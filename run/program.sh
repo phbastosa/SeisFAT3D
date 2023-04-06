@@ -34,11 +34,8 @@ Usage:
 "
 # Check if user provide some parameter
 [ -z "$1" ] && {
-	echo " "
-	echo "You didn't provide any parameter!" 
-	echo "Type $0 -help for more info"
-	echo " "  
-	
+	echo -e "\nYou didn't provide any parameter!" 
+	echo -e "Type $0 -help for more info\n"
     exit 1 
 }
 
