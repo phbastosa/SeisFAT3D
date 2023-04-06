@@ -6,6 +6,13 @@ circular="../src/geometry/circular/circular.cpp"
 streamer="../src/geometry/streamer/streamer.cpp"
 geometry_main="../src/geometry_main.cpp"
 
+modeling="../src/modeling/modeling.cpp"
+eikonal="../src/modeling/eikonal/eikonal.cpp"
+scalar="../src/modeling/scalar/scalar.cpp"
+acoustic="../src/modeling/acoustic/acoustic.cpp"
+elastic="../src/modeling/elastic/elastic.cpp"
+modeling_main="../src/modeling_main.cpp"
+
 USER_MESSAGE="
 Usage:
     $ $0 -help           # 
@@ -40,6 +47,7 @@ case "$1" in
     nvcc $geometry $regular $circular $streamer $geometry_main -lm -O3 -o ../bin/geometry.exe
 
     echo -e "../bin/\033[31mmodeling.exe\033[m" 
+    nvcc $modeling $eikonal $scalar $acoustic $elastic $modeling_main -lm -O3 -o ../bin/modeling.exe
 
     echo -e "../bin/\033[31minversion.exe\033[m" 
 
@@ -51,11 +59,15 @@ case "$1" in
 
 -geometry) 
 
+    ./../bin/geometry.exe
+
 	exit 0
 ;;
 
 -modeling) 
-    
+
+    ./../bin/modeling.exe
+
 	exit 0
 ;;
 
