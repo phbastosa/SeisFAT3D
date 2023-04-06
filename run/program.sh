@@ -13,6 +13,11 @@ acoustic="../src/modeling/acoustic/acoustic.cpp"
 elastic="../src/modeling/elastic/elastic.cpp"
 modeling_main="../src/modeling_main.cpp"
 
+inversion="../src/inversion/inversion.cpp"
+waveform="../src/inversion/waveform/waveform.cpp"
+tomography="../src/inversion/tomography/tomography.cpp"
+inversion_main="../src/inversion_main.cpp"
+
 USER_MESSAGE="
 Usage:
     $ $0 -help           # 
@@ -50,8 +55,9 @@ case "$1" in
     nvcc $modeling $eikonal $scalar $acoustic $elastic $modeling_main -lm -O3 -o ../bin/modeling.exe
 
     echo -e "../bin/\033[31minversion.exe\033[m" 
+    nvcc $inversion $waveform $tomography $inversion_main -lm -O3 -o ../bin/inversion.exe
 
-    echo -e "../bin/\033[31mmigration.exe\033[m" 
+    echo -e "../bin/\033[31mmigration.exe\033[m"
 
 
 	exit 0
@@ -73,6 +79,8 @@ case "$1" in
 
 -inversion) 
     
+    ./../bin/inversion.exe
+
 	exit 0
 ;;
 
