@@ -1,0 +1,1 @@
+## Seismogram output folder
