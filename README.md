@@ -1,1 +1,1 @@
-## Object-oriented seismic modeling using polymorphism
+## Object-oriented seismic imaging using polymorphism
