@@ -1,1 +1,1 @@
-# seismic_modeling_3D
+## Object-oriented seismic modeling using polymorphism
