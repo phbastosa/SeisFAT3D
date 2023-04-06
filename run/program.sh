@@ -18,6 +18,11 @@ waveform="../src/inversion/waveform/waveform.cpp"
 tomography="../src/inversion/tomography/tomography.cpp"
 inversion_main="../src/inversion_main.cpp"
 
+migration="../src/migration/migration.cpp"
+kirchhoff="../src/migration/kirchhoff/kirchhoff.cpp"
+reverseTime="../src/migration/reverseTime/reverseTime.cpp"
+migration_main="../src/migration_main.cpp"
+
 USER_MESSAGE="
 Usage:
     $ $0 -help           # 
@@ -58,7 +63,7 @@ case "$1" in
     nvcc $inversion $waveform $tomography $inversion_main -lm -O3 -o ../bin/inversion.exe
 
     echo -e "../bin/\033[31mmigration.exe\033[m"
-
+    nvcc $migration $kirchhoff $reverseTime $migration_main -lm -O3 -o ../bin/migration.exe
 
 	exit 0
 ;;
@@ -86,6 +91,8 @@ case "$1" in
 
 -migration) 
     
+    ./../bin/migration.exe
+
 	exit 0
 ;;
 
