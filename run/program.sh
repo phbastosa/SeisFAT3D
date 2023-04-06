@@ -32,7 +32,7 @@ Usage:
     $ $0 -inversion      # 
     $ $0 -migration      #    
 "
-# Check if user provide some parameter
+
 [ -z "$1" ] && 
 {
 	echo -e "\nYou didn't provide any parameter!" 
@@ -43,6 +43,7 @@ Usage:
 case "$1" in
 
 -help) 
+
 	echo -e "$USER_MESSAGE"
 	exit 0
 ;;
@@ -94,8 +95,8 @@ case "$1" in
 	exit 0
 ;;
 
-* ) ## Message for bad parameter
-	
+* ) 
+
 	echo -e "\033[31mERRO: Option $1 unknown!\033[m"
 	echo -e "\033[31mType $0 -h for help \033[m"
 	
