@@ -33,7 +33,8 @@ Usage:
     $ $0 -migration      #    
 "
 # Check if user provide some parameter
-[ -z "$1" ] && {
+[ -z "$1" ] && 
+{
 	echo -e "\nYou didn't provide any parameter!" 
 	echo -e "Type $0 -help for more info\n"
     exit 1 
