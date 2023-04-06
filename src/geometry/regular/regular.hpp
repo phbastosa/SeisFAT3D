@@ -6,6 +6,8 @@
 class Regular : public Geometry
 {
     void set_name();
+
+    void set_parameters(std::string file);
 };
 
 # endif
