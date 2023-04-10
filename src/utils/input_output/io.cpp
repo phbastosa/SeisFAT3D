@@ -20,7 +20,7 @@ void import_binary_float(std::string path, float * array, int n)
     }
     else
     {
-        throw std::invalid_argument("Error: " + path + " could not be opened!");
+        throw std::invalid_argument("\033[31mError: " + path + " could not be opened!\033[0;0m");
     }
 
     file.close();    
@@ -36,7 +36,7 @@ void export_binary_float(std::string path, float * array, int n)
     }
     else
     {
-        throw std::invalid_argument("Error: " + path + " could not be opened!");
+        throw std::invalid_argument("\033[31mError: " + path + " could not be opened!\033[0;0m");
     }
 
     std::cout<<"Binary file " + path + " was succesfully written."<<std::endl;
@@ -59,7 +59,7 @@ void import_text_file(std::string path, std::vector<std::string> &elements)
     }
     else
     {
-        throw std::invalid_argument("Error: " + path + " could not be opened!");
+        throw std::invalid_argument("\033[31mError: " + path + " could not be opened!\033[0;0m");
     }
 
     file.close();
@@ -78,7 +78,7 @@ void export_text_file(std::string path, std::vector<std::string> &elements)
     }
     else
     {
-        throw std::invalid_argument("Error: " + path + " could not be opened!");
+        throw std::invalid_argument("\033[31mError: " + path + " could not be opened!\033[0;0m");
     }
 
     std::cout<<"Text file " + path + " was succesfully written."<<std::endl;

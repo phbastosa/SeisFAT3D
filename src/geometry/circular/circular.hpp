@@ -9,7 +9,7 @@ class Circular : public Geometry
 
 public:
 
-    void set_parameters(std::string file);
+    void set_geometry(std::string file, std::string name);
 };
 
 # endif

@@ -7,23 +7,23 @@ class Regular : public Geometry
 {
     bool reciprocity;
 
-    std::vector<float> shots_SW;
-    std::vector<float> shots_NW;
-    std::vector<float> shots_SE;
+    std::string parameters;
 
-    std::vector<float> nodes_SW;
-    std::vector<float> nodes_NW;
-    std::vector<float> nodes_SE;
+    std::vector<float> SW;
+    std::vector<float> NW;
+    std::vector<float> SE;
 
-    std::vector<int> shots_nlines;
-    std::vector<int> nodes_nlines;
-    
-    void build_shots();
-    void build_nodes();
+    std::vector<int> nlines;
+
+    std::vector<std::string> splitted;
+
+    std::vector<float> linspace(float xi, float xf, int n);
+
+    void build_geometry();
 
 public:
 
-    void set_parameters(std::string file);
+    void set_geometry(std::string file, std::string name);
 };
 
 # endif

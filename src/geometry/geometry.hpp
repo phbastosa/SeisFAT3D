@@ -7,20 +7,16 @@ class Geometry
 {
 protected:
 
-    std::string name;        
-
     bool import_geometry;
-    std::string geometry_folder;
+    std::string geometry_file;
 
 public:
     
-    float * shot_x = nullptr;
-    float * shot_y = nullptr;
-    float * shot_z = nullptr;
+    int total;
 
-    float * node_x = nullptr;
-    float * node_y = nullptr;
-    float * node_z = nullptr;
+    float * x = nullptr;
+    float * y = nullptr;
+    float * z = nullptr;
 
     int * beg_relative = nullptr;
     int * end_relative = nullptr;
@@ -28,7 +24,7 @@ public:
     void import_coordinates();
     void export_coordinates();
 
-    virtual void set_parameters(std::string file) = 0;     
+    virtual void set_geometry(std::string file, std::string name) = 0;     
 };
 
 # endif

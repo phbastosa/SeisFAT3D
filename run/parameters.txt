@@ -29,11 +29,11 @@ geometry_folder = ../inputs/geometry/     # <str>
 
 # Regular geometry ---------------------------------------------------------------------------                     
 
-shots_nlines = [1, 1, 1]    # <int> (z, x, y)     
+shots_nlines = [11, 1, 1]    # <int> (z, x, y)     
 nodes_nlines = [1, 1, 1]    # <int> (z, x, y)            
 
 shots_SW = [10, 25, 25]     # [m] <float> (z, x, y) NW            
-shots_NW = [10, 25, 25]     # [m] <float> (z, x, y)  |            
+shots_NW = [110, 25, 25]     # [m] <float> (z, x, y)  |            
 shots_SE = [10, 25, 25]     # [m] <float> (z, x, y) SW -- SE     
 
 nodes_SW = [10, 25, 25]     # [m] <float> (z, x, y) NW           
