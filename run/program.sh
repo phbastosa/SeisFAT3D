@@ -1,5 +1,7 @@
 #!/bin/bash
 
+io="../src/utils/input_output/io.cpp"
+
 geometry="../src/geometry/geometry.cpp"
 regular="../src/geometry/regular/regular.cpp"
 circular="../src/geometry/circular/circular.cpp"
@@ -53,44 +55,44 @@ case "$1" in
     echo -e "Compiling the stand-alone executables!\n"
 
     echo -e "../bin/\033[31mgeometry.exe\033[m" 
-    nvcc $geometry $regular $circular $streamer $geometry_main -lm -O3 -o ../bin/geometry.exe
+    nvcc $io $geometry $regular $circular $streamer $geometry_main -lm -O3 -o ../bin/geometry.exe
 
     echo -e "../bin/\033[31mmodeling.exe\033[m" 
-    nvcc $modeling $eikonal $scalar $acoustic $elastic $modeling_main -lm -O3 -o ../bin/modeling.exe
+    nvcc $io $modeling $eikonal $scalar $acoustic $elastic $modeling_main -lm -O3 -o ../bin/modeling.exe
 
     echo -e "../bin/\033[31minversion.exe\033[m" 
-    nvcc $inversion $waveform $tomography $inversion_main -lm -O3 -o ../bin/inversion.exe
+    nvcc $io $inversion $waveform $tomography $inversion_main -lm -O3 -o ../bin/inversion.exe
 
     echo -e "../bin/\033[31mmigration.exe\033[m"
-    nvcc $migration $kirchhoff $reverseTime $migration_main -lm -O3 -o ../bin/migration.exe
+    nvcc $io $migration $kirchhoff $reverseTime $migration_main -lm -O3 -o ../bin/migration.exe
 
 	exit 0
 ;;
 
 -geometry) 
 
-    ./../bin/geometry.exe
+    ./../bin/geometry.exe parameters.txt
 
 	exit 0
 ;;
 
 -modeling) 
 
-    ./../bin/modeling.exe
+    ./../bin/modeling.exe parameters.txt
 
 	exit 0
 ;;
 
 -inversion) 
     
-    ./../bin/inversion.exe
+    ./../bin/inversion.exe parameters.txt
 
 	exit 0
 ;;
 
 -migration) 
     
-    ./../bin/migration.exe
+    ./../bin/migration.exe parameters.txt
 
 	exit 0
 ;;

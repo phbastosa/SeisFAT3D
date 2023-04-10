@@ -8,16 +8,19 @@ class Geometry
 protected:
 
     std::string name;        
-    std::string geometry_file;
+
+    bool import_geometry;
+    std::string geometry_folder;
 
 public:
     
-    void get_name();
-    virtual void set_name() = 0;
+    float * shot_x = nullptr;
+    float * shot_y = nullptr;
+    float * shot_z = nullptr;
 
-    float * x = nullptr;
-    float * y = nullptr;
-    float * z = nullptr;
+    float * node_x = nullptr;
+    float * node_y = nullptr;
+    float * node_z = nullptr;
 
     int * beg_relative = nullptr;
     int * end_relative = nullptr;

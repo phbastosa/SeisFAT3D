@@ -1,0 +1,56 @@
+#----------------------------------------------------------------------------------------------------
+# Model paramenters ---------------------------------------------------------------------------------
+#----------------------------------------------------------------------------------------------------
+ 
+model_samples = [101, 251, 351]   # <int> (z, x, y) 
+model_spacing = [25, 25, 25]      # [m] <float> (z, x, y)
+
+p_velocity_model_file = ../inputs/models/.bin       # <str> 
+s_velocity_model_file = ../inputs/models/.bin       # <str>
+density_model_file = ../inputs/models/.bin          # <str>
+
+#---------------------------------------------------------------------------------------------------
+# Geometry parameters ------------------------------------------------------------------------------
+#---------------------------------------------------------------------------------------------------
+# Available types:
+#   
+#   [0] - regular nodes and regular shots    
+#   [1] - regular nodes and circular shots  
+#   [2] - streamer nodes and regular shots  
+#---------------------------------------------------------------------------------------------------
+
+geometry_type = 0           # <int>
+
+reciprocity = false         # <bool>     
+
+import_geometry = false     # <bool>
+
+geometry_folder = ../inputs/geometry/     # <str>         
+
+# Regular geometry ---------------------------------------------------------------------------                     
+
+shots_nlines = [1, 1, 1]    # <int> (z, x, y)     
+nodes_nlines = [1, 1, 1]    # <int> (z, x, y)            
+
+shots_SW = [10, 25, 25]     # [m] <float> (z, x, y) NW            
+shots_NW = [10, 25, 25]     # [m] <float> (z, x, y)  |            
+shots_SE = [10, 25, 25]     # [m] <float> (z, x, y) SW -- SE     
+
+nodes_SW = [10, 25, 25]     # [m] <float> (z, x, y) NW           
+nodes_NW = [10, 25, 25]     # [m] <float> (z, x, y)  |         
+nodes_SE = [10, 25, 25]     # [m] <float> (z, x, y) SW -- SE   
+
+# Circular geometry ---------------------------------------------------------------------------                                            
+
+shots_spacing = 50                   # [m] <float>
+
+shots_center  = [10, 1000, 1000]     # [m] <float> (z,x,y)        
+shots_offsets = [500, 750, 1000]     # [m] <float>
+
+# Streamer geometry -------------------------------------------------------------------------------- 
+
+spread = [321, 11]         # <int> (x, y)         
+
+offset_x = [-50, -8050]    # [m] <float> (min, max) 
+offset_y = [-250, 250]     # [m] <float> (min, max)
+

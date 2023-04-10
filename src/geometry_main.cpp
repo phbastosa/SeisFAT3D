@@ -11,11 +11,14 @@ int main(int argc, char **argv)
         new Streamer()
     }; 
 
-    for (int type = 0; type < 3; type++)
-    {
-        geometry[type]->set_name();
-        geometry[type]->get_name();
-    }
+    std::string file = std::string(argv[1]);
+
+    int type = std::stoi(catch_parameter("geometry_type", file));
+
+    geometry[type]->set_parameters(file);
+
+    // geometry[0]->set_name();
+    // geometry[0]->get_name();
 
     return 0;
 }

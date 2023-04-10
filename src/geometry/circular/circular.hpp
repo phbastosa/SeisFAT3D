@@ -5,7 +5,9 @@
 
 class Circular : public Geometry
 {
-    void set_name();
+
+
+public:
 
     void set_parameters(std::string file);
 };
