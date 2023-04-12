@@ -5,7 +5,8 @@
 
 class Eikonal : public Modeling
 {
-    void set_name();
+
+
 };
 
 # endif

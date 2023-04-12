@@ -1,16 +1,9 @@
-# include <cmath>
-
 # include "circular.hpp"
 
 void Circular::set_geometry(std::string file)
-{
-    reciprocity = str2bool(catch_parameter("reciprocity", file));
-    import_geometry = str2bool(catch_parameter("import_geometry", file));
+{    
+    Geometry::set_geometry(file);
 
-    shots_file = catch_parameter("shots_file", file);
-    nodes_file = catch_parameter("nodes_file", file);
-    relational = catch_parameter("relational", file);
-    
     if (import_geometry) 
     {
         import_coordinates();
@@ -38,7 +31,9 @@ void Circular::set_geometry(std::string file)
 
         splitted = split(catch_parameter("nodes_SE", file), ',');
         for (auto key : splitted) SE.push_back(std::stof(key));
-    
+        
+        std::vector<std::string>().swap(splitted); 
+        
         set_circular();    
         set_regular(nodes);    
 
@@ -47,8 +42,6 @@ void Circular::set_geometry(std::string file)
 
         set_relational();
         export_coordinates();
-
-        std::vector<std::string>().swap(splitted); 
     }    
 }
 

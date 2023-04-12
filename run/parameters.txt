@@ -48,3 +48,9 @@ spacing = 50                         # [m] <float>
 center  = [10, 2100, 2100]           # [m] <float> (z, x, y)        
 offsets = [500, 750, 1000]           # [m] <float>
 
+# Streamer geometry ---------------------------------------------------------------------------
+
+spread = [321, 11]                   # [m] <float> (x, y) 
+offset_x = [-50,-8050]               # [m] <float> (min, max)
+offset_y = [-250, 250]               # [m] <float> (min, max)
+

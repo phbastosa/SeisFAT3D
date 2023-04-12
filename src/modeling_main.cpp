@@ -13,11 +13,6 @@ int main(int argc, char **argv)
         new Elastic()
     }; 
 
-    for (int type = 0; type < 4; type++)
-    {
-        modeling[type]->set_name();
-        modeling[type]->get_name();
-    }
 
     return 0;
 }

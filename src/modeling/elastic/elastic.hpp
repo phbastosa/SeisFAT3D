@@ -5,7 +5,8 @@
 
 class Elastic : public Modeling
 {
-    void set_name();
+
+
 };
 
 # endif

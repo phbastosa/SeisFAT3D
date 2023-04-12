@@ -2,13 +2,8 @@
 
 void Regular::set_geometry(std::string file)
 {
-    reciprocity = str2bool(catch_parameter("reciprocity", file));
-    import_geometry = str2bool(catch_parameter("import_geometry", file));
-
-    shots_file = catch_parameter("shots_file", file);
-    nodes_file = catch_parameter("nodes_file", file);
-    relational = catch_parameter("relational", file);
-
+    Geometry::set_geometry(file);
+    
     if (import_geometry) 
     {
         import_coordinates();

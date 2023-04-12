@@ -1,6 +1,7 @@
 # include "modeling.hpp"
 
-void Modeling::get_name()
+void Modeling::export_outputs()
 {
-    std::cout << name << std::endl;
+
+
 }

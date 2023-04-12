@@ -5,7 +5,8 @@
 
 class Acoustic : public Modeling
 {
-    void set_name();
+
+
 };
 
 # endif

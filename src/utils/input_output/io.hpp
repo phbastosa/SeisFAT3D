@@ -1,6 +1,7 @@
 # ifndef FILE_MANAGER_CPP
 # define FILE_MANAGER_CPP
 
+# include <cmath>
 # include <string>
 # include <vector>
 # include <sstream>

@@ -49,7 +49,7 @@ public:
     int * beg_relation = nullptr;
     int * end_relation = nullptr;
 
-    virtual void set_geometry(std::string file) = 0;     
+    virtual void set_geometry(std::string file);     
 };
 
 # endif
