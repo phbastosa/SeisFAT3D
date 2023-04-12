@@ -5,7 +5,9 @@
 
 class Streamer : public Geometry
 {
+private:
 
+    void set_relational();
 
 public:
 

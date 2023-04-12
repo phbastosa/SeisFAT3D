@@ -10,3 +10,10 @@ void Streamer::set_geometry(std::string file)
 
 
 }
+
+void Streamer::set_relational()
+{
+
+
+    
+}

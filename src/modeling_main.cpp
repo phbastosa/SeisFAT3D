@@ -13,6 +13,19 @@ int main(int argc, char **argv)
         new Elastic()
     }; 
 
+    int type = std::stoi(catch_parameter("modeling_type", std::string(argv[1]))); 
+
+    modeling[type]->set_parameters(std::string(argv[1]));
+
+    
+
+    modeling[type]->set_runtime();
+
+
+
+
+
+    modeling[type]->get_runtime();
 
     return 0;
 }
