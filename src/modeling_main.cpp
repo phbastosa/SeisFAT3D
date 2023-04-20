@@ -1,4 +1,4 @@
-# include "modeling/eikonal/eikonal.hpp"
+# include "modeling/eikonal/eikonal.cuh"
 # include "modeling/scalar/scalar.hpp"
 # include "modeling/acoustic/acoustic.hpp"
 # include "modeling/elastic/elastic.hpp"
@@ -16,8 +16,6 @@ int main(int argc, char **argv)
     int type = std::stoi(catch_parameter("modeling_type", std::string(argv[1]))); 
 
     modeling[type]->set_parameters(std::string(argv[1]));
-
-    
 
     modeling[type]->set_runtime();
 

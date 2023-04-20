@@ -8,7 +8,9 @@ circular="../src/geometry/circular/circular.cpp"
 streamer="../src/geometry/streamer/streamer.cpp"
 
 modeling="../src/modeling/modeling.cpp"
-eikonal="../src/modeling/eikonal/eikonal.cpp"
+
+eikonal="../src/modeling/eikonal/eikonal.cu"
+
 scalar="../src/modeling/scalar/scalar.cpp"
 acoustic="../src/modeling/acoustic/acoustic.cpp"
 elastic="../src/modeling/elastic/elastic.cpp"
@@ -54,7 +56,7 @@ case "$1" in
     echo -e "Compiling the stand-alone executables!\n"
 
     echo -e "../bin/\033[31mmodeling.exe\033[m" 
-    nvcc $io $geometry $regular $circular $streamer $modeling $eikonal $scalar $acoustic $elastic $modeling_main -lm -O3 -o ../bin/modeling.exe
+    nvcc $io $geometry $regular $circular $streamer $modeling $eikonal $scalar $acoustic $elastic $modeling_main -std=c++11 -lm -O3 -o ../bin/modeling.exe
 
     # echo -e "../bin/\033[31minversion.exe\033[m" 
     # nvcc $io $inversion $waveform $tomography $inversion_main -lm -O3 -o ../bin/inversion.exe

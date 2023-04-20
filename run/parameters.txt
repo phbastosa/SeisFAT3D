@@ -2,8 +2,8 @@
 # Model paramenters --------------------------------------------------------------------------------
 #---------------------------------------------------------------------------------------------------
  
-model_samples = [101, 251, 351]   # <int> (z, x, y) 
-model_spacing = [25, 25, 25]      # [m] <float> (z, x, y)
+model_samples = [101, 251, 351]    # <int> (z, x, y) 
+model_spacing = 25                 # [m] <float> 
 
 vp_model_file = ../inputs/models/.bin       # <str> 
 vs_model_file = ../inputs/models/.bin       # <str>
