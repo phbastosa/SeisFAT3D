@@ -1,24 +1,20 @@
 # include "modeling.hpp"
 
 void Modeling::set_parameters(std::string file)
-{
-    std::vector<std::string> splitted;
-
-    splitted = split(catch_parameter("model_samples", file), ',');
-    
-    nz = std::stoi(splitted[0]);
-    nx = std::stoi(splitted[1]);
-    ny = std::stoi(splitted[2]);
+{    
+    nx = std::stoi(catch_parameter("x_samples", file));
+    ny = std::stoi(catch_parameter("y_samples", file));
+    nz = std::stoi(catch_parameter("z_samples", file));
 
     nPoints = nx*ny*nz;
 
     dh = std::stof(catch_parameter("model_spacing", file));
 
-    export_receiver_output = str2bool(catch_parameter("export_seismogram", file));
-    export_wavefield_output = str2bool(catch_parameter("export_snapshots", file));
+    export_receiver_output = str2bool(catch_parameter("export_receiver_output", file));
+    export_wavefield_output = str2bool(catch_parameter("export_wavefield_output", file));
 
-    receiver_output_folder = catch_parameter("seismogram_folder", file);
-    wavefield_output_folder = catch_parameter("snapshots_folder", file);
+    receiver_output_folder = catch_parameter("receiver_output_folder", file); 
+    wavefield_output_folder = catch_parameter("wavefield_output_folder", file);
 
     Geometry * gtypes[] = {new Regular(), new Circular(), new Streamer()};
 
@@ -28,8 +24,6 @@ void Modeling::set_parameters(std::string file)
 
     total_shots = geometry->shots.total;
     total_nodes = geometry->nodes.total;
-
-    std::vector<std::string>().swap(splitted);
 }
 
 void Modeling::set_runtime()

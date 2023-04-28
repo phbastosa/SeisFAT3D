@@ -19,9 +19,15 @@ int main(int argc, char **argv)
 
     modeling[type]->set_runtime();
 
+    for (int shot = 0; shot < modeling[type]->total_shots; shot++)
+    {
+        modeling[type]->shot_id = shot;
+
+        
 
 
-
+        modeling[type]->export_outputs();
+    }
 
     modeling[type]->get_runtime();
 

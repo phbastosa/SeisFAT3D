@@ -6,12 +6,6 @@ void Eikonal::set_parameters(std::string file)
 
     std::string vp_model_file = catch_parameter("vp_model_file", file);
 
-    // export_receiver_output = 
-    // export_wavefield_output = 
-
-    // receiver_output_folder = 
-    // wavefield_output_folder = 
-
     pdx = (BLOCK_LENGTH - nx % BLOCK_LENGTH) % BLOCK_LENGTH;
     pdy = (BLOCK_LENGTH - ny % BLOCK_LENGTH) % BLOCK_LENGTH;
     pdz = (BLOCK_LENGTH - nz % BLOCK_LENGTH) % BLOCK_LENGTH;
@@ -110,7 +104,6 @@ void Eikonal::initial_setup()
 	uint idx = 0;
 	uint blk_idx = 0;
 	uint list_idx = 0;
-    uint nActiveBlock = 0;
 
     float sx = geometry->shots.x[shot_id];
     float sy = geometry->shots.y[shot_id];
@@ -162,7 +155,6 @@ void Eikonal::initial_setup()
 					h_listVol[blk_idx] = true;
           			
                     ++list_idx;
-          			++nActiveBlock;
         		} 
 				else 
 				{
@@ -183,15 +175,10 @@ void Eikonal::forward_solver()
 
 
 
-
-
 }
 
 void Eikonal::build_outputs()
 {
-    // receiver_output_file = receiver_output_folder + " ";
-    // wavefield_output_file = wavefield_output_file + " ";
-
     get_travelTimes();
     get_firstArrivals();
 }
@@ -225,6 +212,8 @@ void Eikonal::get_travelTimes()
 			}
 		}
 	}
+
+    wavefield_output_file = wavefield_output_file + "travel_times_" + std::to_string(nz) + "x" + std::to_string(nx) + "x" + std::to_string(ny) + "_shot_" + std::to_string(shot_id) + ".bin";
 }
 
 void Eikonal::get_firstArrivals()
@@ -268,4 +257,6 @@ void Eikonal::get_firstArrivals()
 
         receiver_output[r] = c0*(1 - zd) + c1*zd;
     }
+
+    receiver_output_file = receiver_output_folder + "first_arrivals_" + std::to_string(geometry->nodes.total) + "_shot_" + std::to_string(shot_id) + ".bin";
 }
