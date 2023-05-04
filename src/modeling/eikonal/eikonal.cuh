@@ -19,30 +19,71 @@ private:
 
     int pdx, pdy, pdz; 
     int nxx, nyy, nzz;
-    int nbx, nby, nbz;
+    int volsize, padb;
 
-    int nblk;
-    int volsize;
-    int blksize;
-    int nit = 10;
-    uint nActiveBlock;
+    float t0;
+    int sidx, sidy, sidz;
 
-    float * h_slow, * d_slow;
-    float * h_time, * d_time, * t_time;
+    void pad_expansion();
+    void fdm_expansion();
 
-    uint * h_list, * d_list;
-    bool * h_mask, * d_mask;
-    bool * h_listed, * d_con;
-    bool * h_listVol, * d_listVol;
-
-    void expand_model();
+    void pad_reduction();
+    void fdm_reduction();
 
     void get_travelTimes();
     void get_firstArrivals();
 
-    void POD_solver();
+    /* Podvin and Lecomte method components */
+
+    void PAL_solver();
+
+
+    /* Fast Sweeping Method components */
+
+    int i, j, k;
+    int sgnvx, sgnvy, sgnvz;
+    int sgntx, sgnty, sgntz;
+
+    float dxi, dyi, dzi;
+    float dx2i, dy2i, dz2i, dsum;
+    float dz2dx2, dz2dy2, dx2dy2;
+
+    void FSM_init();
     void FSM_solver();
+    void FSM_parameters();
+    void FSM_components();
+
+    void init_sweep();
+    void full_sweep();    
+    void inner_sweep();
+
+    /* Fast Iterative Method components */
+
+    int nblk;
+    int blksize;
+    int nit = 10;
+    int nbx, nby, nbz;
+    uint nActiveBlock;
+
+    uint * h_list = nullptr;
+    bool * h_mask = nullptr; 
+    bool * h_listed = nullptr;
+    bool * h_listVol = nullptr; 
+    float * h_slow = nullptr; 
+    float * h_time = nullptr; 
+    
+    uint * d_list = nullptr;
+    bool * d_mask = nullptr;
+    bool * d_con = nullptr;
+    bool * d_listVol = nullptr;
+    float * d_slow = nullptr;
+    float * d_time = nullptr; 
+    float * t_time = nullptr;
+
+    void FIM_init();
     void FIM_solver();
+    void FIM_parameters();
+    void FIM_components();
 
 public:
 

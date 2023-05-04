@@ -9,6 +9,8 @@ streamer="../src/geometry/streamer/streamer.cpp"
 
 modeling="../src/modeling/modeling.cpp"
 
+FSM="../src/modeling/eikonal/FSM.cu"
+FIM="../src/modeling/eikonal/FIM.cu"
 eikonal="../src/modeling/eikonal/eikonal.cu"
 
 scalar="../src/modeling/scalar/scalar.cpp"
@@ -58,7 +60,7 @@ case "$1" in
     echo -e "Compiling the stand-alone executables!\n"
 
     echo -e "../bin/\033[31mmodeling.exe\033[m" 
-    nvcc $io $geometry $regular $circular $streamer $modeling $eikonal $scalar $acoustic $elastic $modeling_main $flags -o ../bin/modeling.exe
+    nvcc $io $geometry $regular $circular $streamer $modeling $FSM $FIM $eikonal $scalar $acoustic $elastic $modeling_main $flags -o ../bin/modeling.exe
 
     # echo -e "../bin/\033[31minversion.exe\033[m" 
     # nvcc $io $inversion $waveform $tomography $inversion_main -lm -O3 -o ../bin/inversion.exe

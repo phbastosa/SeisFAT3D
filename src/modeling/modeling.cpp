@@ -42,13 +42,15 @@ void Modeling::info_message()
     std::cout<<"Total Y model length = "<<(ny-1)*dh<<" m\n";
     std::cout<<"Total Z model length = "<<(nz-1)*dh<<" m\n\n";
 
-    std::cout<<"Shot " << shot_id+1 << " of " << geometry->shots.total << "\n";
+    std::cout<<"Shot " << shot_id+1 << " of " << geometry->shots.total;
 
-    std::cout << "Position (x,y,z) = (" << geometry->shots.x[shot_id] << ", " 
-                                        << geometry->shots.y[shot_id] << ", " 
-                                        << geometry->shots.z[shot_id] << ") m\n\n";
+    std::cout << " at position (x,y,z) = (" << geometry->shots.x[shot_id] << ", " 
+                                            << geometry->shots.y[shot_id] << ", " 
+                                            << geometry->shots.z[shot_id] << ") m\n\n";
 
-    // std::cout<<"Solving eikonal equation with the \033[32mJeong & Whitaker (2008)\033[0;0m formulation\n\n";
+    std::cout<<"Memory usage: \n";
+    std::cout<<"RAM  = "<<RAM<<" Mb\n";
+    std::cout<<"vRAM = "<<vRAM<<" Mb\n\n";
 }
 
 void Modeling::set_runtime()
