@@ -17,14 +17,21 @@ int main(int argc, char **argv)
 
     modeling[type]->set_parameters(std::string(argv[1]));
 
+    modeling[type]->set_components();
+
     modeling[type]->set_runtime();
 
     for (int shot = 0; shot < modeling[type]->total_shots; shot++)
     {
         modeling[type]->shot_id = shot;
 
-        
+        modeling[type]->info_message();
 
+        modeling[type]->initial_setup();
+
+        modeling[type]->forward_solver();
+
+        modeling[type]->build_outputs();
 
         modeling[type]->export_outputs();
     }

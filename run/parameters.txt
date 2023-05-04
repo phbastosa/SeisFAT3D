@@ -2,13 +2,13 @@
 # Model paramenters --------------------------------------------------------------------------------
 #---------------------------------------------------------------------------------------------------
  
-z_samples = 101          # <int>  
-x_samples = 201          # <int>  
-y_samples = 301          # <int>  
+z_samples = 187          # <int>  
+x_samples = 801          # <int>  
+y_samples = 801          # <int>  
 
 model_spacing = 25       # [m] <float> 
 
-vp_model_file = ../inputs/models/vp_two_layer.bin     # <str> 
+vp_model_file = ../inputs/models/overthrust_z187_x801_y801_25m.bin     # <str> 
 vs_model_file = ../inputs/models/vs_two_layer.bin     # <str>
 rho_model_file = ../inputs/models/rho_two_layer.bin   # <str>
 
@@ -22,9 +22,9 @@ rho_model_file = ../inputs/models/rho_two_layer.bin   # <str>
 #   [2] - streamer nodes and regular shots  
 #---------------------------------------------------------------------------------------------------
 
-geometry_type = 0                    # <int>
+geometry_type = 1                    # <int>
 
-reciprocity = false                  # <bool>     
+reciprocity = true                  # <bool>     
 
 shots_file = ../inputs/geometry/xyz_shots.txt     # <str>         
 nodes_file = ../inputs/geometry/xyz_nodes.txt     # <str>
@@ -41,15 +41,15 @@ shots_SW = [10, 25, 25]              # [m] <float> (z, x, y) NW
 shots_NW = [10, 25, 25]              # [m] <float> (z, x, y)  |            
 shots_SE = [10, 25, 25]              # [m] <float> (z, x, y) SW -- SE     
 
-nodes_SW = [10, 25, 25]              # [m] <float> (z, x, y) NW           
-nodes_NW = [10, 25, 25]              # [m] <float> (z, x, y)  |         
-nodes_SE = [10, 25, 25]              # [m] <float> (z, x, y) SW -- SE   
+nodes_SW = [10, 1000, 10000]              # [m] <float> (z, x, y) NW           
+nodes_NW = [10, 1000, 10000]              # [m] <float> (z, x, y)  |         
+nodes_SE = [10, 1000, 10000]              # [m] <float> (z, x, y) SW -- SE   
 
 # Circular geometry --------------------------------------------------------------------------------                                            
 
 spacing = 50                         # [m] <float>
-center  = [10, 2100, 2100]           # [m] <float> (z, x, y)        
-offsets = [500, 750, 1000]           # [m] <float>
+center  = [10, 10000, 10000]           # [m] <float> (z, x, y)        
+offsets = [5500, 7500, 9500]           # [m] <float>
 
 # Streamer geometry --------------------------------------------------------------------------------
 
@@ -70,7 +70,7 @@ offset_y = [-250, 250]               # [m] <float> (min, max)
 
 modeling_type = 0
 
-export_receiver_output = false
+export_receiver_output = true
 export_wavefield_output = false
 
 receiver_output_folder = ../outputs/seismograms/

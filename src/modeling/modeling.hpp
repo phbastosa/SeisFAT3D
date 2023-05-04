@@ -2,6 +2,10 @@
 # define MODELING_HPP
 
 # include <chrono>
+# include <cuda.h>
+# include <cassert>
+# include <cuda_runtime.h>
+# include <sys/resource.h>
 
 # include "../geometry/geometry.hpp"
 # include "../geometry/regular/regular.hpp"
@@ -15,6 +19,10 @@ private:
     std::chrono::_V2::system_clock::time_point ti, tf;
 
 protected:
+
+    std::string title;
+
+    int RAM, vRAM, ivRAM;
 
     int receiver_output_samples;
     int wavefield_output_samples;
@@ -31,8 +39,7 @@ protected:
     float * wavefield_output = nullptr;
 
     float dh;
-    int nPoints;
-    int nx, ny, nz;
+    int nx, ny, nz, nPoints;
 
     float * S = nullptr;
     float * V = nullptr;
@@ -43,6 +50,10 @@ protected:
 
     Geometry * geometry;
 
+    void get_RAM_usage();
+    void get_GPU_usage();
+    void get_vRAM_init();
+
 public: 
 
     int shot_id;
@@ -50,16 +61,16 @@ public:
     int total_shots;
     int total_nodes;
 
-    // virtual void initial_setup() = 0;
-    // virtual void set_components() = 0;
-    // virtual void forward_solver() = 0;
-    // virtual void build_outputs() = 0;
+    virtual void initial_setup() = 0;
+    virtual void set_components() = 0;
+    virtual void forward_solver() = 0;
+    virtual void build_outputs() = 0;
 
     virtual void set_parameters(std::string file); 
 
     void set_runtime();
     void get_runtime();
-
+    void info_message();
     void export_outputs();
 };
 

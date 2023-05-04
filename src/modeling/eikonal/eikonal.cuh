@@ -1,9 +1,6 @@
 # ifndef EIKONAL_CUH
 # define EIKONAL_CUH
 
-# include <cuda.h>
-# include <cuda_runtime.h>
-
 # include "../modeling.hpp"
 
 # define INF 1e6f
@@ -28,19 +25,24 @@ private:
     int volsize;
     int blksize;
     int nit = 10;
+    uint nActiveBlock;
 
-    float * h_time;
-    float * h_slow;
+    float * h_slow, * d_slow;
+    float * h_time, * d_time, * t_time;
 
-    uint * h_list;
-    bool * h_mask;
-    bool * h_listed;
-    bool * h_listVol;
+    uint * h_list, * d_list;
+    bool * h_mask, * d_mask;
+    bool * h_listed, * d_con;
+    bool * h_listVol, * d_listVol;
 
     void expand_model();
 
     void get_travelTimes();
     void get_firstArrivals();
+
+    void POD_solver();
+    void FSM_solver();
+    void FIM_solver();
 
 public:
 
