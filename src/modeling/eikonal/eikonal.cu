@@ -4,29 +4,58 @@ void Eikonal::set_parameters(std::string file)
 {
     Modeling::set_parameters(file);
 
-    std::string vp_model_file = catch_parameter("vp_model_file", file);
+    eikonal_type = std::stoi(catch_parameter("eikonal_type", file));
 
-    FSM_parameters();
-    // FIM_parameters();
+    switch (eikonal_type)
+    {
+    case 0:
+        PAL_parameters();    
+        break;    
+    case 1:
+        FIM_parameters();
+        break;
+    case 2:
+        FSM_parameters();
+        break;
+    default:
+        eikonal_type = 1;
+        FIM_parameters();
+        break;
+    }
+
+    volsize = nxx * nyy * nzz;
 
     S = new float[volsize]();
     vp = new float[nPoints]();
 
+    std::string vp_model_file = catch_parameter("vp_model_file", file);
+
     import_binary_float(vp_model_file, vp, nPoints);
 
-    fdm_expansion();
-    // pad_expansion();
+    eikonal_type == true ? pad_expansion() : fdm_expansion();
 
     delete[] vp;
 }
 
 void Eikonal::set_components()
 {
-    FSM_components();
-    // FIM_components();
+    switch (eikonal_type)
+    {
+    case 0:
+        PAL_components();    
+        break;    
+    case 1:
+        FIM_components();
+        break;
+    case 2:
+        FSM_components();
+        break;
+    default:
+        eikonal_type = 1;
+        FIM_components();
+        break;
+    }
 	
-    volsize = nxx * nyy * nzz;
-
     T = new float[volsize]();
 
     wavefield_output_samples = nPoints;
@@ -41,22 +70,42 @@ void Eikonal::set_components()
 
 void Eikonal::initial_setup()
 {
-    sidx = (int)(geometry->shots.x[shot_id] / dh);
-    sidy = (int)(geometry->shots.y[shot_id] / dh);
-    sidz = (int)(geometry->shots.z[shot_id] / dh);
-
-    t0 = S[sidz + sidx*nzz + sidy*nxx*nzz] * sqrtf(powf((float)(sidx*dh) - geometry->shots.x[shot_id], 2.0f) +
-                                                   powf((float)(sidy*dh) - geometry->shots.y[shot_id], 2.0f) +
-                                                   powf((float)(sidz*dh) - geometry->shots.z[shot_id], 2.0f));
-
-    FSM_init();
-    // FIM_init();
+    switch (eikonal_type)
+    {
+    case 0:
+        PAL_init();    
+        break;    
+    case 1:
+        FIM_init();
+        break;
+    case 2:
+        FSM_init();
+        break;
+    default:
+        eikonal_type = 1;
+        FIM_init();
+        break;
+    }
 }
 
 void Eikonal::forward_solver()
 {
-    FSM_solver();
-    // FIM_solver();
+    switch (eikonal_type)
+    {
+    case 0:
+        PAL_solver();    
+        break;    
+    case 1:
+        FIM_solver();
+        break;
+    case 2:
+        FSM_solver();
+        break;
+    default:
+        eikonal_type = 1;
+        FIM_solver();
+        break;
+    }
 }
 
 void Eikonal::build_outputs()
@@ -67,8 +116,7 @@ void Eikonal::build_outputs()
 
 void Eikonal::get_travelTimes()
 {
-    fdm_reduction();
-    // pad_reduction();
+    eikonal_type == true ? pad_reduction() : fdm_reduction();    
 
     wavefield_output_file = wavefield_output_folder + "travel_times_" + std::to_string(nz) + "x" + std::to_string(nx) + "x" + std::to_string(ny) + "_shot_" + std::to_string(shot_id+1) + ".bin";
 }

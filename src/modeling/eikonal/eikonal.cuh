@@ -21,8 +21,7 @@ private:
     int nxx, nyy, nzz;
     int volsize, padb;
 
-    float t0;
-    int sidx, sidy, sidz;
+    int eikonal_type;
 
     void pad_expansion();
     void fdm_expansion();
@@ -35,8 +34,18 @@ private:
 
     /* Podvin and Lecomte method components */
 
-    void PAL_solver();
+    float * K = nullptr;
+    
+    float * d_K = nullptr;
+    float * d_nK = nullptr;
+    float * d_nT = nullptr;
+    float * d_T = nullptr;
+    float * d_S = nullptr;
 
+    void PAL_init();
+    void PAL_solver();
+    void PAL_parameters();
+    void PAL_components();
 
     /* Fast Sweeping Method components */
 
@@ -59,9 +68,8 @@ private:
 
     /* Fast Iterative Method components */
 
-    int nblk;
     int blksize;
-    int nit = 10;
+    int nblk, nit;
     int nbx, nby, nbz;
     uint nActiveBlock;
 
@@ -96,6 +104,10 @@ public:
 
     void set_parameters(std::string file);
 };
+
+__global__ void PAL_kernel(float * S, float * T, float * K, float * nT, float h, int nxx, int nyy, int nzz);
+__global__ void PAL_expansion(float * K, float * nK, int nxx, int nyy, int nzz);
+__global__ void PAL_update(float * T, float * nT, float * K, float * nK, int N);
 
 __global__ void run_solver(float* spd, bool* mask, const float *sol_in, float *sol_out, bool *con, uint* list, int xdim, int ydim, int zdim, float dh, int nIter, uint nActiveBlock);
 __global__ void run_reduction(bool *con, bool *listVol, uint *list, uint nActiveBlock);

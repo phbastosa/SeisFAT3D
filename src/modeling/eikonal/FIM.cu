@@ -18,7 +18,28 @@ void Eikonal::FIM_parameters()
 	
     nblk = nbx * nby * nbz;
 
+	nit = 10;
+
     title = "Eikonal solver for acoustic isotropic media\n\nSolving eikonal equation with the \033[32mJeong & Whitaker (2008)\033[0;0m formulation\n";    
+}
+
+void Eikonal::FIM_components()
+{
+    h_mask = new bool[volsize]();
+    h_slow = new float[volsize]();
+	h_time = new float[volsize]();
+	
+    h_list = new uint[nblk]();      
+	h_listed = new bool[nblk]();    
+	h_listVol = new bool[nblk]();   
+
+	cudaMalloc((void**)&(d_con), volsize*sizeof(bool));  
+	cudaMalloc((void**)&(d_mask), volsize*sizeof(bool));
+	cudaMalloc((void**)&(d_slow), volsize*sizeof(float));
+	cudaMalloc((void**)&(d_time), volsize*sizeof(float));
+	cudaMalloc((void**)&(t_time), volsize*sizeof(float)); 
+	cudaMalloc((void**)&(d_list), nblk*sizeof(uint));
+	cudaMalloc((void**)&(d_listVol), nblk*sizeof(bool));
 }
 
 void Eikonal::FIM_init()
@@ -27,6 +48,14 @@ void Eikonal::FIM_init()
 	uint blk_idx = 0;
 	uint list_idx = 0;
     nActiveBlock = 0;
+
+    int sidx = (int)(geometry->shots.x[shot_id] / dh);
+    int sidy = (int)(geometry->shots.y[shot_id] / dh);
+    int sidz = (int)(geometry->shots.z[shot_id] / dh);
+
+    float t0 = S[sidz + sidx*nzz + sidy*nxx*nzz] * sqrtf(powf((float)(sidx*dh) - geometry->shots.x[shot_id], 2.0f) +
+                                                         powf((float)(sidy*dh) - geometry->shots.y[shot_id], 2.0f) +
+                                                         powf((float)(sidz*dh) - geometry->shots.z[shot_id], 2.0f));
 
   	for(int zStr = 0; zStr < nzz; zStr += BLOCK_LENGTH) 
 	{
@@ -83,25 +112,6 @@ void Eikonal::FIM_init()
     cudaMemcpy(t_time, h_time, volsize*sizeof(float), cudaMemcpyHostToDevice);
 	cudaMemcpy(d_mask, h_mask, volsize*sizeof(bool), cudaMemcpyHostToDevice);
     cudaMemcpy(d_listVol, h_listVol, nblk*sizeof(bool), cudaMemcpyHostToDevice);
-}
-
-void Eikonal::FIM_components()
-{
-    h_mask = new bool[volsize]();
-    h_slow = new float[volsize]();
-	h_time = new float[volsize]();
-	
-    h_list = new uint[nblk]();      
-	h_listed = new bool[nblk]();    
-	h_listVol = new bool[nblk]();   
-
-	cudaMalloc((void**)&(d_con), volsize*sizeof(bool));  
-	cudaMalloc((void**)&(d_mask), volsize*sizeof(bool));
-	cudaMalloc((void**)&(d_slow), volsize*sizeof(float));
-	cudaMalloc((void**)&(d_time), volsize*sizeof(float));
-	cudaMalloc((void**)&(t_time), volsize*sizeof(float)); 
-	cudaMalloc((void**)&(d_list), nblk*sizeof(uint));
-	cudaMalloc((void**)&(d_listVol), nblk*sizeof(bool));
 }
 
 void Eikonal::FIM_solver()
@@ -230,7 +240,7 @@ void Eikonal::FIM_solver()
 					{
 						for(int x = xStr; x < xStr + BLOCK_LENGTH; x++) 
 						{
-                            T[z + x*nz + y*nx*nz] = h_time[idx];
+                            T[z + x*nzz + y*nxx*nzz] = h_time[idx];
 							++idx;
 						}
 					}

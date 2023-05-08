@@ -4,18 +4,36 @@ void Eikonal::FSM_parameters()
 {
     padb = 1;
 
-    title = "Eikonal solver for acoustic isotropic media\n\nSolving eikonal equation with the \033[32mNoble, Gesret and Belayouni (2014)\033[0;0m formulation\n";    
-}
-
-void Eikonal::FSM_components()
-{
     nxx = nx + 2*padb;
     nyy = ny + 2*padb;
     nzz = nz + 2*padb;
+
+    title = "Eikonal solver for acoustic isotropic media\n\nSolving eikonal equation with the \033[32mNoble, Gesret and Belayouni (2014)\033[0;0m formulation\n";    
+}
+
+void Eikonal::FSM_components() 
+{ 
+    dzi = 1.0f / dh;
+    dxi = 1.0f / dh;
+    dyi = 1.0f / dh;
+
+    dz2i = 1.0f / (dh*dh);
+    dx2i = 1.0f / (dh*dh);
+    dy2i = 1.0f / (dh*dh);
+
+    dz2dx2 = dz2i * dx2i;
+    dz2dy2 = dz2i * dy2i;
+    dx2dy2 = dx2i * dy2i;
+
+    dsum = dz2i + dx2i + dy2i;
 }
 
 void Eikonal::FSM_init()
 {
+    int sidx = (int)(geometry->shots.x[shot_id] / dh) + padb;
+    int sidy = (int)(geometry->shots.y[shot_id] / dh) + padb;
+    int sidz = (int)(geometry->shots.z[shot_id] / dh) + padb;
+
     int sId = sidz + sidx*nzz + sidy*nxx*nzz;
 
     for (int index = 0; index < volsize; index++)
@@ -58,20 +76,6 @@ void Eikonal::FSM_init()
     T[sId - 1 - nzz + nxx*nzz] = S[sId] * sqrtf(powf(((sidx-padb)-1)*dh - geometry->shots.x[shot_id], 2.0f) + powf(((sidy-padb)+1)*dh - geometry->shots.y[shot_id], 2.0f) + powf(((sidz-padb)-1)*dh - geometry->shots.z[shot_id], 2.0f));
     T[sId - 1 + nzz - nxx*nzz] = S[sId] * sqrtf(powf(((sidx-padb)+1)*dh - geometry->shots.x[shot_id], 2.0f) + powf(((sidy-padb)-1)*dh - geometry->shots.y[shot_id], 2.0f) + powf(((sidz-padb)-1)*dh - geometry->shots.z[shot_id], 2.0f));
     T[sId - 1 - nzz - nxx*nzz] = S[sId] * sqrtf(powf(((sidx-padb)-1)*dh - geometry->shots.x[shot_id], 2.0f) + powf(((sidy-padb)-1)*dh - geometry->shots.y[shot_id], 2.0f) + powf(((sidz-padb)-1)*dh - geometry->shots.z[shot_id], 2.0f));
-
-    dzi = 1.0f / dh;
-    dxi = 1.0f / dh;
-    dyi = 1.0f / dh;
-
-    dz2i = 1.0f / (dh*dh);
-    dx2i = 1.0f / (dh*dh);
-    dy2i = 1.0f / (dh*dh);
-
-    dz2dx2 = dz2i * dx2i;
-    dz2dy2 = dz2i * dy2i;
-    dx2dy2 = dx2i * dy2i;
-
-    dsum = dz2i + dx2i + dy2i;
 }
 
 void Eikonal::FSM_solver()
@@ -82,6 +86,10 @@ void Eikonal::FSM_solver()
 
 void Eikonal::init_sweep()
 {
+    int sidx = (int)(geometry->shots.x[shot_id] / dh) + padb;
+    int sidy = (int)(geometry->shots.y[shot_id] / dh) + padb;
+    int sidz = (int)(geometry->shots.z[shot_id] / dh) + padb;
+
     // First sweeping: Top->Bottom; West->East; South->North
     sgntz = 1; sgntx = 1; sgnty = 1; 
     sgnvz = 1; sgnvx = 1; sgnvy = 1;

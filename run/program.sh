@@ -9,6 +9,7 @@ streamer="../src/geometry/streamer/streamer.cpp"
 
 modeling="../src/modeling/modeling.cpp"
 
+PAL="../src/modeling/eikonal/PAL.cu"
 FSM="../src/modeling/eikonal/FSM.cu"
 FIM="../src/modeling/eikonal/FIM.cu"
 eikonal="../src/modeling/eikonal/eikonal.cu"
@@ -28,7 +29,7 @@ kirchhoff="../src/migration/kirchhoff/kirchhoff.cpp"
 reverseTime="../src/migration/reverseTime/reverseTime.cpp"
 migration_main="../src/migration_main.cpp"
 
-flags="-std=c++11 -lm -O4"
+flags="-std=c++11 -lm -O3"
 
 USER_MESSAGE="
 Usage:
@@ -60,7 +61,7 @@ case "$1" in
     echo -e "Compiling the stand-alone executables!\n"
 
     echo -e "../bin/\033[31mmodeling.exe\033[m" 
-    nvcc $io $geometry $regular $circular $streamer $modeling $FSM $FIM $eikonal $scalar $acoustic $elastic $modeling_main $flags -o ../bin/modeling.exe
+    nvcc $io $geometry $regular $circular $streamer $modeling $PAL $FIM $FSM $eikonal $scalar $acoustic $elastic $modeling_main $flags -o ../bin/modeling.exe
 
     # echo -e "../bin/\033[31minversion.exe\033[m" 
     # nvcc $io $inversion $waveform $tomography $inversion_main -lm -O3 -o ../bin/inversion.exe

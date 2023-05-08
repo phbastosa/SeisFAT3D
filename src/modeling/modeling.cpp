@@ -49,8 +49,8 @@ void Modeling::info_message()
                                             << geometry->shots.z[shot_id] << ") m\n\n";
 
     std::cout<<"Memory usage: \n";
-    std::cout<<"RAM  = "<<RAM<<" Mb\n";
-    std::cout<<"vRAM = "<<vRAM<<" Mb\n\n";
+    std::cout<<"RAM = "<<RAM<<" Mb\n";
+    std::cout<<"GPU = "<<vRAM<<" Mb\n\n";
 }
 
 void Modeling::set_runtime()
