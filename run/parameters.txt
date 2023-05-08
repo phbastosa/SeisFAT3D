@@ -19,7 +19,6 @@ rho_model_file = ../inputs/models/rho_two_layer.bin   # <str>
 #   
 #   [0] - regular nodes and regular shots    
 #   [1] - regular nodes and circular shots  
-#   [2] - streamer nodes and regular shots  
 #---------------------------------------------------------------------------------------------------
 
 geometry_type = 1                    # <int>
@@ -28,7 +27,6 @@ import_geometry = false              # <bool>
 
 shots_file = ../inputs/geometry/xyz_shots.txt     # <str>         
 nodes_file = ../inputs/geometry/xyz_nodes.txt     # <str>
-relational = ../inputs/geometry/relations.txt     # <str>
 
 # Regular geometry ---------------------------------------------------------------------------------               
 
@@ -76,7 +74,7 @@ modeling_type = 0
 #   [2] - Noble, Gesret and Belayouni (2014) 
 #---------------------------------------------------------------------------------------------------
 
-eikonal_type = 2
+eikonal_type = 1
 
 export_receiver_output = true
 export_wavefield_output = false

@@ -7,7 +7,6 @@ void Geometry::set_geometry(std::string file)
 
     shots_file = catch_parameter("shots_file", file);
     nodes_file = catch_parameter("nodes_file", file);
-    relational = catch_parameter("relational", file);
 }
 
 void Geometry::set_reciprocity()
@@ -60,27 +59,11 @@ void Geometry::import_coordinates()
     }    
 
     std::vector<std::string>().swap(elements);
-
-    import_text_file(relational, elements);
-
-    beg_relation = new int[shots.total]();
-    end_relation = new int[shots.total]();
-
-    for (int i = 0; i < nodes.total; i++)
-    {
-        splitted = split(elements[i], ',');
-
-        beg_relation[i] = std::stoi(splitted[0]);
-        end_relation[i] = std::stoi(splitted[1]);
-    }    
-
-    std::vector<std::string>().swap(elements);
 }
 
 void Geometry::export_coordinates()
 {
     auto folder = std::string("../inputs/geometry/");
-    auto rel_path = folder + std::string("relational_file.txt");
     auto shots_path = folder + std::string("xyz_shot_positions.txt");
     auto nodes_path = folder + std::string("xyz_node_positions.txt");
 
@@ -118,24 +101,6 @@ void Geometry::export_coordinates()
     std::cout<<"File " + nodes_path + " was succesfully written."<<std::endl;
 
     nfile.close();
-
-    std::ofstream rfile(rel_path, std::ios::out);        
-
-    if (rfile.is_open()) 
-    {    
-        for (int i = 0; i < shots.total; i++)        
-        {   
-            rfile <<beg_relation[i]<<", "<<end_relation[i]<<std::endl;    
-        }
-    }
-    else
-    {
-        throw std::invalid_argument("Error: file " + rel_path + " could not be opened!");
-    }
-
-    std::cout<<"File " + rel_path + " was succesfully written."<<std::endl;
-
-    rfile.close();
 }
 
 void Geometry::set_regular(Coord &obj)

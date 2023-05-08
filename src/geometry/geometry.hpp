@@ -27,7 +27,6 @@ protected:
     bool import_geometry;
     std::string shots_file;
     std::string nodes_file;
-    std::string relational;
 
     std::vector<int> nlines;
     std::vector<float> SW, NW, SE;    
@@ -39,15 +38,10 @@ protected:
 
     void set_regular(Coord &obj);
 
-    virtual void set_relational() = 0;
-
 public:
 
     Coord shots;
     Coord nodes;
-
-    int * beg_relation = nullptr;
-    int * end_relation = nullptr;
 
     virtual void set_geometry(std::string file);     
 };

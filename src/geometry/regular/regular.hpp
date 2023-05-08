@@ -5,12 +5,7 @@
 
 class Regular : public Geometry
 {
-private:
-    
-    void set_relational();
-
 public:
-
     void set_geometry(std::string file);
 };
 

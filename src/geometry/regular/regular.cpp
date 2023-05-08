@@ -33,21 +33,7 @@ void Regular::set_geometry(std::string file)
         if (reciprocity) 
             set_reciprocity();
 
-        set_relational();
         export_coordinates();
     }   
 }
-
-void Regular::set_relational()
-{
-    beg_relation = new int[shots.total]();
-    end_relation = new int[shots.total]();
-
-    for (int shot = 0; shot < shots.total; shot++)
-    {
-        beg_relation[shot] = 0;
-        end_relation[shot] = nodes.total;
-    }
-}
-
 

@@ -13,7 +13,6 @@ private:
     std::vector<float> offsets;
 
     void set_circular();
-    void set_relational();
 
 public:
 

@@ -17,6 +17,8 @@ private:
 
     float * vp = nullptr;
 
+    float * T = nullptr;
+    
     int pdx, pdy, pdz; 
     int nxx, nyy, nzz;
     int volsize, padb;
@@ -94,8 +96,6 @@ private:
     void FIM_components();
 
 public:
-
-    float * T = nullptr;
 
     void initial_setup();
     void set_components();
