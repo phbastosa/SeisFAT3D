@@ -1,6 +1,8 @@
 # include "inversion.hpp"
 
-void Inversion::get_name()
+void Inversion::export_results()
 {
-    std::cout << name << std::endl;
+
+
+
 }

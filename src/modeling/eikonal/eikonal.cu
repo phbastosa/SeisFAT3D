@@ -23,22 +23,20 @@ void Eikonal::set_parameters(std::string file)
         break;
     }
 
-    volsize = nxx * nyy * nzz;
+    V = new float[nPoints]();
 
-    S = new float[volsize]();
-    vp = new float[nPoints]();
-
-    std::string vp_model_file = catch_parameter("vp_model_file", file);
-
-    import_binary_float(vp_model_file, vp, nPoints);
-
-    eikonal_type == true ? pad_expansion() : fdm_expansion();
-
-    delete[] vp;
+    import_binary_float(catch_parameter("vp_model_file", file), V, nPoints);
 }
 
 void Eikonal::set_components()
 {
+    volsize = nxx*nyy*nzz;
+
+    T = new float[volsize]();
+    S = new float[volsize]();
+    
+    eikonal_type == true ? pad_expansion() : fdm_expansion();
+
     switch (eikonal_type)
     {
     case 0:
@@ -56,16 +54,11 @@ void Eikonal::set_components()
         break;
     }
 	
-    T = new float[volsize]();
-
     wavefield_output_samples = nPoints;
     receiver_output_samples = geometry->nodes.total;
 
     receiver_output = new float[receiver_output_samples]();
     wavefield_output = new float[wavefield_output_samples]();
-    
-    get_RAM_usage();
-    get_GPU_usage();
 }
 
 void Eikonal::initial_setup()
@@ -174,7 +167,7 @@ void Eikonal::pad_expansion()
         {
             for (int x = 0; x < nx; x++)
             {
-                S[z + x*nzz + y*nxx*nzz] = 1.0f / vp[z + x*nz + y*nx*nz];
+                S[z + x*nzz + y*nxx*nzz] = 1.0f / V[z + x*nz + y*nx*nz];
             }
         }
     }
@@ -185,7 +178,7 @@ void Eikonal::pad_expansion()
         {
             for (int x = 0; x < nxx - pdx; x++)
             {
-                S[(nzz - z - 1) + x*nzz + y*nxx*nzz] = 1.0f / vp[(nz - 1) + x*nz + y*nx*nz];
+                S[(nzz - z - 1) + x*nzz + y*nxx*nzz] = 1.0f / V[(nz - 1) + x*nz + y*nx*nz];
             }
         }
     }
@@ -222,7 +215,7 @@ void Eikonal::fdm_expansion()
         {
             for (int x = padb; x < nxx - padb; x++)
             {
-                S[z + x*nzz + y*nxx*nzz] = 1.0f / vp[(z - padb) + (x - padb)*nz + (y - padb)*nx*nz];
+                S[z + x*nzz + y*nxx*nzz] = 1.0f / V[(z - padb) + (x - padb)*nz + (y - padb)*nx*nz];
             }
         }
     }
@@ -234,8 +227,8 @@ void Eikonal::fdm_expansion()
         {
             for (int x = padb; x < nxx - padb; x++)
             {
-                S[z + x*nzz + y*nxx*nzz] = 1.0f / vp[0 + (x - padb)*nz + (y - padb)*nx*nz];
-                S[(nzz - z - 1) + x*nzz + y*nxx*nzz] = 1.0f / vp[(nz - 1) + (x - padb)*nz + (y - padb)*nx*nz];
+                S[z + x*nzz + y*nxx*nzz] = 1.0f / V[0 + (x - padb)*nz + (y - padb)*nx*nz];
+                S[(nzz - z - 1) + x*nzz + y*nxx*nzz] = 1.0f / V[(nz - 1) + (x - padb)*nz + (y - padb)*nx*nz];
             }
         }
     }
@@ -290,3 +283,28 @@ void Eikonal::fdm_reduction()
         wavefield_output[z + x*nz + y*nx*nz] = T[(z + padb) + (x + padb)*nzz + (y + padb)*nxx*nzz];
     }
 }
+
+void Eikonal::free_space()
+{
+    delete[] T;
+    delete[] S;
+
+    switch (eikonal_type)
+    {
+    case 0:
+        PAL_free_space();    
+        break;    
+    case 1:
+        FIM_free_space();
+        break;
+    case 2:
+        FSM_free_space();
+        break;
+    default:
+        eikonal_type = 1;
+        FIM_free_space();
+        break;
+    }
+}
+
+

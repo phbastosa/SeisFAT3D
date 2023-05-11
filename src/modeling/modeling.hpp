@@ -65,6 +65,7 @@ public:
     virtual void set_components() = 0;
     virtual void forward_solver() = 0;
     virtual void build_outputs() = 0;
+    virtual void free_space() = 0;
 
     virtual void set_parameters(std::string file); 
 

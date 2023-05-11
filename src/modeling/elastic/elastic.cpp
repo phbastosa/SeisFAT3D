@@ -24,3 +24,8 @@ void Elastic::build_outputs()
 
 }
 
+void Elastic::free_space()
+{
+
+    
+}

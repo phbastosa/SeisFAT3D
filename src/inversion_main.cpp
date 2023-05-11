@@ -3,17 +3,15 @@
 
 int main(int argc, char **argv)
 {
-    Inversion * inversion[] =
-    {
-        new Waveform(),
-        new Tomography()
-    }; 
+    Inversion * inversion[] = { new Waveform(), new Tomography() }; 
 
-    for (int type = 0; type < 2; type++)
-    {
-        inversion[type]->set_name();
-        inversion[type]->get_name();
-    }
+    auto file = std::string(argv[1]);
+
+    auto type = std::stoi(catch_parameter("inversion_type", file));
+
+    inversion[type]->set_parameters(file);
+
+    inversion[type]->forward_modeling();
 
     return 0;
 }

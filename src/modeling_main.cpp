@@ -5,17 +5,13 @@
 
 int main(int argc, char **argv)
 {
-    Modeling * modeling[] =
-    {
-        new Eikonal(),
-        new Scalar(),
-        new Acoustic(),
-        new Elastic()
-    }; 
+    Modeling * modeling[] = { new Eikonal(), new Scalar(), new Acoustic(), new Elastic() }; 
 
-    int type = std::stoi(catch_parameter("modeling_type", std::string(argv[1]))); 
+    auto file = std::string(argv[1]);
 
-    modeling[type]->set_parameters(std::string(argv[1]));
+    auto type = std::stoi(catch_parameter("modeling_type", file)); 
+
+    modeling[type]->set_parameters(file);
 
     modeling[type]->set_components();
 
@@ -38,7 +34,7 @@ int main(int argc, char **argv)
 
     modeling[type]->get_runtime();
 
-    
+    modeling[type]->free_space();    
 
     return 0;
 }

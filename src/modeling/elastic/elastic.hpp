@@ -12,7 +12,7 @@ public:
     void set_components();
     void forward_solver();
     void build_outputs();    
-
+    void free_space();
 };
 
 # endif

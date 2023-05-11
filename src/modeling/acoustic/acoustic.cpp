@@ -24,3 +24,10 @@ void Acoustic::build_outputs()
 
     
 }
+
+void Acoustic::free_space()
+{
+
+
+}
+

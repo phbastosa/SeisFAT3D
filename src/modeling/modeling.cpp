@@ -36,6 +36,9 @@ void Modeling::info_message()
 {
     auto clear = system("clear");
 
+    get_RAM_usage();
+    get_GPU_usage();
+    
     std::cout<<title<<"\n";
     
     std::cout<<"Total x model length = "<<(nx-1)*dh<<" m\n";

@@ -84,6 +84,12 @@ void Eikonal::FSM_solver()
     full_sweep();
 }
 
+void Eikonal::FSM_free_space()
+{
+
+    
+}
+
 void Eikonal::init_sweep()
 {
     int sidx = (int)(geometry->shots.x[shot_id] / dh) + padb;
@@ -441,3 +447,4 @@ void Eikonal::inner_sweep()
    
     T[ijk] = min(T[ijk], min(t1D, min(t2D, t3D)));
 }
+

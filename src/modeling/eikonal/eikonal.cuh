@@ -15,8 +15,6 @@ class Eikonal : public Modeling
 {
 private:
 
-    float * vp = nullptr;
-
     float * T = nullptr;
     
     int pdx, pdy, pdz; 
@@ -48,6 +46,7 @@ private:
     void PAL_solver();
     void PAL_parameters();
     void PAL_components();
+    void PAL_free_space();
 
     /* Fast Sweeping Method components */
 
@@ -63,6 +62,7 @@ private:
     void FSM_solver();
     void FSM_parameters();
     void FSM_components();
+    void FSM_free_space();
 
     void init_sweep();
     void full_sweep();    
@@ -94,6 +94,7 @@ private:
     void FIM_solver();
     void FIM_parameters();
     void FIM_components();
+    void FIM_free_space();
 
 public:
 
@@ -101,6 +102,7 @@ public:
     void set_components();
     void forward_solver();
     void build_outputs();    
+    void free_space();
 
     void set_parameters(std::string file);
 };

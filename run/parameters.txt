@@ -30,16 +30,16 @@ nodes_file = ../inputs/geometry/xyz_nodes.txt     # <str>
 
 # Regular geometry ---------------------------------------------------------------------------------               
 
-shots_nlines = [1, 1, 1]             # <int> (z, x, y)     
-nodes_nlines = [1, 1, 1]             # <int> (z, x, y)            
+shots_nlines = [1, 5, 1]             # <int> (z, x, y)     
+nodes_nlines = [1, 5, 1]             # <int> (z, x, y)            
 
 shots_SW = [10, 25, 25]              # [m] <float> (z, x, y) NW            
 shots_NW = [10, 25, 25]              # [m] <float> (z, x, y)  |            
-shots_SE = [10, 25, 25]              # [m] <float> (z, x, y) SW -- SE     
+shots_SE = [10, 125, 25]             # [m] <float> (z, x, y) SW -- SE     
 
-nodes_SW = [10, 1000, 10000]         # [m] <float> (z, x, y) NW           
-nodes_NW = [10, 1000, 10000]         # [m] <float> (z, x, y)  |         
-nodes_SE = [10, 1000, 10000]         # [m] <float> (z, x, y) SW -- SE   
+nodes_SW = [10, 25, 25]         # [m] <float> (z, x, y) NW           
+nodes_NW = [10, 25, 25]         # [m] <float> (z, x, y)  |         
+nodes_SE = [10, 125, 25]         # [m] <float> (z, x, y) SW -- SE   
 
 # Circular geometry --------------------------------------------------------------------------------                                            
 
@@ -66,6 +66,12 @@ offset_y = [-250, 250]               # [m] <float> (min, max)
 
 modeling_type = 0
 
+export_receiver_output = true
+export_wavefield_output = false
+
+receiver_output_folder = ../outputs/seismograms/
+wavefield_output_folder = ../outputs/snapshots/
+
 #---------------------------------------------------------------------------------------------------
 # Eikonal available types
 #---------------------------------------------------------------------------------------------------   
@@ -76,11 +82,21 @@ modeling_type = 0
 
 eikonal_type = 1
 
-export_receiver_output = true
-export_wavefield_output = false
 
-receiver_output_folder = ../outputs/seismograms/
-wavefield_output_folder = ../outputs/snapshots/
+
+
+
+
+#---------------------------------------------------------------------------------------------------
+# Inversion parameters 
+#---------------------------------------------------------------------------------------------------
+# Available types:
+#   
+#   [0] - Waveform    
+#   [1] - Tomography  
+#---------------------------------------------------------------------------------------------------
+
+inversion_type = 1
 
 
 

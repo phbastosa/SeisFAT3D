@@ -15,10 +15,10 @@ void Eikonal::PAL_components()
 { 
     K = new float[volsize]();
 
-    cudaMalloc((void**)&(d_K), volsize*sizeof(float));     
-    cudaMalloc((void**)&(d_nK), volsize*sizeof(float));     
     cudaMalloc((void**)&(d_S), volsize*sizeof(float));     
     cudaMalloc((void**)&(d_T), volsize*sizeof(float));     
+    cudaMalloc((void**)&(d_K), volsize*sizeof(float));     
+    cudaMalloc((void**)&(d_nK), volsize*sizeof(float));     
     cudaMalloc((void**)&(d_nT), volsize*sizeof(float));     
 }
 
@@ -121,6 +121,17 @@ void Eikonal::PAL_solver()
     }
 
     cudaMemcpy(T, d_T, volsize*sizeof(float), cudaMemcpyDeviceToHost);
+}
+
+void Eikonal::PAL_free_space()
+{
+    delete[] K;
+
+    cudaFree(d_K);
+    cudaFree(d_S);
+    cudaFree(d_T);
+    cudaFree(d_nK);
+    cudaFree(d_nT);
 }
 
 __global__ void PAL_kernel(float * S, float * T, float * K, float * nT, float h, int nxx, int nyy, int nzz)

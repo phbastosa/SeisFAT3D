@@ -25,3 +25,8 @@ void Scalar::build_outputs()
 
 }
 
+void Scalar::free_space()
+{
+
+    
+}

@@ -250,6 +250,25 @@ void Eikonal::FIM_solver()
 	}
 }
 
+void Eikonal::FIM_free_space()
+{
+	delete[] h_mask;
+	delete[] h_slow;
+	delete[] h_time;
+	
+	delete[] h_list;
+	delete[] h_listed;
+	delete[] h_listVol;
+
+	cudaFree(d_con);
+	cudaFree(d_mask);
+	cudaFree(d_slow);
+	cudaFree(d_time);
+	cudaFree(t_time);
+	cudaFree(d_list);
+	cudaFree(d_listVol);
+}
+
 __global__ void run_solver(float* spd, bool* mask, const float *sol_in, float *sol_out, bool *con, uint* list, int xdim, int ydim, int zdim, float dh, int nIter, uint nActiveBlock)
 {
 	uint list_idx = blockIdx.y*gridDim.x + blockIdx.x;
