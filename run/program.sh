@@ -34,7 +34,6 @@ USER_MESSAGE="
 Usage:
     $ $0 -help           # 
     $ $0 -compile        # 
-    $ $0 -geometry       #  
     $ $0 -modeling       #           
     $ $0 -inversion      # 
     $ $0 -migration      #    
@@ -62,18 +61,11 @@ case "$1" in
     echo -e "../bin/\033[31mmodeling.exe\033[m" 
     nvcc $io $geometry $regular $circular $modeling $PAL $FIM $FSM $eikonal $scalar $acoustic $elastic $modeling_main $flags -o ../bin/modeling.exe
 
-    echo -e "../bin/\033[31minversion.exe\033[m" 
-    nvcc $io $geometry $regular $circular $modeling $PAL $FIM $FSM $eikonal $inversion $waveform $tomography $inversion_main $flags -o ../bin/inversion.exe
+    # echo -e "../bin/\033[31minversion.exe\033[m" 
+    # nvcc $io $geometry $regular $circular $modeling $PAL $FIM $FSM $eikonal $inversion $waveform $tomography $inversion_main $flags -o ../bin/inversion.exe
 
     # echo -e "../bin/\033[31mmigration.exe\033[m"
     # nvcc $io $migration $kirchhoff $reverseTime $migration_main -lm -O3 -o ../bin/migration.exe
-
-	exit 0
-;;
-
--geometry) 
-
-    ./../bin/geometry.exe parameters.txt
 
 	exit 0
 ;;
