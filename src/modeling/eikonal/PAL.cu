@@ -1,6 +1,6 @@
-# include "eikonal.cuh"
+# include "PAL.cuh"
 
-void Eikonal::PAL_parameters()
+void Eikonal_pal::parameters()
 {
     padb = 1;
 
@@ -11,7 +11,7 @@ void Eikonal::PAL_parameters()
     title = "Eikonal solver for acoustic isotropic media\n\nSolving eikonal equation with the \033[32mPodvin & Lecomte (1991)\033[0;0m formulation\n";    
 }
 
-void Eikonal::PAL_components() 
+void Eikonal_pal::components() 
 { 
     K = new float[volsize]();
 
@@ -22,7 +22,7 @@ void Eikonal::PAL_components()
     cudaMalloc((void**)&(d_nT), volsize*sizeof(float));     
 }
 
-void Eikonal::PAL_init()
+void Eikonal_pal::initial_setup()
 {
     nit = 0;
     
@@ -101,30 +101,94 @@ void Eikonal::PAL_init()
     cudaMemcpy(d_nT, T, volsize*sizeof(float), cudaMemcpyHostToDevice);
 }
 
-void Eikonal::PAL_solver()
+void Eikonal_pal::expansion()
 {
-    int nThreads = 512;
+    for (int z = padb; z < nzz - padb; z++)
+    {
+        for (int y = padb; y < nyy - padb; y++)
+        {
+            for (int x = padb; x < nxx - padb; x++)
+            {
+                S[z + x*nzz + y*nxx*nzz] = 1.0f / V[(z - padb) + (x - padb)*nz + (y - padb)*nx*nz];
+            }
+        }
+    }
+
+    for (int z = 0; z < padb; z++)
+    {
+        for (int y = padb; y < nyy - padb; y++)
+        {
+            for (int x = padb; x < nxx - padb; x++)
+            {
+                S[z + x*nzz + y*nxx*nzz] = 1.0f / V[0 + (x - padb)*nz + (y - padb)*nx*nz];
+                S[(nzz - z - 1) + x*nzz + y*nxx*nzz] = 1.0f / V[(nz - 1) + (x - padb)*nz + (y - padb)*nx*nz];
+            }
+        }
+    }
+
+    for (int x = 0; x < padb; x++)
+    {
+        for (int z = 0; z < nzz; z++)
+        {
+            for (int y = padb; y < nyy - padb; y++)
+            {
+                S[z + x*nzz + y*nxx*nzz] = S[z + padb*nzz + y*nxx*nzz];
+                S[z + (nxx - x - 1)*nzz + y*nxx*nzz] = S[z + (nxx - padb - 1)*nzz + y*nxx*nzz];
+            }
+        }
+    }
+
+    for (int y = 0; y < padb; y++)
+    {
+        for (int z = 0; z < nzz; z++)
+        {
+            for (int x = 0; x < nxx; x++)
+            {
+                S[z + x*nzz + y*nxx*nzz] = S[z + x*nzz + padb*nxx*nzz];
+                S[z + x*nzz + (nyy - y - 1)*nxx*nzz] = S[z + x*nzz + (nyy - padb - 1)*nxx*nzz];
+            }
+        }
+    }
+}
+
+void Eikonal_pal::reduction()
+{
+    for (int index = 0; index < nPoints; index++)
+    {
+        int y = (int) (index / (nx*nz));         
+        int x = (int) (index - y*nx*nz) / nz;    
+        int z = (int) (index - x*nz - y*nx*nz);  
+
+        wavefield_output[z + x*nz + y*nx*nz] = T[(z + padb) + (x + padb)*nzz + (y + padb)*nxx*nzz];
+    }
+}
+
+void Eikonal_pal::forward_solver()
+{
+    int nThreads = 256;
     int nBlocks = volsize / nThreads;
 
     for (int it = 0; it < nit; it++)
     {
-        PAL_kernel<<<nBlocks,nThreads>>>(d_S, d_T, d_K, d_nT, dh, nxx, nyy, nzz);        
+        equations<<<nBlocks,nThreads>>>(d_S, d_T, d_K, d_nT, dh, nxx, nyy, nzz);        
         cudaDeviceSynchronize();
 
         cudaMemset(d_nK, 0.0f, volsize*sizeof(float));
 
-        PAL_expansion<<<nBlocks,nThreads>>>(d_K, d_nK, nxx, nyy, nzz);
+        wavefront<<<nBlocks,nThreads>>>(d_K, d_nK, nxx, nyy, nzz);
         cudaDeviceSynchronize();
 
-        PAL_update<<<nBlocks,nThreads>>>(d_T, d_nT, d_K, d_nK, volsize);
+        update<<<nBlocks,nThreads>>>(d_T, d_nT, d_K, d_nK, volsize);
         cudaDeviceSynchronize();
     }
 
     cudaMemcpy(T, d_T, volsize*sizeof(float), cudaMemcpyDeviceToHost);
 }
 
-void Eikonal::PAL_free_space()
+void Eikonal_pal::free_space()
 {
+    delete[] S;
+    delete[] T;
     delete[] K;
 
     cudaFree(d_K);
@@ -134,7 +198,7 @@ void Eikonal::PAL_free_space()
     cudaFree(d_nT);
 }
 
-__global__ void PAL_kernel(float * S, float * T, float * K, float * nT, float h, int nxx, int nyy, int nzz)
+__global__ void equations(float * S, float * T, float * K, float * nT, float h, int nxx, int nyy, int nzz)
 {
     float sqrt2 = sqrtf(2.0f);
     float sqrt3 = sqrtf(3.0f);
@@ -1634,7 +1698,7 @@ __global__ void PAL_kernel(float * S, float * T, float * K, float * nT, float h,
     }
 }
 
-__global__ void PAL_expansion(float * K, float * nK, int nxx, int nyy, int nzz)
+__global__ void wavefront(float * K, float * nK, int nxx, int nyy, int nzz)
 {
     int index = blockIdx.x * blockDim.x + threadIdx.x;
 
@@ -1676,7 +1740,7 @@ __global__ void PAL_expansion(float * K, float * nK, int nxx, int nyy, int nzz)
     }
 }
 
-__global__ void PAL_update(float * T, float * nT, float * K, float * nK, int N)
+__global__ void update(float * T, float * nT, float * K, float * nK, int N)
 {
     int index = blockIdx.x * blockDim.x + threadIdx.x;
 

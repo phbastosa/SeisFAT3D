@@ -1,6 +1,6 @@
-# include "eikonal.cuh"
+# include "FSM.cuh"
 
-void Eikonal::FSM_parameters()
+void Eikonal_fsm::parameters()
 {
     padb = 1;
 
@@ -11,7 +11,7 @@ void Eikonal::FSM_parameters()
     title = "Eikonal solver for acoustic isotropic media\n\nSolving eikonal equation with the \033[32mNoble, Gesret and Belayouni (2014)\033[0;0m formulation\n";    
 }
 
-void Eikonal::FSM_components() 
+void Eikonal_fsm::components() 
 { 
     dzi = 1.0f / dh;
     dxi = 1.0f / dh;
@@ -28,7 +28,7 @@ void Eikonal::FSM_components()
     dsum = dz2i + dx2i + dy2i;
 }
 
-void Eikonal::FSM_init()
+void Eikonal_fsm::initial_setup()
 {
     int sidx = (int)(geometry->shots.x[shot_id] / dh) + padb;
     int sidy = (int)(geometry->shots.y[shot_id] / dh) + padb;
@@ -78,19 +78,81 @@ void Eikonal::FSM_init()
     T[sId - 1 - nzz - nxx*nzz] = S[sId] * sqrtf(powf(((sidx-padb)-1)*dh - geometry->shots.x[shot_id], 2.0f) + powf(((sidy-padb)-1)*dh - geometry->shots.y[shot_id], 2.0f) + powf(((sidz-padb)-1)*dh - geometry->shots.z[shot_id], 2.0f));
 }
 
-void Eikonal::FSM_solver()
+void Eikonal_fsm::expansion()
+{
+    for (int z = padb; z < nzz - padb; z++)
+    {
+        for (int y = padb; y < nyy - padb; y++)
+        {
+            for (int x = padb; x < nxx - padb; x++)
+            {
+                S[z + x*nzz + y*nxx*nzz] = 1.0f / V[(z - padb) + (x - padb)*nz + (y - padb)*nx*nz];
+            }
+        }
+    }
+
+    for (int z = 0; z < padb; z++)
+    {
+        for (int y = padb; y < nyy - padb; y++)
+        {
+            for (int x = padb; x < nxx - padb; x++)
+            {
+                S[z + x*nzz + y*nxx*nzz] = 1.0f / V[0 + (x - padb)*nz + (y - padb)*nx*nz];
+                S[(nzz - z - 1) + x*nzz + y*nxx*nzz] = 1.0f / V[(nz - 1) + (x - padb)*nz + (y - padb)*nx*nz];
+            }
+        }
+    }
+
+    for (int x = 0; x < padb; x++)
+    {
+        for (int z = 0; z < nzz; z++)
+        {
+            for (int y = padb; y < nyy - padb; y++)
+            {
+                S[z + x*nzz + y*nxx*nzz] = S[z + padb*nzz + y*nxx*nzz];
+                S[z + (nxx - x - 1)*nzz + y*nxx*nzz] = S[z + (nxx - padb - 1)*nzz + y*nxx*nzz];
+            }
+        }
+    }
+
+    for (int y = 0; y < padb; y++)
+    {
+        for (int z = 0; z < nzz; z++)
+        {
+            for (int x = 0; x < nxx; x++)
+            {
+                S[z + x*nzz + y*nxx*nzz] = S[z + x*nzz + padb*nxx*nzz];
+                S[z + x*nzz + (nyy - y - 1)*nxx*nzz] = S[z + x*nzz + (nyy - padb - 1)*nxx*nzz];
+            }
+        }
+    }
+}
+
+void Eikonal_fsm::reduction()
+{
+    for (int index = 0; index < nPoints; index++)
+    {
+        int y = (int) (index / (nx*nz));         
+        int x = (int) (index - y*nx*nz) / nz;    
+        int z = (int) (index - x*nz - y*nx*nz);  
+
+        wavefield_output[z + x*nz + y*nx*nz] = T[(z + padb) + (x + padb)*nzz + (y + padb)*nxx*nzz];
+    }
+}
+
+void Eikonal_fsm::forward_solver()
 {
     init_sweep();
     full_sweep();
 }
 
-void Eikonal::FSM_free_space()
+void Eikonal_fsm::free_space()
 {
-
-    
+    delete[] T;
+    delete[] S;
 }
 
-void Eikonal::init_sweep()
+void Eikonal_fsm::init_sweep()
 {
     int sidx = (int)(geometry->shots.x[shot_id] / dh) + padb;
     int sidy = (int)(geometry->shots.y[shot_id] / dh) + padb;
@@ -217,7 +279,7 @@ void Eikonal::init_sweep()
     }
 }
 
-void Eikonal::full_sweep()
+void Eikonal_fsm::full_sweep()
 {
     // First sweeping: Top->Bottom; West->East; South->North 
     sgntz = 1; sgntx = 1; sgnty = 1; 
@@ -340,7 +402,7 @@ void Eikonal::full_sweep()
     }
 }
 
-void Eikonal::inner_sweep()
+void Eikonal_fsm::inner_sweep()
 {
     float ta, tb, tc, t1, t2, t3, Sref;
     float t1D1, t1D2, t1D3, t1D, t2D1, t2D2, t2D3, t2D, t3D;

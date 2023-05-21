@@ -1,10 +1,10 @@
-# include "eikonal.cuh"
+# include "FIM.cuh"
 
-void Eikonal::FIM_parameters()
+void Eikonal_fim::parameters()
 {
-    pdx = (BLOCK_LENGTH - nx % BLOCK_LENGTH) % BLOCK_LENGTH;
-    pdy = (BLOCK_LENGTH - ny % BLOCK_LENGTH) % BLOCK_LENGTH;
-    pdz = (BLOCK_LENGTH - nz % BLOCK_LENGTH) % BLOCK_LENGTH;
+	pdx = (BLOCK_LENGTH - nx % BLOCK_LENGTH) % BLOCK_LENGTH;
+	pdy = (BLOCK_LENGTH - ny % BLOCK_LENGTH) % BLOCK_LENGTH;
+	pdz = (BLOCK_LENGTH - nz % BLOCK_LENGTH) % BLOCK_LENGTH;
 
     nxx = nx + pdx;    
     nyy = ny + pdy;    
@@ -23,7 +23,7 @@ void Eikonal::FIM_parameters()
     title = "Eikonal solver for acoustic isotropic media\n\nSolving eikonal equation with the \033[32mJeong & Whitaker (2008)\033[0;0m formulation\n";    
 }
 
-void Eikonal::FIM_components()
+void Eikonal_fim::components()
 {
     h_mask = new bool[volsize]();
     h_slow = new float[volsize]();
@@ -42,7 +42,7 @@ void Eikonal::FIM_components()
 	cudaMalloc((void**)&(d_listVol), nblk*sizeof(bool));
 }
 
-void Eikonal::FIM_init()
+void Eikonal_fim::initial_setup()
 {
 	uint idx = 0;
 	uint blk_idx = 0;
@@ -114,7 +114,7 @@ void Eikonal::FIM_init()
     cudaMemcpy(d_listVol, h_listVol, nblk*sizeof(bool), cudaMemcpyHostToDevice);
 }
 
-void Eikonal::FIM_solver()
+void Eikonal_fim::forward_solver()
 {
     int nTotalIter = 0;
     uint nTotalBlockProcessed = 0;
@@ -250,8 +250,70 @@ void Eikonal::FIM_solver()
 	}
 }
 
-void Eikonal::FIM_free_space()
+void Eikonal_fim::expansion()
 {
+    for (int z = 0; z < nz; z++)
+    {
+        for (int y = 0; y < ny; y++)
+        {
+            for (int x = 0; x < nx; x++)
+            {
+                S[z + x*nzz + y*nxx*nzz] = 1.0f / V[z + x*nz + y*nx*nz];
+            }
+        }
+    }
+
+    for (int z = 0; z < pdz; z++)
+    {
+        for (int y = 0; y < nyy - pdy; y++)
+        {
+            for (int x = 0; x < nxx - pdx; x++)
+            {
+                S[(nzz - z - 1) + x*nzz + y*nxx*nzz] = 1.0f / V[(nz - 1) + x*nz + y*nx*nz];
+            }
+        }
+    }
+
+    for (int x = 0; x < pdx; x++)
+    {
+        for (int z = 0; z < nzz; z++)
+        {
+            for (int y = 0; y < nyy - pdy; y++)
+            {
+                S[z + (nxx - x - 1)*nzz + y*nxx*nzz] = S[z + (nxx - pdx - 1)*nzz + y*nxx*nzz];
+            }
+        }
+    }
+
+    for (int y = 0; y < pdy; y++)
+    {
+        for (int z = 0; z < nzz; z++)
+        {
+            for (int x = 0; x < nxx; x++)
+            {
+                S[z + x*nzz + (nyy - y - 1)*nxx*nzz] = S[z + x*nzz + (nyy - pdy - 1)*nxx*nzz];
+            }
+        }
+    }
+}
+
+void Eikonal_fim::reduction()
+{
+    for (int index = 0; index < nPoints; index++)
+    {
+        int y = (int) (index / (nx*nz));         
+        int x = (int) (index - y*nx*nz) / nz;    
+        int z = (int) (index - x*nz - y*nx*nz);  
+
+        wavefield_output[z + x*nz + y*nx*nz] = T[z + x*nzz + y*nxx*nzz];
+    }
+}
+
+void Eikonal_fim::free_space()
+{
+	delete[] S;
+	delete[] T;
+
 	delete[] h_mask;
 	delete[] h_slow;
 	delete[] h_time;

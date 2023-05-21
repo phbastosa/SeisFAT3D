@@ -4,24 +4,7 @@ void Eikonal::set_parameters(std::string file)
 {
     Modeling::set_parameters(file);
 
-    eikonal_type = std::stoi(catch_parameter("eikonal_type", file));
-
-    switch (eikonal_type)
-    {
-    case 0:
-        PAL_parameters();    
-        break;    
-    case 1:
-        FIM_parameters();
-        break;
-    case 2:
-        FSM_parameters();
-        break;
-    default:
-        eikonal_type = 1;
-        FIM_parameters();
-        break;
-    }
+    parameters();
 
     V = new float[nPoints]();
 
@@ -34,71 +17,15 @@ void Eikonal::set_components()
 
     T = new float[volsize]();
     S = new float[volsize]();
-    
-    eikonal_type == true ? pad_expansion() : fdm_expansion();
 
-    switch (eikonal_type)
-    {
-    case 0:
-        PAL_components();    
-        break;    
-    case 1:
-        FIM_components();
-        break;
-    case 2:
-        FSM_components();
-        break;
-    default:
-        eikonal_type = 1;
-        FIM_components();
-        break;
-    }
-	
+    expansion();
+    components();
+
     wavefield_output_samples = nPoints;
     receiver_output_samples = geometry->nodes.total;
 
     receiver_output = new float[receiver_output_samples]();
     wavefield_output = new float[wavefield_output_samples]();
-}
-
-void Eikonal::initial_setup()
-{
-    switch (eikonal_type)
-    {
-    case 0:
-        PAL_init();    
-        break;    
-    case 1:
-        FIM_init();
-        break;
-    case 2:
-        FSM_init();
-        break;
-    default:
-        eikonal_type = 1;
-        FIM_init();
-        break;
-    }
-}
-
-void Eikonal::forward_solver()
-{
-    switch (eikonal_type)
-    {
-    case 0:
-        PAL_solver();    
-        break;    
-    case 1:
-        FIM_solver();
-        break;
-    case 2:
-        FSM_solver();
-        break;
-    default:
-        eikonal_type = 1;
-        FIM_solver();
-        break;
-    }
 }
 
 void Eikonal::build_outputs()
@@ -109,7 +36,7 @@ void Eikonal::build_outputs()
 
 void Eikonal::get_travelTimes()
 {
-    eikonal_type == true ? pad_reduction() : fdm_reduction();    
+    reduction();
 
     wavefield_output_file = wavefield_output_folder + "travel_times_" + std::to_string(nz) + "x" + std::to_string(nx) + "x" + std::to_string(ny) + "_shot_" + std::to_string(shot_id+1) + ".bin";
 }
@@ -158,153 +85,3 @@ void Eikonal::get_firstArrivals()
 
     receiver_output_file = receiver_output_folder + "first_arrivals_" + std::to_string(geometry->nodes.total) + "_shot_" + std::to_string(shot_id+1) + ".bin";
 }
-
-void Eikonal::pad_expansion()
-{
-    for (int z = 0; z < nz; z++)
-    {
-        for (int y = 0; y < ny; y++)
-        {
-            for (int x = 0; x < nx; x++)
-            {
-                S[z + x*nzz + y*nxx*nzz] = 1.0f / V[z + x*nz + y*nx*nz];
-            }
-        }
-    }
-
-    for (int z = 0; z < pdz; z++)
-    {
-        for (int y = 0; y < nyy - pdy; y++)
-        {
-            for (int x = 0; x < nxx - pdx; x++)
-            {
-                S[(nzz - z - 1) + x*nzz + y*nxx*nzz] = 1.0f / V[(nz - 1) + x*nz + y*nx*nz];
-            }
-        }
-    }
-
-    for (int x = 0; x < pdx; x++)
-    {
-        for (int z = 0; z < nzz; z++)
-        {
-            for (int y = 0; y < nyy - pdy; y++)
-            {
-                S[z + (nxx - x - 1)*nzz + y*nxx*nzz] = S[z + (nxx - pdx - 1)*nzz + y*nxx*nzz];
-            }
-        }
-    }
-
-    for (int y = 0; y < pdy; y++)
-    {
-        for (int z = 0; z < nzz; z++)
-        {
-            for (int x = 0; x < nxx; x++)
-            {
-                S[z + x*nzz + (nyy - y - 1)*nxx*nzz] = S[z + x*nzz + (nyy - pdy - 1)*nxx*nzz];
-            }
-        }
-    }
-}
-
-void Eikonal::fdm_expansion()
-{
-    // Centering
-    for (int z = padb; z < nzz - padb; z++)
-    {
-        for (int y = padb; y < nyy - padb; y++)
-        {
-            for (int x = padb; x < nxx - padb; x++)
-            {
-                S[z + x*nzz + y*nxx*nzz] = 1.0f / V[(z - padb) + (x - padb)*nz + (y - padb)*nx*nz];
-            }
-        }
-    }
-
-    // Z direction
-    for (int z = 0; z < padb; z++)
-    {
-        for (int y = padb; y < nyy - padb; y++)
-        {
-            for (int x = padb; x < nxx - padb; x++)
-            {
-                S[z + x*nzz + y*nxx*nzz] = 1.0f / V[0 + (x - padb)*nz + (y - padb)*nx*nz];
-                S[(nzz - z - 1) + x*nzz + y*nxx*nzz] = 1.0f / V[(nz - 1) + (x - padb)*nz + (y - padb)*nx*nz];
-            }
-        }
-    }
-
-    // X direction
-    for (int x = 0; x < padb; x++)
-    {
-        for (int z = 0; z < nzz; z++)
-        {
-            for (int y = padb; y < nyy - padb; y++)
-            {
-                S[z + x*nzz + y*nxx*nzz] = S[z + padb*nzz + y*nxx*nzz];
-                S[z + (nxx - x - 1)*nzz + y*nxx*nzz] = S[z + (nxx - padb - 1)*nzz + y*nxx*nzz];
-            }
-        }
-    }
-
-    // Y direction
-    for (int y = 0; y < padb; y++)
-    {
-        for (int z = 0; z < nzz; z++)
-        {
-            for (int x = 0; x < nxx; x++)
-            {
-                S[z + x*nzz + y*nxx*nzz] = S[z + x*nzz + padb*nxx*nzz];
-                S[z + x*nzz + (nyy - y - 1)*nxx*nzz] = S[z + x*nzz + (nyy - padb - 1)*nxx*nzz];
-            }
-        }
-    }
-}
-
-void Eikonal::pad_reduction()
-{
-    for (int index = 0; index < nPoints; index++)
-    {
-        int y = (int) (index / (nx*nz));         
-        int x = (int) (index - y*nx*nz) / nz;    
-        int z = (int) (index - x*nz - y*nx*nz);  
-
-        wavefield_output[z + x*nz + y*nx*nz] = T[z + x*nzz + y*nxx*nzz];
-    }
-}
-
-void Eikonal::fdm_reduction()
-{
-    for (int index = 0; index < nPoints; index++)
-    {
-        int y = (int) (index / (nx*nz));         
-        int x = (int) (index - y*nx*nz) / nz;    
-        int z = (int) (index - x*nz - y*nx*nz);  
-
-        wavefield_output[z + x*nz + y*nx*nz] = T[(z + padb) + (x + padb)*nzz + (y + padb)*nxx*nzz];
-    }
-}
-
-void Eikonal::free_space()
-{
-    delete[] T;
-    delete[] S;
-
-    switch (eikonal_type)
-    {
-    case 0:
-        PAL_free_space();    
-        break;    
-    case 1:
-        FIM_free_space();
-        break;
-    case 2:
-        FSM_free_space();
-        break;
-    default:
-        eikonal_type = 1;
-        FIM_free_space();
-        break;
-    }
-}
-
-

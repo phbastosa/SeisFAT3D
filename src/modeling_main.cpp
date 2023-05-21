@@ -1,11 +1,21 @@
+# include "modeling/eikonal/FIM.cuh"
+# include "modeling/eikonal/FSM.cuh"
+# include "modeling/eikonal/PAL.cuh"
 # include "modeling/eikonal/eikonal.cuh"
+
 # include "modeling/scalar/scalar.hpp"
 # include "modeling/acoustic/acoustic.hpp"
 # include "modeling/elastic/elastic.hpp"
 
 int main(int argc, char **argv)
 {
-    Modeling * modeling[] = { new Eikonal(), new Scalar(), new Acoustic(), new Elastic() }; 
+    Modeling * modeling[] = 
+    { 
+        new Eikonal_pal(), new Eikonal_fim(), new Eikonal_fsm(), 
+        new Scalar(), 
+        new Acoustic(), 
+        new Elastic() 
+    }; 
 
     auto file = std::string(argv[1]);
 
