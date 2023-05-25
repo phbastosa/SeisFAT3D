@@ -1,6 +1,6 @@
 # include "modeling.hpp"
 
-void Modeling::set_parameters(std::string file)
+void Modeling::set_parameters()
 {    
     get_GPU_initMem();
 
@@ -18,13 +18,15 @@ void Modeling::set_parameters(std::string file)
     receiver_output_folder = catch_parameter("receiver_output_folder", file); 
     wavefield_output_folder = catch_parameter("wavefield_output_folder", file);
 
-    Geometry * gtypes[] = {new Regular(), new Circular()};
+    Geometry * types[] = {new Regular(), new Circular()};
 
-    int type = std::stoi(catch_parameter("geometry_type", file));
+    auto type = std::stoi(catch_parameter("geometry_type", file));
 
-    geometry = gtypes[type];
+    geometry = types[type];
 
-    geometry->set_geometry(file);
+    geometry->file = file;
+
+    geometry->set_geometry();
 
     total_shots = geometry->shots.total;
     total_nodes = geometry->nodes.total;

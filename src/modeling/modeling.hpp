@@ -62,18 +62,19 @@ public:
     float * receiver_output = nullptr;
     float * wavefield_output = nullptr;
     
+    std::string file;
+
     void set_runtime();
     void get_runtime();
     void info_message();
     void export_outputs();
 
-    virtual void initial_setup() = 0;
+    virtual void set_parameters(); 
     virtual void set_components() = 0;
     virtual void forward_solver() = 0;
+    virtual void initial_setup() = 0;
     virtual void build_outputs() = 0;
     virtual void free_space() = 0;
-
-    virtual void set_parameters(std::string file); 
 };
 
 # endif

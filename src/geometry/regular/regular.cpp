@@ -1,8 +1,8 @@
 # include "regular.hpp"
 
-void Regular::set_geometry(std::string file)
+void Regular::set_geometry()
 {
-    Geometry::set_geometry(file);
+    Geometry::set_geometry();
     
     if (import_geometry) 
     {

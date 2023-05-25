@@ -6,7 +6,7 @@
 class Regular : public Geometry
 {
 public:
-    void set_geometry(std::string file);
+    void set_geometry();
 };
 
 # endif

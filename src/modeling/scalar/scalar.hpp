@@ -21,13 +21,12 @@ protected:
 
 public:
     
-    void initial_setup();
+    void set_parameters();
     void set_components();
     void forward_solver();
+    void initial_setup();
     void build_outputs();    
     void free_space();
-
-    void set_parameters(std::string file);
 };
 
 # endif

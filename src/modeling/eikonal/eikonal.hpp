@@ -21,10 +21,9 @@ protected:
 
 public:
 
+    void set_parameters();
     void set_components();
     void build_outputs();    
-
-    void set_parameters(std::string file);
 };
 
 # endif

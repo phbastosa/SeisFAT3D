@@ -1,8 +1,8 @@
 # include "eikonal.hpp"
 
-void Eikonal::set_parameters(std::string file)
+void Eikonal::set_parameters()
 {
-    Modeling::set_parameters(file);
+    Modeling::set_parameters();
 
     parameters();
 

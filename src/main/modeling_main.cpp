@@ -18,10 +18,11 @@ int main(int argc, char **argv)
     }; 
 
     auto file = std::string(argv[1]);
-
     auto type = std::stoi(catch_parameter("modeling_type", file)); 
 
-    modeling[type]->set_parameters(file);
+    modeling[type]->file = file;
+
+    modeling[type]->set_parameters();
 
     modeling[type]->set_components();
 

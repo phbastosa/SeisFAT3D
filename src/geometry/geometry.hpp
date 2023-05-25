@@ -43,7 +43,9 @@ public:
     Coord shots;
     Coord nodes;
 
-    virtual void set_geometry(std::string file);     
+    std::string file;
+
+    virtual void set_geometry();     
 };
 
 # endif

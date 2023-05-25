@@ -1,8 +1,8 @@
 # include "scalar.hpp"
 
-void Scalar::set_parameters(std::string file)
+void Scalar::set_parameters()
 {
-    Modeling::set_parameters(file);
+    Modeling::set_parameters();
 
 
 }
