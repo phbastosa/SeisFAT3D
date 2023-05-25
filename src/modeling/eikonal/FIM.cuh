@@ -1,7 +1,7 @@
 # ifndef EIKONAL_FIM_CUH
 # define EIKONAL_FIM_CUH
 
-# include "eikonal.cuh"
+# include "eikonal.hpp"
 
 # define INF 1e6f
 # define EPS 1e-6f

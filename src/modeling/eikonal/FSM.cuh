@@ -1,7 +1,7 @@
 # ifndef EIKONAL_FSM_CUH
 # define EIKONAL_FSM_CUH
 
-# include "eikonal.cuh"
+# include "eikonal.hpp"
 
 class Eikonal_fsm : public Eikonal
 {

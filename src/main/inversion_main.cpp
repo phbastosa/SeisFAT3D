@@ -1,5 +1,5 @@
-# include "inversion/waveform/waveform.hpp"
-# include "inversion/tomography/tomography.hpp"
+# include "../inversion/waveform/waveform.hpp"
+# include "../inversion/tomography/tomography.hpp"
 
 int main(int argc, char **argv)
 {

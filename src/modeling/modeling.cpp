@@ -2,7 +2,7 @@
 
 void Modeling::set_parameters(std::string file)
 {    
-    get_vRAM_init();
+    get_GPU_initMem();
 
     nx = std::stoi(catch_parameter("x_samples", file));
     ny = std::stoi(catch_parameter("y_samples", file));
@@ -26,10 +26,29 @@ void Modeling::set_parameters(std::string file)
 
     geometry->set_geometry(file);
 
-    // Check if geometry is inside the model dimensions
-
     total_shots = geometry->shots.total;
     total_nodes = geometry->nodes.total;
+
+    check_geometry_overflow();
+}
+
+void Modeling::check_geometry_overflow()
+{
+    for (int shot = 0; shot < total_shots; shot++)
+    {
+        if ((geometry->shots.x[shot] < 0) && (geometry->shots.x[shot] > (nx-1)*dh) && 
+            (geometry->shots.y[shot] < 0) && (geometry->shots.y[shot] > (ny-1)*dh) &&
+            (geometry->shots.z[shot] < 0) && (geometry->shots.z[shot] > (nz-1)*dh))       
+        throw std::invalid_argument("\033[31mError: shots geometry overflow!\033[0;0m");
+    }
+
+    for (int node = 0; node < total_nodes; node++)
+    {
+        if ((geometry->nodes.x[node] < 0) && (geometry->nodes.x[node] > (nx-1)*dh) && 
+            (geometry->nodes.y[node] < 0) && (geometry->nodes.y[node] > (ny-1)*dh) &&
+            (geometry->nodes.z[node] < 0) && (geometry->nodes.z[node] > (nz-1)*dh))       
+        throw std::invalid_argument("\033[31mError: nodes geometry overflow!\033[0;0m");
+    }
 }
 
 void Modeling::info_message()
@@ -41,15 +60,13 @@ void Modeling::info_message()
     
     std::cout<<title<<"\n";
     
-    std::cout<<"Total x model length = "<<(nx-1)*dh<<" m\n";
-    std::cout<<"Total Y model length = "<<(ny-1)*dh<<" m\n";
-    std::cout<<"Total Z model length = "<<(nz-1)*dh<<" m\n\n";
+    std::cout<<"Model dimensions (x, y, z) = ("<<(nx-1)*dh<<", "<<(ny-1)*dh<<", "<<(nz-1)*dh<<") m\n\n";
 
-    std::cout<<"Shot " << shot_id+1 << " of " << geometry->shots.total;
+    std::cout<<"Shot "<<shot_id+1<<" of "<<geometry->shots.total;
 
-    std::cout << " at position (x,y,z) = (" << geometry->shots.x[shot_id] << ", " 
-                                            << geometry->shots.y[shot_id] << ", " 
-                                            << geometry->shots.z[shot_id] << ") m\n\n";
+    std::cout<<" at position (x, y, z) = ("<<geometry->shots.x[shot_id]<<", " 
+                                           <<geometry->shots.y[shot_id]<<", " 
+                                           <<geometry->shots.z[shot_id]<<") m\n\n";
 
     std::cout<<"Memory usage: \n";
     std::cout<<"RAM = "<<RAM<<" Mb\n";
@@ -77,7 +94,7 @@ void Modeling::get_RAM_usage()
     RAM = (int) (usage.ru_maxrss / 1024);
 }
 
-void Modeling::get_vRAM_init()
+void Modeling::get_GPU_initMem()
 {
 	size_t freeMem, totalMem;
 	cudaMemGetInfo(&freeMem, &totalMem);

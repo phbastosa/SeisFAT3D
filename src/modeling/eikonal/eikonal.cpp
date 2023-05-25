@@ -1,4 +1,4 @@
-# include "eikonal.cuh"
+# include "eikonal.hpp"
 
 void Eikonal::set_parameters(std::string file)
 {

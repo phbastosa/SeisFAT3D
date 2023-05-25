@@ -11,22 +11,22 @@ modeling="../src/modeling/modeling.cpp"
 PAL="../src/modeling/eikonal/PAL.cu"
 FSM="../src/modeling/eikonal/FSM.cu"
 FIM="../src/modeling/eikonal/FIM.cu"
-eikonal="../src/modeling/eikonal/eikonal.cu"
+eikonal="../src/modeling/eikonal/eikonal.cpp"
 
 scalar="../src/modeling/scalar/scalar.cpp"
 acoustic="../src/modeling/acoustic/acoustic.cpp"
 elastic="../src/modeling/elastic/elastic.cpp"
-modeling_main="../src/modeling_main.cpp"
+modeling_main="../src/main/modeling_main.cpp"
 
 inversion="../src/inversion/inversion.cpp"
 waveform="../src/inversion/waveform/waveform.cpp"
 tomography="../src/inversion/tomography/tomography.cpp"
-inversion_main="../src/inversion_main.cpp"
+inversion_main="../src/main/inversion_main.cpp"
 
 migration="../src/migration/migration.cpp"
 kirchhoff="../src/migration/kirchhoff/kirchhoff.cpp"
 reverseTime="../src/migration/reverseTime/reverseTime.cpp"
-migration_main="../src/migration_main.cpp"
+migration_main="../src/main/migration_main.cpp"
 
 flags="-std=c++11 -lm -O3"
 

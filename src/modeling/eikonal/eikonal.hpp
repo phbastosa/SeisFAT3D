@@ -1,5 +1,5 @@
-# ifndef EIKONAL_CUH
-# define EIKONAL_CUH
+# ifndef EIKONAL_HPP
+# define EIKONAL_HPP
 
 # include "../modeling.hpp"
 

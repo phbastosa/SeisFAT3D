@@ -1,11 +1,11 @@
-# include "modeling/eikonal/FIM.cuh"
-# include "modeling/eikonal/FSM.cuh"
-# include "modeling/eikonal/PAL.cuh"
-# include "modeling/eikonal/eikonal.cuh"
+# include "../modeling/eikonal/FIM.cuh"
+# include "../modeling/eikonal/FSM.cuh"
+# include "../modeling/eikonal/PAL.cuh"
+# include "../modeling/eikonal/eikonal.hpp"
 
-# include "modeling/scalar/scalar.hpp"
-# include "modeling/acoustic/acoustic.hpp"
-# include "modeling/elastic/elastic.hpp"
+# include "../modeling/scalar/scalar.hpp"
+# include "../modeling/acoustic/acoustic.hpp"
+# include "../modeling/elastic/elastic.hpp"
 
 int main(int argc, char **argv)
 {

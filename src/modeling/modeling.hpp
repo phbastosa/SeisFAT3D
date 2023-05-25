@@ -15,13 +15,18 @@ class Modeling
 {
 private:
 
+    int RAM, vRAM, ivRAM;
+    void get_RAM_usage();
+    void get_GPU_usage();
+    void get_GPU_initMem();
+
     std::chrono::_V2::system_clock::time_point ti, tf;
+
+    void check_geometry_overflow();
 
 protected:
 
     std::string title;
-
-    int RAM, vRAM, ivRAM;
 
     int receiver_output_samples;
     int wavefield_output_samples;
@@ -36,10 +41,6 @@ protected:
 
     Geometry * geometry;
 
-    void get_RAM_usage();
-    void get_GPU_usage();
-    void get_vRAM_init();
-
 public: 
 
     int shot_id;
@@ -49,7 +50,7 @@ public:
 
     float dh;
     int nPoints;
-    int nx, ny, nz; 
+    int nx, ny, nz, nt; 
 
     float * S = nullptr;
     float * V = nullptr;
@@ -61,6 +62,11 @@ public:
     float * receiver_output = nullptr;
     float * wavefield_output = nullptr;
     
+    void set_runtime();
+    void get_runtime();
+    void info_message();
+    void export_outputs();
+
     virtual void initial_setup() = 0;
     virtual void set_components() = 0;
     virtual void forward_solver() = 0;
@@ -68,11 +74,6 @@ public:
     virtual void free_space() = 0;
 
     virtual void set_parameters(std::string file); 
-
-    void set_runtime();
-    void get_runtime();
-    void info_message();
-    void export_outputs();
 };
 
 # endif

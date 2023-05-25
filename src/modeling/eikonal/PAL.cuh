@@ -1,7 +1,7 @@
 # ifndef EIKONAL_PAL_CUH
 # define EIKONAL_PAL_CUH
 
-# include "eikonal.cuh"
+# include "eikonal.hpp"
 
 class Eikonal_pal : public Eikonal
 {

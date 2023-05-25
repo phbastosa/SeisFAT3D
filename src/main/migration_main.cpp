@@ -1,5 +1,5 @@
-# include "migration/kirchhoff/kirchhoff.hpp"
-# include "migration/reverseTime/reverseTime.hpp"
+# include "../migration/kirchhoff/kirchhoff.hpp"
+# include "../migration/reverseTime/reverseTime.hpp"
 
 int main(int argc, char **argv)
 {

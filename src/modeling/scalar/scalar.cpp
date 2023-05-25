@@ -1,5 +1,12 @@
 # include "scalar.hpp"
 
+void Scalar::set_parameters(std::string file)
+{
+    Modeling::set_parameters(file);
+
+
+}
+
 void Scalar::set_components()
 {
 

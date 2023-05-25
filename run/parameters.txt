@@ -30,16 +30,16 @@ nodes_file = ../inputs/geometry/xyz_nodes.txt     # <str>
 
 # Regular geometry ---------------------------------------------------------------------------------               
 
-shots_nlines = [1, 5, 1]             # <int> (z, x, y)     
-nodes_nlines = [1, 5, 1]             # <int> (z, x, y)            
+shots_nlines = [1, 1, 1]             # <int> (z, x, y)     
+nodes_nlines = [1, 1, 1]             # <int> (z, x, y)            
 
 shots_SW = [10, 25, 25]              # [m] <float> (z, x, y) NW            
 shots_NW = [10, 25, 25]              # [m] <float> (z, x, y)  |            
 shots_SE = [10, 125, 25]             # [m] <float> (z, x, y) SW -- SE     
 
-nodes_SW = [10, 25, 25]              # [m] <float> (z, x, y) NW           
-nodes_NW = [10, 25, 25]              # [m] <float> (z, x, y)  |         
-nodes_SE = [10, 125, 25]             # [m] <float> (z, x, y) SW -- SE   
+nodes_SW = [10, 10000, 10000]              # [m] <float> (z, x, y) NW           
+nodes_NW = [10, 10000, 10000]              # [m] <float> (z, x, y)  |         
+nodes_SE = [10, 10000, 10000]              # [m] <float> (z, x, y) SW -- SE   
 
 # Circular geometry --------------------------------------------------------------------------------                                            
 
@@ -60,7 +60,7 @@ offsets = [5500, 7500, 9500]         # [m] <float>
 #   [5] Elastic 
 #---------------------------------------------------------------------------------------------------
 
-modeling_type = 2
+modeling_type = 1
 
 export_receiver_output = true
 export_wavefield_output = false
