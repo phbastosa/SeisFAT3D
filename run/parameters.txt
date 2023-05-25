@@ -37,9 +37,9 @@ shots_SW = [10, 25, 25]              # [m] <float> (z, x, y) NW
 shots_NW = [10, 25, 25]              # [m] <float> (z, x, y)  |            
 shots_SE = [10, 125, 25]             # [m] <float> (z, x, y) SW -- SE     
 
-nodes_SW = [10, 10000, 10000]              # [m] <float> (z, x, y) NW           
-nodes_NW = [10, 10000, 10000]              # [m] <float> (z, x, y)  |         
-nodes_SE = [10, 10000, 10000]              # [m] <float> (z, x, y) SW -- SE   
+nodes_SW = [10, 10000, 10000]        # [m] <float> (z, x, y) NW           
+nodes_NW = [10, 10000, 10000]        # [m] <float> (z, x, y)  |         
+nodes_SE = [10, 10000, 10000]        # [m] <float> (z, x, y) SW -- SE   
 
 # Circular geometry --------------------------------------------------------------------------------                                            
 
