@@ -60,7 +60,7 @@ offsets = [5500, 7500, 9500]         # [m] <float>
 #   [5] Elastic 
 #---------------------------------------------------------------------------------------------------
 
-modeling_type = 1
+modeling_type = 0
 
 export_receiver_output = true
 export_wavefield_output = false
