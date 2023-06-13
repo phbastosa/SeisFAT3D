@@ -2,11 +2,13 @@
 # Model paramenters --------------------------------------------------------------------------------
 #---------------------------------------------------------------------------------------------------
  
-z_samples = 171          # <int>  
 x_samples = 801          # <int>  
 y_samples = 801          # <int>  
+z_samples = 171          # <int>  
 
-model_spacing = 25       # [m] <float> 
+x_spacing = 25           # [m] <float> 
+y_spacing = 25           # [m] <float> 
+z_spacing = 25           # [m] <float> 
 
 vp_model_file = ../inputs/models/overthrust_z171_x801_y801_25m.bin     # <str> 
 vs_model_file = ../inputs/models/vs_two_layer.bin     # <str>
@@ -52,12 +54,10 @@ offsets = [5500, 7500, 9500]         # [m] <float>
 #---------------------------------------------------------------------------------------------------
 # Available types:
 #   
-#   [0] Eikonal - Podvin & Lecomte (1991)    
-#   [1] Eikonal - Jeong & Whitaker (2008)    
-#   [2] Eikonal - Noble, Gesret & Belayouni (2014)    
-#   [3] Scalar  
-#   [4] Acoustic 
-#   [5] Elastic 
+#   [0] Eikonal - Detrixhe, Gibou & Min (2013) | Noble, Gesret & Belayouni (2014)      
+#   [1] Scalar  
+#   [2] Acoustic 
+#   [3] Elastic 
 #---------------------------------------------------------------------------------------------------
 
 modeling_type = 0

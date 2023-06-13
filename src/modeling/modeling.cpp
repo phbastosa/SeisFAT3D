@@ -10,7 +10,9 @@ void Modeling::set_parameters()
 
     nPoints = nx*ny*nz;
 
-    dh = std::stof(catch_parameter("model_spacing", file));
+    dx = std::stof(catch_parameter("x_spacing", file));
+    dy = std::stof(catch_parameter("y_spacing", file));
+    dz = std::stof(catch_parameter("z_spacing", file));
 
     export_receiver_output = str2bool(catch_parameter("export_receiver_output", file));
     export_wavefield_output = str2bool(catch_parameter("export_wavefield_output", file));
@@ -38,17 +40,17 @@ void Modeling::check_geometry_overflow()
 {
     for (int shot = 0; shot < total_shots; shot++)
     {
-        if ((geometry->shots.x[shot] < 0) && (geometry->shots.x[shot] > (nx-1)*dh) && 
-            (geometry->shots.y[shot] < 0) && (geometry->shots.y[shot] > (ny-1)*dh) &&
-            (geometry->shots.z[shot] < 0) && (geometry->shots.z[shot] > (nz-1)*dh))       
+        if ((geometry->shots.x[shot] < 0) && (geometry->shots.x[shot] > (nx-1)*dx) && 
+            (geometry->shots.y[shot] < 0) && (geometry->shots.y[shot] > (ny-1)*dy) &&
+            (geometry->shots.z[shot] < 0) && (geometry->shots.z[shot] > (nz-1)*dz))       
         throw std::invalid_argument("\033[31mError: shots geometry overflow!\033[0;0m");
     }
 
     for (int node = 0; node < total_nodes; node++)
     {
-        if ((geometry->nodes.x[node] < 0) && (geometry->nodes.x[node] > (nx-1)*dh) && 
-            (geometry->nodes.y[node] < 0) && (geometry->nodes.y[node] > (ny-1)*dh) &&
-            (geometry->nodes.z[node] < 0) && (geometry->nodes.z[node] > (nz-1)*dh))       
+        if ((geometry->nodes.x[node] < 0) && (geometry->nodes.x[node] > (nx-1)*dx) && 
+            (geometry->nodes.y[node] < 0) && (geometry->nodes.y[node] > (ny-1)*dy) &&
+            (geometry->nodes.z[node] < 0) && (geometry->nodes.z[node] > (nz-1)*dz))       
         throw std::invalid_argument("\033[31mError: nodes geometry overflow!\033[0;0m");
     }
 }
@@ -62,7 +64,7 @@ void Modeling::info_message()
     
     std::cout<<title<<"\n";
     
-    std::cout<<"Model dimensions (x, y, z) = ("<<(nx-1)*dh<<", "<<(ny-1)*dh<<", "<<(nz-1)*dh<<") m\n\n";
+    std::cout<<"Model dimensions (x, y, z) = ("<<(nx-1)*dx<<", "<<(ny-1)*dy<<", "<<(nz-1)*dz<<") m\n\n";
 
     std::cout<<"Shot "<<shot_id+1<<" of "<<geometry->shots.total;
 

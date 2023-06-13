@@ -2,8 +2,6 @@
 # define MODELING_HPP
 
 # include <chrono>
-# include <cuda.h>
-# include <cassert>
 # include <cuda_runtime.h>
 # include <sys/resource.h>
 
@@ -48,8 +46,8 @@ public:
     int total_shots;
     int total_nodes;
 
-    float dh;
     int nPoints;
+    float dx, dy, dz;
     int nx, ny, nz, nt; 
 
     float * S = nullptr;
