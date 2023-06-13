@@ -1,10 +1,12 @@
 # include "tomography.hpp"
 
-void Tomography::set_parameters(std::string file)
+void Tomography::set_parameters()
 {
     modeling = new Eikonal();
 
-    modeling->set_parameters(file);
+    modeling->file = file;
+
+    modeling->set_parameters();
 
     
 

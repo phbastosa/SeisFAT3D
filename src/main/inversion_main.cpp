@@ -9,9 +9,10 @@ int main(int argc, char **argv)
 
     auto type = std::stoi(catch_parameter("inversion_type", file));
 
-    inversion[type]->set_parameters(file);
+    inversion[type]->file = file;
+    inversion[type]->set_parameters();
 
-    inversion[type]->forward_modeling();
+    // inversion[type]->forward_modeling();
 
     return 0;
 }

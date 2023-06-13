@@ -1,6 +1,6 @@
 # include "waveform.hpp"
 
-void Waveform::set_parameters(std::string file)
+void Waveform::set_parameters()
 {
     std::cout<<"Setting Waveform inversion parameters..."<<std::endl;
 
