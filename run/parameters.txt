@@ -4,15 +4,13 @@
  
 x_samples = 801          # <int>  
 y_samples = 801          # <int>  
-z_samples = 171          # <int>  
+z_samples = 187          # <int>  
 
 x_spacing = 25           # [m] <float> 
 y_spacing = 25           # [m] <float> 
 z_spacing = 25           # [m] <float> 
 
-vp_model_file = ../inputs/models/overthrust_z171_x801_y801_25m.bin     # <str> 
-vs_model_file = ../inputs/models/vs_two_layer.bin     # <str>
-rho_model_file = ../inputs/models/rho_two_layer.bin   # <str>
+vp_model_file = ../inputs/models/overthrust_z187_x801_y801_25m.bin    # <str> 
 
 #---------------------------------------------------------------------------------------------------
 # Geometry parameters ------------------------------------------------------------------------------
@@ -50,38 +48,36 @@ center  = [10, 10000, 10000]         # [m] <float> (z, x, y)
 offsets = [5500, 7500, 9500]         # [m] <float>
 
 #---------------------------------------------------------------------------------------------------
-# Modeling parameters 
+# Eikonal solver parameters 
 #---------------------------------------------------------------------------------------------------
-# Available types:
-#   
-#   [0] Eikonal - Detrixhe, Gibou & Min (2013) | Noble, Gesret & Belayouni (2014)      
-#   [1] Scalar  
-#   [2] Acoustic 
-#   [3] Elastic 
+#   Detrixhe, Gibou & Min (2013)  
+#   Noble, Gesret & Belayouni (2014)      
 #---------------------------------------------------------------------------------------------------
-
-modeling_type = 0
 
 export_receiver_output = true
 export_wavefield_output = false
 
-receiver_output_folder = ../outputs/seismograms/
-wavefield_output_folder = ../outputs/snapshots/
-
-
-
-
+receiver_output_folder = ../outputs/first_arrivals/
+wavefield_output_folder = ../outputs/travel_times/
 
 #---------------------------------------------------------------------------------------------------
 # Inversion parameters 
 #---------------------------------------------------------------------------------------------------
-# Available types:
-#   
-#   [0] - Waveform    
-#   [1] - Tomography  
+# 
+#
+#  
 #---------------------------------------------------------------------------------------------------
 
-inversion_type = 1
 
 
+
+
+
+#---------------------------------------------------------------------------------------------------
+# Migration parameters 
+#---------------------------------------------------------------------------------------------------
+# 
+#
+#  
+#---------------------------------------------------------------------------------------------------
 

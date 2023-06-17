@@ -61,16 +61,14 @@ void Modeling::info_message()
 
     get_RAM_usage();
     get_GPU_usage();
-    
-    std::cout<<title<<"\n";
-    
-    std::cout<<"Model dimensions (x, y, z) = ("<<(nx-1)*dx<<", "<<(ny-1)*dy<<", "<<(nz-1)*dz<<") m\n\n";
+        
+    std::cout<<"Model dimensions (z = "<<(nz-1)*dz<<", x = "<<(nx-1)*dx<<", y = "<<(ny-1)*dy<<") m\n\n";
 
     std::cout<<"Shot "<<shot_id+1<<" of "<<geometry->shots.total;
 
-    std::cout<<" at position (x, y, z) = ("<<geometry->shots.x[shot_id]<<", " 
-                                           <<geometry->shots.y[shot_id]<<", " 
-                                           <<geometry->shots.z[shot_id]<<") m\n\n";
+    std::cout<<" at position (z = "<<geometry->shots.z[shot_id]<<", x = " 
+                                   <<geometry->shots.x[shot_id]<<", y = " 
+                                   <<geometry->shots.y[shot_id]<<") m\n\n";
 
     std::cout<<"Memory usage: \n";
     std::cout<<"RAM = "<<RAM<<" Mb\n";

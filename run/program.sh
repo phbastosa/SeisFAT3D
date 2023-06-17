@@ -7,32 +7,25 @@ regular="../src/geometry/regular/regular.cpp"
 circular="../src/geometry/circular/circular.cpp"
 
 modeling="../src/modeling/modeling.cpp"
-
 eikonal="../src/modeling/eikonal/eikonal.cu"
-scalar="../src/modeling/scalar/scalar.cpp"
-acoustic="../src/modeling/acoustic/acoustic.cpp"
-elastic="../src/modeling/elastic/elastic.cpp"
 modeling_main="../src/main/modeling_main.cpp"
 
 inversion="../src/inversion/inversion.cpp"
-waveform="../src/inversion/waveform/waveform.cpp"
 tomography="../src/inversion/tomography/tomography.cpp"
 inversion_main="../src/main/inversion_main.cpp"
 
 migration="../src/migration/migration.cpp"
 kirchhoff="../src/migration/kirchhoff/kirchhoff.cpp"
-reverseTime="../src/migration/reverseTime/reverseTime.cpp"
 migration_main="../src/main/migration_main.cpp"
 
 flags="-std=c++11 -lm -O3"
 
 USER_MESSAGE="
-Usage:
-    $ $0 -help           # 
-    $ $0 -compile        # 
-    $ $0 -modeling       #           
-    $ $0 -inversion      # 
-    $ $0 -migration      #    
+Usage:\n
+    $ $0 -compile        # Create executables 
+    $ $0 -modeling       # Perform eikonal solver          
+    $ $0 -inversion      # Perform adjoint-state tomography
+    $ $0 -migration      # Perform kirchhoff depth migration   
 "
 
 [ -z "$1" ] && 
@@ -44,7 +37,7 @@ Usage:
 
 case "$1" in
 
--help) 
+-h) 
 
 	echo -e "$USER_MESSAGE"
 	exit 0
@@ -55,13 +48,13 @@ case "$1" in
     echo -e "Compiling the stand-alone executables!\n"
 
     echo -e "../bin/\033[31mmodeling.exe\033[m" 
-    nvcc $io $geometry $regular $circular $modeling $eikonal $scalar $acoustic $elastic $modeling_main $flags -o ../bin/modeling.exe
+    nvcc $io $geometry $regular $circular $modeling $eikonal $modeling_main $flags -o ../bin/modeling.exe
 
     echo -e "../bin/\033[31minversion.exe\033[m" 
-    nvcc $io $geometry $regular $circular $modeling $eikonal $inversion $waveform $tomography $inversion_main $flags -o ../bin/inversion.exe
+    nvcc $io $geometry $regular $circular $modeling $eikonal $inversion $tomography $inversion_main $flags -o ../bin/inversion.exe
 
-    # echo -e "../bin/\033[31mmigration.exe\033[m"
-    # nvcc $io $migration $kirchhoff $reverseTime $migration_main -lm -O3 -o ../bin/migration.exe
+    echo -e "../bin/\033[31mmigration.exe\033[m"
+    nvcc $io $geometry $regular $circular $modeling $eikonal $migration $kirchhoff $migration_main $flags -o ../bin/migration.exe
 
 	exit 0
 ;;

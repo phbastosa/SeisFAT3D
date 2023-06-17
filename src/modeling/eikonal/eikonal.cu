@@ -26,8 +26,6 @@ void Eikonal::set_parameters()
 
 	totalLevels = (nxx - 1) + (nyy - 1) + (nzz - 1);
 
-    title = "Parallel Fast Sweeping Method for eikonal equation\nCombination of two strategies to achieve performance and accuracy:\n\033[32mDetrixhe, Gibou & Min (2013) \nNoble, Gesret and Belayouni (2014)\033[0;0m\n";    
-
     V = new float[nPoints]();
 
     import_binary_float(catch_parameter("vp_model_file", file), V, nPoints);

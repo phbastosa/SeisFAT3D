@@ -7,8 +7,6 @@ class Eikonal : public Modeling
 {
 protected:
 
-    float * T = nullptr;
-    
     int nit, nxx, nyy, nzz, volsize;
 
     float * d_T = nullptr;
@@ -21,8 +19,7 @@ protected:
     int nSweeps, meshDim;
     int totalLevels, padb;
     
-    float dsum;
-    float dx2i, dy2i, dz2i; 
+    float dx2i, dy2i, dz2i, dsum; 
     float dx2dy2, dz2dx2, dz2dy2;
 
     void get_travelTimes();

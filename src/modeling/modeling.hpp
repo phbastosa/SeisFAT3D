@@ -24,8 +24,6 @@ private:
 
 protected:
 
-    std::string title;
-
     int receiver_output_samples;
     int wavefield_output_samples;
 
@@ -52,11 +50,8 @@ public:
 
     float * S = nullptr;
     float * V = nullptr;
-    float * K = nullptr;
-    float * B = nullptr;
-    float * M = nullptr;
-    float * L = nullptr;
-
+    float * T = nullptr;
+    
     float * receiver_output = nullptr;
     float * wavefield_output = nullptr;
     
