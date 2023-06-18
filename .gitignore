@@ -1,3 +1,5 @@
 *.exe
 *.bin
 *.txt
+*.json
+__*
