@@ -1,16 +1,58 @@
-# include "eikonal.cuh"
+# include "modeling.cuh"
 
-void Eikonal::set_parameters()
-{
-    Modeling::set_parameters();
+void Modeling::set_parameters()
+{    
+    get_GPU_initMem();
+
+    nx = std::stoi(catch_parameter("x_samples", file));
+    ny = std::stoi(catch_parameter("y_samples", file));
+    nz = std::stoi(catch_parameter("z_samples", file));
 
     padb = 1;
     nSweeps = 8;
     meshDim = 3;
-
+        
     nxx = nx + 2*padb;
     nyy = ny + 2*padb;
     nzz = nz + 2*padb;
+
+    nPoints = nx*ny*nz;
+    volsize = nxx*nyy*nzz;
+
+    dx = std::stof(catch_parameter("x_spacing", file));
+    dy = std::stof(catch_parameter("y_spacing", file));
+    dz = std::stof(catch_parameter("z_spacing", file));
+
+    export_receiver_output = str2bool(catch_parameter("export_receiver_output", file));
+    export_wavefield_output = str2bool(catch_parameter("export_wavefield_output", file));
+
+    receiver_output_folder = catch_parameter("receiver_output_folder", file); 
+    wavefield_output_folder = catch_parameter("wavefield_output_folder", file);
+
+    V = new float[nPoints]();
+    S = new float[volsize]();
+    T = new float[volsize]();
+
+    import_binary_float(catch_parameter("vp_model_file", file), V, nPoints);
+
+    Geometry * types[] = {new Regular(), new Circular()};
+
+    geometry = types[std::stoi(catch_parameter("geometry_type", file))];
+
+    geometry->file = file;
+
+    geometry->set_geometry();
+
+    total_shots = geometry->shots.total;
+    total_nodes = geometry->nodes.total;
+
+    check_geometry_overflow();
+
+    wavefield_output_samples = nPoints;
+    receiver_output_samples = geometry->nodes.total;
+
+    receiver_output = new float[receiver_output_samples]();
+    wavefield_output = new float[wavefield_output_samples]();
 
     dz2i = 1.0f / (dz*dz);
     dx2i = 1.0f / (dx*dx);
@@ -25,10 +67,6 @@ void Eikonal::set_parameters()
     threadsPerBlock = 256;
 
 	totalLevels = (nxx - 1) + (nyy - 1) + (nzz - 1);
-
-    V = new float[nPoints]();
-
-    import_binary_float(catch_parameter("vp_model_file", file), V, nPoints);
 
     int sgnv[nSweeps][meshDim] = {{1,1,1}, {0,1,1}, {1,1,0}, {0,1,0}, {1,0,1}, {0,0,1}, {1,0,0}, {0,0,0}};
     int sgnt[nSweeps][meshDim] = {{1,1,1}, {-1,1,1}, {1,1,-1}, {-1,1,-1}, {1,-1,1}, {-1,-1,1}, {1,-1,-1}, {-1,-1,-1}};
@@ -51,32 +89,66 @@ void Eikonal::set_parameters()
 	cudaMemcpy(d_sgnv, h_sgnv, nSweeps*meshDim*sizeof(int), cudaMemcpyHostToDevice);
 	cudaMemcpy(d_sgnt, h_sgnt, nSweeps*meshDim*sizeof(int), cudaMemcpyHostToDevice);
 
+	cudaMalloc((void**)&(d_T), volsize*sizeof(float));
+	cudaMalloc((void**)&(d_S), volsize*sizeof(float));
+
     delete[] h_sgnt;
     delete[] h_sgnv;
 }
 
-void Eikonal::set_components()
+void Modeling::set_slowness()
 {
-    volsize = nxx*nyy*nzz;
+    for (int z = padb; z < nzz - padb; z++)
+    {
+        for (int y = padb; y < nyy - padb; y++)
+        {
+            for (int x = padb; x < nxx - padb; x++)
+            {
+                S[z + x*nzz + y*nxx*nzz] = 1.0f / V[(z - padb) + (x - padb)*nz + (y - padb)*nx*nz];
+            }
+        }
+    }
 
-    T = new float[volsize]();
-    S = new float[volsize]();
+    for (int z = 0; z < padb; z++)
+    {
+        for (int y = padb; y < nyy - padb; y++)
+        {
+            for (int x = padb; x < nxx - padb; x++)
+            {
+                S[z + x*nzz + y*nxx*nzz] = 1.0f / V[0 + (x - padb)*nz + (y - padb)*nx*nz];
+                S[(nzz - z - 1) + x*nzz + y*nxx*nzz] = 1.0f / V[(nz - 1) + (x - padb)*nz + (y - padb)*nx*nz];
+            }
+        }
+    }
 
-    model_expansion();
+    for (int x = 0; x < padb; x++)
+    {
+        for (int z = 0; z < nzz; z++)
+        {
+            for (int y = padb; y < nyy - padb; y++)
+            {
+                S[z + x*nzz + y*nxx*nzz] = S[z + padb*nzz + y*nxx*nzz];
+                S[z + (nxx - x - 1)*nzz + y*nxx*nzz] = S[z + (nxx - padb - 1)*nzz + y*nxx*nzz];
+            }
+        }
+    }
 
-    wavefield_output_samples = nPoints;
-    receiver_output_samples = geometry->nodes.total;
-
-    receiver_output = new float[receiver_output_samples]();
-    wavefield_output = new float[wavefield_output_samples]();
-
-	cudaMalloc((void**)&(d_T), volsize*sizeof(float));
-	cudaMalloc((void**)&(d_S), volsize*sizeof(float));
+    for (int y = 0; y < padb; y++)
+    {
+        for (int z = 0; z < nzz; z++)
+        {
+            for (int x = 0; x < nxx; x++)
+            {
+                S[z + x*nzz + y*nxx*nzz] = S[z + x*nzz + padb*nxx*nzz];
+                S[z + x*nzz + (nyy - y - 1)*nxx*nzz] = S[z + x*nzz + (nyy - padb - 1)*nxx*nzz];
+            }
+        }
+    }
 
 	cudaMemcpy(d_S, S, volsize*sizeof(float), cudaMemcpyHostToDevice);
 }
 
-void Eikonal::initial_setup()
+void Modeling::initial_setup()
 {
     int sidx = (int)(geometry->shots.x[shot_id] / dx) + padb;
     int sidy = (int)(geometry->shots.y[shot_id] / dy) + padb;
@@ -127,8 +199,8 @@ void Eikonal::initial_setup()
 	cudaMemcpy(d_T, T, volsize*sizeof(float), cudaMemcpyHostToDevice);
 }
 
-void Eikonal::forward_solver()
-{    
+void Modeling::forward_solver()
+{
     for (int sweep = 0; sweep < nSweeps; sweep++)
 	{ 
 		int start = (sweep == 3 || sweep == 5 || sweep == 6 || sweep == 7) ? totalLevels : meshDim;
@@ -173,20 +245,27 @@ void Eikonal::forward_solver()
     cudaMemcpy(T, d_T, volsize*sizeof(float), cudaMemcpyDeviceToHost);
 }
 
-void Eikonal::build_outputs()
+void Modeling::build_outputs()
 {
     get_travelTimes();
     get_firstArrivals();
 }
 
-void Eikonal::get_travelTimes()
+void Modeling::get_travelTimes()
 {
-    times_reduction();
+    for (int index = 0; index < nPoints; index++)
+    {
+        int y = (int) (index / (nx*nz));         
+        int x = (int) (index - y*nx*nz) / nz;    
+        int z = (int) (index - x*nz - y*nx*nz);  
+
+        wavefield_output[z + x*nz + y*nx*nz] = T[(z + padb) + (x + padb)*nzz + (y + padb)*nxx*nzz];
+    }
 
     wavefield_output_file = wavefield_output_folder + "time_volume_" + std::to_string(nz) + "x" + std::to_string(nx) + "x" + std::to_string(ny) + "_shot_" + std::to_string(shot_id+1) + ".bin";
 }
 
-void Eikonal::get_firstArrivals()
+void Modeling::get_firstArrivals()
 {
     for (int r = 0; r < total_nodes; r++)
     {
@@ -231,74 +310,7 @@ void Eikonal::get_firstArrivals()
     receiver_output_file = receiver_output_folder + "data_" + std::to_string(geometry->nodes.total) + "_shot_" + std::to_string(shot_id+1) + ".bin";
 }
 
-void Eikonal::model_expansion()
-{
-    for (int z = padb; z < nzz - padb; z++)
-    {
-        for (int y = padb; y < nyy - padb; y++)
-        {
-            for (int x = padb; x < nxx - padb; x++)
-            {
-                S[z + x*nzz + y*nxx*nzz] = 1.0f / V[(z - padb) + (x - padb)*nz + (y - padb)*nx*nz];
-            }
-        }
-    }
-
-    for (int z = 0; z < padb; z++)
-    {
-        for (int y = padb; y < nyy - padb; y++)
-        {
-            for (int x = padb; x < nxx - padb; x++)
-            {
-                S[z + x*nzz + y*nxx*nzz] = 1.0f / V[0 + (x - padb)*nz + (y - padb)*nx*nz];
-                S[(nzz - z - 1) + x*nzz + y*nxx*nzz] = 1.0f / V[(nz - 1) + (x - padb)*nz + (y - padb)*nx*nz];
-            }
-        }
-    }
-
-    for (int x = 0; x < padb; x++)
-    {
-        for (int z = 0; z < nzz; z++)
-        {
-            for (int y = padb; y < nyy - padb; y++)
-            {
-                S[z + x*nzz + y*nxx*nzz] = S[z + padb*nzz + y*nxx*nzz];
-                S[z + (nxx - x - 1)*nzz + y*nxx*nzz] = S[z + (nxx - padb - 1)*nzz + y*nxx*nzz];
-            }
-        }
-    }
-
-    for (int y = 0; y < padb; y++)
-    {
-        for (int z = 0; z < nzz; z++)
-        {
-            for (int x = 0; x < nxx; x++)
-            {
-                S[z + x*nzz + y*nxx*nzz] = S[z + x*nzz + padb*nxx*nzz];
-                S[z + x*nzz + (nyy - y - 1)*nxx*nzz] = S[z + x*nzz + (nyy - padb - 1)*nxx*nzz];
-            }
-        }
-    }
-}
-
-void Eikonal::times_reduction()
-{
-    for (int index = 0; index < nPoints; index++)
-    {
-        int y = (int) (index / (nx*nz));         
-        int x = (int) (index - y*nx*nz) / nz;    
-        int z = (int) (index - x*nz - y*nx*nz);  
-
-        wavefield_output[z + x*nz + y*nx*nz] = T[(z + padb) + (x + padb)*nzz + (y + padb)*nxx*nzz];
-    }
-}
-
-int Eikonal::iDivUp(int a, int b) 
-{ 
-    return ( (a % b) != 0 ) ? (a / b + 1) : (a / b); 
-}
-
-void Eikonal::free_space()
+void Modeling::free_space()
 {
     cudaFree(d_T);
     cudaFree(d_S);
@@ -309,6 +321,92 @@ void Eikonal::free_space()
     delete[] T;
     delete[] S;
     delete[] V;
+}
+
+void Modeling::info_message()
+{
+    get_RAM_usage();
+    get_GPU_usage();
+
+    auto clear = system("clear");
+        
+    std::cout<<"Model dimensions (z = "<<(nz-1)*dz<<", x = "<<(nx-1)*dx<<", y = "<<(ny-1)*dy<<") m\n\n";
+
+    std::cout<<"Shot "<<shot_id+1<<" of "<<geometry->shots.total;
+
+    std::cout<<" at position (z = "<<geometry->shots.z[shot_id]<<", x = " 
+                                   <<geometry->shots.x[shot_id]<<", y = " 
+                                   <<geometry->shots.y[shot_id]<<") m\n\n";
+
+    std::cout<<"Memory usage: \n";
+    std::cout<<"RAM = "<<RAM<<" Mb\n";
+    std::cout<<"GPU = "<<vRAM<<" Mb\n\n";
+}
+
+void Modeling::set_runtime()
+{
+    ti = std::chrono::system_clock::now();
+}
+
+void Modeling::get_runtime()
+{
+    tf = std::chrono::system_clock::now();
+
+    std::chrono::duration<double> elapsed_seconds = tf - ti;
+
+    std::cout<<"\nRun time: "<<elapsed_seconds.count()<<" s."<<std::endl;
+}
+
+void Modeling::get_RAM_usage()
+{
+    struct rusage usage;
+    getrusage(RUSAGE_SELF, &usage);
+    RAM = (int) (usage.ru_maxrss / 1024);
+}
+
+void Modeling::get_GPU_initMem()
+{
+	size_t freeMem, totalMem;
+	cudaMemGetInfo(&freeMem, &totalMem);
+    ivRAM = (int) ((totalMem - freeMem) / (1024 * 1024));
+}
+
+void Modeling::get_GPU_usage()
+{
+	size_t freeMem, totalMem;
+	cudaMemGetInfo(&freeMem, &totalMem);
+    vRAM = (int) ((totalMem - freeMem) / (1024 * 1024));
+    vRAM -= ivRAM;
+}
+
+void Modeling::export_outputs()
+{
+    if (export_receiver_output) export_binary_float(receiver_output_file, receiver_output, receiver_output_samples);
+    if (export_wavefield_output) export_binary_float(wavefield_output_file, wavefield_output, wavefield_output_samples);
+}
+
+int Modeling::iDivUp(int a, int b) 
+{ 
+    return ( (a % b) != 0 ) ? (a / b + 1) : (a / b); 
+}
+
+void Modeling::check_geometry_overflow()
+{
+    for (int shot = 0; shot < total_shots; shot++)
+    {
+        if ((geometry->shots.x[shot] < 0) && (geometry->shots.x[shot] > (nx-1)*dx) && 
+            (geometry->shots.y[shot] < 0) && (geometry->shots.y[shot] > (ny-1)*dy) &&
+            (geometry->shots.z[shot] < 0) && (geometry->shots.z[shot] > (nz-1)*dz))       
+        throw std::invalid_argument("\033[31mError: shots geometry overflow!\033[0;0m");
+    }
+
+    for (int node = 0; node < total_nodes; node++)
+    {
+        if ((geometry->nodes.x[node] < 0) && (geometry->nodes.x[node] > (nx-1)*dx) && 
+            (geometry->nodes.y[node] < 0) && (geometry->nodes.y[node] > (ny-1)*dy) &&
+            (geometry->nodes.z[node] < 0) && (geometry->nodes.z[node] > (nz-1)*dz))       
+        throw std::invalid_argument("\033[31mError: nodes geometry overflow!\033[0;0m");
+    }
 }
 
 __global__ void fast_sweeping_kernel(float * S, float * T, int * sgnt, int * sgnv, int sgni, int sgnj, int sgnk, 
@@ -433,5 +531,3 @@ __global__ void fast_sweeping_kernel(float * S, float * T, int * sgnt, int * sgn
         }
     }
 }
-
-

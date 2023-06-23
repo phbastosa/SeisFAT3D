@@ -8,10 +8,10 @@ void Tomography::set_parameters()
 
     modeling->set_parameters();
 
+    iteration = 0;
+
     n_model = modeling->nPoints;
     n_data = modeling->total_nodes * modeling->total_shots;
-
-    iteration = 0;
 
     tolerance = std::stof(catch_parameter("tolerance", file));
     max_iteration = std::stof(catch_parameter("max_iteration", file));

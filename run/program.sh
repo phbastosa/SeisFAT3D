@@ -6,8 +6,7 @@ geometry="../src/geometry/geometry.cpp"
 regular="../src/geometry/regular/regular.cpp"
 circular="../src/geometry/circular/circular.cpp"
 
-modeling="../src/modeling/modeling.cpp"
-eikonal="../src/modeling/eikonal/eikonal.cu"
+modeling="../src/modeling/modeling.cu"
 modeling_main="../src/main/modeling_main.cpp"
 
 inversion="../src/inversion/inversion.cpp"
@@ -48,13 +47,13 @@ case "$1" in
     echo -e "Compiling the stand-alone executables!\n"
 
     echo -e "../bin/\033[31mmodeling.exe\033[m" 
-    nvcc $io $geometry $regular $circular $modeling $eikonal $modeling_main $flags -o ../bin/modeling.exe
+    nvcc $io $geometry $regular $circular $modeling $modeling_main $flags -o ../bin/modeling.exe
 
-    echo -e "../bin/\033[31minversion.exe\033[m" 
-    nvcc $io $geometry $regular $circular $modeling $eikonal $inversion $tomography $inversion_main $flags -o ../bin/inversion.exe
+    # echo -e "../bin/\033[31minversion.exe\033[m" 
+    # nvcc $io $geometry $regular $circular $modeling $eikonal $inversion $tomography $inversion_main $flags -o ../bin/inversion.exe
 
-    echo -e "../bin/\033[31mmigration.exe\033[m"
-    nvcc $io $geometry $regular $circular $modeling $eikonal $migration $kirchhoff $migration_main $flags -o ../bin/migration.exe
+    # echo -e "../bin/\033[31mmigration.exe\033[m"
+    # nvcc $io $geometry $regular $circular $modeling $eikonal $migration $kirchhoff $migration_main $flags -o ../bin/migration.exe
 
 	exit 0
 ;;

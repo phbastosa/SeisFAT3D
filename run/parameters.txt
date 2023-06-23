@@ -58,7 +58,7 @@ offsets = [5500, 7500, 9500]         # [m] <float>
 export_receiver_output = true
 export_wavefield_output = false
 
-receiver_output_folder = ../ouputs/first_arrivals/
+receiver_output_folder = ../outputs/first_arrivals/
 wavefield_output_folder = ../outputs/travel_times/
 
 #---------------------------------------------------------------------------------------------------
