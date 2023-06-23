@@ -6,6 +6,13 @@
 
 class Tomography : public Inversion
 {
+private:
+
+    float * source = nullptr;       
+    float * adjoint = nullptr;
+
+    void adjoint_state_solver();
+    void fill_calculated_data();
 
 public:
 
@@ -17,5 +24,7 @@ public:
     void optimization();
     void model_update();
 };
+
+__global__ void adjoint_state_kernel();
 
 # endif

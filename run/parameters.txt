@@ -4,14 +4,13 @@
  
 x_samples = 801          # <int>  
 y_samples = 801          # <int>  
-z_samples = 165          # <int>  
+z_samples = 181          # <int>  
 
 x_spacing = 25           # [m] <float> 
 y_spacing = 25           # [m] <float> 
 z_spacing = 25           # [m] <float> 
 
-vp_model_file = ../inputs/models/overthrust_z165_x801_y801_25m.bin    # <str> 
-#vp_model_file = ../inputs/models/init_model_z165_x801_y801_25m.bin    # <str> 
+vp_model_file = ../inputs/models/init_model_z181_x801_y801_25m.bin    # <str> 
 
 #---------------------------------------------------------------------------------------------------
 # Geometry parameters ------------------------------------------------------------------------------
@@ -32,7 +31,7 @@ nodes_file = ../inputs/geometry/xyz_node_positions.txt     # <str>
 # Regular geometry ---------------------------------------------------------------------------------               
 
 shots_nlines = [1, 1, 1]            # <int> (z, x, y)     
-nodes_nlines = [1, 2, 2]            # <int> (z, x, y)            
+nodes_nlines = [1, 3, 3]            # <int> (z, x, y)            
 
 shots_SW = [10, 25, 25]             # [m] <float> (z, x, y) NW            
 shots_NW = [10, 25, 25]             # [m] <float> (z, x, y)  |            
@@ -44,35 +43,37 @@ nodes_SE = [10, 19000, 1000]        # [m] <float> (z, x, y) SW -- SE
 
 # Circular geometry --------------------------------------------------------------------------------                                            
 
-spacing = 25                         # [m] <float>
+spacing = 100                        # [m] <float>
 center  = [10, 10000, 10000]         # [m] <float> (z, x, y)        
 offsets = [5500, 7500, 9500]         # [m] <float>
 
 #---------------------------------------------------------------------------------------------------
 # Eikonal solver parameters 
 #---------------------------------------------------------------------------------------------------
-#   Detrixhe, Gibou & Min (2013)  
-#   Noble, Gesret & Belayouni (2014)      
+# Accurate Parallel Fast Sweeping Method:  
+#    Detrixhe, Gibou & Min (2013)  
+#    Noble, Gesret & Belayouni (2014)      
 #---------------------------------------------------------------------------------------------------
 
 export_receiver_output = true
 export_wavefield_output = false
 
-receiver_output_folder = ../outputs/first_arrivals/cal_
+receiver_output_folder = ../ouputs/first_arrivals/
 wavefield_output_folder = ../outputs/travel_times/
 
 #---------------------------------------------------------------------------------------------------
 # Inversion parameters 
 #---------------------------------------------------------------------------------------------------
-# 
-#
-#  
+# Adjoint State First Arrival Tomography
+#    a
+#    b  
 #---------------------------------------------------------------------------------------------------
 
+tolerance = 1000
+max_iteration = 1 
 
-
-
-
+obs_data_folder = ../inputs/data/
+obs_data_prefix = obs_data_1416_shot_
 
 #---------------------------------------------------------------------------------------------------
 # Migration parameters 

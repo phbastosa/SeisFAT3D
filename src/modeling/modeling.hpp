@@ -35,14 +35,16 @@ protected:
     std::string receiver_output_folder;
     std::string wavefield_output_folder;
 
-    Geometry * geometry;
-
 public: 
+
+    float t0;    
 
     int shot_id;
 
     int total_shots;
     int total_nodes;
+
+    Geometry * geometry;
 
     int nPoints;
     float dx, dy, dz;

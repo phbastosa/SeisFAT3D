@@ -11,7 +11,7 @@ eikonal="../src/modeling/eikonal/eikonal.cu"
 modeling_main="../src/main/modeling_main.cpp"
 
 inversion="../src/inversion/inversion.cpp"
-tomography="../src/inversion/tomography/tomography.cpp"
+tomography="../src/inversion/tomography/tomography.cu"
 inversion_main="../src/main/inversion_main.cpp"
 
 migration="../src/migration/migration.cpp"

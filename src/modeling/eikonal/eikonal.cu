@@ -87,7 +87,7 @@ void Eikonal::initial_setup()
     for (int index = 0; index < volsize; index++) T[index] = 1e6f;
 
     T[sId] = S[sId] * sqrtf(powf((sidx-padb)*dx - geometry->shots.x[shot_id], 2.0f) + powf((sidy-padb)*dy - geometry->shots.y[shot_id], 2.0f) + powf((sidz-padb)*dz - geometry->shots.z[shot_id], 2.0f));
-    
+
     T[sId + 1] = S[sId] * sqrtf(powf((sidx-padb)*dx - geometry->shots.x[shot_id], 2.0f) + powf((sidy-padb)*dy - geometry->shots.y[shot_id], 2.0f) + powf(((sidz-padb)+1)*dz - geometry->shots.z[shot_id], 2.0f));
     T[sId - 1] = S[sId] * sqrtf(powf((sidx-padb)*dx - geometry->shots.x[shot_id], 2.0f) + powf((sidy-padb)*dy - geometry->shots.y[shot_id], 2.0f) + powf(((sidz-padb)-1)*dz - geometry->shots.z[shot_id], 2.0f));
 
@@ -121,6 +121,8 @@ void Eikonal::initial_setup()
     T[sId - 1 - nzz + nxx*nzz] = S[sId] * sqrtf(powf(((sidx-padb)-1)*dx - geometry->shots.x[shot_id], 2.0f) + powf(((sidy-padb)+1)*dy - geometry->shots.y[shot_id], 2.0f) + powf(((sidz-padb)-1)*dz - geometry->shots.z[shot_id], 2.0f));
     T[sId - 1 + nzz - nxx*nzz] = S[sId] * sqrtf(powf(((sidx-padb)+1)*dx - geometry->shots.x[shot_id], 2.0f) + powf(((sidy-padb)-1)*dy - geometry->shots.y[shot_id], 2.0f) + powf(((sidz-padb)-1)*dz - geometry->shots.z[shot_id], 2.0f));
     T[sId - 1 - nzz - nxx*nzz] = S[sId] * sqrtf(powf(((sidx-padb)-1)*dx - geometry->shots.x[shot_id], 2.0f) + powf(((sidy-padb)-1)*dy - geometry->shots.y[shot_id], 2.0f) + powf(((sidz-padb)-1)*dz - geometry->shots.z[shot_id], 2.0f));
+
+    t0 = T[sId];
 
 	cudaMemcpy(d_T, T, volsize*sizeof(float), cudaMemcpyHostToDevice);
 }
@@ -306,6 +308,7 @@ void Eikonal::free_space()
 
     delete[] T;
     delete[] S;
+    delete[] V;
 }
 
 __global__ void fast_sweeping_kernel(float * S, float * T, int * sgnt, int * sgnv, int sgni, int sgnj, int sgnk, 
