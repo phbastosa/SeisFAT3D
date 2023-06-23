@@ -9,8 +9,7 @@ circular="../src/geometry/circular/circular.cpp"
 modeling="../src/modeling/modeling.cu"
 modeling_main="../src/main/modeling_main.cpp"
 
-inversion="../src/inversion/inversion.cpp"
-tomography="../src/inversion/tomography/tomography.cu"
+inversion="../src/inversion/inversion.cu"
 inversion_main="../src/main/inversion_main.cpp"
 
 migration="../src/migration/migration.cpp"
@@ -49,8 +48,8 @@ case "$1" in
     echo -e "../bin/\033[31mmodeling.exe\033[m" 
     nvcc $io $geometry $regular $circular $modeling $modeling_main $flags -o ../bin/modeling.exe
 
-    # echo -e "../bin/\033[31minversion.exe\033[m" 
-    # nvcc $io $geometry $regular $circular $modeling $eikonal $inversion $tomography $inversion_main $flags -o ../bin/inversion.exe
+    echo -e "../bin/\033[31minversion.exe\033[m" 
+    nvcc $io $geometry $regular $circular $modeling $inversion $inversion_main $flags -o ../bin/inversion.exe
 
     # echo -e "../bin/\033[31mmigration.exe\033[m"
     # nvcc $io $geometry $regular $circular $modeling $eikonal $migration $kirchhoff $migration_main $flags -o ../bin/migration.exe

@@ -1,8 +1,8 @@
-# include "../inversion/tomography/tomography.cuh"
+# include "../inversion/inversion.cuh"
 
 int main(int argc, char **argv)
 {
-    Inversion * inversion = new Tomography(); 
+    Inversion * inversion = new Inversion(); 
 
     inversion->file = std::string(argv[1]);
 
