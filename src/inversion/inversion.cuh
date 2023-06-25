@@ -25,6 +25,9 @@ protected:
     float * source = nullptr;       
     float * adjoint = nullptr;
     
+    float * d_source = nullptr;
+    float * d_adjoint = nullptr;
+
     std::string obs_data_folder;
     std::string obs_data_prefix;
 
@@ -49,6 +52,8 @@ public:
     void check_convergence();
 };
 
-__global__ void adjoint_state_kernel();
+__global__ void adjoint_state_kernel(float * adjoint, float * source, float * T, int level, int xOffset, int yOffset, 
+                                     int xSweepOffset, int ySweepOffset, int zSweepOffset, int nxx, int nyy, int nzz, 
+                                     float dx, float dy, float dz);
 
 # endif

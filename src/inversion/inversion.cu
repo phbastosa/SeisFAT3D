@@ -19,9 +19,13 @@ void Inversion::set_parameters()
     dobs = new float[n_data]();    
     dcal = new float[n_data]();    
 
-    source = new float[n_model]();
-    adjoint = new float[n_model]();
+    source = new float[volsize]();
+    adjoint = new float[volsize]();
+    
     gradient = new float[n_model]();
+
+    cudaMalloc((void**)&(d_source), volsize*sizeof(float));
+    cudaMalloc((void**)&(d_adjoint), volsize*sizeof(float));
 }
 
 void Inversion::import_obs_data()
@@ -69,7 +73,7 @@ void Inversion::forward_modeling()
 
     }
 
-    free_space(); 
+
 }
 
 void Inversion::fill_calculated_data()
@@ -86,18 +90,18 @@ void Inversion::adjoint_state_solver()
 {
     float cell_volume = dx * dy * dz;
 
-    for (int index = 0; index < n_model; index++) 
+    for (int index = 0; index < volsize; index++) 
     {
         source[index] = 0.0f;    
         adjoint[index] = 1e6f;
 
-        int k = (int) (index / (nx*nz));        
-        int j = (int) (index - k*nx*nz) / nz;    
-        int i = (int) (index - j*nz - k*nx*nz);  
+        int k = (int) (index / (nxx*nzz));        
+        int j = (int) (index - k*nxx*nzz) / nzz;    
+        int i = (int) (index - j*nzz - k*nxx*nzz);  
 
-        if ((i == 0) || (i == nz-1) || 
-            (j == 0) || (j == nx-1) || 
-            (k == 0) || (k == ny-1))  
+        if ((i == 0) || (i == nzz-1) || 
+            (j == 0) || (j == nxx-1) || 
+            (k == 0) || (k == nyy-1))  
         {    
             adjoint[index] = 0.0f;        
         }
@@ -105,28 +109,28 @@ void Inversion::adjoint_state_solver()
 
     for (int node = 0; node < total_nodes; node++)
     {
-        int node_id = node + shot_id * total_nodes;
+        int node_id = node + shot_id*total_nodes;
 
         float tmp = dcal[node_id] + t0 - dobs[node_id]; 
 
-        int i = (int) floorf(geometry->nodes.z[node] / dz);
-        int j = (int) floorf(geometry->nodes.x[node] / dx);
-        int k = (int) floorf(geometry->nodes.y[node] / dy);
+        int i = (int)(geometry->nodes.z[node] / dz) + padb;
+        int j = (int)(geometry->nodes.x[node] / dx) + padb;
+        int k = (int)(geometry->nodes.y[node] / dy) + padb;
 
-        int index = i + j*nz + k*nz*nx;
+        int index = i + j*nzz + k*nzz*nxx;
 
         source[index] += tmp / cell_volume; 
         source[index + 1] += tmp / cell_volume; 
-        source[index + nz] += tmp / cell_volume; 
-        source[index + 1 + nz] += tmp / cell_volume; 
-        source[index + nx * nz] += tmp / cell_volume; 
-        source[index + 1 + nx * nz] += tmp / cell_volume; 
-        source[index + nz + nx * nz] += tmp / cell_volume; 
-        source[index + 1 + nz + nx * nz] += tmp / cell_volume; 
+        source[index + nzz] += tmp / cell_volume; 
+        source[index + 1 + nzz] += tmp / cell_volume; 
+        source[index + nxx*nzz] += tmp / cell_volume; 
+        source[index + 1 + nxx*nzz] += tmp / cell_volume; 
+        source[index + nzz + nxx*nzz] += tmp / cell_volume; 
+        source[index + 1 + nzz + nxx*nzz] += tmp / cell_volume; 
     }
 
-
-
+	cudaMemcpy(d_source, source, volsize*sizeof(float), cudaMemcpyHostToDevice);
+	cudaMemcpy(d_adjoint, adjoint, volsize*sizeof(float), cudaMemcpyHostToDevice);
 
     for (int sweep = 0; sweep < nSweeps; sweep++)
 	{ 
@@ -156,31 +160,33 @@ void Inversion::adjoint_state_solver()
 			if (nThreads < threadsPerBlock) { bs.x = xr; bs.y = yr; } 
 
 			dim3 gs(iDivUp(xr, bs.x), iDivUp(yr , bs.y), 1);
-			
-            int sgni = sweep + 0*nSweeps;
-            int sgnj = sweep + 1*nSweeps;
-            int sgnk = sweep + 2*nSweeps;
 
+            adjoint_state_kernel<<<gs,bs>>>(d_adjoint, d_source, d_T, level, xs, ys, xSweepOff, 
+                                            ySweepOff, zSweepOff, nxx, nyy, nzz, dx, dy, dz);
 
-            // adjoint_state_kernel();
-            // cudaDeviceSyncronize();
+            cudaDeviceSynchronize();
 		}
 	}
 
+    cudaMemcpy(adjoint, d_adjoint, volsize*sizeof(float), cudaMemcpyDeviceToHost);
 
+    for (int index = 0; index < n_model; index++) 
+    {
+        int k = (int) (index / (nx*nz));        
+        int j = (int) (index - k*nx*nz) / nz;    
+        int i = (int) (index - j*nz - k*nx*nz);  
 
+        int indp = (i+padb) + (j+padb)*nzz + (k+padb)*nxx*nzz;
 
+        gradient[index] += adjoint[indp]*S[indp]*S[indp]*cell_volume;
 
-
-
-
-
-    // for (int index = 0; index < n_model; index++) 
-    // {
-    //     float slowness = 1.0f / V[index];
-
-    //     gradient[index] += source[index];
-    // }
+        if ((i == 0) || (i == nz-1) || 
+            (j == 0) || (j == nx-1) || 
+            (k == 0) || (k == ny-1))  
+        {    
+            gradient[index] = 0.0f;        
+        }
+    }
 }
 
 void Inversion::compute_residuals()
@@ -225,6 +231,60 @@ void Inversion::export_results()
 {
     get_runtime();
 
-
     export_binary_float("gradient.bin", gradient, n_model);
+}
+
+__global__ void adjoint_state_kernel(float * adjoint, float * source, float * T, int level, int xOffset, int yOffset, 
+                                     int xSweepOffset, int ySweepOffset, int zSweepOffset, int nxx, int nyy, int nzz, 
+                                     float dx, float dy, float dz)
+{
+	int x = (blockIdx.x * blockDim.x + threadIdx.x) + xOffset;
+	int y = (blockIdx.y * blockDim.y + threadIdx.y) + yOffset;
+
+	if ((x >= 0) && (x < nxx) && (y >= 0) && (y < nyy)) 
+	{
+		int z = level - (x + y);
+		
+		if ((z >= 0) && (z < nzz))	
+		{
+			int i = abs(z - zSweepOffset);
+			int j = abs(x - xSweepOffset);
+			int k = abs(y - ySweepOffset);
+
+			if ((i > 0) && (i < nzz-1) && (j > 0) && (j < nxx-1) && (k > 0) && (k < nyy-1))
+			{		
+                float a1 = -1.0f*(T[i + j*nzz + k*nxx*nzz] - T[i + (j-1)*nzz + k*nxx*nzz]) / dx;
+                float ap1 = (a1 + abs(a1)) / 2.0f;
+                float am1 = (a1 - abs(a1)) / 2.0f;
+
+                float a2 = -1.0f*(T[i + (j+1)*nzz + k*nxx*nzz] - T[i + j*nzz + k*nxx*nzz]) / dx;
+                float ap2 = (a2 + abs(a2)) / 2.0f;
+                float am2 = (a2 - abs(a2)) / 2.0f;
+
+                float b1 = -1.0f*(T[i + j*nzz + k*nxx*nzz] - T[i + j*nzz + (k-1)*nxx*nzz]) / dy;
+                float bp1 = (b1 + abs(b1)) / 2.0f;
+                float bm1 = (b1 - abs(b1)) / 2.0f;
+
+                float b2 = -1.0f*(T[i + j*nzz + (k+1)*nxx*nzz] - T[i + j*nzz + k*nxx*nzz]) / dy;
+                float bp2 = (b2 + abs(b2)) / 2.0f;
+                float bm2 = (b2 - abs(b2)) / 2.0f;
+
+                float c1 = -1.0f*(T[i + j*nzz + k*nxx*nzz] - T[(i-1) + j*nzz + k*nxx*nzz]) / dz;
+                float cp1 = (c1 + abs(c1)) / 2.0f;
+                float cm1 = (c1 - abs(c1)) / 2.0f;
+
+                float c2 = -1.0f*(T[(i+1) + j*nzz + k*nxx*nzz] - T[i + j*nzz + k*nxx*nzz]) / dz;
+                float cp2 = (c2 + abs(c2)) / 2.0f;
+                float cm2 = (c2 - abs(c2)) / 2.0f;
+
+                float d = (ap2 - am1)/dx + (bp2 - bm1)/dy + (cp2 - cm1)/dz;
+
+                float e = (ap1*T[i + (j-1)*nzz + k*nxx*nzz] - am2*T[i + (j+1)*nzz + k*nxx*nzz]) / dx +
+                          (bp1*T[i + j*nzz + (k-1)*nxx*nzz] - bm2*T[i + j*nzz + (k+1)*nxx*nzz]) / dy +
+                          (cp1*T[(i-1) + j*nzz + k*nxx*nzz] - cm2*T[(i+1) + j*nzz + k*nxx*nzz]) / dz;
+
+                adjoint[i + j*nzz + k*nxx*nzz] = (e + source[i + j*nzz + k*nxx*nzz]) / d; 
+            }
+        }
+    }
 }

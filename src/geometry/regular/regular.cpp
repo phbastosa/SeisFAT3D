@@ -30,10 +30,10 @@ void Regular::set_geometry()
             if (name == std::string("nodes")) set_regular(nodes);
         }
 
+        export_coordinates();
+        
         if (reciprocity) 
             set_reciprocity();
-
-        export_coordinates();
     }   
 }
 
