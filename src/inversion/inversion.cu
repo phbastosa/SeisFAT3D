@@ -283,7 +283,8 @@ __global__ void adjoint_state_kernel(float * adjoint, float * source, float * T,
                           (bp1*T[i + j*nzz + (k-1)*nxx*nzz] - bm2*T[i + j*nzz + (k+1)*nxx*nzz]) / dy +
                           (cp1*T[(i-1) + j*nzz + k*nxx*nzz] - cm2*T[(i+1) + j*nzz + k*nxx*nzz]) / dz;
 
-                adjoint[i + j*nzz + k*nxx*nzz] = (e + source[i + j*nzz + k*nxx*nzz]) / d; 
+            
+                adjoint[i + j*nzz + k*nxx*nzz] = min(adjoint[i + j*nzz + k*nxx*nzz], (e + source[i + j*nzz + k*nxx*nzz]) / d); 
             }
         }
     }
