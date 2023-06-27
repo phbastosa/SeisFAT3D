@@ -113,9 +113,9 @@ void Inversion::adjoint_state_solver()
 
         float tmp = dcal[node_id] + t0 - dobs[node_id]; 
 
-        int i = (int)(geometry->nodes.z[node] / dz) + padb;
-        int j = (int)(geometry->nodes.x[node] / dx) + padb;
-        int k = (int)(geometry->nodes.y[node] / dy) + padb;
+        int i = (int)(geometry->nodes.z[node] / dz);
+        int j = (int)(geometry->nodes.x[node] / dx);
+        int k = (int)(geometry->nodes.y[node] / dy);
 
         int index = i + j*nzz + k*nzz*nxx;
 
@@ -178,7 +178,10 @@ void Inversion::adjoint_state_solver()
 
         int indp = (i+padb) + (j+padb)*nzz + (k+padb)*nxx*nzz;
 
-        gradient[index] += adjoint[indp]*S[indp]*S[indp]*cell_volume;
+        if (T[indp] <= 0.3) 
+            gradient[index] += 0.01*T[indp]*adjoint[indp]*S[indp]*S[indp]*cell_volume;
+        else 
+            gradient[index] += adjoint[indp]*S[indp]*S[indp]*cell_volume;
 
         if ((i == 0) || (i == nz-1) || 
             (j == 0) || (j == nx-1) || 
@@ -225,8 +228,6 @@ void Inversion::model_update()
 
 }
 
-
-
 void Inversion::export_results()
 {
     get_runtime();
@@ -241,11 +242,11 @@ __global__ void adjoint_state_kernel(float * adjoint, float * source, float * T,
 	int x = (blockIdx.x * blockDim.x + threadIdx.x) + xOffset;
 	int y = (blockIdx.y * blockDim.y + threadIdx.y) + yOffset;
 
-	if ((x >= 0) && (x < nxx) && (y >= 0) && (y < nyy)) 
+	if ((x <= nxx) && (y <= nyy)) 
 	{
 		int z = level - (x + y);
 		
-		if ((z >= 0) && (z < nzz))	
+		if ((z > 0) && (z <= nzz))	
 		{
 			int i = abs(z - zSweepOffset);
 			int j = abs(x - xSweepOffset);
@@ -279,12 +280,20 @@ __global__ void adjoint_state_kernel(float * adjoint, float * source, float * T,
 
                 float d = (ap2 - am1)/dx + (bp2 - bm1)/dy + (cp2 - cm1)/dz;
 
-                float e = (ap1*T[i + (j-1)*nzz + k*nxx*nzz] - am2*T[i + (j+1)*nzz + k*nxx*nzz]) / dx +
-                          (bp1*T[i + j*nzz + (k-1)*nxx*nzz] - bm2*T[i + j*nzz + (k+1)*nxx*nzz]) / dy +
-                          (cp1*T[(i-1) + j*nzz + k*nxx*nzz] - cm2*T[(i+1) + j*nzz + k*nxx*nzz]) / dz;
+                if (d < 1e-6f)
+                {
+                    adjoint[i + j*nzz + k*nxx*nzz] = 0.0f;    
+                }
+                else
+                {
+                    float e = (ap1*adjoint[i + (j-1)*nzz + k*nxx*nzz] - am2*adjoint[i + (j+1)*nzz + k*nxx*nzz]) / dx +
+                              (bp1*adjoint[i + j*nzz + (k-1)*nxx*nzz] - bm2*adjoint[i + j*nzz + (k+1)*nxx*nzz]) / dy +
+                              (cp1*adjoint[(i-1) + j*nzz + k*nxx*nzz] - cm2*adjoint[(i+1) + j*nzz + k*nxx*nzz]) / dz;
 
+                    float f = (e + source[i + j*nzz + k*nxx*nzz]) / d;
             
-                adjoint[i + j*nzz + k*nxx*nzz] = min(adjoint[i + j*nzz + k*nxx*nzz], (e + source[i + j*nzz + k*nxx*nzz]) / d); 
+                    adjoint[i + j*nzz + k*nxx*nzz] = min(adjoint[i + j*nzz + k*nxx*nzz], f);
+                }
             }
         }
     }

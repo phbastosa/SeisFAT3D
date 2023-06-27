@@ -420,11 +420,11 @@ __global__ void fast_sweeping_kernel(float * S, float * T, int * sgnt, int * sgn
     float ta, tb, tc, t1, t2, t3, Sref;
     float t1D1, t1D2, t1D3, t1D, t2D1, t2D2, t2D3, t2D, t3D;
 
-	if ((x >= 0) && (x < nxx) && (y >= 0) && (y < nyy)) 
+	if ((x <= nxx) && (y <= nyy)) 
 	{
 		int z = level - (x + y);
 		
-		if ((z >= 0) && (z < nzz))	
+		if ((z > 0) && (z <= nzz))	
 		{
 			int i = abs(z - zSweepOffset);
 			int j = abs(x - xSweepOffset);
@@ -503,7 +503,7 @@ __global__ void fast_sweeping_kernel(float * S, float * T, int * sgnt, int * sgn
 
                 t2D = min(t2D1, min(t2D2, t2D3));
 
-                //------------------- 3D operators ---------------------------------------------------------------------------------------------------
+                //------------------- 3D operators - 8 point operator ---------------------------------------------------------------------------------------------------
                 t3D = 1e6;
 
                 Sref = S[i1 + j1*nzz + k1*nxx*nzz];

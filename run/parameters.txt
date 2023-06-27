@@ -33,13 +33,13 @@ nodes_file = ../inputs/geometry/xyz_node_positions.txt     # <str>
 shots_nlines = [1, 75, 75]            # <int> (z, x, y)     
 nodes_nlines = [1, 11, 11]            # <int> (z, x, y)            
 
-shots_SW = [10, 50, 50]               # [m] <float> (z, x, y) NW            
-shots_NW = [10, 50, 7450]             # [m] <float> (z, x, y)  |            
-shots_SE = [10, 7450, 50]             # [m] <float> (z, x, y) SW -- SE     
+shots_SW = [50, 50, 50]               # [m] <float> (z, x, y) NW            
+shots_NW = [50, 50, 7450]             # [m] <float> (z, x, y)  |            
+shots_SE = [50, 7450, 50]             # [m] <float> (z, x, y) SW -- SE     
 
-nodes_SW = [10, 500, 500]             # [m] <float> (z, x, y) NW           
-nodes_NW = [10, 500, 7000]            # [m] <float> (z, x, y)  |         
-nodes_SE = [10, 7000, 500]            # [m] <float> (z, x, y) SW -- SE   
+nodes_SW = [1000, 500, 500]           # [m] <float> (z, x, y) NW           
+nodes_NW = [1000, 500, 7000]          # [m] <float> (z, x, y)  |         
+nodes_SE = [1000, 7000, 500]          # [m] <float> (z, x, y) SW -- SE   
 
 # Circular geometry --------------------------------------------------------------------------------                                            
 
@@ -58,15 +58,16 @@ offsets = [5500, 7500, 9500]         # [m] <float>
 export_receiver_output = true
 export_wavefield_output = false
 
-receiver_output_folder = ../outputs/first_arrivals/
+receiver_output_folder = ../inputs/data/obs_
 wavefield_output_folder = ../outputs/travel_times/
 
 #---------------------------------------------------------------------------------------------------
 # Inversion parameters 
 #---------------------------------------------------------------------------------------------------
-# Adjoint State First Arrival Tomography
-#    a
-#    b  
+# Adjoint State First Arrival Tomography:
+#    Sei & Symes (1994)
+#    Leung & Qian (2006)
+#    Tailander, Noble, Chauris & Calandra (2009)   
 #---------------------------------------------------------------------------------------------------
 
 tolerance = 1000
