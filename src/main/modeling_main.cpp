@@ -1,30 +1,38 @@
-# include "../modeling/modeling.cuh"
+# include "../modeling/modeling.hpp"
+# include "../modeling/eikonal/eikonal.cuh"
+# include "../modeling/elastic/elastic.cuh"
 
 int main(int argc, char **argv)
 {
-    Modeling * modeling = new Modeling();
+    Modeling * modeling[] = 
+    {
+        new Eikonal(),
+        new Elastic()
+    };
 
     auto file = std::string(argv[1]);
+    auto type = std::stoi(catch_parameter("modeling_type", file));
 
-    modeling->file = file;
+    std::cout<<type<<std::endl;
 
-    modeling->set_parameters();
-    modeling->set_slowness();
-    modeling->set_runtime();
+    // modeling[type]->file = file;
 
-    for (int shot = 0; shot < modeling->total_shots; shot++)
-    {
-        modeling->shot_id = shot;
+    // modeling[type]->set_parameters();
+    // modeling[type]->set_runtime();
 
-        modeling->info_message();
-        modeling->initial_setup();
-        modeling->forward_solver();
-        modeling->build_outputs();
-        modeling->export_outputs();
-    }
+    // for (int shot = 0; shot < modeling[type]->total_shots; shot++)
+    // {
+    //     modeling[type]->shot_id = shot;
 
-    modeling->get_runtime();
-    modeling->free_space();    
+    //     modeling[type]->info_message();
+    //     modeling[type]->initial_setup();
+    //     modeling[type]->forward_solver();
+    //     modeling[type]->build_outputs();
+    //     modeling[type]->export_outputs();
+    // }
+
+    // modeling[type]->get_runtime();
+    // modeling[type]->free_space();    
 
     return 0;
 }

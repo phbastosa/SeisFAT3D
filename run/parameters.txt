@@ -3,14 +3,18 @@
 #---------------------------------------------------------------------------------------------------
  
 x_samples = 301          # <int>  
-y_samples = 301          # <int>  
-z_samples = 121          # <int>  
+y_samples = 201          # <int>  
+z_samples = 101          # <int>  
 
-x_spacing = 25           # [m] <float> 
-y_spacing = 25           # [m] <float> 
-z_spacing = 25           # [m] <float> 
+n_boundary = 50          # <int> 
 
-vp_model_file = ../inputs/models/init_model_121x301x301_25m.bin    # <str> 
+x_spacing = 10           # [m] <float> 
+y_spacing = 10           # [m] <float> 
+z_spacing = 10           # [m] <float> 
+
+vp_model_file = ../inputs/models/vp_simple_model.bin    # <str> 
+vs_model_file = ../inputs/models/vs_simple_model.bin    # <str>
+rho_model_file = ../inputs/models/rho_simple_model.bin  # <str> 
 
 #---------------------------------------------------------------------------------------------------
 # Geometry parameters ------------------------------------------------------------------------------
@@ -48,27 +52,43 @@ center  = [10, 10000, 10000]         # [m] <float> (z, x, y)
 offsets = [5500, 7500, 9500]         # [m] <float>
 
 #---------------------------------------------------------------------------------------------------
-# Eikonal solver parameters 
+# Modeling parameters ------------------------------------------------------------------------------
 #---------------------------------------------------------------------------------------------------
-# Accurate Parallel Fast Sweeping Method:  
-#    Detrixhe, Gibou & Min (2013)  
-#    Noble, Gesret & Belayouni (2014)      
+# Available types:
+#   
+#   [0] - Accurate Parallel Fast Sweeping Method for eikonal equations:   
+#       Detrixhe, Gibou & Min (2013)
+#       Noble, Gesret & Belayouni (2014)
+#
+#   [1] - Staggered grid solution for waves in elastic isotropic media:
+#       Graves (1996)
+#       Cerjan et al. (1985)  
 #---------------------------------------------------------------------------------------------------
 
-export_receiver_output = true
+modeling_type = 0
+
+export_receiver_output = false
 export_wavefield_output = false
 
-receiver_output_folder = ../inputs/data/obs_
-wavefield_output_folder = ../outputs/travel_times/
+receiver_output_folder = ../outputs/seismograms/
+wavefield_output_folder = ../outputs/snapshots/
 
 #---------------------------------------------------------------------------------------------------
 # Inversion parameters 
 #---------------------------------------------------------------------------------------------------
-# Adjoint State First Arrival Tomography:
-#    Sei & Symes (1994)
-#    Leung & Qian (2006)
-#    Tailander, Noble, Chauris & Calandra (2009)   
+# Available types: 
+# 
+#   [0] - Adjoint State First Arrival Tomography: 
+#       Sei & Symes (1994)
+#       Leung & Qian (2006)
+#       Tailander et al. (2009)   
+#      
+#   [1] - Full Waveform Inversion:
+#       References...
+#
 #---------------------------------------------------------------------------------------------------
+
+inversion_type = 0
 
 tolerance = 1000
 max_iteration = 1 
@@ -83,4 +103,8 @@ obs_data_prefix = obs_data_5625_shot_
 #
 #  
 #---------------------------------------------------------------------------------------------------
+
+migration_type = 0
+
+
 
