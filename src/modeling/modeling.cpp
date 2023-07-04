@@ -111,7 +111,7 @@ void Modeling::set_parameters()
 
     check_geometry_overflow();
     
-    set_wavefields();
+    set_wavefields();        
     
     set_outputs();
 }

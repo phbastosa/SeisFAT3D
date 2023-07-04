@@ -33,6 +33,7 @@ void Eikonal::set_model_parameters()
     dsum = dz2i + dx2i + dy2i;
 
     V = new float[nPoints]();
+    S = new float[volsize]();
 
     import_binary_float(catch_parameter("vp_model_file", file), V, nPoints);
 }
@@ -85,13 +86,10 @@ void Eikonal::set_model_boundaries()
             }
         }
     }
-
-	cudaMemcpy(d_S, S, volsize*sizeof(float), cudaMemcpyHostToDevice);
 }
 
 void Eikonal::set_wavefields()
 {
-    S = new float[volsize]();
     T = new float[volsize]();
 
     int sgnv[nSweeps][meshDim] = {{1,1,1}, {0,1,1}, {1,1,0}, {0,1,0}, {1,0,1}, {0,0,1}, {1,0,0}, {0,0,0}};
@@ -109,14 +107,16 @@ void Eikonal::set_wavefields()
 		h_sgnt[i + j * nSweeps] = sgnt[i][j];
 	}
 
+	cudaMalloc((void**)&(d_T), volsize*sizeof(float));
+	cudaMalloc((void**)&(d_S), volsize*sizeof(float));
+
 	cudaMalloc((void**)&(d_sgnv), nSweeps*meshDim*sizeof(int));
 	cudaMalloc((void**)&(d_sgnt), nSweeps*meshDim*sizeof(int));
 
 	cudaMemcpy(d_sgnv, h_sgnv, nSweeps*meshDim*sizeof(int), cudaMemcpyHostToDevice);
 	cudaMemcpy(d_sgnt, h_sgnt, nSweeps*meshDim*sizeof(int), cudaMemcpyHostToDevice);
 
-	cudaMalloc((void**)&(d_T), volsize*sizeof(float));
-	cudaMalloc((void**)&(d_S), volsize*sizeof(float));
+	cudaMemcpy(d_S, S, volsize*sizeof(float), cudaMemcpyHostToDevice);
 
     delete[] h_sgnt;
     delete[] h_sgnv;

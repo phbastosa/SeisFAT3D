@@ -3,8 +3,8 @@
 #---------------------------------------------------------------------------------------------------
  
 x_samples = 301          # <int>  
-y_samples = 201          # <int>  
-z_samples = 101          # <int>  
+y_samples = 101          # <int>  
+z_samples = 51           # <int>  
 
 n_boundary = 50          # <int> 
 
@@ -12,9 +12,9 @@ x_spacing = 10           # [m] <float>
 y_spacing = 10           # [m] <float> 
 z_spacing = 10           # [m] <float> 
 
-vp_model_file = ../inputs/models/vp_simple_model.bin    # <str> 
-vs_model_file = ../inputs/models/vs_simple_model.bin    # <str>
-rho_model_file = ../inputs/models/rho_simple_model.bin  # <str> 
+vp_model_file = ../inputs/models/vp_model_51x301x101_10m.bin    # <str> 
+vs_model_file = ../inputs/models/vs_model_51x301x101_10m.bin    # <str>
+rho_model_file = ../inputs/models/rho_model_51x301x101_10m.bin  # <str> 
 
 #---------------------------------------------------------------------------------------------------
 # Geometry parameters ------------------------------------------------------------------------------
@@ -26,7 +26,7 @@ rho_model_file = ../inputs/models/rho_simple_model.bin  # <str>
 #---------------------------------------------------------------------------------------------------
 
 geometry_type = 0                    # <int>
-reciprocity = true                   # <bool>     
+reciprocity = false                  # <bool>     
 import_geometry = false              # <bool>
 
 shots_file = ../inputs/geometry/xyz_shot_positions.txt     # <str>         
@@ -34,16 +34,16 @@ nodes_file = ../inputs/geometry/xyz_node_positions.txt     # <str>
 
 # Regular geometry ---------------------------------------------------------------------------------               
 
-shots_nlines = [1, 75, 75]            # <int> (z, x, y)     
-nodes_nlines = [1, 11, 11]            # <int> (z, x, y)            
+shots_nlines = [1, 1, 1]            # <int> (z, x, y)     
+nodes_nlines = [1, 281, 9]          # <int> (z, x, y)            
 
-shots_SW = [50, 50, 50]               # [m] <float> (z, x, y) NW            
-shots_NW = [50, 50, 7450]             # [m] <float> (z, x, y)  |            
-shots_SE = [50, 7450, 50]             # [m] <float> (z, x, y) SW -- SE     
+shots_SW = [10, 100, 500]           # [m] <float> (z, x, y) NW            
+shots_NW = [10, 100, 500]           # [m] <float> (z, x, y)  |            
+shots_SE = [10, 100, 500]           # [m] <float> (z, x, y) SW -- SE     
 
-nodes_SW = [1000, 500, 500]           # [m] <float> (z, x, y) NW           
-nodes_NW = [1000, 500, 7000]          # [m] <float> (z, x, y)  |         
-nodes_SE = [1000, 7000, 500]          # [m] <float> (z, x, y) SW -- SE   
+nodes_SW = [10, 100, 100]           # [m] <float> (z, x, y) NW           
+nodes_NW = [10, 100, 900]           # [m] <float> (z, x, y)  |         
+nodes_SE = [10, 2900, 100]          # [m] <float> (z, x, y) SW -- SE   
 
 # Circular geometry --------------------------------------------------------------------------------                                            
 
@@ -67,8 +67,10 @@ offsets = [5500, 7500, 9500]         # [m] <float>
 
 modeling_type = 0
 
-export_receiver_output = false
-export_wavefield_output = false
+boundary_damper = 0.0045
+
+export_receiver_output = true
+export_wavefield_output = true
 
 receiver_output_folder = ../outputs/seismograms/
 wavefield_output_folder = ../outputs/snapshots/
