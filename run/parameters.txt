@@ -65,15 +65,25 @@ offsets = [5500, 7500, 9500]         # [m] <float>
 #       Cerjan et al. (1985)  
 #---------------------------------------------------------------------------------------------------
 
-modeling_type = 0
+modeling_type = 1               # <int>
 
-boundary_damper = 0.0045
+total_time = 2.0                # [s] <float>
+time_spacing = 0.001            # [s] <float>
+wavelet_shift = 0.15            # [s] <float>
+max_frequency = 30.0            # [Hz] <float>
+max_amplitude = 1e4             # <float>
+boundary_damper = 0.0045        # <float>
 
-export_receiver_output = true
-export_wavefield_output = true
+import_wavelet = false          # <bool>
+wavelet_file = ../inputs/sss    # <str>
 
-receiver_output_folder = ../outputs/seismograms/
-wavefield_output_folder = ../outputs/snapshots/
+n_snapshots = 101               # <int>
+
+export_receiver_output = true   # <bool> 
+export_wavefield_output = true  # <bool>
+
+receiver_output_folder = ../outputs/seismograms/    # <str>
+wavefield_output_folder = ../outputs/snapshots/     # <str>
 
 #---------------------------------------------------------------------------------------------------
 # Inversion parameters 

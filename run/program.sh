@@ -18,7 +18,7 @@ migration="../src/migration/migration.cpp"
 kirchhoff="../src/migration/kirchhoff/kirchhoff.cpp"
 migration_main="../src/main/migration_main.cpp"
 
-flags="-std=c++11 -lm -O3"
+flags="-Xcompiler=-fopenmp -std=c++11 -lm -O3"
 
 USER_MESSAGE="
 Usage:\n

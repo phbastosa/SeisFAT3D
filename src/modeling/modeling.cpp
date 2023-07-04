@@ -79,6 +79,8 @@ void Modeling::set_parameters()
 {    
     get_GPU_initMem();
 
+    threadsPerBlock = 256;
+
     nx = std::stoi(catch_parameter("x_samples", file));
     ny = std::stoi(catch_parameter("y_samples", file));
     nz = std::stoi(catch_parameter("z_samples", file));

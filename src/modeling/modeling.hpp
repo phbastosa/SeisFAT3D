@@ -1,6 +1,7 @@
 # ifndef MODELING_HPP
 # define MODELING_HPP
 
+# include <omp.h>
 # include <chrono>
 # include <cuda_runtime.h>
 # include <sys/resource.h>
@@ -25,11 +26,13 @@ private:
 
 protected:
 
+    int threadsPerBlock;
+
     int nx, ny, nz, nt; 
     int nPoints, volsize;
     int nxx, nyy, nzz, nb;
     
-    float dx, dy, dz;
+    float dx, dy, dz, dt;
 
     int receiver_output_samples;
     int wavefield_output_samples;
@@ -55,6 +58,7 @@ protected:
 public: 
 
     int shot_id;
+    int time_id;
     int total_shots;
     int total_nodes;
     

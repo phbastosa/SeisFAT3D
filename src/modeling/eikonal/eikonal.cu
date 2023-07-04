@@ -11,8 +11,6 @@ void Eikonal::set_model_parameters()
     nSweeps = 8;
     meshDim = 3;
 
-    threadsPerBlock = 256;
-
     nxx = nx + 2*nb;
     nyy = ny + 2*nb;
     nzz = nz + 2*nb;

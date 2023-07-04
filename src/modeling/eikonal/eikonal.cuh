@@ -20,7 +20,7 @@ private:
 protected:
 
     int totalLevels;
-    int threadsPerBlock;
+
     int nSweeps, meshDim;
 
     float source_travel_time;    
