@@ -19,9 +19,16 @@ void Elastic::set_model_parameters()
     h_M = new float[volsize]();
     h_L = new float[volsize]();
 
-    import_binary_float(catch_parameter("vp_model_file", file), Vp, nPoints);
-    import_binary_float(catch_parameter("vs_model_file", file), Vs, nPoints);
-    import_binary_float(catch_parameter("rho_model_file", file), Rho, nPoints);
+    // import_binary_float(catch_parameter("vp_model_file", file), Vp, nPoints);
+    // import_binary_float(catch_parameter("vs_model_file", file), Vs, nPoints);
+    // import_binary_float(catch_parameter("rho_model_file", file), Rho, nPoints);
+
+    for (int index = 0; index < nPoints; index++) 
+    {
+        Vp[index] = 1500.0f;
+        Vs[index] = 0.0f;
+        Rho[index] = 1000.0f;
+    }   
 
     int total_time = std::stoi(catch_parameter("total_time", file));
 
@@ -30,6 +37,7 @@ void Elastic::set_model_parameters()
     nt = (int)(ceilf(total_time / dt)) + 1; 
 
     set_wavelet();
+    set_dampers();
 }
 
 void Elastic::set_wavelet()
@@ -64,6 +72,60 @@ void Elastic::set_wavelet()
 
     delete[] aux;
     delete[] wavelet;
+}
+
+void Elastic::set_dampers()
+{
+    float * damp1D = new float[nb]();
+    float * damp2D = new float[nb*nb]();
+    float * damp3D = new float[nb*nb*nb]();
+
+    float factor = std::stof(catch_parameter("boundary_damper", file));
+
+    for (int i = 0; i < nb; i++) 
+    {
+        damp1D[i] = expf(-powf(factor * (nb - i), 2.0f));
+    }
+
+    for(int i = 0; i < nb; i++) 
+    {
+        for (int j = 0; j < nb; j++)
+        {   
+            damp2D[j + i*nb] += damp1D[i]; // up to bottom
+            damp2D[i + j*nb] += damp1D[i]; // left to right
+        }
+    }
+
+    for (int i  = 0; i < nb; i++)
+    {
+        for(int j = 0; j < nb; j++)
+        {
+            for(int k = 0; k < nb; k++)
+            {
+                damp3D[i + j*nb + k*nb*nb] += damp2D[i + j*nb]; // XY plane
+                damp3D[i + j*nb + k*nb*nb] += damp2D[j + k*nb]; // ZX plane
+                damp3D[i + j*nb + k*nb*nb] += damp2D[i + k*nb]; // ZY plane
+            }
+        }
+    }    
+
+    for (int index = 0; index < nb*nb; index++)
+        damp2D[index] -= 1.0f;
+
+    for (int index = 0; index < nb*nb*nb; index++)
+        damp3D[index] -= 5.0f;    
+
+	cudaMalloc((void**)&(d_damp1D), nb*sizeof(float));
+	cudaMalloc((void**)&(d_damp2D), nb*nb*sizeof(float));
+	cudaMalloc((void**)&(d_damp3D), nb*nb*nb*sizeof(float));
+
+	cudaMemcpy(d_damp1D, damp1D, nb*sizeof(float), cudaMemcpyHostToDevice);
+	cudaMemcpy(d_damp2D, damp2D, nb*nb*sizeof(float), cudaMemcpyHostToDevice);
+	cudaMemcpy(d_damp3D, damp3D, nb*nb*nb*sizeof(float), cudaMemcpyHostToDevice);
+
+    delete[] damp1D;
+    delete[] damp2D;
+    delete[] damp3D;
 }
 
 void Elastic::set_model_boundaries()
@@ -154,63 +216,6 @@ void Elastic::set_model_boundaries()
     delete[] h_B;
     delete[] h_M;
     delete[] h_L;
-
-
-    set_dampers();
-}
-
-void Elastic::set_dampers()
-{
-    float * damp1D = new float[nb]();
-    float * damp2D = new float[nb*nb]();
-    float * damp3D = new float[nb*nb*nb]();
-
-    float factor = std::stoi(catch_parameter("boundary_damper", file));
-
-    for (int i = 0; i < nb; i++) 
-    {
-        damp1D[i] = expf(-powf(factor * (nb - i), 2.0f));
-    }
-
-    for(int i = 0; i < nb; i++) 
-    {
-        for (int j = 0; j < nb; j++)
-        {   
-            damp2D[j + i*nb] += damp1D[i]; // up to bottom
-            damp2D[i + j*nb] += damp1D[i]; // left to right
-        }
-    }
-
-    for (int i  = 0; i < nb; i++)
-    {
-        for(int j = 0; j < nb; j++)
-        {
-            for(int k = 0; k < nb; k++)
-            {
-                damp3D[i + j*nb + k*nb*nb] += damp2D[i + j*nb]; // XY plane
-                damp3D[i + j*nb + k*nb*nb] += damp2D[j + k*nb]; // ZX plane
-                damp3D[i + j*nb + k*nb*nb] += damp2D[i + k*nb]; // ZY plane
-            }
-        }
-    }    
-
-    for (int index = 0; index < nb*nb; index++)
-        damp2D[index] -= 1.0f;
-
-    for (int index = 0; index < nb*nb*nb; index++)
-        damp3D[index] -= 5.0f;    
-
-	cudaMalloc((void**)&(d_damp1D), nb*sizeof(float));
-	cudaMalloc((void**)&(d_damp2D), nb*nb*sizeof(float));
-	cudaMalloc((void**)&(d_damp3D), nb*nb*nb*sizeof(float));
-
-	cudaMemcpy(d_damp1D, damp1D, nb*sizeof(float), cudaMemcpyHostToDevice);
-	cudaMemcpy(d_damp2D, damp2D, nb*nb*sizeof(float), cudaMemcpyHostToDevice);
-	cudaMemcpy(d_damp3D, damp3D, nb*nb*nb*sizeof(float), cudaMemcpyHostToDevice);
-
-    delete[] damp1D;
-    delete[] damp2D;
-    delete[] damp3D;
 }
 
 void Elastic::set_wavefields()
@@ -298,7 +303,7 @@ void Elastic::forward_solver()
     
         if (export_wavefield_output)
         {
-            if (nt % dsnap == 0)
+            if (time_id % dsnap == 0)
             {
                 cudaMemcpy(snapshot, Pressure, volsize*sizeof(float), cudaMemcpyDeviceToHost);       
 
@@ -334,7 +339,7 @@ void Elastic::build_outputs()
 
     receiver_output_file = receiver_output_folder + "elastic_pressure_" + std::to_string(nt) + "x" + std::to_string(geometry->nodes.total) + "_shot_" + std::to_string(shot_id+1) + ".bin";
 
-    wavefield_output_file = wavefield_output_folder + "elastic_pressure_" + std::to_string(nz) + "x" + std::to_string(nx) + "x" + std::to_string(ny) + "_" + std::to_string(nsnap) + "_"+ "_shot_" + std::to_string(shot_id+1) + ".bin";
+    wavefield_output_file = wavefield_output_folder + "elastic_pressure_" + std::to_string(nz) + "x" + std::to_string(nx) + "x" + std::to_string(ny) + "_" + std::to_string(nsnap) + "_shot_" + std::to_string(shot_id+1) + ".bin";
 }
 
 void Elastic::free_space()
@@ -436,7 +441,7 @@ __global__ void compute_velocity(float * Vx, float * Vy, float * Vz, float * Txx
         float d_Tzz_dz = (75.0f*(Tzz[(i-4) + j*nzz + k*nxx*nzz] - Tzz[(i+3) + j*nzz + k*nxx*nzz]) +
                         1029.0f*(Tzz[(i+2) + j*nzz + k*nxx*nzz] - Tzz[(i-3) + j*nzz + k*nxx*nzz]) +
                         8575.0f*(Tzz[(i-2) + j*nzz + k*nxx*nzz] - Tzz[(i+1) + j*nzz + k*nxx*nzz]) +
-                      128625.0f*(Tzz[i + j*nzz + k*nxx*nzz]     - Tzz[(i+1) + j*nzz + k*nxx*nzz])) / (107520.0f*dz);
+                      128625.0f*(Tzz[i + j*nzz + k*nxx*nzz]     - Tzz[(i-1) + j*nzz + k*nxx*nzz])) / (107520.0f*dz);
 
         float Bz = 0.5f*(B[(i+1) + j*nzz + k*nxx*nzz] + B[i + j*nzz + k*nxx*nzz]);
 

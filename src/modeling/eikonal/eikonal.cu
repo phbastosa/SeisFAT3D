@@ -33,7 +33,9 @@ void Eikonal::set_model_parameters()
     V = new float[nPoints]();
     S = new float[volsize]();
 
-    import_binary_float(catch_parameter("vp_model_file", file), V, nPoints);
+    // import_binary_float(catch_parameter("vp_model_file", file), V, nPoints);
+
+    for (int index = 0; index < nPoints; index++) V[index] = 1500.0f; 
 }
 
 void Eikonal::set_model_boundaries()
