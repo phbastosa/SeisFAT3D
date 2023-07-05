@@ -10,6 +10,8 @@
 # include <algorithm>
 
 bool str2bool(std::string s);
+bool isInteger(const std::string& input); 
+bool fileExists(const std::string& filename); 
 
 void import_binary_float(std::string path, float * array, int n);
 void export_binary_float(std::string path, float * array, int n);

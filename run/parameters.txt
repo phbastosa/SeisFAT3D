@@ -35,15 +35,15 @@ nodes_file = ../inputs/geometry/xyz_node_positions.txt     # <str>
 # Regular geometry ---------------------------------------------------------------------------------               
 
 shots_nlines = [1, 1, 1]          # <int> (z, x, y)     
-nodes_nlines = [1, 1, 1]          # <int> (z, x, y)            
+nodes_nlines = [1, 91, 1]         # <int> (z, x, y)            
 
-shots_SW = [10, 1000, 1000]       # [m] <float> (z, x, y) NW            
-shots_NW = [10, 1000, 1000]       # [m] <float> (z, x, y)  |            
-shots_SE = [10, 1000, 1000]       # [m] <float> (z, x, y) SW -- SE     
+shots_SW = [1000, 1000, 1000]     # [m] <float> (z, x, y) NW            
+shots_NW = [1000, 1000, 1000]     # [m] <float> (z, x, y)  |            
+shots_SE = [1000, 1000, 1000]     # [m] <float> (z, x, y) SW -- SE     
 
 nodes_SW = [10, 1000, 1000]       # [m] <float> (z, x, y) NW           
 nodes_NW = [10, 1000, 1000]       # [m] <float> (z, x, y)  |         
-nodes_SE = [10, 1000, 1000]       # [m] <float> (z, x, y) SW -- SE   
+nodes_SE = [10, 1900, 1000]       # [m] <float> (z, x, y) SW -- SE   
 
 # Circular geometry --------------------------------------------------------------------------------                                            
 
@@ -69,7 +69,7 @@ modeling_type = 1                # <int>
 
 total_time = 2.0                 # [s] <float>
 time_spacing = 0.001             # [s] <float>
-wavelet_shift = 0.1              # [s] <float>
+wavelet_shift = 0.10             # [s] <float>
 max_frequency = 40.0             # [Hz] <float>
 max_amplitude = 1e5              # <float>
 boundary_damper = 0.0045         # <float>
@@ -79,8 +79,8 @@ wavelet_file = ../inputs/        # <str>
 
 n_snapshots = 11                 # <int>
 
-export_receiver_output = false   # <bool> 
-export_wavefield_output = false  # <bool>
+export_receiver_output = true    # <bool> 
+export_wavefield_output = false   # <bool>
 
 receiver_output_folder = ../outputs/seismograms/    # <str>
 wavefield_output_folder = ../outputs/snapshots/     # <str>

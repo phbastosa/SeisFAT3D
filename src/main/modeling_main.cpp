@@ -4,14 +4,24 @@
 
 int main(int argc, char **argv)
 {
-    Modeling * modeling[] = 
+    std::vector<Modeling *> modeling = 
     {
-        new Eikonal(),
+        new Eikonal(), 
         new Elastic()
     };
+    
+    if (!fileExists(std::string(argv[1])))
+        throw std::invalid_argument("\033[31mError: " + std::string(argv[1]) + " could not be opened!\033[0;0m");
 
     auto file = std::string(argv[1]);
+
+    if (!isInteger(catch_parameter("modeling_type", file)))
+        throw std::invalid_argument("\033[31mError: Wrong modeling type! \033[0;0m");
+    
     auto type = std::stoi(catch_parameter("modeling_type", file));
+
+    if ((type < 0) || (type >= modeling.size()))
+        throw std::invalid_argument("\033[31mError: Modeling type is out of bounds! \033[0;0m");
 
     modeling[type]->file = file;
 

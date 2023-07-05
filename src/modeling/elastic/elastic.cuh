@@ -18,11 +18,14 @@ private:
 
     void set_model_parameters();
     void set_model_boundaries();
+    void set_gridded_geometry();
     void set_wavefields();
     void show_progress();
-    void set_outputs();
     void set_dampers();
     void set_wavelet();
+    void set_outputs();
+
+    void specific_modeling_parameters();
 
 protected:
 
@@ -53,6 +56,10 @@ protected:
     float * snapshot = nullptr;
     float * seismogram = nullptr;
 
+    int * grid_node_x = nullptr;
+    int * grid_node_y = nullptr;
+    int * grid_node_z = nullptr;
+
 public:
 
     void initial_setup();
@@ -63,8 +70,7 @@ public:
 
 __global__ void apply_wavelet(float * Txx, float * Tyy, float * Tzz, float * wavelet, int sId, int time_id, float dx, float dy, float dz);
 __global__ void compute_velocity(float * Vx, float * Vy, float * Vz, float * Txx, float * Tyy, float * Tzz, float * Txz, float * Tyz, float * Txy, float * B, float dx, float dy, float dz, float dt, int nxx, int nyy, int nzz);
-__global__ void compute_stress(float * Vx, float * Vy, float * Vz, float * Txx, float * Tyy, float * Tzz, float * Txz, float * Tyz, float * Txy, float * M, float * L, float * damp1D, float * damp2D, float * damp3D, float dx, float dy, float dz, float dt, int nxx, int nyy, int nzz, int nb);
-__global__ void compute_pressure(float * Txx, float * Tyy, float * Tzz, float * Pressure, int volsize);
-__global__ void get_seismogram();
+__global__ void compute_stress(float * Vx, float * Vy, float * Vz, float * Txx, float * Tyy, float * Tzz, float * Txz, float * Tyz, float * Txy, float * Pressure, float * M, float * L, float * damp1D, float * damp2D, float * damp3D, float dx, float dy, float dz, float dt, int nxx, int nyy, int nzz, int nb);
+__global__ void get_seismogram(float * Pressure, float * seismogram, int * rx, int * ry, int * rz, int total_nodes, int time_id, int nt, int nxx, int nzz);
 
 # endif

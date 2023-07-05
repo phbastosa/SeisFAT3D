@@ -1,8 +1,12 @@
 # include "eikonal.cuh"
 
-int Eikonal::iDivUp(int a, int b) 
-{ 
-    return ( (a % b) != 0 ) ? (a / b + 1) : (a / b); 
+void Eikonal::specific_modeling_parameters()
+{
+    set_model_parameters();
+    set_model_boundaries();
+
+    set_wavefields();
+    set_outputs();
 }
 
 void Eikonal::set_model_parameters()
@@ -285,6 +289,11 @@ void Eikonal::forward_solver()
 	}
 
     cudaMemcpy(T, d_T, volsize*sizeof(float), cudaMemcpyDeviceToHost);
+}
+
+int Eikonal::iDivUp(int a, int b) 
+{ 
+    return ( (a % b) != 0 ) ? (a / b + 1) : (a / b); 
 }
 
 void Eikonal::build_outputs()

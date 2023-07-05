@@ -50,10 +50,7 @@ protected:
 
     Geometry * geometry;
 
-    virtual void set_model_parameters() = 0;
-    virtual void set_model_boundaries() = 0;
-    virtual void set_wavefields() = 0;
-    virtual void set_outputs() = 0;
+    virtual void specific_modeling_parameters() = 0;
 
 public: 
 

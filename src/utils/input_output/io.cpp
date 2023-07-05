@@ -10,6 +10,19 @@ bool str2bool(std::string s)
     return b;
 }
 
+bool isInteger(const std::string& input) 
+{
+    std::stringstream ss(input);
+    int value;
+    return (ss >> value) && (ss.eof());
+}
+
+bool fileExists(const std::string& filename) 
+{
+    std::ifstream file(filename);
+    return file.good();
+}
+
 void import_binary_float(std::string path, float * array, int n)
 {
     std::ifstream file(path, std::ios::in);

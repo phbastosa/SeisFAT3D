@@ -17,6 +17,8 @@ private:
     void get_travelTimes();
     void get_firstArrivals();
 
+    void specific_modeling_parameters();
+
 protected:
 
     int totalLevels;

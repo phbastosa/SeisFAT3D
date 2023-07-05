@@ -97,12 +97,17 @@ void Modeling::set_parameters()
     receiver_output_folder = catch_parameter("receiver_output_folder", file); 
     wavefield_output_folder = catch_parameter("wavefield_output_folder", file);
 
-    set_model_parameters();
-    set_model_boundaries();    
+    std::vector<Geometry *> possibilities = {new Regular(), new Circular()};
 
-    Geometry * types[] = {new Regular(), new Circular()};
+    if (!isInteger(catch_parameter("geometry_type", file)))
+        throw std::invalid_argument("\033[31mError: Wrong geometry type! \033[0;0m");
 
-    geometry = types[std::stoi(catch_parameter("geometry_type", file))];
+    auto type = std::stoi(catch_parameter("geometry_type", file));
+
+    if ((type < 0) || (type >= possibilities.size()))
+        throw std::invalid_argument("\033[31mError: Geometry type is out of bounds! \033[0;0m");
+
+    geometry = possibilities[type];
 
     geometry->file = file;
 
@@ -113,9 +118,7 @@ void Modeling::set_parameters()
 
     check_geometry_overflow();
     
-    set_wavefields();        
-    
-    set_outputs();
+    specific_modeling_parameters();
 }
 
 void Modeling::export_outputs()

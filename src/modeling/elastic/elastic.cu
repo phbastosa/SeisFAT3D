@@ -1,5 +1,23 @@
 # include "elastic.cuh"
 
+void Elastic::specific_modeling_parameters()
+{
+    int total_time = std::stoi(catch_parameter("total_time", file));
+
+    dt = std::stof(catch_parameter("time_spacing", file));
+
+    nt = (int)(ceilf(total_time / dt)) + 1; 
+
+    set_model_parameters();
+    set_model_boundaries();
+    set_gridded_geometry();
+    set_wavefields();
+
+    set_wavelet();
+    set_dampers();
+    set_outputs();
+}
+
 void Elastic::set_model_parameters()
 {
     nxx = nx + 2*nb;
@@ -29,103 +47,6 @@ void Elastic::set_model_parameters()
         Vs[index] = 0.0f;
         Rho[index] = 1000.0f;
     }   
-
-    int total_time = std::stoi(catch_parameter("total_time", file));
-
-    dt = std::stof(catch_parameter("time_spacing", file));
-
-    nt = (int)(ceilf(total_time / dt)) + 1; 
-
-    set_wavelet();
-    set_dampers();
-}
-
-void Elastic::set_wavelet()
-{
-    float * wavelet = new float[nt]();
-
-    float fmax = std::stof(catch_parameter("max_frequency", file));
-    float tlag = std::stof(catch_parameter("wavelet_shift", file));
-    float amp = std::stof(catch_parameter("max_amplitude", file));
-
-    float pi = 4.0f * atanf(1.0f);  
-
-    float fc = fmax / (3.0f * sqrtf(pi));
-
-    float * aux = new float[nt]();
-
-    for (int n = 0; n < nt; n++)
-    {        
-        float arg = pi*((n*dt - tlag)*fc*pi)*((n*dt - tlag)*fc*pi);
-        
-        aux[n] = (1 - 2*arg) * expf(-arg);    
-
-        float sum = 0.0f;
-        for (int k = 0; k < n+1; k++)     
-            sum += aux[k];
-    
-        wavelet[n] = amp * sum;
-    }
-
-	cudaMalloc((void**)&(d_wavelet), nt*sizeof(float));
-	cudaMemcpy(d_wavelet, wavelet, nt*sizeof(float), cudaMemcpyHostToDevice);
-
-    delete[] aux;
-    delete[] wavelet;
-}
-
-void Elastic::set_dampers()
-{
-    float * damp1D = new float[nb]();
-    float * damp2D = new float[nb*nb]();
-    float * damp3D = new float[nb*nb*nb]();
-
-    float factor = std::stof(catch_parameter("boundary_damper", file));
-
-    for (int i = 0; i < nb; i++) 
-    {
-        damp1D[i] = expf(-powf(factor * (nb - i), 2.0f));
-    }
-
-    for(int i = 0; i < nb; i++) 
-    {
-        for (int j = 0; j < nb; j++)
-        {   
-            damp2D[j + i*nb] += damp1D[i]; // up to bottom
-            damp2D[i + j*nb] += damp1D[i]; // left to right
-        }
-    }
-
-    for (int i  = 0; i < nb; i++)
-    {
-        for(int j = 0; j < nb; j++)
-        {
-            for(int k = 0; k < nb; k++)
-            {
-                damp3D[i + j*nb + k*nb*nb] += damp2D[i + j*nb]; // XY plane
-                damp3D[i + j*nb + k*nb*nb] += damp2D[j + k*nb]; // ZX plane
-                damp3D[i + j*nb + k*nb*nb] += damp2D[i + k*nb]; // ZY plane
-            }
-        }
-    }    
-
-    for (int index = 0; index < nb*nb; index++)
-        damp2D[index] -= 1.0f;
-
-    for (int index = 0; index < nb*nb*nb; index++)
-        damp3D[index] -= 5.0f;    
-
-	cudaMalloc((void**)&(d_damp1D), nb*sizeof(float));
-	cudaMalloc((void**)&(d_damp2D), nb*nb*sizeof(float));
-	cudaMalloc((void**)&(d_damp3D), nb*nb*nb*sizeof(float));
-
-	cudaMemcpy(d_damp1D, damp1D, nb*sizeof(float), cudaMemcpyHostToDevice);
-	cudaMemcpy(d_damp2D, damp2D, nb*nb*sizeof(float), cudaMemcpyHostToDevice);
-	cudaMemcpy(d_damp3D, damp3D, nb*nb*nb*sizeof(float), cudaMemcpyHostToDevice);
-
-    delete[] damp1D;
-    delete[] damp2D;
-    delete[] damp3D;
 }
 
 void Elastic::set_model_boundaries()
@@ -218,6 +139,32 @@ void Elastic::set_model_boundaries()
     delete[] h_L;
 }
 
+void Elastic::set_gridded_geometry()
+{
+    int * rx = new int[total_nodes]();
+    int * ry = new int[total_nodes]();
+    int * rz = new int[total_nodes]();
+
+    for (int index = 0; index < total_nodes; index++)
+    {
+        rx[index] = (int)(geometry->nodes.x[index] / dx) + nb;
+        ry[index] = (int)(geometry->nodes.y[index] / dy) + nb;
+        rz[index] = (int)(geometry->nodes.z[index] / dz) + nb;
+    }
+
+	cudaMalloc((void**)&(grid_node_x), total_nodes*sizeof(int));
+	cudaMalloc((void**)&(grid_node_y), total_nodes*sizeof(int));
+	cudaMalloc((void**)&(grid_node_z), total_nodes*sizeof(int));
+
+    cudaMemcpy(grid_node_x, rx, total_nodes*sizeof(int), cudaMemcpyHostToDevice);
+    cudaMemcpy(grid_node_y, ry, total_nodes*sizeof(int), cudaMemcpyHostToDevice);
+    cudaMemcpy(grid_node_z, rz, total_nodes*sizeof(int), cudaMemcpyHostToDevice);
+
+    delete[] rx;
+    delete[] ry;
+    delete[] rz;
+}
+
 void Elastic::set_wavefields()
 {
 	cudaMalloc((void**)&(Vx), volsize*sizeof(float));
@@ -232,6 +179,94 @@ void Elastic::set_wavefields()
 	cudaMalloc((void**)&(Txy), volsize*sizeof(float));
 
     cudaMalloc((void**)&(Pressure), volsize*sizeof(float));
+}
+
+void Elastic::set_wavelet()
+{
+    float * wavelet = new float[nt]();
+
+    float fmax = std::stof(catch_parameter("max_frequency", file));
+    float tlag = std::stof(catch_parameter("wavelet_shift", file));
+    float amp = std::stof(catch_parameter("max_amplitude", file));
+
+    float pi = 4.0f * atanf(1.0f);  
+
+    float fc = fmax / (3.0f * sqrtf(pi));
+
+    float * aux = new float[nt]();
+
+    for (int n = 0; n < nt; n++)
+    {        
+        float arg = pi*((n*dt - tlag)*fc*pi)*((n*dt - tlag)*fc*pi);
+        
+        aux[n] = (1 - 2*arg) * expf(-arg);    
+
+        float sum = 0.0f;
+        for (int k = 0; k < n+1; k++)     
+            sum += aux[k];
+    
+        wavelet[n] = amp * sum;
+    }
+
+	cudaMalloc((void**)&(d_wavelet), nt*sizeof(float));
+	cudaMemcpy(d_wavelet, wavelet, nt*sizeof(float), cudaMemcpyHostToDevice);
+
+    delete[] aux;
+    delete[] wavelet;
+}
+
+void Elastic::set_dampers()
+{
+    float * damp1D = new float[nb]();
+    float * damp2D = new float[nb*nb]();
+    float * damp3D = new float[nb*nb*nb]();
+
+    float factor = std::stof(catch_parameter("boundary_damper", file));
+
+    for (int i = 0; i < nb; i++) 
+    {
+        damp1D[i] = expf(-powf(factor * (nb - i), 2.0f));
+    }
+
+    for(int i = 0; i < nb; i++) 
+    {
+        for (int j = 0; j < nb; j++)
+        {   
+            damp2D[j + i*nb] += damp1D[i]; // up to bottom
+            damp2D[i + j*nb] += damp1D[i]; // left to right
+        }
+    }
+
+    for (int i  = 0; i < nb; i++)
+    {
+        for(int j = 0; j < nb; j++)
+        {
+            for(int k = 0; k < nb; k++)
+            {
+                damp3D[i + j*nb + k*nb*nb] += damp2D[i + j*nb]; // XY plane
+                damp3D[i + j*nb + k*nb*nb] += damp2D[j + k*nb]; // ZX plane
+                damp3D[i + j*nb + k*nb*nb] += damp2D[i + k*nb]; // ZY plane
+            }
+        }
+    }    
+
+    for (int index = 0; index < nb*nb; index++)
+        damp2D[index] -= 1.0f;
+
+    for (int index = 0; index < nb*nb*nb; index++)
+        damp3D[index] -= 5.0f;    
+
+	cudaMalloc((void**)&(d_damp1D), nb*sizeof(float));
+	cudaMalloc((void**)&(d_damp2D), nb*nb*sizeof(float));
+	cudaMalloc((void**)&(d_damp3D), nb*nb*nb*sizeof(float));
+
+	cudaMemcpy(d_damp1D, damp1D, nb*sizeof(float), cudaMemcpyHostToDevice);
+	cudaMemcpy(d_damp2D, damp2D, nb*nb*sizeof(float), cudaMemcpyHostToDevice);
+	cudaMemcpy(d_damp3D, damp3D, nb*nb*nb*sizeof(float), cudaMemcpyHostToDevice);
+
+    delete[] damp1D;
+    delete[] damp2D;
+    delete[] damp3D;
 }
 
 void Elastic::set_outputs()
@@ -292,14 +327,15 @@ void Elastic::forward_solver()
         compute_velocity<<<totalBlocks,threadsPerBlock>>>(Vx,Vy,Vz,Txx,Tyy,Tzz,Txz,Tyz,Txy,B,dx,dy,dz,dt,nxx,nyy,nzz);
         cudaDeviceSynchronize();
 
-        compute_stress<<<totalBlocks,threadsPerBlock>>>(Vx,Vy,Vz,Txx,Tyy,Tzz,Txz,Tyz,Txy,M,L,d_damp1D,d_damp2D,d_damp3D,dx,dy,dz,dt,nxx,nyy,nzz,nb);
+        compute_stress<<<totalBlocks,threadsPerBlock>>>(Vx,Vy,Vz,Txx,Tyy,Tzz,Txz,Tyz,Txy,Pressure,M,L,d_damp1D,d_damp2D,d_damp3D,dx,dy,dz,dt,nxx,nyy,nzz,nb);
         cudaDeviceSynchronize();
 
-        compute_pressure<<<totalBlocks,threadsPerBlock>>>(Txx,Tyy,Tzz,Pressure,volsize);
-        cudaDeviceSynchronize();
+        if (export_receiver_output)
+        {
+            int seismBlocks = (int)(total_nodes / threadsPerBlock);
 
-        // // if (export_receiver_output)
-        // //     get_seismogram
+            get_seismogram<<<seismBlocks,threadsPerBlock>>>(Pressure,seismogram,grid_node_x,grid_node_y,grid_node_z,total_nodes,time_id,nt,nxx,nzz);
+        }    
     
         if (export_wavefield_output)
         {
@@ -449,7 +485,7 @@ __global__ void compute_velocity(float * Vx, float * Vy, float * Vz, float * Txx
     }
 }
 
-__global__ void compute_stress(float * Vx, float * Vy, float * Vz, float * Txx, float * Tyy, float * Tzz, float * Txz, float * Tyz, float * Txy, float * M, float * L, float * damp1D, float * damp2D, float * damp3D, float dx, float dy, float dz, float dt, int nxx, int nyy, int nzz, int nb)
+__global__ void compute_stress(float * Vx, float * Vy, float * Vz, float * Txx, float * Tyy, float * Tzz, float * Txz, float * Tyz, float * Txy, float * Pressure, float * M, float * L, float * damp1D, float * damp2D, float * damp3D, float dx, float dy, float dz, float dt, int nxx, int nyy, int nzz, int nb)
 {
     int index = blockIdx.x * blockDim.x + threadIdx.x;
 
@@ -659,21 +695,17 @@ __global__ void compute_stress(float * Vx, float * Vy, float * Vz, float * Txx, 
         Txz[index] *= damper;
         Tyz[index] *= damper;
         Txy[index] *= damper;    
+
+        Pressure[index] = (Txx[index] + Tyy[index] + Tzz[index]) / 3.0f;
     }
 }
 
-__global__ void compute_pressure(float * Txx, float * Tyy, float * Tzz, float * Pressure, int volsize)
+__global__ void get_seismogram(float * Pressure, float * seismogram, int * rx, int * ry, int * rz, int total_nodes, int time_id, int nt, int nxx, int nzz)
 {
-    int index = blockIdx.x * blockDim.x + threadIdx.x;
+    int index = blockIdx.x * blockDim.x + threadIdx.x; 
 
-    if (index < volsize) Pressure[index] = (Txx[index] + Tyy[index] + Tzz[index]) / 3.0f;
-}
-
-__global__ void get_seismogram()
-{
-
-
-
+    if (index < total_nodes) 
+        seismogram[time_id + index*nt] = Pressure[rz[index] + rx[index]*nzz + ry[index]*nxx*nzz];
 }
 
 
