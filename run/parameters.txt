@@ -77,10 +77,10 @@ boundary_damper = 0.0045         # <float>
 import_wavelet = false           # <bool>
 wavelet_file = ../inputs/        # <str>
 
-n_snapshots = 11                 # <int>
+n_snapshots = 101                # <int>
 
 export_receiver_output = true    # <bool> 
-export_wavefield_output = false   # <bool>
+export_wavefield_output = true   # <bool>
 
 receiver_output_folder = ../outputs/seismograms/    # <str>
 wavefield_output_folder = ../outputs/snapshots/     # <str>

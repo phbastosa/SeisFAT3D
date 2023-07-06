@@ -334,6 +334,8 @@ void Elastic::forward_solver()
         {
             int seismBlocks = (int)(total_nodes / threadsPerBlock);
 
+            if (seismBlocks == 0) seismBlocks = 1; 
+
             get_seismogram<<<seismBlocks,threadsPerBlock>>>(Pressure,seismogram,grid_node_x,grid_node_y,grid_node_z,total_nodes,time_id,nt,nxx,nzz);
         }    
     
@@ -371,7 +373,7 @@ void Elastic::show_progress()
 
 void Elastic::build_outputs()
 {
-    cudaMemcpy(seismogram, receiver_output, receiver_output_samples*sizeof(float), cudaMemcpyDeviceToHost);
+    cudaMemcpy(receiver_output, seismogram, receiver_output_samples*sizeof(float), cudaMemcpyDeviceToHost);
 
     receiver_output_file = receiver_output_folder + "elastic_pressure_" + std::to_string(nt) + "x" + std::to_string(geometry->nodes.total) + "_shot_" + std::to_string(shot_id+1) + ".bin";
 
