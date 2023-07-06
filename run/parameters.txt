@@ -69,7 +69,7 @@ modeling_type = 1                # <int>
 
 total_time = 2.0                 # [s] <float>
 time_spacing = 0.001             # [s] <float>
-wavelet_shift = 0.10             # [s] <float>
+wavelet_shift = 0.15             # [s] <float>
 max_frequency = 40.0             # [Hz] <float>
 max_amplitude = 1e5              # <float>
 boundary_damper = 0.0045         # <float>

@@ -332,9 +332,7 @@ void Elastic::forward_solver()
 
         if (export_receiver_output)
         {
-            int seismBlocks = (int)(total_nodes / threadsPerBlock);
-
-            if (seismBlocks == 0) seismBlocks = 1; 
+            int seismBlocks = (int)(total_nodes / threadsPerBlock) + 1;
 
             get_seismogram<<<seismBlocks,threadsPerBlock>>>(Pressure,seismogram,grid_node_x,grid_node_y,grid_node_z,total_nodes,time_id,nt,nxx,nzz);
         }    
