@@ -1,56 +1,36 @@
 # ifndef EIKONAL_HPP
 # define EIKONAL_HPP
 
-# include "../modeling.hpp"
+# include "../../modeling.hpp"
 
 class Eikonal : public Modeling
 {
 private:
 
-    int iDivUp(int a, int b);
-
-    void set_model_parameters();
-    void set_model_boundaries();
-    void set_wavefields();
-    void set_outputs();
-
-    void get_travelTimes();
-    void get_firstArrivals();
-
-    void specific_modeling_parameters();
 
 protected:
 
-    int totalLevels;
+    float t0;    
 
-    int nSweeps, meshDim;
-
-    float source_travel_time;    
-    float dx2i, dy2i, dz2i, dsum; 
-    float dx2dy2, dz2dx2, dz2dy2;
-
+    float * V = nullptr;
     float * S = nullptr;
     float * T = nullptr;
-    float * V = nullptr;
 
-    float * d_T = nullptr;
-    float * d_S = nullptr;
+    void get_travel_times();
+    void get_first_arrivals();
+    void set_specifications();
 
-    int * d_sgnv = nullptr;
-    int * d_sgnt = nullptr;
+    virtual void set_model_boundaries() = 0;
+    virtual void set_modeling_message() = 0;
+    virtual void set_preconditioners() = 0;
 
 public:
 
-    void initial_setup();
-    void forward_solver();
     void build_outputs();
-    void free_space();
+
+    virtual void initial_setup() = 0;
+    virtual void forward_solver() = 0;
+    virtual void free_space() = 0;
 };
-
-__global__ void fast_sweeping_kernel(float * S, float * T, int * sgnt, int * sgnv, int sgni, int sgnj, int sgnk, 
-                                     int level, int xOffset, int yOffset, int xSweepOffset, int ySweepOffset, int zSweepOffset, 
-                                     int nxx, int nyy, int nzz, float dx, float dy, float dz, float dx2i, float dy2i, float dz2i, 
-                                     float dz2dx2, float dz2dy2, float dx2dy2, float dsum);
-
 
 # endif

@@ -73,6 +73,8 @@ void Modeling::info_message()
     std::cout<<"Memory usage: \n";
     std::cout<<"RAM = "<<RAM<<" Mb\n";
     std::cout<<"GPU = "<<vRAM<<" Mb\n\n";
+
+    set_modeling_message();
 }
 
 void Modeling::set_parameters()
@@ -85,6 +87,8 @@ void Modeling::set_parameters()
     ny = std::stoi(catch_parameter("y_samples", file));
     nz = std::stoi(catch_parameter("z_samples", file));
 
+    nPoints = nx*ny*nz;
+    
     nb = std::stoi(catch_parameter("n_boundary", file));
 
     dx = std::stof(catch_parameter("x_spacing", file));
@@ -118,7 +122,98 @@ void Modeling::set_parameters()
 
     check_geometry_overflow();
     
-    specific_modeling_parameters();
+    set_specifications();
+}
+
+void Modeling::expand_boundary(float * input, float * output)
+{
+    for (int y = nbyl; y < nyy - nbyr; y++)
+    {
+        for (int x = nbxl; x < nxx - nbyr; x++)
+        {
+            for (int z = nbzu; z < nzz - nbzd; z++)
+            {
+                output[z + x*nzz + y*nxx*nzz] = input[(z - nbzu) + (x - nbxl)*nz + (y - nbyl)*nx*nz];       
+            }
+        }
+    }
+
+    for (int y = nbyl; y < nyy - nbyr; y++)
+    {
+        for (int x = nbxl; x < nxx - nbyr; x++)
+        {
+            for (int z = 0; z < nbzu; z++)
+            {
+                output[z + x*nzz + y*nxx*nzz] = input[0 + (x - nbxl)*nz + (y - nbyl)*nx*nz];
+            }
+        }
+    }
+
+    for (int y = nbyl; y < nyy - nbyr; y++)
+    {
+        for (int x = nbxl; x < nxx - nbyr; x++)
+        {
+            for (int z = nzz - nbzd; z < nzz; z++)
+            {
+                output[z + x*nzz + y*nxx*nzz] = input[(nz - 1) + (x - nbxl)*nz + (y - nbyl)*nx*nz];
+            }
+        }
+    }
+
+    for (int y = nbyl; y < nyy - nbyr; y++)
+    {
+        for (int x = nbxl; x < nxx - nbyr; x++)
+        {
+            for (int z = nzz - nbzd; z < nzz; z++)
+            {
+                output[z + x*nzz + y*nxx*nzz] = input[(nz - 1) + (x - nbxl)*nz + (y - nbyl)*nx*nz];
+            }
+        }
+    }
+
+    for (int y = nbyl; y < nyy - nbyr; y++)
+    {
+        for (int x = 0; x < nbxl; x++)
+        {
+            for (int z = 0; z < nzz; z++)
+            {
+                output[z + x*nzz + y*nxx*nzz] = output[z + nbxl*nzz + y*nxx*nzz];
+            }
+        }
+    }
+
+    for (int y = nbyl; y < nyy - nbyr; y++)
+    {
+        for (int x = nxx-nbxr; x < nxx; x++)
+        {
+            for (int z = 0; z < nzz; z++)
+            {
+                output[z + x*nzz + y*nxx*nzz] = output[z + (nxx - nbxr - 1)*nzz + y*nxx*nzz];
+            }
+        }
+    }
+
+    for (int y = 0; y < nbyl; y++)
+    {
+        for (int x = 0; x < nxx; x++)
+        {
+            for (int z = 0; z < nzz; z++)
+            {
+                output[z + x*nzz + y*nxx*nzz] = output[z + x*nzz + nbyl*nxx*nzz];
+            }
+        }
+    }
+
+    for (int y = nyy - nbyr; y < nyy; y++)
+    {
+        for (int x = 0; x < nxx; x++)
+        {
+            for (int z = 0; z < nzz; z++)
+            {
+                output[z + x*nzz + y*nxx*nzz] = output[z + x*nzz + (nyy - nbyr - 1)*nxx*nzz];
+            }
+        }
+    }
 }
 
 void Modeling::export_outputs()

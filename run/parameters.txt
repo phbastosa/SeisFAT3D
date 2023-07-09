@@ -65,7 +65,7 @@ offsets = [1000, 1000, 1000]      # [m] <float>
 #       Cerjan et al. (1985)  
 #---------------------------------------------------------------------------------------------------
 
-modeling_type = 1                # <int>
+modeling_type = 0                # <int>
 
 total_time = 2.0                 # [s] <float>
 time_spacing = 0.001             # [s] <float>

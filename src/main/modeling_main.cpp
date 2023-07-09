@@ -1,13 +1,12 @@
 # include "../modeling/modeling.hpp"
-# include "../modeling/eikonal/eikonal.cuh"
-# include "../modeling/elastic/elastic.cuh"
+# include "../modeling/high_frequency/eikonal/eikonal.hpp"
+# include "../modeling/high_frequency/eikonal/fast_sweeping_method/fast_sweeping_method.cuh"
 
 int main(int argc, char **argv)
 {
     std::vector<Modeling *> modeling = 
     {
-        new Eikonal(), 
-        new Elastic()
+        new Fast_sweeping_method() 
     };
     
     if (!fileExists(std::string(argv[1])))

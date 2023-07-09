@@ -7,16 +7,21 @@ regular="../src/geometry/regular/regular.cpp"
 circular="../src/geometry/circular/circular.cpp"
 
 modeling="../src/modeling/modeling.cpp"
-eikonal="../src/modeling/eikonal/eikonal.cu"
-elastic="../src/modeling/elastic/elastic.cu"
+eikonal="../src/modeling/high_frequency/eikonal/eikonal.cpp"
+fsm="../src/modeling/high_frequency/eikonal/fast_sweeping_method/fast_sweeping_method.cu"
+
 modeling_main="../src/main/modeling_main.cpp"
 
-inversion="../src/inversion/inversion.cu"
-inversion_main="../src/main/inversion_main.cpp"
+# inversion="../src/inversion/inversion.cu"
+# inversion_main="../src/main/inversion_main.cpp"
 
-migration="../src/migration/migration.cpp"
-kirchhoff="../src/migration/kirchhoff/kirchhoff.cpp"
-migration_main="../src/main/migration_main.cpp"
+# migration="../src/migration/migration.cpp"
+# kirchhoff="../src/migration/kirchhoff/kirchhoff.cpp"
+# migration_main="../src/main/migration_main.cpp"
+
+geometry_all="$geometry $regular $circular"
+
+modeling_all="$modeling $eikonal $fsm $modeling_main"
 
 flags="-Xcompiler=-fopenmp --std=c++11 -lm -O3"
 
@@ -48,7 +53,7 @@ case "$1" in
     echo -e "Compiling the stand-alone executables!\n"
 
     echo -e "../bin/\033[31mmodeling.exe\033[m" 
-    nvcc $io $geometry $regular $circular $modeling $eikonal $elastic $modeling_main $flags -o ../bin/modeling.exe
+    nvcc $io $geometry_all $modeling_all $flags -o ../bin/modeling.exe
 
     # echo -e "../bin/\033[31minversion.exe\033[m" 
     # nvcc $io $geometry $regular $circular $modeling $inversion $inversion_main $flags -o ../bin/inversion.exe

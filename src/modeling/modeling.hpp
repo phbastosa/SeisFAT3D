@@ -28,10 +28,10 @@ protected:
 
     int threadsPerBlock;
 
-    int nx, ny, nz, nt; 
-    int nPoints, volsize;
-    int nxx, nyy, nzz, nb;
-    
+    int nx, ny, nz, nt, nPoints;
+    int nxx, nyy, nzz, nb, volsize;
+    int nbxl, nbxr, nbyl, nbyr, nbzu, nbzd;
+
     float dx, dy, dz, dt;
 
     int receiver_output_samples;
@@ -50,7 +50,10 @@ protected:
 
     Geometry * geometry;
 
-    virtual void specific_modeling_parameters() = 0;
+    virtual void set_specifications() = 0;
+    virtual void set_modeling_message() = 0;
+
+    void expand_boundary(float * input, float * output);
 
 public: 
 
