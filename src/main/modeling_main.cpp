@@ -1,12 +1,16 @@
 # include "../modeling/modeling.hpp"
 # include "../modeling/high_frequency/eikonal/eikonal.hpp"
+# include "../modeling/high_frequency/eikonal/podvin_and_lecomte/podvin_and_lecomte.cuh"
 # include "../modeling/high_frequency/eikonal/fast_sweeping_method/fast_sweeping_method.cuh"
+# include "../modeling/high_frequency/eikonal/fast_iterative_method/fast_iterative_method.cuh"
 
 int main(int argc, char **argv)
 {
     std::vector<Modeling *> modeling = 
     {
-        new Fast_sweeping_method() 
+        new Podvin_and_Lecomte(),
+        new Fast_Iterative_Method(),
+        new Fast_Sweeping_Method() 
     };
     
     if (!fileExists(std::string(argv[1])))

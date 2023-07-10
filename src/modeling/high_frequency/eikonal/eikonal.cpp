@@ -49,7 +49,7 @@ void Eikonal::get_travel_times()
         wavefield_output[z + x*nz + y*nx*nz] = T[(z + nbzu) + (x + nbxl)*nzz + (y + nbyl)*nxx*nzz];
     }
 
-    wavefield_output_file = wavefield_output_folder + "time_volume_" + std::to_string(nz) + "x" + std::to_string(nx) + "x" + std::to_string(ny) + "_shot_" + std::to_string(shot_id+1) + ".bin";
+    wavefield_output_file = wavefield_output_folder + modeling_method +"_time_volume_" + std::to_string(nz) + "x" + std::to_string(nx) + "x" + std::to_string(ny) + "_shot_" + std::to_string(shot_id+1) + ".bin";
 }
 
 void Eikonal::get_first_arrivals()
@@ -94,7 +94,7 @@ void Eikonal::get_first_arrivals()
         receiver_output[r] = c0*(1 - zd) + c1*zd;
     }
 
-    receiver_output_file = receiver_output_folder + "data_" + std::to_string(geometry->nodes.total) + "_shot_" + std::to_string(shot_id+1) + ".bin";
+    receiver_output_file = receiver_output_folder + modeling_method + "_data_" + std::to_string(geometry->nodes.total) + "_shot_" + std::to_string(shot_id+1) + ".bin";
 }
 
 

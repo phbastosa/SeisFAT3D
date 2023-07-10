@@ -7,7 +7,10 @@ int Fast_Sweeping_Method::iDivUp(int a, int b)
 
 void Fast_Sweeping_Method::set_modeling_message()
 {
-    std::cout<<"Fast Sweeping Method"<<std::endl;
+    std::cout<<"Running:\n";
+    std::cout<<"[2] - Accurate Parallel Fast Sweeping Method for eikonal equations\n"; 
+    std::cout<<"    Detrixhe, Gibou & Min (2013)\n";
+    std::cout<<"    Noble, Gesret & Belayouni (2014)\n\n";
 }
 
 void Fast_Sweeping_Method::set_model_boundaries()

@@ -2,7 +2,9 @@
 
 void Podvin_and_Lecomte::set_modeling_message()
 {
-    std::cout<<"Podvin and Lecomte (1991)"<<std::endl;
+    std::cout<<"Running:\n";
+    std::cout<<"[0] - Finite difference computation of traveltimes in very contrasted velocity models\n"; 
+    std::cout<<"    Podvin & Lecomte (1991)\n\n";
 }
 
 void Podvin_and_Lecomte::set_model_boundaries()
@@ -14,7 +16,11 @@ void Podvin_and_Lecomte::set_model_boundaries()
 
 void Podvin_and_Lecomte::set_preconditioners()
 {
+    modeling_method = std::string("pod");
+
     K = new float[volsize]();
+
+    check_spatial_spacing();
 
     cudaMalloc((void**)&(d_S), volsize*sizeof(float));     
     cudaMalloc((void**)&(d_T), volsize*sizeof(float));     
@@ -23,6 +29,12 @@ void Podvin_and_Lecomte::set_preconditioners()
     cudaMalloc((void**)&(d_nT), volsize*sizeof(float));   
 
     cudaMemcpy(d_S, S, volsize*sizeof(float), cudaMemcpyHostToDevice);
+}
+
+void Podvin_and_Lecomte::check_spatial_spacing()
+{
+    if ((dx != dy) || (dx != dz))
+        throw std::invalid_argument("\033[31mError: For Podvin and Lecomte method the model spacing must to be fixed (dx = dy = dz).\033[0;0m");
 }
 
 void Podvin_and_Lecomte::initial_setup()
@@ -107,7 +119,7 @@ void Podvin_and_Lecomte::forward_solver()
 
     int blocksPerGrid = volsize / threadsPerBlock;
 
-    float dh = dx; 
+    float dh = dx;
 
     for (int it = 0; it < nit; it++)
     {
@@ -119,9 +131,11 @@ void Podvin_and_Lecomte::forward_solver()
         expanding_box<<<blocksPerGrid,threadsPerBlock>>>(d_K, d_nK, nxx, nyy, nzz);
         cudaDeviceSynchronize();
 
-        update<<<blocksPerGrid,threadsPerBlock>>>(d_T, d_nT, d_K, d_nK, volsize);
+        update_volume<<<blocksPerGrid,threadsPerBlock>>>(d_T, d_nT, d_K, d_nK, volsize);
         cudaDeviceSynchronize();
     }
+
+    cudaMemcpy(T, d_T, volsize*sizeof(float), cudaMemcpyDeviceToHost);
 }
 
 void Podvin_and_Lecomte::free_space()
@@ -1677,7 +1691,7 @@ __global__ void expanding_box(float * K, float * nK, int nxx, int nyy, int nzz)
     }
 }
 
-__global__ void update(float * T, float * nT, float * K, float * nK, int N)
+__global__ void update_volume(float * T, float * nT, float * K, float * nK, int N)
 {
     int index = blockIdx.x * blockDim.x + threadIdx.x;
 

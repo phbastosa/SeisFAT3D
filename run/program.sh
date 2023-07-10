@@ -8,7 +8,9 @@ circular="../src/geometry/circular/circular.cpp"
 
 modeling="../src/modeling/modeling.cpp"
 eikonal="../src/modeling/high_frequency/eikonal/eikonal.cpp"
+pod="../src/modeling/high_frequency/eikonal/podvin_and_lecomte/podvin_and_lecomte.cu"
 fsm="../src/modeling/high_frequency/eikonal/fast_sweeping_method/fast_sweeping_method.cu"
+fim="../src/modeling/high_frequency/eikonal/fast_iterative_method/fast_iterative_method.cu"
 
 modeling_main="../src/main/modeling_main.cpp"
 
@@ -21,7 +23,7 @@ modeling_main="../src/main/modeling_main.cpp"
 
 geometry_all="$geometry $regular $circular"
 
-modeling_all="$modeling $eikonal $fsm $modeling_main"
+modeling_all="$modeling $eikonal $pod $fim $fsm $modeling_main"
 
 flags="-Xcompiler=-fopenmp --std=c++11 -lm -O3"
 

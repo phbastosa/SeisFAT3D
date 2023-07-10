@@ -10,8 +10,6 @@ x_spacing = 10           # [m] <float>
 y_spacing = 10           # [m] <float> 
 z_spacing = 10           # [m] <float> 
 
-n_boundary = 50          # <int> 
-
 vp_model_file = ../inputs/models/vp_model_51x301x101_10m.bin    # <str> 
 vs_model_file = ../inputs/models/vs_model_51x301x101_10m.bin    # <str>
 rho_model_file = ../inputs/models/rho_model_51x301x101_10m.bin  # <str> 
@@ -56,22 +54,30 @@ offsets = [1000, 1000, 1000]      # [m] <float>
 #---------------------------------------------------------------------------------------------------
 # Available types:
 #   
-#   [0] - Accurate Parallel Fast Sweeping Method for eikonal equations:   
+#   [0] - Finite difference computation of traveltimes in very contrasted velocity models 
+#       Podvin & Lecomte (1991)   
+#
+#   [1] - Fast Iterative method for eikonal equations   
+#       Jeong & Whitaker (2008)
+#
+#   [2] - Accurate Parallel Fast Sweeping Method for eikonal equations   
 #       Detrixhe, Gibou & Min (2013)
 #       Noble, Gesret & Belayouni (2014)
 #
-#   [1] - Staggered grid solution for waves in elastic isotropic media:
+#   [3] - Staggered grid solution for waves in elastic isotropic media
 #       Graves (1996)
 #       Cerjan et al. (1985)  
 #---------------------------------------------------------------------------------------------------
 
-modeling_type = 0                # <int>
+modeling_type = 2                # <int>
 
 total_time = 2.0                 # [s] <float>
 time_spacing = 0.001             # [s] <float>
 wavelet_shift = 0.15             # [s] <float>
 max_frequency = 40.0             # [Hz] <float>
 max_amplitude = 1e5              # <float>
+
+n_boundary = 50                  # <int> 
 boundary_damper = 0.0045         # <float>
 
 import_wavelet = false           # <bool>

@@ -14,6 +14,8 @@ private:
     float * d_nK = nullptr;
     float * d_nT = nullptr;
 
+    void check_spatial_spacing();
+
 protected:
 
     float * d_T = nullptr;
@@ -32,6 +34,6 @@ public:
 
 __global__ void fdm_operators(float * S, float * T, float * K, float * nT, float h, int nxx, int nyy, int nzz);
 __global__ void expanding_box(float * K, float * nK, int nxx, int nyy, int nzz);
-__global__ void update_volumes(float * T, float * nT, float * K, float * nK, int N);
+__global__ void update_volume(float * T, float * nT, float * K, float * nK, int N);
 
 # endif
