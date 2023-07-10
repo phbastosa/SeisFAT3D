@@ -26,13 +26,14 @@ private:
 
 protected:
 
+    int blocksPerGrid;
     int threadsPerBlock;
 
-    int nx, ny, nz, nt, nPoints;
+    int nx, ny, nz, nPoints;
     int nxx, nyy, nzz, nb, volsize;
     int nbxl, nbxr, nbyl, nbyr, nbzu, nbzd;
 
-    float dx, dy, dz, dt;
+    float dx, dy, dz;
 
     int receiver_output_samples;
     int wavefield_output_samples;

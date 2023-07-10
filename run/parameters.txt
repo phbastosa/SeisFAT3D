@@ -39,9 +39,9 @@ shots_SW = [1000, 1000, 1000]     # [m] <float> (z, x, y) NW
 shots_NW = [1000, 1000, 1000]     # [m] <float> (z, x, y)  |            
 shots_SE = [1000, 1000, 1000]     # [m] <float> (z, x, y) SW -- SE     
 
-nodes_SW = [10, 1000, 1000]       # [m] <float> (z, x, y) NW           
-nodes_NW = [10, 1000, 1000]       # [m] <float> (z, x, y)  |         
-nodes_SE = [10, 1900, 1000]       # [m] <float> (z, x, y) SW -- SE   
+nodes_SW = [100, 1000, 1000]      # [m] <float> (z, x, y) NW           
+nodes_NW = [100, 1000, 1000]      # [m] <float> (z, x, y)  |         
+nodes_SE = [100, 1900, 1000]      # [m] <float> (z, x, y) SW -- SE   
 
 # Circular geometry --------------------------------------------------------------------------------                                            
 
@@ -64,12 +64,15 @@ offsets = [1000, 1000, 1000]      # [m] <float>
 #       Detrixhe, Gibou & Min (2013)
 #       Noble, Gesret & Belayouni (2014)
 #
-#   [3] - Staggered grid solution for waves in elastic isotropic media
+#   [3] - Solution for wave equation in constant density acoustic isotropic media   
+#       Cerjan et al. (1985)
+#
+#   [4] - Staggered grid solution for waves in elastic isotropic media
 #       Graves (1996)
 #       Cerjan et al. (1985)  
 #---------------------------------------------------------------------------------------------------
 
-modeling_type = 2                # <int>
+modeling_type = 3                # <int>
 
 total_time = 2.0                 # [s] <float>
 time_spacing = 0.001             # [s] <float>
@@ -79,11 +82,12 @@ max_amplitude = 1e5              # <float>
 
 n_boundary = 50                  # <int> 
 boundary_damper = 0.0045         # <float>
+free_surface = true              # <bool>
 
 import_wavelet = false           # <bool>
 wavelet_file = ../inputs/        # <str>
 
-n_snapshots = 101                # <int>
+n_snapshots = 11                 # <int>
 
 export_receiver_output = true    # <bool> 
 export_wavefield_output = true   # <bool>

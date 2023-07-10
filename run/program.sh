@@ -12,6 +12,14 @@ pod="../src/modeling/high_frequency/eikonal/podvin_and_lecomte/podvin_and_lecomt
 fsm="../src/modeling/high_frequency/eikonal/fast_sweeping_method/fast_sweeping_method.cu"
 fim="../src/modeling/high_frequency/eikonal/fast_iterative_method/fast_iterative_method.cu"
 
+low_freq="../src/modeling/low_frequency/low_frequency.cu"
+
+scalar="../src/modeling/low_frequency/scalar/scalar.cpp"
+scalar_isotropic="../src/modeling/low_frequency/scalar/fdm_isotropic/scalar_isotropic.cu"
+
+elastic="../src/modeling/low_frequency/elastic/elastic.cpp"
+elastic_isotropic="../src/modeling/low_frequency/elastic/fdm_isotropic/elastic_isotropic.cu"
+
 modeling_main="../src/main/modeling_main.cpp"
 
 # inversion="../src/inversion/inversion.cu"
@@ -23,7 +31,10 @@ modeling_main="../src/main/modeling_main.cpp"
 
 geometry_all="$geometry $regular $circular"
 
-modeling_all="$modeling $eikonal $pod $fim $fsm $modeling_main"
+high_freq_all="$eikonal $pod $fim $fsm"
+low_freq_all="$low_freq $scalar $scalar_isotropic $elastic $elastic_isotropic"
+
+modeling_all="$modeling $high_freq_all $low_freq_all $modeling_main"
 
 flags="-Xcompiler=-fopenmp --std=c++11 -lm -O3"
 
