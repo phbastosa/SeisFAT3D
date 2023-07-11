@@ -1,17 +1,9 @@
 # include "scalar_isotropic.cuh"
 
-void Scalar_Isotropic::set_modeling_message()
-{
-    std::cout<<"Running:\n";
-    std::cout<<"[3] - Solution for wave equation in constant density acoustic isotropic media\n"; 
-    std::cout<<"    Cerjan et al. (1985)\n\n";
-
-    std::cout<<"Modeling progress: " << floorf(100.0f * (float)(time_id+1) / (float)(nt)) <<" %\n\n";
-}
-
 void Scalar_Isotropic::set_model_parameters()
 {
     modeling_method = std::string("scalar_isotropic");
+    modeling_message = std::string("[3] - Solution for wave equation in constant density acoustic isotropic media\n\n");
 
     float * vp = new float[nPoints]();
     float * dtvp2 = new float[volsize]();
@@ -70,10 +62,7 @@ void Scalar_Isotropic::forward_solver()
     {
         show_progress();
         
-        apply_wavelet<<<1,1>>>(U_pre,wavelet,sId,time_id,dx,dy,dz);
-        cudaDeviceSynchronize();
-
-        compute_pressure<<<blocksPerGrid,threadsPerBlock>>>(Pressure,U_pre,U_pas,dtVp2,damp1D,damp2D,damp3D,dx,dy,dz,nxx,nyy,nzz,nb,nbzu);
+        compute_pressure<<<blocksPerGrid,threadsPerBlock>>>(Pressure,U_pre,U_pas,dtVp2,damp1D,damp2D,damp3D,wavelet,sId,time_id,dx,dy,dz,nxx,nyy,nzz,nb,nbzu);
         cudaDeviceSynchronize();
 
         update_pressure<<<blocksPerGrid,threadsPerBlock>>>(Pressure,U_pre,U_pas,volsize);
@@ -99,46 +88,41 @@ void Scalar_Isotropic::free_space()
     cudaFree(seismogram);
 }
 
-__global__ void apply_wavelet(float * Pressure, float * wavelet, int sId, int time_id, float dx, float dy, float dz)
-{
-    Pressure[sId] += wavelet[time_id] / (dx*dy*dz);
-}
-
-__global__ void compute_pressure(float * Pressure, float * U_pre, float * U_pas, float * dtVp2, float * damp1D, float * damp2D, float * damp3D, float dx, float dy, float dz, int nxx, int nyy, int nzz, int nb, int nbzu)
+__global__ void compute_pressure(float * Pressure, float * U_pre, float * U_pas, float * dtVp2, float * damp1D, float * damp2D, float * damp3D, float * wavelet, int sId, int time_id, float dx, float dy, float dz, int nxx, int nyy, int nzz, int nb, int nbzu)
 {
     int index = blockIdx.x * blockDim.x + threadIdx.x;
 
     int k = (int) (index / (nxx*nzz));         // y direction
     int j = (int) (index - k*nxx*nzz) / nzz;   // x direction
     int i = (int) (index - j*nzz - k*nxx*nzz); // z direction
-
-    float d2_Px2, d2_Py2, d2_Pz2;
+    
+    if (index == 0) U_pre[sId] += wavelet[time_id] / (dx*dy*dz);
 
     if((i >= 4) && (i < nzz-4) && (j >= 4) && (j < nxx-4) && (k >= 4) && (k < nyy-4)) 
     {
-        d2_Px2 = (- 9.0f*(U_pre[i + (j-4)*nzz + k*nxx*nzz] + U_pre[i + (j+4)*nzz + k*nxx*nzz])
-              +   128.0f*(U_pre[i + (j-3)*nzz + k*nxx*nzz] + U_pre[i + (j+3)*nzz + k*nxx*nzz])
-              -  1008.0f*(U_pre[i + (j-2)*nzz + k*nxx*nzz] + U_pre[i + (j+2)*nzz + k*nxx*nzz])
-              +  8064.0f*(U_pre[i + (j-1)*nzz + k*nxx*nzz] + U_pre[i + (j+1)*nzz + k*nxx*nzz])
-              - 14350.0f*(U_pre[i + j*nzz + k*nxx*nzz]))/(5040.0f*powf(dx, 2.0f));
+        float d2_Px2 = (- 9.0f*(U_pre[i + (j-4)*nzz + k*nxx*nzz] + U_pre[i + (j+4)*nzz + k*nxx*nzz])
+                    +   128.0f*(U_pre[i + (j-3)*nzz + k*nxx*nzz] + U_pre[i + (j+3)*nzz + k*nxx*nzz])
+                    -  1008.0f*(U_pre[i + (j-2)*nzz + k*nxx*nzz] + U_pre[i + (j+2)*nzz + k*nxx*nzz])
+                    +  8064.0f*(U_pre[i + (j-1)*nzz + k*nxx*nzz] + U_pre[i + (j+1)*nzz + k*nxx*nzz])
+                    - 14350.0f*(U_pre[i + j*nzz + k*nxx*nzz]))/(5040.0f*powf(dx, 2.0f));
 
-        d2_Py2 = (- 9.0f*(U_pre[i + j*nzz + (k-4)*nxx*nzz] + U_pre[i + j*nzz + (k+4)*nxx*nzz])
-              +   128.0f*(U_pre[i + j*nzz + (k-3)*nxx*nzz] + U_pre[i + j*nzz + (k+3)*nxx*nzz])
-              -  1008.0f*(U_pre[i + j*nzz + (k-2)*nxx*nzz] + U_pre[i + j*nzz + (k+2)*nxx*nzz])
-              +  8064.0f*(U_pre[i + j*nzz + (k-1)*nxx*nzz] + U_pre[i + j*nzz + (k+1)*nxx*nzz])
-              - 14350.0f*(U_pre[i + j*nzz + k*nxx*nzz]))/(5040.0f*powf(dy,2.0f));
+        float d2_Py2 = (- 9.0f*(U_pre[i + j*nzz + (k-4)*nxx*nzz] + U_pre[i + j*nzz + (k+4)*nxx*nzz])
+                    +   128.0f*(U_pre[i + j*nzz + (k-3)*nxx*nzz] + U_pre[i + j*nzz + (k+3)*nxx*nzz])
+                    -  1008.0f*(U_pre[i + j*nzz + (k-2)*nxx*nzz] + U_pre[i + j*nzz + (k+2)*nxx*nzz])
+                    +  8064.0f*(U_pre[i + j*nzz + (k-1)*nxx*nzz] + U_pre[i + j*nzz + (k+1)*nxx*nzz])
+                    - 14350.0f*(U_pre[i + j*nzz + k*nxx*nzz]))/(5040.0f*powf(dy,2.0f));
 
-        d2_Pz2 = (- 9.0f*(U_pre[(i-4) + j*nzz + k*nxx*nzz] + U_pre[(i+4) + j*nzz + k*nxx*nzz])
-              +   128.0f*(U_pre[(i-3) + j*nzz + k*nxx*nzz] + U_pre[(i+3) + j*nzz + k*nxx*nzz])
-              -  1008.0f*(U_pre[(i-2) + j*nzz + k*nxx*nzz] + U_pre[(i+2) + j*nzz + k*nxx*nzz])
-              +  8064.0f*(U_pre[(i-1) + j*nzz + k*nxx*nzz] + U_pre[(i+1) + j*nzz + k*nxx*nzz])
-              - 14350.0f*(U_pre[i + j*nzz + k*nxx*nzz]))/(5040.0f*powf(dz,2.0f));
+        float d2_Pz2 = (- 9.0f*(U_pre[(i-4) + j*nzz + k*nxx*nzz] + U_pre[(i+4) + j*nzz + k*nxx*nzz])
+                    +   128.0f*(U_pre[(i-3) + j*nzz + k*nxx*nzz] + U_pre[(i+3) + j*nzz + k*nxx*nzz])
+                    -  1008.0f*(U_pre[(i-2) + j*nzz + k*nxx*nzz] + U_pre[(i+2) + j*nzz + k*nxx*nzz])
+                    +  8064.0f*(U_pre[(i-1) + j*nzz + k*nxx*nzz] + U_pre[(i+1) + j*nzz + k*nxx*nzz])
+                    - 14350.0f*(U_pre[i + j*nzz + k*nxx*nzz]))/(5040.0f*powf(dz,2.0f));
     
         
         Pressure[index] = dtVp2[index] * (d2_Px2 + d2_Py2 + d2_Pz2) + 2.0f*U_pre[index] - U_pas[index]; 
     }
 
-    float damper = get_boundary_damper(i,j,k,nxx,nyy,nzz,nb,nbzu);
+    float damper = get_boundary_damper(damp1D,damp2D,damp3D,i,j,k,nxx,nyy,nzz,nb,nbzu);
     
     if (index < nxx*nyy*nzz)
     {

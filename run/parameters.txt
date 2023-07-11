@@ -55,19 +55,15 @@ offsets = [1000, 1000, 1000]      # [m] <float>
 # Available types:
 #   
 #   [0] - Solution for the eikonal equation via Podvin & Lecomte (1991) 
-#
 #   [1] - Solution for the eikonal equation via Fast Iterative Method
-#
 #   [2] - Solution for the eikonal equation via Fast Sweeping Method   
 #
 #   [3] - Solution for the wave equation in constant density acoustic isotropic media   
-#
 #   [4] - Solution for the wave equation in variable density acoustic isotropic media   
-#
 #   [5] - Solution for the wave equation in elastic isotropic media
 #---------------------------------------------------------------------------------------------------
 
-modeling_type = 3                # <int>
+modeling_type = 5                # <int>
 
 total_time = 2.0                 # [s] <float>
 time_spacing = 0.001             # [s] <float>
@@ -77,7 +73,7 @@ max_amplitude = 1e5              # <float>
 
 n_boundary = 50                  # <int> 
 boundary_damper = 0.0045         # <float>
-free_surface = true              # <bool>
+free_surface = false             # <bool>
 
 import_wavelet = false           # <bool>
 wavelet_file = ../inputs/        # <str>
@@ -85,7 +81,7 @@ wavelet_file = ../inputs/        # <str>
 n_snapshots = 11                 # <int>
 
 export_receiver_output = true    # <bool> 
-export_wavefield_output = true   # <bool>
+export_wavefield_output = false  # <bool>
 
 receiver_output_folder = ../outputs/seismograms/    # <str>
 wavefield_output_folder = ../outputs/snapshots/     # <str>

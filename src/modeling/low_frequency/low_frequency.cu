@@ -161,6 +161,15 @@ void Low_Frequency::show_progress()
         info_message();
 }
 
+void Low_Frequency::set_modeling_message()
+{
+    std::cout<<"Running:\n";
+
+    std::cout<<modeling_message; 
+
+    std::cout<<"Modeling progress: " << floorf(100.0f * (float)(time_id+1) / (float)(nt)) <<" %\n\n";
+}
+
 void Low_Frequency::get_snapshots()
 {
     if (export_wavefield_output)
@@ -202,7 +211,7 @@ __global__ void compute_seismogram(float * Pressure, float * seismogram, int * r
         seismogram[time_id + index*nt] = Pressure[rz[index] + rx[index]*nzz + ry[index]*nxx*nzz];
 }
 
-__device__ float get_boundary_damper(int i, int j, int k, int nxx, int nyy, int nzz, int nb, int nbzu)
+__device__ float get_boundary_damper(float * damp1D, float * damp2D, float * damp3D, int i, int j, int k, int nxx, int nyy, int nzz, int nb, int nbzu)
 {
     float damper = 1.0f;
 

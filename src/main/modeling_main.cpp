@@ -1,10 +1,11 @@
 # include "../modeling/modeling.hpp"
-# include "../modeling/high_frequency/eikonal/eikonal.hpp"
+
 # include "../modeling/high_frequency/eikonal/podvin_and_lecomte/podvin_and_lecomte.cuh"
 # include "../modeling/high_frequency/eikonal/fast_sweeping_method/fast_sweeping_method.cuh"
 # include "../modeling/high_frequency/eikonal/fast_iterative_method/fast_iterative_method.cuh"
 
 # include "../modeling/low_frequency/scalar/fdm_isotropic/scalar_isotropic.cuh" 
+# include "../modeling/low_frequency/acoustic/fdm_isotropic/acoustic_isotropic.cuh" 
 # include "../modeling/low_frequency/elastic/fdm_isotropic/elastic_isotropic.cuh" 
 
 int main(int argc, char **argv)
@@ -16,6 +17,7 @@ int main(int argc, char **argv)
         new Fast_Sweeping_Method(),
         
         new Scalar_Isotropic(),
+        new Acoustic_Isotropic(),
         new Elastic_Isotropic() 
     };
     

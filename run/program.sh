@@ -15,10 +15,13 @@ fim="../src/modeling/high_frequency/eikonal/fast_iterative_method/fast_iterative
 low_freq="../src/modeling/low_frequency/low_frequency.cu"
 
 scalar="../src/modeling/low_frequency/scalar/scalar.cpp"
-scalar_isotropic="../src/modeling/low_frequency/scalar/fdm_isotropic/scalar_isotropic.cu"
+scalar_iso="../src/modeling/low_frequency/scalar/fdm_isotropic/scalar_isotropic.cu"
+
+acoustic="../src/modeling/low_frequency/acoustic/acoustic.cpp"
+acoustic_iso="../src/modeling/low_frequency/acoustic/fdm_isotropic/acoustic_isotropic.cu"
 
 elastic="../src/modeling/low_frequency/elastic/elastic.cpp"
-elastic_isotropic="../src/modeling/low_frequency/elastic/fdm_isotropic/elastic_isotropic.cu"
+elastic_iso="../src/modeling/low_frequency/elastic/fdm_isotropic/elastic_isotropic.cu"
 
 modeling_main="../src/main/modeling_main.cpp"
 
@@ -32,11 +35,11 @@ modeling_main="../src/main/modeling_main.cpp"
 geometry_all="$geometry $regular $circular"
 
 high_freq_all="$eikonal $pod $fim $fsm"
-low_freq_all="$low_freq $scalar $scalar_isotropic $elastic $elastic_isotropic"
+low_freq_all="$low_freq $scalar $scalar_iso $acoustic $acoustic_iso $elastic $elastic_iso"
 
 modeling_all="$modeling $high_freq_all $low_freq_all $modeling_main"
 
-flags="-Xcompiler=-fopenmp --std=c++11 -lm -O3"
+flags="-Xcompiler=-fopenmp --std=c++11 --relocatable-device-code=true -lm -O3"
 
 USER_MESSAGE="
 Usage:\n

@@ -12,7 +12,6 @@ protected:
 
     void set_wavelet();
 
-    virtual void set_modeling_message() = 0;
     virtual void set_model_parameters() = 0;
     virtual void set_wavefields() = 0;
     
