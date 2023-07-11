@@ -1,7 +1,7 @@
 #---------------------------------------------------------------------------------------------------
 # Model paramenters --------------------------------------------------------------------------------
 #---------------------------------------------------------------------------------------------------
- 
+
 x_samples = 201          # <int>  
 y_samples = 201          # <int>  
 z_samples = 201          # <int>  
@@ -54,17 +54,17 @@ offsets = [1000, 1000, 1000]      # [m] <float>
 #---------------------------------------------------------------------------------------------------
 # Available types:
 #   
-#   [0] - Classical method for solving the eikonal equation  
+#   [0] - Solution for the eikonal equation via Podvin & Lecomte (1991) 
 #
-#   [1] - Fast Iterative method for solving the eikonal equation
+#   [1] - Solution for the eikonal equation via Fast Iterative Method
 #
-#   [2] - Accurate Parallel Fast Sweeping Method for solving the eikonal equations   
+#   [2] - Solution for the eikonal equation via Fast Sweeping Method   
 #
-#   [3] - Solution for wave equation in constant density acoustic isotropic media   
+#   [3] - Solution for the wave equation in constant density acoustic isotropic media   
 #
-#   [4] - Solution for wave equation in variable density acoustic isotropic media   
+#   [4] - Solution for the wave equation in variable density acoustic isotropic media   
 #
-#   [5] - Solution for wave equation in elastic isotropic media
+#   [5] - Solution for the wave equation in elastic isotropic media
 #---------------------------------------------------------------------------------------------------
 
 modeling_type = 3                # <int>
