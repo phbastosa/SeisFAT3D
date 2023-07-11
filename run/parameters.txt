@@ -54,22 +54,17 @@ offsets = [1000, 1000, 1000]      # [m] <float>
 #---------------------------------------------------------------------------------------------------
 # Available types:
 #   
-#   [0] - Finite difference computation of traveltimes in very contrasted velocity models 
-#       Podvin & Lecomte (1991)   
+#   [0] - Classical method for solving the eikonal equation  
 #
-#   [1] - Fast Iterative method for eikonal equations   
-#       Jeong & Whitaker (2008)
+#   [1] - Fast Iterative method for solving the eikonal equation
 #
-#   [2] - Accurate Parallel Fast Sweeping Method for eikonal equations   
-#       Detrixhe, Gibou & Min (2013)
-#       Noble, Gesret & Belayouni (2014)
+#   [2] - Accurate Parallel Fast Sweeping Method for solving the eikonal equations   
 #
 #   [3] - Solution for wave equation in constant density acoustic isotropic media   
-#       Cerjan et al. (1985)
 #
-#   [4] - Staggered grid solution for waves in elastic isotropic media
-#       Graves (1996)
-#       Cerjan et al. (1985)  
+#   [4] - Solution for wave equation in variable density acoustic isotropic media   
+#
+#   [5] - Solution for wave equation in elastic isotropic media
 #---------------------------------------------------------------------------------------------------
 
 modeling_type = 3                # <int>

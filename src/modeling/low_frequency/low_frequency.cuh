@@ -58,5 +58,6 @@ public:
 };
 
 __global__ void compute_seismogram(float * Pressure, float * seismogram, int * rx, int * ry, int * rz, int total_nodes, int time_id, int nt, int nxx, int nzz);
+__device__ float get_boundary_damper(int i, int j, int k, int nxx, int nyy, int nzz, int nb, int nbzu);
 
 # endif

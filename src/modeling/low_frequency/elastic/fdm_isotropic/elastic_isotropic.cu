@@ -3,9 +3,7 @@
 void Elastic_Isotropic::set_modeling_message()
 {
     std::cout<<"Running:\n";
-    std::cout<<"[4] - Staggered grid solution for waves in elastic isotropic media\n"; 
-    std::cout<<"    Graves (1996)\n";
-    std::cout<<"    Cerjan et al. (1985)\n\n";
+    std::cout<<"[5] - Solution for wave equation in elastic isotropic media\n\n"; 
 
     std::cout<<"Modeling progress: " << floorf(100.0f * (float)(time_id+1) / (float)(nt)) <<" %\n\n";
 }
@@ -143,14 +141,12 @@ void Elastic_Isotropic::free_space()
     cudaFree(Tyz);
     cudaFree(Txy);
 
-    cudaFree(Pressure);
-
     cudaFree(damp1D);
     cudaFree(damp2D);
     cudaFree(damp3D);
     
     cudaFree(wavelet);
-    
+    cudaFree(Pressure);
     cudaFree(seismogram);
 }
 

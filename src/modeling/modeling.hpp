@@ -45,6 +45,7 @@ protected:
     float * wavefield_output = nullptr;
     
     std::string modeling_method;
+
     std::string receiver_output_file;
     std::string wavefield_output_file;
     std::string receiver_output_folder;
