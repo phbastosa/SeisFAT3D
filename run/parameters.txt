@@ -52,18 +52,25 @@ offsets = [1000, 1000, 1000]      # [m] <float>
 #---------------------------------------------------------------------------------------------------
 # Modeling parameters ------------------------------------------------------------------------------
 #---------------------------------------------------------------------------------------------------
-# Available types:
-#   
-#   [0] - Solution for the eikonal equation via Podvin & Lecomte (1991) 
-#   [1] - Solution for the eikonal equation via Fast Iterative Method
-#   [2] - Solution for the eikonal equation via Fast Sweeping Method   
+#   Ray tracing solvers:  
+#   [0] Initial value problem
+#   [1] Boundary value problem  
 #
-#   [3] - Solution for the wave equation in constant density acoustic isotropic media   
-#   [4] - Solution for the wave equation in variable density acoustic isotropic media   
-#   [5] - Solution for the wave equation in elastic isotropic media
+#   Eikonal solvers: 
+#   [0] - Podvin & Lecomte (1991) 
+#   [1] - Fast Iterative Method (jeong & Whitaker, 2008)
+#   [2] - Fast Sweeping Method (Detrixhe et al., 2013; Noble et al., 2014)   
+#
+#   Wave equation solvers:
+#   [3] - Constant density acoustic isotropic media   
+#   [4] - Variable density acoustic isotropic media   
+#   [5] - Elastic isotropic media
 #---------------------------------------------------------------------------------------------------
 
 modeling_type = 5                # <int>
+
+plane_azimuth = [0, 360]         # [°] <float> 
+vertical_angle = [0, 360]        # [°] <float> 
 
 total_time = 2.0                 # [s] <float>
 time_spacing = 0.001             # [s] <float>

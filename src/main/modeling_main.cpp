@@ -12,6 +12,8 @@ int main(int argc, char **argv)
 {
     std::vector<Modeling *> modeling = 
     {
+        // shooting_rayTracing
+
         new Podvin_and_Lecomte(),
         new Fast_Iterative_Method(),
         new Fast_Sweeping_Method(),
