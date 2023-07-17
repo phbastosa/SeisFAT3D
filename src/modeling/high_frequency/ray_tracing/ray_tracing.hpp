@@ -7,8 +7,25 @@ class Ray_Tracing : public Modeling
 {
 private:
 
+typedef struct
+{
+    std::vector<float> x;
+    std::vector<float> y;
+    std::vector<float> z;
+
+    std::vector<float> px;
+    std::vector<float> py;
+    std::vector<float> pz;
+
+    std::vector<float> t;
+
+} Ray;
+
 
 protected:
+
+    Ray * ray;
+    Ray auxRay;
 
     float * V = nullptr;
     float * S = nullptr;
@@ -17,7 +34,6 @@ protected:
     void get_first_arrivals();
     void set_specifications();
 
-    virtual void set_model_boundaries() = 0;
     virtual void set_modeling_message() = 0;
     virtual void set_preconditioners() = 0;
 

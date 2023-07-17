@@ -2,8 +2,30 @@
 
 void Ray_Tracing::set_specifications()
 {
+    V = new float[nPoints]();
 
+    // import_binary_float(catch_parameter("vp_model_file", file), V, nPoints);
 
+    for (int index = 0; index < nPoints; index++) V[index] = 1500.0f; 
+
+    nbxl = 1; nbxr = 1;
+    nbyl = 1; nbyr = 1;
+    nbzu = 1; nbzd = 1;
+
+    nxx = nx + nbxl + nbxr;
+    nyy = ny + nbyl + nbyr;
+    nzz = nz + nbzu + nbzd;
+
+    volsize = nxx*nyy*nzz;
+
+    S = new float[volsize]();
+
+    expand_boundary(V, S);
+
+    for (int index = 0; index < volsize; index++) S[index] = 1.0f / S[index];
+
+    receiver_output_samples = total_nodes;
+    receiver_output = new float[receiver_output_samples]();
 }
 
 void Ray_Tracing::get_first_arrivals()
@@ -20,8 +42,14 @@ void Ray_Tracing::get_ray_positions()
 
 void Ray_Tracing::build_outputs()
 {
+// shot_index x y z ---> 4*ray[id]->x.size(); for all receivers
 
+//     wavefield_output_samples = ;
 
+//     wavefield_output = new float[wavefield_output_samples]();
+
+    get_travel_times();
+    get_first_arrivals();
 }
 
 

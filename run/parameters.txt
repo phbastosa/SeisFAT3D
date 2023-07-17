@@ -53,12 +53,11 @@ offsets = [1000, 1000, 1000]      # [m] <float>
 # Modeling parameters ------------------------------------------------------------------------------
 #---------------------------------------------------------------------------------------------------
 #   Ray tracing solvers:  
-#   [0] Initial value problem
-#   [1] Boundary value problem  
+#   [0] Shooting - Initial value problem
 #
 #   Eikonal solvers: 
 #   [0] - Podvin & Lecomte (1991) 
-#   [1] - Fast Iterative Method (jeong & Whitaker, 2008)
+#   [1] - Fast Iterative Method (Jeong & Whitaker, 2008)
 #   [2] - Fast Sweeping Method (Detrixhe et al., 2013; Noble et al., 2014)   
 #
 #   Wave equation solvers:
@@ -67,7 +66,7 @@ offsets = [1000, 1000, 1000]      # [m] <float>
 #   [5] - Elastic isotropic media
 #---------------------------------------------------------------------------------------------------
 
-modeling_type = 5                # <int>
+modeling_type = 0                # <int>
 
 plane_azimuth = [0, 360]         # [°] <float> 
 vertical_angle = [0, 360]        # [°] <float> 
