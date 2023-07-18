@@ -1,5 +1,7 @@
 # include "../modeling/modeling.hpp"
 
+# include "../modeling/high_frequency/ray_tracing/shooting/shooting.hpp"
+
 # include "../modeling/high_frequency/eikonal/podvin_and_lecomte/podvin_and_lecomte.cuh"
 # include "../modeling/high_frequency/eikonal/fast_sweeping_method/fast_sweeping_method.cuh"
 # include "../modeling/high_frequency/eikonal/fast_iterative_method/fast_iterative_method.cuh"
@@ -12,7 +14,7 @@ int main(int argc, char **argv)
 {
     std::vector<Modeling *> modeling = 
     {
-        // shooting_rayTracing
+        new Shooting(),
 
         new Podvin_and_Lecomte(),
         new Fast_Iterative_Method(),
@@ -48,8 +50,8 @@ int main(int argc, char **argv)
         modeling[type]->info_message();
         modeling[type]->initial_setup();
         modeling[type]->forward_solver();
-        modeling[type]->build_outputs();
-        modeling[type]->export_outputs();
+        // modeling[type]->build_outputs();
+        // modeling[type]->export_outputs();
     }
 
     modeling[type]->get_runtime();

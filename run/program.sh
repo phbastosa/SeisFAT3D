@@ -7,6 +7,10 @@ regular="../src/geometry/regular/regular.cpp"
 circular="../src/geometry/circular/circular.cpp"
 
 modeling="../src/modeling/modeling.cpp"
+
+rayTracing="../src/modeling/high_frequency/ray_tracing/ray_tracing.cpp"
+shooting="../src/modeling/high_frequency/ray_tracing/shooting/shooting.cpp"
+
 eikonal="../src/modeling/high_frequency/eikonal/eikonal.cpp"
 pod="../src/modeling/high_frequency/eikonal/podvin_and_lecomte/podvin_and_lecomte.cu"
 fsm="../src/modeling/high_frequency/eikonal/fast_sweeping_method/fast_sweeping_method.cu"
@@ -34,7 +38,7 @@ modeling_main="../src/main/modeling_main.cpp"
 
 geometry_all="$geometry $regular $circular"
 
-high_freq_all="$eikonal $pod $fim $fsm"
+high_freq_all="$rayTracing $shooting $eikonal $pod $fim $fsm"
 low_freq_all="$low_freq $scalar $scalar_iso $acoustic $acoustic_iso $elastic $elastic_iso"
 
 modeling_all="$modeling $high_freq_all $low_freq_all $modeling_main"

@@ -13,7 +13,6 @@ private:
 protected:
 
     void set_modeling_message();
-    void set_preconditioners();
 
 public:
 

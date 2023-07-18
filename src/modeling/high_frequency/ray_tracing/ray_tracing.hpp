@@ -17,10 +17,11 @@ typedef struct
     std::vector<float> py;
     std::vector<float> pz;
 
-    std::vector<float> t;
+    float total_time;
 
 } Ray;
 
+    float deg2rad(float degree);
 
 protected:
 
@@ -30,12 +31,14 @@ protected:
     float * V = nullptr;
     float * S = nullptr;
 
+    float beg_vtangle, end_vtangle, vtangle_spacing;
+    float beg_azimuth, end_azimuth, azimuth_spacing;
+
     void get_ray_positions();
     void get_first_arrivals();
     void set_specifications();
 
     virtual void set_modeling_message() = 0;
-    virtual void set_preconditioners() = 0;
 
 public:
 

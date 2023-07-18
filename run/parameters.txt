@@ -53,23 +53,23 @@ offsets = [1000, 1000, 1000]      # [m] <float>
 # Modeling parameters ------------------------------------------------------------------------------
 #---------------------------------------------------------------------------------------------------
 #   Ray tracing solvers:  
-#   [0] Shooting - Initial value problem
+#   [0] Shooting: Initial value problem
 #
 #   Eikonal solvers: 
-#   [0] - Podvin & Lecomte (1991) 
-#   [1] - Fast Iterative Method (Jeong & Whitaker, 2008)
-#   [2] - Fast Sweeping Method (Detrixhe et al., 2013; Noble et al., 2014)   
+#   [1] - Podvin & Lecomte (1991) 
+#   [2] - Fast Iterative Method (Jeong & Whitaker, 2008)
+#   [3] - Fast Sweeping Method (Detrixhe et al., 2013; Noble et al., 2014)   
 #
 #   Wave equation solvers:
-#   [3] - Constant density acoustic isotropic media   
-#   [4] - Variable density acoustic isotropic media   
-#   [5] - Elastic isotropic media
+#   [4] - Constant density acoustic isotropic media   
+#   [5] - Variable density acoustic isotropic media   
+#   [6] - Elastic isotropic media
 #---------------------------------------------------------------------------------------------------
 
 modeling_type = 0                # <int>
 
-plane_azimuth = [0, 360]         # [°] <float> 
-vertical_angle = [0, 360]        # [°] <float> 
+plane_azimuth = [0, 360, 60]   # [°] <float> (initial, final, spacing)
+vertical_angle = [0, 360, 60]  # [°] <float> (initial, final, spacing)
 
 total_time = 2.0                 # [s] <float>
 time_spacing = 0.001             # [s] <float>

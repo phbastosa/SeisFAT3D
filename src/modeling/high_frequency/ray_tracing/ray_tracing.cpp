@@ -1,5 +1,12 @@
 # include "ray_tracing.hpp"
 
+float Ray_Tracing::deg2rad(float degree)
+{
+    float pi = 4.0f*atanf(1.0f);
+
+    return degree * pi / 180.0f;
+}
+
 void Ray_Tracing::set_specifications()
 {
     V = new float[nPoints]();
@@ -7,6 +14,28 @@ void Ray_Tracing::set_specifications()
     // import_binary_float(catch_parameter("vp_model_file", file), V, nPoints);
 
     for (int index = 0; index < nPoints; index++) V[index] = 1500.0f; 
+
+    std::vector<std::string> splitted;
+
+    // deg2rad()
+
+    splitted = split(catch_parameter("plane_azimuth", file), ',');
+    beg_azimuth = deg2rad(std::stof(splitted[0]));
+    end_azimuth = deg2rad(std::stof(splitted[1]));
+    azimuth_spacing = deg2rad(std::stof(splitted[2]));
+
+    if (end_azimuth < beg_azimuth) 
+        throw std::invalid_argument("Error: final plane azimuth angle is smaller than the initial.\n");
+
+    splitted = split(catch_parameter("vertical_angle", file), ',');
+    beg_vtangle = deg2rad(std::stof(splitted[0]));
+    end_vtangle = deg2rad(std::stof(splitted[1]));    
+    vtangle_spacing = deg2rad(std::stof(splitted[2]));
+
+    if (end_azimuth < beg_azimuth) 
+        throw std::invalid_argument("Error: final vertical angle is smaller than the initial.\n");
+
+    std::vector<std::string>().swap(splitted);
 
     nbxl = 1; nbxr = 1;
     nbyl = 1; nbyr = 1;
@@ -26,6 +55,8 @@ void Ray_Tracing::set_specifications()
 
     receiver_output_samples = total_nodes;
     receiver_output = new float[receiver_output_samples]();
+
+    ray = new Ray[receiver_output_samples]();
 }
 
 void Ray_Tracing::get_first_arrivals()
@@ -48,8 +79,8 @@ void Ray_Tracing::build_outputs()
 
 //     wavefield_output = new float[wavefield_output_samples]();
 
-    get_travel_times();
     get_first_arrivals();
+    get_ray_positions();
 }
 
 
