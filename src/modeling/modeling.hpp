@@ -29,6 +29,7 @@ protected:
     int blocksPerGrid;
     int threadsPerBlock;
 
+    int source_id, time_id;
     int nx, ny, nz, nPoints;
     int nxx, nyy, nzz, nb, volsize;
     int nbxl, nbxr, nbyl, nbyr, nbzu, nbzd;
@@ -62,7 +63,6 @@ protected:
 public: 
 
     int shot_id;
-    int time_id;
     int total_shots;
     int total_nodes;
     
