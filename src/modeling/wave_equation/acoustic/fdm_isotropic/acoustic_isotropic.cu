@@ -3,7 +3,7 @@
 void Acoustic_Isotropic::set_model_parameters()
 {
     modeling_method = std::string("acoustic_isotropic");
-    modeling_message = std::string("[4] - Solution for the wave equation in variable density acoustic isotropic media\n\n");
+    modeling_message = std::string("[4] - Variable density acoustic isotropic media\n\n");
 
     float * vp = new float[nPoints]();
     float * rho = new float[nPoints]();

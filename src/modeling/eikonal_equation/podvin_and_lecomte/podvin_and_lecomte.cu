@@ -3,8 +3,7 @@
 void Podvin_and_Lecomte::set_modeling_message()
 {
     std::cout<<"Running:\n";
-    std::cout<<"[0] - Finite difference computation of traveltimes in very contrasted velocity models\n"; 
-    std::cout<<"    Podvin & Lecomte (1991)\n\n";
+    std::cout<<"[0] - Podvin & Lecomte (1991)\n\n"; 
 }
 
 void Podvin_and_Lecomte::set_model_boundaries()

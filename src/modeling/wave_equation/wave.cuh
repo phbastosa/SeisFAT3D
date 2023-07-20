@@ -17,6 +17,8 @@ protected:
     float dt, tmax, pi, fc;
 
     bool free_surface;
+    bool import_wavelet;
+    std::string wavelet_file;
 
     float * damp1D = nullptr;
     float * damp2D = nullptr;

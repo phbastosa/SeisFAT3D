@@ -11,8 +11,10 @@ void Scalar::set_wavelet()
         ricker[n] = amp*(1 - 2*arg)*expf(-arg);    
     }
 
-	cudaMalloc((void**)&(wavelet), nt*sizeof(float));
+    if (import_wavelet) 
+        import_binary_float(wavelet_file, ricker, nt);
 
+	cudaMalloc((void**)&(wavelet), nt*sizeof(float));
 	cudaMemcpy(wavelet, ricker, nt*sizeof(float), cudaMemcpyHostToDevice);
 
     delete[] ricker;

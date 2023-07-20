@@ -3,8 +3,7 @@
 void Fast_Iterative_Method::set_modeling_message()
 {
     std::cout<<"Running:\n";
-    std::cout<<"[1] - Fast Iterative Method for eikonal equations\n"; 
-    std::cout<<"    Jeong & Whitaker (2008)\n\n";
+    std::cout<<"[1] - Fast Iterative Method (Jeong & Whitaker, 2008)\n\n";
 }
 
 void Fast_Iterative_Method::set_model_boundaries()

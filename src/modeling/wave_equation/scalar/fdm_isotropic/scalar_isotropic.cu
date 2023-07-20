@@ -3,7 +3,7 @@
 void Scalar_Isotropic::set_model_parameters()
 {
     modeling_method = std::string("scalar_isotropic");
-    modeling_message = std::string("[3] - Solution for wave equation in constant density acoustic isotropic media\n\n");
+    modeling_message = std::string("[3] - SConstant density acoustic isotropic media\n\n");
 
     float * vp = new float[nPoints]();
     float * dtvp2 = new float[volsize]();

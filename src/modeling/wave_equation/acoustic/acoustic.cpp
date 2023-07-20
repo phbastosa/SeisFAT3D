@@ -19,6 +19,9 @@ void Acoustic::set_wavelet()
         aux[n] = amp * sum;
     }
 
+    if (import_wavelet) 
+        import_binary_float(wavelet_file, aux, nt);
+
 	cudaMalloc((void**)&(wavelet), nt*sizeof(float));
 	cudaMemcpy(wavelet, aux, nt*sizeof(float), cudaMemcpyHostToDevice);
 

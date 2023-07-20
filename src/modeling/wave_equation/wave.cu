@@ -18,6 +18,9 @@ void Wave::set_specifications()
     amp = std::stof(catch_parameter("max_amplitude", file));
     fc = fmax / (3.0f * sqrtf(pi));
 
+    wavelet_file = catch_parameter("wavelet_file", file); 
+    import_wavelet = str2bool(catch_parameter("import_wavelet", file));
+
     set_model_boundaries();
     set_model_parameters();
     set_gridded_geometry();

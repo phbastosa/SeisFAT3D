@@ -3,7 +3,7 @@
 void Elastic_Isotropic::set_model_parameters()
 {
     modeling_method = std::string("elastic_isotropic");
-    modeling_message = std::string("[5] - Solution for wave equation in elastic isotropic media\n\n");
+    modeling_message = std::string("[5] - Elastic isotropic media\n\n");
 
     float * vp = new float[nPoints]();
     float * vs = new float[nPoints]();
