@@ -8,24 +8,18 @@ circular="../src/geometry/circular/circular.cpp"
 
 modeling="../src/modeling/modeling.cpp"
 
-rayTracing="../src/modeling/high_frequency/ray_tracing/ray_tracing.cpp"
-shooting="../src/modeling/high_frequency/ray_tracing/shooting/shooting.cpp"
+eikonal="../src/modeling/eikonal_equation/eikonal.cpp"
+pod="../src/modeling/eikonal_equation/podvin_and_lecomte/podvin_and_lecomte.cu"
+fsm="../src/modeling/eikonal_equation/fast_sweeping_method/fast_sweeping_method.cu"
+fim="../src/modeling/eikonal_equation/fast_iterative_method/fast_iterative_method.cu"
 
-eikonal="../src/modeling/high_frequency/eikonal/eikonal.cpp"
-pod="../src/modeling/high_frequency/eikonal/podvin_and_lecomte/podvin_and_lecomte.cu"
-fsm="../src/modeling/high_frequency/eikonal/fast_sweeping_method/fast_sweeping_method.cu"
-fim="../src/modeling/high_frequency/eikonal/fast_iterative_method/fast_iterative_method.cu"
-
-low_freq="../src/modeling/low_frequency/low_frequency.cu"
-
-scalar="../src/modeling/low_frequency/scalar/scalar.cpp"
-scalar_iso="../src/modeling/low_frequency/scalar/fdm_isotropic/scalar_isotropic.cu"
-
-acoustic="../src/modeling/low_frequency/acoustic/acoustic.cpp"
-acoustic_iso="../src/modeling/low_frequency/acoustic/fdm_isotropic/acoustic_isotropic.cu"
-
-elastic="../src/modeling/low_frequency/elastic/elastic.cpp"
-elastic_iso="../src/modeling/low_frequency/elastic/fdm_isotropic/elastic_isotropic.cu"
+wave="../src/modeling/wave_equation/wave.cu"
+scalar="../src/modeling/wave_equation/scalar/scalar.cpp"
+scalar_iso="../src/modeling/wave_equation/scalar/fdm_isotropic/scalar_isotropic.cu"
+acoustic="../src/modeling/wave_equation/acoustic/acoustic.cpp"
+acoustic_iso="../src/modeling/wave_equation/acoustic/fdm_isotropic/acoustic_isotropic.cu"
+elastic="../src/modeling/wave_equation/elastic/elastic.cpp"
+elastic_iso="../src/modeling/wave_equation/elastic/fdm_isotropic/elastic_isotropic.cu"
 
 modeling_main="../src/main/modeling_main.cpp"
 
@@ -38,10 +32,10 @@ modeling_main="../src/main/modeling_main.cpp"
 
 geometry_all="$geometry $regular $circular"
 
-high_freq_all="$rayTracing $shooting $eikonal $pod $fim $fsm"
-low_freq_all="$low_freq $scalar $scalar_iso $acoustic $acoustic_iso $elastic $elastic_iso"
+eikonal_all="$eikonal $pod $fim $fsm"
+wave_all="$wave $scalar $scalar_iso $acoustic $acoustic_iso $elastic $elastic_iso"
 
-modeling_all="$modeling $high_freq_all $low_freq_all $modeling_main"
+modeling_all="$modeling $eikonal_all $wave_all $modeling_main"
 
 flags="-Xcompiler=-fopenmp --std=c++11 --relocatable-device-code=true -lm -O3"
 

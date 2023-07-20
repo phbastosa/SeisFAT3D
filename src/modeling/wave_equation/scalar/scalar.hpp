@@ -1,9 +1,9 @@
 # ifndef SCALAR_HPP
 # define SCALAR_HPP
 
-# include "../low_frequency.cuh"
+# include "../wave.cuh"
 
-class Scalar : public Low_Frequency
+class Scalar : public Wave
 {
 private:
 

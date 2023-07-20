@@ -1,9 +1,9 @@
 # ifndef ELASTIC_HPP
 # define ELASTIC_HPP
 
-# include "../low_frequency.cuh"
+# include "../wave.cuh"
 
-class Elastic : public Low_Frequency
+class Elastic : public Wave
 {
 private:
 

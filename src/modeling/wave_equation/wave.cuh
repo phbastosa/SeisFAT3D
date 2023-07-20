@@ -3,7 +3,7 @@
 
 # include "../modeling.hpp" 
 
-class Low_Frequency : public Modeling
+class Wave : public Modeling
 {
 private:
 

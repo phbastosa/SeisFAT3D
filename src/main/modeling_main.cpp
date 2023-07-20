@@ -1,21 +1,17 @@
 # include "../modeling/modeling.hpp"
 
-# include "../modeling/high_frequency/ray_tracing/shooting/shooting.hpp"
+# include "../modeling/eikonal_equation/podvin_and_lecomte/podvin_and_lecomte.cuh"
+# include "../modeling/eikonal_equation/fast_sweeping_method/fast_sweeping_method.cuh"
+# include "../modeling/eikonal_equation/fast_iterative_method/fast_iterative_method.cuh"
 
-# include "../modeling/high_frequency/eikonal/podvin_and_lecomte/podvin_and_lecomte.cuh"
-# include "../modeling/high_frequency/eikonal/fast_sweeping_method/fast_sweeping_method.cuh"
-# include "../modeling/high_frequency/eikonal/fast_iterative_method/fast_iterative_method.cuh"
-
-# include "../modeling/low_frequency/scalar/fdm_isotropic/scalar_isotropic.cuh" 
-# include "../modeling/low_frequency/acoustic/fdm_isotropic/acoustic_isotropic.cuh" 
-# include "../modeling/low_frequency/elastic/fdm_isotropic/elastic_isotropic.cuh" 
+# include "../modeling/wave_equation/scalar/fdm_isotropic/scalar_isotropic.cuh" 
+# include "../modeling/wave_equation/acoustic/fdm_isotropic/acoustic_isotropic.cuh" 
+# include "../modeling/wave_equation/elastic/fdm_isotropic/elastic_isotropic.cuh" 
 
 int main(int argc, char **argv)
 {
     std::vector<Modeling *> modeling = 
     {
-        new Shooting(),
-
         new Podvin_and_Lecomte(),
         new Fast_Iterative_Method(),
         new Fast_Sweeping_Method(),
@@ -50,8 +46,8 @@ int main(int argc, char **argv)
         modeling[type]->info_message();
         modeling[type]->initial_setup();
         modeling[type]->forward_solver();
-        // modeling[type]->build_outputs();
-        // modeling[type]->export_outputs();
+        modeling[type]->build_outputs();
+        modeling[type]->export_outputs();
     }
 
     modeling[type]->get_runtime();

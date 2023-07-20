@@ -1,9 +1,9 @@
 # ifndef ACOUSTIC_HPP
 # define ACOUSTIC_HPP
 
-# include "../low_frequency.cuh" 
+# include "../wave.cuh" 
 
-class Acoustic : public Low_Frequency
+class Acoustic : public Wave
 {
 private:
 

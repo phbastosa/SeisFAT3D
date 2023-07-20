@@ -1,6 +1,6 @@
-# include "low_frequency.cuh"
+# include "wave.cuh"
 
-void Low_Frequency::set_specifications()
+void Wave::set_specifications()
 {
     pi = 4.0f * atanf(1.0f);  
 
@@ -28,7 +28,7 @@ void Low_Frequency::set_specifications()
     set_outputs();
 }
 
-void Low_Frequency::set_model_boundaries()
+void Wave::set_model_boundaries()
 {
     nbxl = nb; nbxr = nb;
     nbyl = nb; nbyr = nb;
@@ -45,7 +45,7 @@ void Low_Frequency::set_model_boundaries()
     blocksPerGrid = (int)(volsize / threadsPerBlock);
 }
 
-void Low_Frequency::set_gridded_geometry()
+void Wave::set_gridded_geometry()
 {
     int * rx = new int[total_nodes]();
     int * ry = new int[total_nodes]();
@@ -71,7 +71,7 @@ void Low_Frequency::set_gridded_geometry()
     delete[] rz;
 }
 
-void Low_Frequency::set_dampers()
+void Wave::set_dampers()
 {
     float * d1D = new float[nb]();
     float * d2D = new float[nb*nb]();
@@ -125,7 +125,7 @@ void Low_Frequency::set_dampers()
     delete[] d3D;
 }
 
-void Low_Frequency::set_outputs()
+void Wave::set_outputs()
 {
     receiver_output_samples = nt*total_nodes;
     wavefield_output_samples = nPoints*nsnap;
@@ -143,7 +143,7 @@ void Low_Frequency::set_outputs()
     }
 }
 
-void Low_Frequency::build_outputs()
+void Wave::build_outputs()
 {
     if (export_receiver_output)
     {
@@ -155,13 +155,13 @@ void Low_Frequency::build_outputs()
         wavefield_output_file = wavefield_output_folder + modeling_method + "_pressure_" + std::to_string(nz) + "x" + std::to_string(nx) + "x" + std::to_string(ny) + "_" + std::to_string(nsnap) + "_shot_" + std::to_string(shot_id+1) + ".bin";
 }
 
-void Low_Frequency::show_progress()
+void Wave::show_progress()
 {
     if (time_id % (nt / 10) == 0) 
         info_message();
 }
 
-void Low_Frequency::set_modeling_message()
+void Wave::set_modeling_message()
 {
     std::cout<<"Running:\n";
 
@@ -170,7 +170,7 @@ void Low_Frequency::set_modeling_message()
     std::cout<<"Modeling progress: " << floorf(100.0f * (float)(time_id+1) / (float)(nt)) <<" %\n\n";
 }
 
-void Low_Frequency::get_snapshots()
+void Wave::get_snapshots()
 {
     if (export_wavefield_output)
     {
@@ -193,7 +193,7 @@ void Low_Frequency::get_snapshots()
     }
 }
 
-void Low_Frequency::get_seismogram()
+void Wave::get_seismogram()
 {
     if (export_receiver_output)
     {
