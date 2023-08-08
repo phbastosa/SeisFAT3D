@@ -1,5 +1,3 @@
-# include "../modeling/modeling.hpp"
-
 # include "../modeling/eikonal_equation/podvin_and_lecomte/podvin_and_lecomte.cuh"
 # include "../modeling/eikonal_equation/fast_sweeping_method/fast_sweeping_method.cuh"
 # include "../modeling/eikonal_equation/fast_iterative_method/fast_iterative_method.cuh"
