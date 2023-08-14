@@ -63,7 +63,7 @@ offsets = [1000, 1000, 1000]      # [m] <float>
 #   [5] - Elastic isotropic media
 #---------------------------------------------------------------------------------------------------
 
-modeling_type = 5                # <int>
+modeling_type = 2                # <int>
 
 total_time = 2.0                 # [s] <float>
 time_spacing = 0.001             # [s] <float>
@@ -104,6 +104,9 @@ max_iteration = 1
 
 obs_data_folder = ../inputs/data/
 obs_data_prefix = obs_data_5625_shot_
+
+estimated_model_folder = 
+convergence_map_folder = 
 
 #---------------------------------------------------------------------------------------------------
 # Migration parameters 

@@ -1,5 +1,5 @@
-# ifndef ADJOINT_STATE_HPP
-# define ADJOINT_STATE_HPP
+# ifndef ADJOINT_STATE_CUH
+# define ADJOINT_STATE_CUH
 
 # include "../tomography.hpp"
 
@@ -13,7 +13,9 @@ protected:
 
 public:
 
-
+    void optimization();
+    void set_parameters();
+    void forward_modeling();
 };
 
 # endif

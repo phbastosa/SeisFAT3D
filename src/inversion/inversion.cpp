@@ -7,4 +7,8 @@ void Inversion::set_general_parameters()
 
     obs_data_folder = catch_parameter("obs_data_folder", file);
     obs_data_prefix = catch_parameter("obs_data_prefix", file);
+
+    // estimated model path
+
+    // convergence path
 }

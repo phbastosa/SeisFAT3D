@@ -12,7 +12,7 @@ protected:
 
     int n_data, n_model;
     int max_iteration;
-    int iterration;
+    int iteration;
 
     float tolerance;
 

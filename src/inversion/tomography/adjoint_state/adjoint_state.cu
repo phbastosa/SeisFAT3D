@@ -1,5 +1,33 @@
 # include "adjoint_state.cuh"
 
+void Adjoint_State::set_parameters()
+{
+    set_general_parameters();
+    
+    set_forward_modeling();
+
+    set_main_components();
+
+    std::cout<<"Adjoint state first arrival tomography"<<std::endl;
+
+
+}
+
+void Adjoint_State::forward_modeling()
+{
+
+
+}
+
+void Adjoint_State::optimization()
+{
+
+    
+}
+
+
+
+
 
 
 // void Inversion::set_parameters()

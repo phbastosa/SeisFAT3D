@@ -1,57 +1,73 @@
 # include "tomography.hpp"
 
-void Tomography::set_parameters()
+void Tomography::set_forward_modeling()
 {
-    modeling = 
+    std::vector<Eikonal *> possibilities = 
     {
         new Podvin_and_Lecomte(),
         new Fast_Iterative_Method(),
         new Fast_Sweeping_Method()
     };
     
-    if (!isInteger(catch_parameter("modeling_type", file)))
-        throw std::invalid_argument("\033[31mError: Wrong modeling type! \033[0;0m");
-
     auto type = std::stoi(catch_parameter("modeling_type", file));
 
-    if ((type < 0) || (type >= modeling.size()))
-        throw std::invalid_argument("\033[31mError: Modeling type must to be an eikonal equation solver! \033[0;0m");
+    modeling = possibilities[type];
 
-    modeling[type]->file = file;
+    modeling->file = file;
 
-    modeling[type]->set_parameters();
+    modeling->set_parameters();
+}
 
-    set_general_parameters();    
+void Tomography::set_main_components()
+{
+    n_data = modeling->total_shots * modeling->total_nodes;
+    n_model = modeling->nPoints;
 
-    n_data = modeling[type]->total_shots * modeling[type]->total_nodes;
-    n_model = modeling[type]->nx * modeling[type]->ny * modeling[type]->nz;
+    dcal = new float[n_data]();
+    dobs = new float[n_data]();
 
-    std::cout<<n_data<<std::endl;
-    std::cout<<n_model<<std::endl;
-} 
+    dm = new float[n_model]();
+    model = new float[n_model]();
+}
 
 void Tomography::import_obs_data()
 {
+    int ptr = 0; 
+    
+    float * data = new float[modeling->total_nodes]();
 
+    for (int shot = 0; shot < modeling->total_shots; shot++)
+    {
+        import_binary_float(obs_data_folder + obs_data_prefix + std::to_string(shot+1) + ".bin", data, modeling->total_nodes);
 
-}
+        for (int d = ptr; d < ptr + modeling->total_nodes; d++) 
+            dobs[d] = data[d - ptr];
 
-void Tomography::forward_modeling()
-{
+        ptr += modeling->total_nodes;        
+    }
 
-
+    delete[] data;    
 }
 
 void Tomography::check_convergence()
 {
+    float r = 0.0f;
 
+    for (int i = 0; i < n_data; i++)
+        r += powf(dobs[i] - dcal[i], 2.0f);
 
-}
-
-void Tomography::optimization()
-{
-
-
+    residuo.push_back(sqrtf(r));
+    
+    if ((iteration >= max_iteration) || (residuo.back() <= tolerance))
+    {
+        std::cout << "\nFinal residuo: "<< residuo.back() << std::endl;
+        converged = true;
+    }
+    else
+    {
+        iteration += 1;
+        converged = false;
+    }
 }
 
 void Tomography::model_update()

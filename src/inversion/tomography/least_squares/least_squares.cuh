@@ -13,7 +13,9 @@ protected:
 
 public:
 
-
+    void optimization();
+    void set_parameters();
+    void forward_modeling();
 };
 
 # endif

@@ -43,7 +43,7 @@ adjoint_state="../src/inversion/tomography/adjoint_state/adjoint_state.cu"
 tomography_all="$tomography $least_squares $adjoint_state"
 
 waveform="../src/inversion/waveform/waveform.cpp"
-scalar_iso_fwi="../src/inversion/waveform/scalar_isotropic_fwi/scalar_isotropic_fwi.cu"
+# scalar_iso_fwi="../src/inversion/waveform/scalar_isotropic_fwi/scalar_isotropic_fwi.cu"
 
 waveform_all="$waveform $scalar_fwi"
 
@@ -57,8 +57,8 @@ inversion_main="../src/main/inversion_main.cpp"
 
 # Path unification ---------------------------------------------------------------------------------------
 
-modeling_all="$modeling $eikonal_all $wave_all $modeling_main"
-inversion_all="$inversion $tomography_all $waveform_all $inversion_main"
+modeling_all="$modeling $eikonal_all $wave_all"
+inversion_all="$inversion $tomography_all $waveform_all"
 migration_all=""
 
 flags="-Xcompiler=-fopenmp --std=c++11 --relocatable-device-code=true -lm -O3"
@@ -92,11 +92,11 @@ case "$1" in
 
     echo -e "Compiling the stand-alone executables!\n"
 
-    echo -e "../bin/\033[31mmodeling.exe\033[m" 
-    nvcc $io $geometry_all $modeling_all $flags -o ../bin/modeling.exe
+    # echo -e "../bin/\033[31mmodeling.exe\033[m" 
+    # nvcc $io $geometry_all $modeling_all $modeling_main $flags -o ../bin/modeling.exe
 
-    # echo -e "../bin/\033[31minversion.exe\033[m" 
-    # nvcc $io $geometry_all $modeling_all $inversion_all $flags -o ../bin/inversion.exe
+    echo -e "../bin/\033[31minversion.exe\033[m" 
+    nvcc $io $geometry_all $modeling_all $inversion_all $inversion_main $flags -o ../bin/inversion.exe
 
     # echo -e "../bin/\033[31mmigration.exe\033[m"
     # nvcc $io $geometry $regular $circular $modeling $eikonal $migration $kirchhoff $migration_main $flags -o ../bin/migration.exe

@@ -9,22 +9,27 @@
 
 class Tomography : public Inversion
 {
-private:
-
-
 protected:
 
-    std::vector<Eikonal *> modeling;
+    float * dm;
+    float * model;
+
+    Eikonal * modeling;
+
+    void set_forward_modeling();
+    void set_main_components();
 
 public:
 
-    void optimization();
+    void import_obs_data();
+    void check_convergence();
+
     void model_update();
     void export_results();
-    void set_parameters();
-    void import_obs_data();
-    void forward_modeling();
-    void check_convergence();
+
+    virtual void optimization() = 0;
+    virtual void set_parameters() = 0;
+    virtual void forward_modeling() = 0;
 };
 
 # endif
