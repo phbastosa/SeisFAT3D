@@ -55,7 +55,31 @@ void Modeling::get_runtime()
     std::cout<<"\nRun time: "<<elapsed_seconds.count()<<" s."<<std::endl;
 }
 
-void Modeling::info_message()
+void Modeling::set_acquisition_geometry()
+{
+    std::vector<Geometry *> possibilities = 
+    {
+        new Regular(), 
+        new Circular()
+    };
+
+    auto type = std::stoi(catch_parameter("geometry_type", file));
+
+    geometry = possibilities[type];
+
+    geometry->file = file;
+
+    geometry->set_geometry();
+
+    total_shots = geometry->shots.total;
+    total_nodes = geometry->nodes.total;
+
+    check_geometry_overflow();
+
+    std::vector<Geometry *>().swap(possibilities); 
+}
+
+void Modeling::general_modeling_message()
 {
     get_RAM_usage();
     get_GPU_usage();
@@ -73,12 +97,10 @@ void Modeling::info_message()
     std::cout<<"Memory usage: \n";
     std::cout<<"RAM = "<<RAM<<" Mb\n";
     std::cout<<"GPU = "<<vRAM<<" Mb\n\n";
-
-    set_modeling_message();
 }
 
-void Modeling::set_parameters()
-{    
+void Modeling::general_modeling_parameters()
+{
     get_GPU_initMem();
 
     threadsPerBlock = 256;
@@ -100,29 +122,15 @@ void Modeling::set_parameters()
 
     receiver_output_folder = catch_parameter("receiver_output_folder", file); 
     wavefield_output_folder = catch_parameter("wavefield_output_folder", file);
+}
 
-    std::vector<Geometry *> possibilities = {new Regular(), new Circular()};
+void Modeling::set_velocity_model()
+{
+    Vp = new float[nPoints]();
 
-    if (!isInteger(catch_parameter("geometry_type", file)))
-        throw std::invalid_argument("\033[31mError: Wrong geometry type! \033[0;0m");
+    // import_binary_float(catch_parameter("vp_model_file", file), Vp, nPoints);
 
-    auto type = std::stoi(catch_parameter("geometry_type", file));
-
-    if ((type < 0) || (type >= possibilities.size()))
-        throw std::invalid_argument("\033[31mError: Geometry type is out of bounds! \033[0;0m");
-
-    geometry = possibilities[type];
-
-    geometry->file = file;
-
-    geometry->set_geometry();
-
-    total_shots = geometry->shots.total;
-    total_nodes = geometry->nodes.total;
-
-    check_geometry_overflow();
-    
-    set_specifications();
+    for (int index = 0; index < nPoints; index++) Vp[index] = 1500.0f; 
 }
 
 void Modeling::expand_boundary(float * input, float * output)

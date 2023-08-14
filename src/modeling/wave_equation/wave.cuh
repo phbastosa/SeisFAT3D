@@ -10,8 +10,7 @@ private:
 
 protected:
 
-    int time_id, nt, sId;
-    int nsnap, dsnap, isnap;
+    int nt, nsnap, dsnap, isnap;
 
     float fmax, tlag, amp;
     float dt, tmax, pi, fc;
@@ -34,8 +33,9 @@ protected:
     int * grid_node_y = nullptr;
     int * grid_node_z = nullptr;
 
-    void set_specifications();
-    void set_model_boundaries();
+    void wave_modeling_parameters();
+    
+    void set_boundaries();
     void set_gridded_geometry();
     
     void set_dampers();
@@ -47,16 +47,15 @@ protected:
 
     void set_modeling_message();
 
-    virtual void set_model_parameters() = 0;
-    virtual void set_wavefields() = 0;
-    virtual void set_wavelet() = 0;
-
 public:
 
     void build_outputs();
 
-    virtual void forward_solver() = 0;
+    virtual void set_parameters() = 0; 
+
+    virtual void info_message() = 0;
     virtual void initial_setup() = 0;
+    virtual void forward_solver() = 0;
     virtual void free_space() = 0;
 };
 

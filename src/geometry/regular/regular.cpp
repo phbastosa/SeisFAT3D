@@ -2,7 +2,7 @@
 
 void Regular::set_geometry()
 {
-    Geometry::set_geometry();
+    set_general_parameters();
     
     if (import_geometry) 
     {

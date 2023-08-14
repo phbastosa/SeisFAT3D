@@ -1,6 +1,6 @@
 # include "geometry.hpp"
 
-void Geometry::set_geometry()
+void Geometry::set_general_parameters()
 {
     reciprocity = str2bool(catch_parameter("reciprocity", file));
     import_geometry = str2bool(catch_parameter("import_geometry", file));

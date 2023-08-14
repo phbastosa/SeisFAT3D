@@ -2,9 +2,9 @@
 # include "../modeling/eikonal_equation/fast_sweeping_method/fast_sweeping_method.cuh"
 # include "../modeling/eikonal_equation/fast_iterative_method/fast_iterative_method.cuh"
 
-# include "../modeling/wave_equation/scalar/fdm_isotropic/scalar_isotropic.cuh" 
-# include "../modeling/wave_equation/acoustic/fdm_isotropic/acoustic_isotropic.cuh" 
-# include "../modeling/wave_equation/elastic/fdm_isotropic/elastic_isotropic.cuh" 
+# include "../modeling/wave_equation/scalar/scalar.cuh" 
+# include "../modeling/wave_equation/acoustic/acoustic.cuh" 
+# include "../modeling/wave_equation/elastic/elastic.cuh" 
 
 int main(int argc, char **argv)
 {
@@ -14,23 +14,13 @@ int main(int argc, char **argv)
         new Fast_Iterative_Method(),
         new Fast_Sweeping_Method(),
         
-        new Scalar_Isotropic(),
-        new Acoustic_Isotropic(),
-        new Elastic_Isotropic() 
+        new Scalar(),
+        new Acoustic(),
+        new Elastic(), 
     };
     
-    if (!fileExists(std::string(argv[1])))
-        throw std::invalid_argument("\033[31mError: " + std::string(argv[1]) + " could not be opened!\033[0;0m");
-
     auto file = std::string(argv[1]);
-
-    if (!isInteger(catch_parameter("modeling_type", file)))
-        throw std::invalid_argument("\033[31mError: Wrong modeling type! \033[0;0m");
-    
     auto type = std::stoi(catch_parameter("modeling_type", file));
-
-    if ((type < 0) || (type >= modeling.size()))
-        throw std::invalid_argument("\033[31mError: Modeling type is out of bounds! \033[0;0m");
 
     modeling[type]->file = file;
 

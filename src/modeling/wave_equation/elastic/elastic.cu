@@ -1,46 +1,60 @@
-# include "elastic_isotropic.cuh"
+# include "elastic.cuh"
 
-void Elastic_Isotropic::set_model_parameters()
+void Elastic::set_parameters()
 {
-    modeling_method = std::string("elastic_isotropic");
-    modeling_message = std::string("[5] - Elastic isotropic media\n\n");
+    general_modeling_parameters();
+    wave_modeling_parameters();
 
-    float * vp = new float[nPoints]();
-    float * vs = new float[nPoints]();
-    float * rho = new float[nPoints]();
+    set_acquisition_geometry();
+    set_gridded_geometry();
 
-    // import_binary_float(catch_parameter("vp_model_file", file), vp, nPoints);
-    // import_binary_float(catch_parameter("vs_model_file", file), vs, nPoints);
-    // import_binary_float(catch_parameter("rho_model_file", file), rho, nPoints);
+    set_velocity_model();
+    set_density_model();
+    set_shear_model();
 
-    for (int index = 0; index < nPoints; index++) 
-    {
-        vp[index] = 1500.0f;
-        vs[index] = 0.0f;
-        rho[index] = 1000.0f;
-    }   
+    set_boundaries();
+    set_model_boundaries();
 
-    Vp = new float[volsize]();
-    Vs = new float[volsize]();
-    Rho = new float[volsize]();
+    set_modeling_volumes();
 
-    expand_boundary(vp, Vp);
-    expand_boundary(vs, Vs);
-    expand_boundary(rho, Rho);
+    set_wavelet();
+    set_dampers();
+    set_outputs();
+}
 
-    delete[] vp;
-    delete[] vs;
-    delete[] rho;
+void Elastic::set_density_model()
+{
+    Rho = new float[nPoints]();
 
+    // import_binary_float(catch_parameter("rho_model_file", file), Rho, nPoints);
+
+    for (int index = 0; index < nPoints; index++) Rho[index] = 1000.0f; 
+}
+
+void Elastic::set_shear_model()
+{
+    Vs = new float[nPoints]();
+
+    // import_binary_float(catch_parameter("vs_model_file", file), Vs, nPoints);
+
+    for (int index = 0; index < nPoints; index++) Vs[index] = 0.0f; 
+}
+
+void Elastic::set_model_boundaries()
+{
     float * b = new float[volsize]();
     float * m = new float[volsize]();
     float * l = new float[volsize]();
 
+    expand_boundary(Rho, b);
+    expand_boundary(Vs, m);
+    expand_boundary(Vp, l);
+
     for (int index = 0; index < volsize; index++)
     {
-        b[index] = 1.0f / Rho[index];
-        m[index] = Rho[index]*powf(Vs[index], 2.0f);
-        l[index] = Rho[index]*powf(Vp[index], 2.0f) - 2.0f*m[index];
+        m[index] = b[index]*powf(m[index], 2.0f);
+        l[index] = b[index]*powf(l[index], 2.0f) - 2.0f*m[index];
+        b[index] = 1.0f / b[index];
     }
     
 	cudaMalloc((void**)&(B), volsize*sizeof(float));
@@ -56,8 +70,11 @@ void Elastic_Isotropic::set_model_parameters()
     delete[] l;
 }
 
-void Elastic_Isotropic::set_wavefields()
+void Elastic::set_modeling_volumes()
 {
+    modeling_method = std::string("elastic");
+    modeling_message = std::string("[5] - Elastic isotropic media\n\n");
+
 	cudaMalloc((void**)&(Vx), volsize*sizeof(float));
 	cudaMalloc((void**)&(Vy), volsize*sizeof(float));
 	cudaMalloc((void**)&(Vz), volsize*sizeof(float));
@@ -72,7 +89,43 @@ void Elastic_Isotropic::set_wavefields()
     cudaMalloc((void**)&(Pressure), volsize*sizeof(float));
 }
 
-void Elastic_Isotropic::initial_setup()
+void Elastic::set_wavelet()
+{
+    float * ricker = new float[nt]();
+    float * aux = new float[nt]();
+
+    float arg, sum;
+    for (int n = 0; n < nt; n++)
+    {        
+        arg = pi*((n*dt - tlag)*fc*pi)*((n*dt - tlag)*fc*pi);
+        
+        ricker[n] = (1 - 2*arg) * expf(-arg);    
+
+        sum = 0.0f;
+        for (int k = 0; k < n+1; k++)     
+            sum += ricker[k];
+    
+        aux[n] = amp * sum;
+    }
+
+    if (import_wavelet) 
+        import_binary_float(wavelet_file, aux, nt);
+
+	cudaMalloc((void**)&(wavelet), nt*sizeof(float));
+	cudaMemcpy(wavelet, aux, nt*sizeof(float), cudaMemcpyHostToDevice);
+
+    delete[] aux;
+    delete[] ricker;
+}
+
+void Elastic::info_message()
+{
+    general_modeling_message();
+    
+    set_modeling_message();
+}
+
+void Elastic::initial_setup()
 {
     cudaMemset(Vx, 0.0f, volsize*sizeof(float));
     cudaMemset(Vy, 0.0f, volsize*sizeof(float));
@@ -92,18 +145,18 @@ void Elastic_Isotropic::initial_setup()
     int sidy = (int)(geometry->shots.y[shot_id] / dy) + nbyl;
     int sidz = (int)(geometry->shots.z[shot_id] / dz) + nbzu;
 
-    sId = sidz + sidx*nzz + sidy*nxx*nzz;
+    source_id = sidz + sidx*nzz + sidy*nxx*nzz;
 
     isnap = 0;
 }
 
-void Elastic_Isotropic::forward_solver()
+void Elastic::forward_solver()
 {
     for (time_id = 0; time_id < nt; time_id++)
     {
         show_progress();
         
-        compute_velocity<<<blocksPerGrid,threadsPerBlock>>>(Vx,Vy,Vz,Txx,Tyy,Tzz,Txz,Tyz,Txy,B,wavelet,sId,time_id,dx,dy,dz,dt,nxx,nyy,nzz);
+        compute_velocity<<<blocksPerGrid,threadsPerBlock>>>(Vx,Vy,Vz,Txx,Tyy,Tzz,Txz,Tyz,Txy,B,wavelet,source_id,time_id,dx,dy,dz,dt,nxx,nyy,nzz);
         cudaDeviceSynchronize();
 
         compute_stress<<<blocksPerGrid,threadsPerBlock>>>(Vx,Vy,Vz,Txx,Tyy,Tzz,Txz,Tyz,Txy,Pressure,M,L,damp1D,damp2D,damp3D,dx,dy,dz,dt,nxx,nyy,nzz,nb,nbzu);
@@ -114,7 +167,7 @@ void Elastic_Isotropic::forward_solver()
     }
 }
 
-void Elastic_Isotropic::free_space()
+void Elastic::free_space()
 {
     cudaFree(B);
     cudaFree(M);
@@ -140,7 +193,7 @@ void Elastic_Isotropic::free_space()
     cudaFree(seismogram);
 }
 
-__global__ void compute_velocity(float * Vx, float * Vy, float * Vz, float * Txx, float * Tyy, float * Tzz, float * Txz, float * Tyz, float * Txy, float * B, float * wavelet, int sId, int time_id, float dx, float dy, float dz, float dt, int nxx, int nyy, int nzz)
+__global__ void compute_velocity(float * Vx, float * Vy, float * Vz, float * Txx, float * Tyy, float * Tzz, float * Txz, float * Tyz, float * Txy, float * B, float * wavelet, int source_id, int time_id, float dx, float dy, float dz, float dt, int nxx, int nyy, int nzz)
 {
     int index = blockIdx.x * blockDim.x + threadIdx.x;
 
@@ -150,9 +203,9 @@ __global__ void compute_velocity(float * Vx, float * Vy, float * Vz, float * Txx
 
     if (index == 0)
     {
-        Txx[sId] += wavelet[time_id] / (dx*dy*dz);
-        Tyy[sId] += wavelet[time_id] / (dx*dy*dz);
-        Tzz[sId] += wavelet[time_id] / (dx*dy*dz);
+        Txx[source_id] += wavelet[time_id] / (dx*dy*dz);
+        Tyy[source_id] += wavelet[time_id] / (dx*dy*dz);
+        Tzz[source_id] += wavelet[time_id] / (dx*dy*dz);
     }
 
     if((i >= 3) && (i < nzz-4) && (j > 3) && (j < nxx-3) && (k >= 3) && (k < nyy-4)) 

@@ -1,9 +1,7 @@
-# include "../inversion/inversion.hpp"
-
-# include "../inversion/waveform/scalar_fwi/scalar_fwi.hpp"
-
-# include "../inversion/tomography/least_squares/least_squares.hpp"
+# include "../inversion/tomography/least_squares/least_squares.cuh"
 # include "../inversion/tomography/adjoint_state/adjoint_state.cuh"
+
+# include "../inversion/waveform/scalar_isotropic_fwi/scalar_isotropic_fwi.cuh"
 
 int main(int argc, char **argv)
 {
@@ -11,28 +9,38 @@ int main(int argc, char **argv)
     {
         new Least_Squares(), 
         new Adjoint_State(), 
-        
-        new Scalar_FWI()
     }; 
+    
+    if (!fileExists(std::string(argv[1])))
+        throw std::invalid_argument("\033[31mError: " + std::string(argv[1]) + " could not be opened!\033[0;0m");
 
-    // inversion->file = std::string(argv[1]);
+    auto file = std::string(argv[1]);
 
-    // inversion->set_parameters();
-    // inversion->import_obs_data();
+    if (!isInteger(catch_parameter("inversion_type", file)))
+        throw std::invalid_argument("\033[31mError: Wrong inversion type! \033[0;0m");
+    
+    auto type = std::stoi(catch_parameter("inversion_type", file));
+
+    if ((type < 0) || (type >= inversion.size()))
+        throw std::invalid_argument("\033[31mError: Inversion type is out of bounds! \033[0;0m");
+
+    inversion[type]->file = file;
+
+    // inversion[type]->set_parameters();
+    // inversion[type]->import_obs_data();
 
     // while (true)
     // {
-    //     inversion->forward_modeling();
-    //     inversion->compute_residuals();
-    //     inversion->check_convergence();
+    //     inversion[type]->forward_modeling();
+    //     inversion[type]->check_convergence();
 
-    //     if (inversion->converged) break;
+    //     if (inversion[type]->converged) break;
 
-    // //     inversion->optimization();
-    // //     inversion->model_update();
+    // //     inversion[type]->optimization();
+    // //     inversion[type]->model_update();
     // }
 
-    // inversion->export_results();
+    // inversion[type]->export_results();
 
     return 0;
 }

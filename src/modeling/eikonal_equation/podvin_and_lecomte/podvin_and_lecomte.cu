@@ -1,22 +1,34 @@
 # include "podvin_and_lecomte.cuh"
 
-void Podvin_and_Lecomte::set_modeling_message()
+void Podvin_and_Lecomte::set_parameters()
 {
-    std::cout<<"Running:\n";
-    std::cout<<"[0] - Podvin & Lecomte (1991)\n\n"; 
+    general_modeling_parameters();
+
+    set_acquisition_geometry();
+
+    set_velocity_model();
+    
+    set_boundaries();
+    set_model_boundaries();
+    
+    set_slowness_model();
+    set_outputs();
+
+    set_modeling_volumes();
 }
 
-void Podvin_and_Lecomte::set_model_boundaries()
+void Podvin_and_Lecomte::set_boundaries()
 {
     nbxl = 1; nbxr = 1;
     nbyl = 1; nbyr = 1;
     nbzu = 1; nbzd = 1;
 }
 
-void Podvin_and_Lecomte::set_preconditioners()
+void Podvin_and_Lecomte::set_modeling_volumes()
 {
     modeling_method = std::string("pod");
 
+    T = new float[volsize](); 
     K = new float[volsize]();
 
     check_spatial_spacing();
@@ -36,6 +48,14 @@ void Podvin_and_Lecomte::check_spatial_spacing()
         throw std::invalid_argument("\033[31mError: For Podvin and Lecomte method the model spacing must to be fixed (dx = dy = dz).\033[0;0m");
 }
 
+void Podvin_and_Lecomte::info_message()
+{
+    general_modeling_message();
+
+    std::cout<<"Running:\n";
+    std::cout<<"[0] - Podvin & Lecomte (1991)\n\n"; 
+}
+
 void Podvin_and_Lecomte::initial_setup()
 {
     nit = 0;
@@ -44,9 +64,9 @@ void Podvin_and_Lecomte::initial_setup()
     int sidy = (int)(geometry->shots.y[shot_id] / dy) + nbyl;
     int sidz = (int)(geometry->shots.z[shot_id] / dz) + nbzu;
 
-    int sId = sidz + sidx*nzz + sidy*nxx*nzz;
+    source_id = sidz + sidx*nzz + sidy*nxx*nzz;
 
-    float t0 = S[sId] * sqrtf(powf((float)((sidx-nbxl)*dx) - geometry->shots.x[shot_id], 2.0f) +
+    t0 = S[source_id] * sqrtf(powf((float)((sidx-nbxl)*dx) - geometry->shots.x[shot_id], 2.0f) +
                               powf((float)((sidy-nbyl)*dy) - geometry->shots.y[shot_id], 2.0f) +
                               powf((float)((sidz-nbzu)*dz) - geometry->shots.z[shot_id], 2.0f));
 
@@ -56,7 +76,7 @@ void Podvin_and_Lecomte::initial_setup()
         K[index] = 0.0f;
     }
 
-    T[sId] = S[sId] * sqrtf(powf((sidx-nbxl)*dx - geometry->shots.x[shot_id], 2.0f) + powf((sidy-nbyl)*dy - geometry->shots.y[shot_id], 2.0f) + powf((sidz-nbzu)*dz - geometry->shots.z[shot_id], 2.0f));
+    T[source_id] = S[source_id] * sqrtf(powf((sidx-nbxl)*dx - geometry->shots.x[shot_id], 2.0f) + powf((sidy-nbyl)*dy - geometry->shots.y[shot_id], 2.0f) + powf((sidz-nbzu)*dz - geometry->shots.z[shot_id], 2.0f));
 
     int aux = (int)sqrtf(powf(sidx, 2.0f) + powf(sidy,2.0f) + powf(sidz,2.0f)); 
     if (aux > nit) nit = aux;
@@ -82,32 +102,32 @@ void Podvin_and_Lecomte::initial_setup()
     aux = (int)sqrtf(powf(nxx - sidx,2.0f) + powf(nyy - sidy,2.0f) + powf(nzz - sidz,2.0f));
     if (aux > nit) nit = aux;
 
-    K[sId - 1] = 1.0f;
-    K[sId + 1] = 1.0f;
-    K[sId - nzz] = 1.0f;
-    K[sId + nzz] = 1.0f;
-    K[sId - nxx*nzz] = 1.0f;
-    K[sId + nxx*nzz] = 1.0f;
-    K[sId + 1 - nzz] = 1.0f;
-    K[sId - 1 - nzz] = 1.0f;
-    K[sId + 1 + nzz] = 1.0f;
-    K[sId - 1 + nzz] = 1.0f;
-    K[sId + 1 + nxx*nzz] = 1.0f;
-    K[sId + 1 - nxx*nzz] = 1.0f;
-    K[sId - 1 + nxx*nzz] = 1.0f;
-    K[sId - 1 - nxx*nzz] = 1.0f;
-    K[sId - nzz - nxx*nzz] = 1.0f;
-    K[sId - nzz + nxx*nzz] = 1.0f;
-    K[sId + nzz - nxx*nzz] = 1.0f;
-    K[sId + nzz + nxx*nzz] = 1.0f;
-    K[sId + 1 + nzz + nxx*nzz] = 1.0f;
-    K[sId + 1 + nzz - nxx*nzz] = 1.0f;
-    K[sId + 1 - nzz + nxx*nzz] = 1.0f;
-    K[sId + 1 - nzz - nxx*nzz] = 1.0f;
-    K[sId - 1 - nzz - nxx*nzz] = 1.0f;
-    K[sId - 1 - nzz + nxx*nzz] = 1.0f;
-    K[sId - 1 + nzz - nxx*nzz] = 1.0f;
-    K[sId - 1 + nzz + nxx*nzz] = 1.0f;
+    K[source_id - 1] = 1.0f;
+    K[source_id + 1] = 1.0f;
+    K[source_id - nzz] = 1.0f;
+    K[source_id + nzz] = 1.0f;
+    K[source_id - nxx*nzz] = 1.0f;
+    K[source_id + nxx*nzz] = 1.0f;
+    K[source_id + 1 - nzz] = 1.0f;
+    K[source_id - 1 - nzz] = 1.0f;
+    K[source_id + 1 + nzz] = 1.0f;
+    K[source_id - 1 + nzz] = 1.0f;
+    K[source_id + 1 + nxx*nzz] = 1.0f;
+    K[source_id + 1 - nxx*nzz] = 1.0f;
+    K[source_id - 1 + nxx*nzz] = 1.0f;
+    K[source_id - 1 - nxx*nzz] = 1.0f;
+    K[source_id - nzz - nxx*nzz] = 1.0f;
+    K[source_id - nzz + nxx*nzz] = 1.0f;
+    K[source_id + nzz - nxx*nzz] = 1.0f;
+    K[source_id + nzz + nxx*nzz] = 1.0f;
+    K[source_id + 1 + nzz + nxx*nzz] = 1.0f;
+    K[source_id + 1 + nzz - nxx*nzz] = 1.0f;
+    K[source_id + 1 - nzz + nxx*nzz] = 1.0f;
+    K[source_id + 1 - nzz - nxx*nzz] = 1.0f;
+    K[source_id - 1 - nzz - nxx*nzz] = 1.0f;
+    K[source_id - 1 - nzz + nxx*nzz] = 1.0f;
+    K[source_id - 1 + nzz - nxx*nzz] = 1.0f;
+    K[source_id - 1 + nzz + nxx*nzz] = 1.0f;
 }
 
 void Podvin_and_Lecomte::forward_solver()
@@ -152,6 +172,8 @@ __global__ void fdm_operators(float * S, float * T, float * K, float * nT, float
 {
     float sqrt2 = sqrtf(2.0f);
     float sqrt3 = sqrtf(3.0f);
+
+    float tolerance = 1e-6f;
 
     int index = blockIdx.x * blockDim.x + threadIdx.x;
     
@@ -1641,7 +1663,7 @@ __global__ void fdm_operators(float * S, float * T, float * K, float * nT, float
             }        
 
             /* Time atualization */
-            if (lowest == T[index]) K[index] = 0.0f;
+            if (fabsf(lowest - T[index]) <= tolerance) K[index] = 0.0f;
 
             nT[index] = lowest;
         }

@@ -23,32 +23,34 @@ private:
     uint nActiveBlock;
 
     uint * h_list = nullptr;
-    bool * h_mask = nullptr; 
     bool * h_listed = nullptr;
     bool * h_listVol = nullptr; 
+
+    bool * h_mask = nullptr; 
     float * h_slow = nullptr; 
     float * h_time = nullptr; 
     
-    uint * d_list = nullptr;
-    bool * d_mask = nullptr;
     bool * d_con = nullptr;
+    uint * d_list = nullptr;
     bool * d_listVol = nullptr;
+
+    bool * d_mask = nullptr;
     float * d_slow = nullptr;
     float * d_time = nullptr; 
     float * t_time = nullptr;
 
+    void set_boundaries();
+    void set_modeling_volumes();
     void check_spatial_spacing();
-
-protected:
-
-    void set_modeling_message();
-    void set_model_boundaries();
-    void set_preconditioners();
 
 public:
 
+    void set_parameters(); 
+
+    void info_message();
     void initial_setup();
     void forward_solver();
+
     void free_space();
 };
 

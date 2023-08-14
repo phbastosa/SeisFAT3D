@@ -1,5 +1,5 @@
-# ifndef LEAST_SQUARES_HPP
-# define LEAST_SQUARES_HPP
+# ifndef LEAST_SQUARES_CUH
+# define LEAST_SQUARES_CUH
 
 # include "../tomography.hpp"
 

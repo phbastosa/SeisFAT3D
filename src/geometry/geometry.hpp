@@ -35,6 +35,7 @@ protected:
     void set_reciprocity();
     void import_coordinates();
     void export_coordinates();
+    void set_general_parameters();
 
     void set_regular(Coord &obj);
 
@@ -45,7 +46,7 @@ public:
 
     std::string file;
 
-    virtual void set_geometry();     
+    virtual void set_geometry() = 0;     
 };
 
 # endif

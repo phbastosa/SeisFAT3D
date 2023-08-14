@@ -1,6 +1,6 @@
 # include "wave.cuh"
 
-void Wave::set_specifications()
+void Wave::wave_modeling_parameters()
 {
     pi = 4.0f * atanf(1.0f);  
 
@@ -20,18 +20,9 @@ void Wave::set_specifications()
 
     wavelet_file = catch_parameter("wavelet_file", file); 
     import_wavelet = str2bool(catch_parameter("import_wavelet", file));
-
-    set_model_boundaries();
-    set_model_parameters();
-    set_gridded_geometry();
-    set_wavefields();
-
-    set_wavelet();
-    set_dampers();
-    set_outputs();
 }
 
-void Wave::set_model_boundaries()
+void Wave::set_boundaries()
 {
     nbxl = nb; nbxr = nb;
     nbyl = nb; nbyr = nb;

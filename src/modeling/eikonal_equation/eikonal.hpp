@@ -5,31 +5,30 @@
 
 class Eikonal : public Modeling
 {
-private:
-
-
 protected:
 
-    float t0;    
-
-    float * V = nullptr;
-    float * S = nullptr;
-    float * T = nullptr;
+    void set_model_boundaries();
+    void set_slowness_model();
+    void set_outputs();
 
     void get_travel_times();
     void get_first_arrivals();
-    void set_specifications();
-
-    virtual void set_model_boundaries() = 0;
-    virtual void set_modeling_message() = 0;
-    virtual void set_preconditioners() = 0;
 
 public:
 
+    float t0;    
+
+    float * S = nullptr;
+    float * T = nullptr;
+
     void build_outputs();
 
+    virtual void set_parameters() = 0; 
+
+    virtual void info_message() = 0;
     virtual void initial_setup() = 0;
     virtual void forward_solver() = 0;
+
     virtual void free_space() = 0;
 };
 

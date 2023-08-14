@@ -39,9 +39,9 @@ shots_SW = [1000, 1000, 1000]     # [m] <float> (z, x, y) NW
 shots_NW = [1000, 1000, 1000]     # [m] <float> (z, x, y)  |            
 shots_SE = [1000, 1000, 1000]     # [m] <float> (z, x, y) SW -- SE     
 
-nodes_SW = [100, 1000, 1000]      # [m] <float> (z, x, y) NW           
-nodes_NW = [100, 1000, 1000]      # [m] <float> (z, x, y)  |         
-nodes_SE = [100, 1900, 1000]      # [m] <float> (z, x, y) SW -- SE   
+nodes_SW = [1000, 1000, 1000]      # [m] <float> (z, x, y) NW           
+nodes_NW = [1000, 1000, 1000]      # [m] <float> (z, x, y)  |         
+nodes_SE = [1000, 1900, 1000]      # [m] <float> (z, x, y) SW -- SE   
 
 # Circular geometry --------------------------------------------------------------------------------                                            
 
@@ -52,7 +52,7 @@ offsets = [1000, 1000, 1000]      # [m] <float>
 #---------------------------------------------------------------------------------------------------
 # Modeling parameters ------------------------------------------------------------------------------
 #---------------------------------------------------------------------------------------------------
-#   Eikonal solvers: 
+#   Eikonal equation solvers: 
 #   [0] - Podvin & Lecomte (1991) 
 #   [1] - Fast Iterative Method (Jeong & Whitaker, 2008)
 #   [2] - Fast Sweeping Method (Detrixhe et al., 2013; Noble et al., 2014)   
@@ -63,7 +63,7 @@ offsets = [1000, 1000, 1000]      # [m] <float>
 #   [5] - Elastic isotropic media
 #---------------------------------------------------------------------------------------------------
 
-modeling_type = 0                # <int>
+modeling_type = 5                # <int>
 
 total_time = 2.0                 # [s] <float>
 time_spacing = 0.001             # [s] <float>
@@ -89,16 +89,12 @@ wavefield_output_folder = ../outputs/snapshots/     # <str>
 #---------------------------------------------------------------------------------------------------
 # Inversion parameters 
 #---------------------------------------------------------------------------------------------------
-# Available types: 
-# 
-#   [0] - Adjoint State First Arrival Tomography: 
-#       Sei & Symes (1994)
-#       Leung & Qian (2006)
-#       Tailander et al. (2009)   
-#      
-#   [1] - Full Waveform Inversion:
-#       References...
-#
+# Seismic First Arrival Tomography 
+#   [0] - Classical least squares approach 
+#   [1] - Adjoint state operators approach
+#       
+# Full Waveform Inversion
+#   [2] - Scalar Isotropic FWI
 #---------------------------------------------------------------------------------------------------
 
 inversion_type = 0

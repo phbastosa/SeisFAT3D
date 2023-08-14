@@ -14,7 +14,7 @@ private:
 
 protected:
 
-    std::vector<Modeling *> modeling;
+    std::vector<Eikonal *> modeling;
 
 public:
 

@@ -14,21 +14,21 @@ private:
     float * d_nK = nullptr;
     float * d_nT = nullptr;
 
-    void check_spatial_spacing();
-
-protected:
-
     float * d_T = nullptr;
     float * d_S = nullptr;
 
-    void set_modeling_message();
-    void set_model_boundaries();
-    void set_preconditioners();
+    void set_boundaries();
+    void set_modeling_volumes();
+    void check_spatial_spacing();
 
 public:
 
+    void set_parameters(); 
+
+    void info_message();
     void initial_setup();
     void forward_solver();
+
     void free_space();
 };
 

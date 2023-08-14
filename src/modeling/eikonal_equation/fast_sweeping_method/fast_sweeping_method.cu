@@ -1,25 +1,33 @@
 # include "fast_sweeping_method.cuh"
 
-int Fast_Sweeping_Method::iDivUp(int a, int b) 
-{ 
-    return ( (a % b) != 0 ) ? (a / b + 1) : (a / b); 
-}
-
-void Fast_Sweeping_Method::set_modeling_message()
+void Fast_Sweeping_Method::set_parameters()
 {
-    std::cout<<"Running:\n";
-    std::cout<<"[2] - Fast Sweeping Method (Detrixhe et al., 2013; Noble et al., 2014)\n\n"; 
+    general_modeling_parameters();
+
+    set_acquisition_geometry();
+
+    set_velocity_model();
+    
+    set_boundaries();
+    set_model_boundaries();
+    
+    set_slowness_model();
+    set_outputs();
+
+    set_modeling_volumes();
 }
 
-void Fast_Sweeping_Method::set_model_boundaries()
+void Fast_Sweeping_Method::set_boundaries()
 {
     nbxl = 1; nbxr = 1;
     nbyl = 1; nbyr = 1;
     nbzu = 1; nbzd = 1;
 }
 
-void Fast_Sweeping_Method::set_preconditioners()
+void Fast_Sweeping_Method::set_modeling_volumes()
 {
+    modeling_method = std::string("fsm");
+
     nSweeps = 8;
     meshDim = 3;
 
@@ -35,8 +43,8 @@ void Fast_Sweeping_Method::set_preconditioners()
 
 	totalLevels = (nxx - 1) + (nyy - 1) + (nzz - 1);
 
-    int sgnv[nSweeps][meshDim] = {{1,1,1}, {0,1,1}, {1,1,0}, {0,1,0}, {1,0,1}, {0,0,1}, {1,0,0}, {0,0,0}};
-    int sgnt[nSweeps][meshDim] = {{1,1,1}, {-1,1,1}, {1,1,-1}, {-1,1,-1}, {1,-1,1}, {-1,-1,1}, {1,-1,-1}, {-1,-1,-1}};
+    std::vector<std::vector<int>> sgnv = {{1,1,1}, {0,1,1}, {1,1,0}, {0,1,0}, {1,0,1}, {0,0,1}, {1,0,0}, {0,0,0}};
+    std::vector<std::vector<int>> sgnt = {{1,1,1}, {-1,1,1}, {1,1,-1}, {-1,1,-1}, {1,-1,1}, {-1,-1,1}, {1,-1,-1}, {-1,-1,-1}};
 
 	int * h_sgnv = new int [nSweeps * meshDim]();
 	int * h_sgnt = new int [nSweeps * meshDim](); 
@@ -49,6 +57,8 @@ void Fast_Sweeping_Method::set_preconditioners()
 		h_sgnv[i + j * nSweeps] = sgnv[i][j];
 		h_sgnt[i + j * nSweeps] = sgnt[i][j];
 	}
+
+    T = new float[volsize](); 
 
 	cudaMalloc((void**)&(d_T), volsize*sizeof(float));
 	cudaMalloc((void**)&(d_S), volsize*sizeof(float));
@@ -63,6 +73,17 @@ void Fast_Sweeping_Method::set_preconditioners()
 
     delete[] h_sgnt;
     delete[] h_sgnv;
+
+    std::vector<std::vector<int>>().swap(sgnv);
+    std::vector<std::vector<int>>().swap(sgnt);
+}
+
+void Fast_Sweeping_Method::info_message()
+{
+    general_modeling_message();
+
+    std::cout<<"Running:\n";
+    std::cout<<"[2] - Fast Sweeping Method (Detrixhe et al., 2013; Noble et al., 2014)\n\n"; 
 }
 
 void Fast_Sweeping_Method::initial_setup()
@@ -71,47 +92,47 @@ void Fast_Sweeping_Method::initial_setup()
     int sidy = (int)(geometry->shots.y[shot_id] / dy) + nbyl;
     int sidz = (int)(geometry->shots.z[shot_id] / dz) + nbzu;
 
-    int sId = sidz + sidx*nzz + sidy*nxx*nzz;
+    source_id = sidz + sidx*nzz + sidy*nxx*nzz;
 
     for (int index = 0; index < volsize; index++) T[index] = 1e6f;
 
-    T[sId] = S[sId] * sqrtf(powf((sidx-nbxl)*dx - geometry->shots.x[shot_id], 2.0f) + powf((sidy-nbyl)*dy - geometry->shots.y[shot_id], 2.0f) + powf((sidz-nbzu)*dz - geometry->shots.z[shot_id], 2.0f));
+    T[source_id] = S[source_id] * sqrtf(powf((sidx-nbxl)*dx - geometry->shots.x[shot_id], 2.0f) + powf((sidy-nbyl)*dy - geometry->shots.y[shot_id], 2.0f) + powf((sidz-nbzu)*dz - geometry->shots.z[shot_id], 2.0f));
 
-    T[sId + 1] = S[sId] * sqrtf(powf((sidx-nbxl)*dx - geometry->shots.x[shot_id], 2.0f) + powf((sidy-nbyl)*dy - geometry->shots.y[shot_id], 2.0f) + powf(((sidz-nbzu)+1)*dz - geometry->shots.z[shot_id], 2.0f));
-    T[sId - 1] = S[sId] * sqrtf(powf((sidx-nbxl)*dx - geometry->shots.x[shot_id], 2.0f) + powf((sidy-nbyl)*dy - geometry->shots.y[shot_id], 2.0f) + powf(((sidz-nbzu)-1)*dz - geometry->shots.z[shot_id], 2.0f));
+    T[source_id + 1] = S[source_id] * sqrtf(powf((sidx-nbxl)*dx - geometry->shots.x[shot_id], 2.0f) + powf((sidy-nbyl)*dy - geometry->shots.y[shot_id], 2.0f) + powf(((sidz-nbzu)+1)*dz - geometry->shots.z[shot_id], 2.0f));
+    T[source_id - 1] = S[source_id] * sqrtf(powf((sidx-nbxl)*dx - geometry->shots.x[shot_id], 2.0f) + powf((sidy-nbyl)*dy - geometry->shots.y[shot_id], 2.0f) + powf(((sidz-nbzu)-1)*dz - geometry->shots.z[shot_id], 2.0f));
 
-    T[sId + nzz] = S[sId] * sqrtf(powf(((sidx-nbxl)+1)*dx - geometry->shots.x[shot_id], 2.0f) + powf((sidy-nbyl)*dy - geometry->shots.y[shot_id], 2.0f) + powf((sidz-nbzu)*dz - geometry->shots.z[shot_id], 2.0f));
-    T[sId - nzz] = S[sId] * sqrtf(powf(((sidx-nbxl)-1)*dx - geometry->shots.x[shot_id], 2.0f) + powf((sidy-nbyl)*dy - geometry->shots.y[shot_id], 2.0f) + powf((sidz-nbzu)*dz - geometry->shots.z[shot_id], 2.0f));
+    T[source_id + nzz] = S[source_id] * sqrtf(powf(((sidx-nbxl)+1)*dx - geometry->shots.x[shot_id], 2.0f) + powf((sidy-nbyl)*dy - geometry->shots.y[shot_id], 2.0f) + powf((sidz-nbzu)*dz - geometry->shots.z[shot_id], 2.0f));
+    T[source_id - nzz] = S[source_id] * sqrtf(powf(((sidx-nbxl)-1)*dx - geometry->shots.x[shot_id], 2.0f) + powf((sidy-nbyl)*dy - geometry->shots.y[shot_id], 2.0f) + powf((sidz-nbzu)*dz - geometry->shots.z[shot_id], 2.0f));
     
-    T[sId + nxx*nzz] = S[sId] * sqrtf(powf((sidx-nbxl)*dx - geometry->shots.x[shot_id], 2.0f) + powf(((sidy-nbyl)+1)*dy - geometry->shots.y[shot_id], 2.0f) + powf((sidz-nbzu)*dz - geometry->shots.z[shot_id], 2.0f));
-    T[sId - nxx*nzz] = S[sId] * sqrtf(powf((sidx-nbxl)*dx - geometry->shots.x[shot_id], 2.0f) + powf(((sidy-nbyl)-1)*dy - geometry->shots.y[shot_id], 2.0f) + powf((sidz-nbzu)*dz - geometry->shots.z[shot_id], 2.0f));
+    T[source_id + nxx*nzz] = S[source_id] * sqrtf(powf((sidx-nbxl)*dx - geometry->shots.x[shot_id], 2.0f) + powf(((sidy-nbyl)+1)*dy - geometry->shots.y[shot_id], 2.0f) + powf((sidz-nbzu)*dz - geometry->shots.z[shot_id], 2.0f));
+    T[source_id - nxx*nzz] = S[source_id] * sqrtf(powf((sidx-nbxl)*dx - geometry->shots.x[shot_id], 2.0f) + powf(((sidy-nbyl)-1)*dy - geometry->shots.y[shot_id], 2.0f) + powf((sidz-nbzu)*dz - geometry->shots.z[shot_id], 2.0f));
     
-    T[sId + 1 + nzz] = S[sId] * sqrtf(powf(((sidx-nbxl)+1)*dx - geometry->shots.x[shot_id], 2.0f) + powf((sidy-nbyl)*dy - geometry->shots.y[shot_id], 2.0f) + powf(((sidz-nbzu)+1)*dz - geometry->shots.z[shot_id], 2.0f));
-    T[sId + 1 - nzz] = S[sId] * sqrtf(powf(((sidx-nbxl)+1)*dx - geometry->shots.x[shot_id], 2.0f) + powf((sidy-nbyl)*dy - geometry->shots.y[shot_id], 2.0f) + powf(((sidz-nbzu)-1)*dz - geometry->shots.z[shot_id], 2.0f));
-    T[sId - 1 + nzz] = S[sId] * sqrtf(powf(((sidx-nbxl)-1)*dx - geometry->shots.x[shot_id], 2.0f) + powf((sidy-nbyl)*dy - geometry->shots.y[shot_id], 2.0f) + powf(((sidz-nbzu)+1)*dz - geometry->shots.z[shot_id], 2.0f));
-    T[sId - 1 - nzz] = S[sId] * sqrtf(powf(((sidx-nbxl)-1)*dx - geometry->shots.x[shot_id], 2.0f) + powf((sidy-nbyl)*dy - geometry->shots.y[shot_id], 2.0f) + powf(((sidz-nbzu)-1)*dz - geometry->shots.z[shot_id], 2.0f));
+    T[source_id + 1 + nzz] = S[source_id] * sqrtf(powf(((sidx-nbxl)+1)*dx - geometry->shots.x[shot_id], 2.0f) + powf((sidy-nbyl)*dy - geometry->shots.y[shot_id], 2.0f) + powf(((sidz-nbzu)+1)*dz - geometry->shots.z[shot_id], 2.0f));
+    T[source_id + 1 - nzz] = S[source_id] * sqrtf(powf(((sidx-nbxl)+1)*dx - geometry->shots.x[shot_id], 2.0f) + powf((sidy-nbyl)*dy - geometry->shots.y[shot_id], 2.0f) + powf(((sidz-nbzu)-1)*dz - geometry->shots.z[shot_id], 2.0f));
+    T[source_id - 1 + nzz] = S[source_id] * sqrtf(powf(((sidx-nbxl)-1)*dx - geometry->shots.x[shot_id], 2.0f) + powf((sidy-nbyl)*dy - geometry->shots.y[shot_id], 2.0f) + powf(((sidz-nbzu)+1)*dz - geometry->shots.z[shot_id], 2.0f));
+    T[source_id - 1 - nzz] = S[source_id] * sqrtf(powf(((sidx-nbxl)-1)*dx - geometry->shots.x[shot_id], 2.0f) + powf((sidy-nbyl)*dy - geometry->shots.y[shot_id], 2.0f) + powf(((sidz-nbzu)-1)*dz - geometry->shots.z[shot_id], 2.0f));
     
-    T[sId + 1 + nxx*nzz] = S[sId] * sqrtf(powf((sidx-nbxl)*dx - geometry->shots.x[shot_id], 2.0f) + powf(((sidy-nbyl)+1)*dy - geometry->shots.y[shot_id], 2.0f) + powf(((sidz-nbzu)+1)*dz - geometry->shots.z[shot_id], 2.0f));
-    T[sId + 1 - nxx*nzz] = S[sId] * sqrtf(powf((sidx-nbxl)*dx - geometry->shots.x[shot_id], 2.0f) + powf(((sidy-nbyl)-1)*dy - geometry->shots.y[shot_id], 2.0f) + powf(((sidz-nbzu)+1)*dz - geometry->shots.z[shot_id], 2.0f));
-    T[sId - 1 + nxx*nzz] = S[sId] * sqrtf(powf((sidx-nbxl)*dx - geometry->shots.x[shot_id], 2.0f) + powf(((sidy-nbyl)+1)*dy - geometry->shots.y[shot_id], 2.0f) + powf(((sidz-nbzu)-1)*dz - geometry->shots.z[shot_id], 2.0f));
-    T[sId - 1 - nxx*nzz] = S[sId] * sqrtf(powf((sidx-nbxl)*dx - geometry->shots.x[shot_id], 2.0f) + powf(((sidy-nbyl)-1)*dy - geometry->shots.y[shot_id], 2.0f) + powf(((sidz-nbzu)-1)*dz - geometry->shots.z[shot_id], 2.0f));
+    T[source_id + 1 + nxx*nzz] = S[source_id] * sqrtf(powf((sidx-nbxl)*dx - geometry->shots.x[shot_id], 2.0f) + powf(((sidy-nbyl)+1)*dy - geometry->shots.y[shot_id], 2.0f) + powf(((sidz-nbzu)+1)*dz - geometry->shots.z[shot_id], 2.0f));
+    T[source_id + 1 - nxx*nzz] = S[source_id] * sqrtf(powf((sidx-nbxl)*dx - geometry->shots.x[shot_id], 2.0f) + powf(((sidy-nbyl)-1)*dy - geometry->shots.y[shot_id], 2.0f) + powf(((sidz-nbzu)+1)*dz - geometry->shots.z[shot_id], 2.0f));
+    T[source_id - 1 + nxx*nzz] = S[source_id] * sqrtf(powf((sidx-nbxl)*dx - geometry->shots.x[shot_id], 2.0f) + powf(((sidy-nbyl)+1)*dy - geometry->shots.y[shot_id], 2.0f) + powf(((sidz-nbzu)-1)*dz - geometry->shots.z[shot_id], 2.0f));
+    T[source_id - 1 - nxx*nzz] = S[source_id] * sqrtf(powf((sidx-nbxl)*dx - geometry->shots.x[shot_id], 2.0f) + powf(((sidy-nbyl)-1)*dy - geometry->shots.y[shot_id], 2.0f) + powf(((sidz-nbzu)-1)*dz - geometry->shots.z[shot_id], 2.0f));
     
-    T[sId + nzz + nxx*nzz] = S[sId] * sqrtf(powf(((sidx-nbxl)+1)*dx - geometry->shots.x[shot_id], 2.0f) + powf(((sidy-nbyl)+1)*dy - geometry->shots.y[shot_id], 2.0f) + powf((sidz-nbzu)*dz - geometry->shots.z[shot_id], 2.0f));
-    T[sId + nzz - nxx*nzz] = S[sId] * sqrtf(powf(((sidx-nbxl)+1)*dx - geometry->shots.x[shot_id], 2.0f) + powf(((sidy-nbyl)-1)*dy - geometry->shots.y[shot_id], 2.0f) + powf((sidz-nbzu)*dz - geometry->shots.z[shot_id], 2.0f));
-    T[sId - nzz + nxx*nzz] = S[sId] * sqrtf(powf(((sidx-nbxl)-1)*dx - geometry->shots.x[shot_id], 2.0f) + powf(((sidy-nbyl)+1)*dy - geometry->shots.y[shot_id], 2.0f) + powf((sidz-nbzu)*dz - geometry->shots.z[shot_id], 2.0f));
-    T[sId - nzz - nxx*nzz] = S[sId] * sqrtf(powf(((sidx-nbxl)-1)*dx - geometry->shots.x[shot_id], 2.0f) + powf(((sidy-nbyl)-1)*dy - geometry->shots.y[shot_id], 2.0f) + powf((sidz-nbzu)*dz - geometry->shots.z[shot_id], 2.0f));
+    T[source_id + nzz + nxx*nzz] = S[source_id] * sqrtf(powf(((sidx-nbxl)+1)*dx - geometry->shots.x[shot_id], 2.0f) + powf(((sidy-nbyl)+1)*dy - geometry->shots.y[shot_id], 2.0f) + powf((sidz-nbzu)*dz - geometry->shots.z[shot_id], 2.0f));
+    T[source_id + nzz - nxx*nzz] = S[source_id] * sqrtf(powf(((sidx-nbxl)+1)*dx - geometry->shots.x[shot_id], 2.0f) + powf(((sidy-nbyl)-1)*dy - geometry->shots.y[shot_id], 2.0f) + powf((sidz-nbzu)*dz - geometry->shots.z[shot_id], 2.0f));
+    T[source_id - nzz + nxx*nzz] = S[source_id] * sqrtf(powf(((sidx-nbxl)-1)*dx - geometry->shots.x[shot_id], 2.0f) + powf(((sidy-nbyl)+1)*dy - geometry->shots.y[shot_id], 2.0f) + powf((sidz-nbzu)*dz - geometry->shots.z[shot_id], 2.0f));
+    T[source_id - nzz - nxx*nzz] = S[source_id] * sqrtf(powf(((sidx-nbxl)-1)*dx - geometry->shots.x[shot_id], 2.0f) + powf(((sidy-nbyl)-1)*dy - geometry->shots.y[shot_id], 2.0f) + powf((sidz-nbzu)*dz - geometry->shots.z[shot_id], 2.0f));
     
-    T[sId + 1 + nzz + nxx*nzz] = S[sId] * sqrtf(powf(((sidx-nbxl)+1)*dx - geometry->shots.x[shot_id], 2.0f) + powf(((sidy-nbyl)+1)*dy - geometry->shots.y[shot_id], 2.0f) + powf(((sidz-nbzu)+1)*dz - geometry->shots.z[shot_id], 2.0f));
-    T[sId + 1 - nzz + nxx*nzz] = S[sId] * sqrtf(powf(((sidx-nbxl)-1)*dx - geometry->shots.x[shot_id], 2.0f) + powf(((sidy-nbyl)+1)*dy - geometry->shots.y[shot_id], 2.0f) + powf(((sidz-nbzu)+1)*dz - geometry->shots.z[shot_id], 2.0f));
-    T[sId + 1 + nzz - nxx*nzz] = S[sId] * sqrtf(powf(((sidx-nbxl)+1)*dx - geometry->shots.x[shot_id], 2.0f) + powf(((sidy-nbyl)-1)*dy - geometry->shots.y[shot_id], 2.0f) + powf(((sidz-nbzu)+1)*dz - geometry->shots.z[shot_id], 2.0f));
-    T[sId + 1 - nzz - nxx*nzz] = S[sId] * sqrtf(powf(((sidx-nbxl)-1)*dx - geometry->shots.x[shot_id], 2.0f) + powf(((sidy-nbyl)-1)*dy - geometry->shots.y[shot_id], 2.0f) + powf(((sidz-nbzu)+1)*dz - geometry->shots.z[shot_id], 2.0f));
+    T[source_id + 1 + nzz + nxx*nzz] = S[source_id] * sqrtf(powf(((sidx-nbxl)+1)*dx - geometry->shots.x[shot_id], 2.0f) + powf(((sidy-nbyl)+1)*dy - geometry->shots.y[shot_id], 2.0f) + powf(((sidz-nbzu)+1)*dz - geometry->shots.z[shot_id], 2.0f));
+    T[source_id + 1 - nzz + nxx*nzz] = S[source_id] * sqrtf(powf(((sidx-nbxl)-1)*dx - geometry->shots.x[shot_id], 2.0f) + powf(((sidy-nbyl)+1)*dy - geometry->shots.y[shot_id], 2.0f) + powf(((sidz-nbzu)+1)*dz - geometry->shots.z[shot_id], 2.0f));
+    T[source_id + 1 + nzz - nxx*nzz] = S[source_id] * sqrtf(powf(((sidx-nbxl)+1)*dx - geometry->shots.x[shot_id], 2.0f) + powf(((sidy-nbyl)-1)*dy - geometry->shots.y[shot_id], 2.0f) + powf(((sidz-nbzu)+1)*dz - geometry->shots.z[shot_id], 2.0f));
+    T[source_id + 1 - nzz - nxx*nzz] = S[source_id] * sqrtf(powf(((sidx-nbxl)-1)*dx - geometry->shots.x[shot_id], 2.0f) + powf(((sidy-nbyl)-1)*dy - geometry->shots.y[shot_id], 2.0f) + powf(((sidz-nbzu)+1)*dz - geometry->shots.z[shot_id], 2.0f));
 
-    T[sId - 1 + nzz + nxx*nzz] = S[sId] * sqrtf(powf(((sidx-nbxl)+1)*dx - geometry->shots.x[shot_id], 2.0f) + powf(((sidy-nbyl)+1)*dy - geometry->shots.y[shot_id], 2.0f) + powf(((sidz-nbzu)-1)*dz - geometry->shots.z[shot_id], 2.0f));
-    T[sId - 1 - nzz + nxx*nzz] = S[sId] * sqrtf(powf(((sidx-nbxl)-1)*dx - geometry->shots.x[shot_id], 2.0f) + powf(((sidy-nbyl)+1)*dy - geometry->shots.y[shot_id], 2.0f) + powf(((sidz-nbzu)-1)*dz - geometry->shots.z[shot_id], 2.0f));
-    T[sId - 1 + nzz - nxx*nzz] = S[sId] * sqrtf(powf(((sidx-nbxl)+1)*dx - geometry->shots.x[shot_id], 2.0f) + powf(((sidy-nbyl)-1)*dy - geometry->shots.y[shot_id], 2.0f) + powf(((sidz-nbzu)-1)*dz - geometry->shots.z[shot_id], 2.0f));
-    T[sId - 1 - nzz - nxx*nzz] = S[sId] * sqrtf(powf(((sidx-nbxl)-1)*dx - geometry->shots.x[shot_id], 2.0f) + powf(((sidy-nbyl)-1)*dy - geometry->shots.y[shot_id], 2.0f) + powf(((sidz-nbzu)-1)*dz - geometry->shots.z[shot_id], 2.0f));
+    T[source_id - 1 + nzz + nxx*nzz] = S[source_id] * sqrtf(powf(((sidx-nbxl)+1)*dx - geometry->shots.x[shot_id], 2.0f) + powf(((sidy-nbyl)+1)*dy - geometry->shots.y[shot_id], 2.0f) + powf(((sidz-nbzu)-1)*dz - geometry->shots.z[shot_id], 2.0f));
+    T[source_id - 1 - nzz + nxx*nzz] = S[source_id] * sqrtf(powf(((sidx-nbxl)-1)*dx - geometry->shots.x[shot_id], 2.0f) + powf(((sidy-nbyl)+1)*dy - geometry->shots.y[shot_id], 2.0f) + powf(((sidz-nbzu)-1)*dz - geometry->shots.z[shot_id], 2.0f));
+    T[source_id - 1 + nzz - nxx*nzz] = S[source_id] * sqrtf(powf(((sidx-nbxl)+1)*dx - geometry->shots.x[shot_id], 2.0f) + powf(((sidy-nbyl)-1)*dy - geometry->shots.y[shot_id], 2.0f) + powf(((sidz-nbzu)-1)*dz - geometry->shots.z[shot_id], 2.0f));
+    T[source_id - 1 - nzz - nxx*nzz] = S[source_id] * sqrtf(powf(((sidx-nbxl)-1)*dx - geometry->shots.x[shot_id], 2.0f) + powf(((sidy-nbyl)-1)*dy - geometry->shots.y[shot_id], 2.0f) + powf(((sidz-nbzu)-1)*dz - geometry->shots.z[shot_id], 2.0f));
 
-    t0 = T[sId];
+    t0 = T[source_id];
 }
 
 void Fast_Sweeping_Method::forward_solver()
@@ -162,6 +183,11 @@ void Fast_Sweeping_Method::forward_solver()
     cudaMemcpy(T, d_T, volsize*sizeof(float), cudaMemcpyDeviceToHost);
 }
 
+int Fast_Sweeping_Method::iDivUp(int a, int b) 
+{ 
+    return ( (a % b) != 0 ) ? (a / b + 1) : (a / b); 
+}
+
 void Fast_Sweeping_Method::free_space()
 {
     cudaFree(d_T);
@@ -169,10 +195,6 @@ void Fast_Sweeping_Method::free_space()
 
     cudaFree(d_sgnt);
     cudaFree(d_sgnv);
-
-    delete[] T;
-    delete[] S;
-    delete[] V;
 }
 
 __global__ void fast_sweeping_kernel(float * S, float * T, int * sgnt, int * sgnv, int sgni, int sgnj, int sgnk, 

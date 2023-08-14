@@ -6,9 +6,6 @@
 class Fast_Sweeping_Method : public Eikonal
 {
 private:
-        
-
-protected:
 
     int totalLevels;
     int nSweeps, meshDim;
@@ -24,14 +21,17 @@ protected:
 
     int iDivUp(int a, int b);
 
-    void set_modeling_message();
-    void set_model_boundaries();
-    void set_preconditioners();
+    void set_boundaries();
+    void set_modeling_volumes();
 
 public:
 
+    void set_parameters(); 
+
+    void info_message();
     void initial_setup();
     void forward_solver();
+
     void free_space();
 };
 
