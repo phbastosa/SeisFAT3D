@@ -2,15 +2,15 @@
 # Model paramenters --------------------------------------------------------------------------------
 #---------------------------------------------------------------------------------------------------
 
-x_samples = 201          # <int>  
-y_samples = 201          # <int>  
-z_samples = 201          # <int>  
+x_samples = 301          # <int>  
+y_samples = 301          # <int>  
+z_samples = 51           # <int>  
 
-x_spacing = 10           # [m] <float> 
-y_spacing = 10           # [m] <float> 
-z_spacing = 10           # [m] <float> 
+x_spacing = 50           # [m] <float> 
+y_spacing = 50           # [m] <float> 
+z_spacing = 50           # [m] <float> 
 
-vp_model_file = ../inputs/models/vp_model_51x301x101_10m.bin    # <str> 
+vp_model_file = ../inputs/models/init_model_51x301x301_50m.bin  # <str> 
 vs_model_file = ../inputs/models/vs_model_51x301x101_10m.bin    # <str>
 rho_model_file = ../inputs/models/rho_model_51x301x101_10m.bin  # <str> 
 
@@ -24,7 +24,7 @@ rho_model_file = ../inputs/models/rho_model_51x301x101_10m.bin  # <str>
 #---------------------------------------------------------------------------------------------------
 
 geometry_type = 0                 # <int>
-reciprocity = false               # <bool>     
+reciprocity = true                # <bool>     
 import_geometry = false           # <bool>
 
 shots_file = ../inputs/geometry/xyz_shot_positions.txt     # <str>         
@@ -32,16 +32,16 @@ nodes_file = ../inputs/geometry/xyz_node_positions.txt     # <str>
 
 # Regular geometry ---------------------------------------------------------------------------------               
 
-shots_nlines = [1, 1, 1]          # <int> (z, x, y)     
-nodes_nlines = [1, 91, 1]         # <int> (z, x, y)            
+shots_nlines = [1, 150, 150]       # <int> (z, x, y)     
+nodes_nlines = [1, 21, 21]         # <int> (z, x, y)            
 
-shots_SW = [1000, 1000, 1000]     # [m] <float> (z, x, y) NW            
-shots_NW = [1000, 1000, 1000]     # [m] <float> (z, x, y)  |            
-shots_SE = [1000, 1000, 1000]     # [m] <float> (z, x, y) SW -- SE     
+shots_SW = [50, 50, 50]        # [m] <float> (z, x, y) NW            
+shots_NW = [50, 50, 14950]     # [m] <float> (z, x, y)  |            
+shots_SE = [50, 14950, 50]     # [m] <float> (z, x, y) SW -- SE     
 
-nodes_SW = [1000, 1000, 1000]      # [m] <float> (z, x, y) NW           
-nodes_NW = [1000, 1000, 1000]      # [m] <float> (z, x, y)  |         
-nodes_SE = [1000, 1900, 1000]      # [m] <float> (z, x, y) SW -- SE   
+nodes_SW = [50, 500, 500]      # [m] <float> (z, x, y) NW           
+nodes_NW = [50, 500, 14500]    # [m] <float> (z, x, y)  |         
+nodes_SE = [50, 14500, 500]    # [m] <float> (z, x, y) SW -- SE   
 
 # Circular geometry --------------------------------------------------------------------------------                                            
 
@@ -102,11 +102,18 @@ inversion_type = 0
 tolerance = 1000
 max_iteration = 1 
 
-obs_data_folder = ../inputs/data/
-obs_data_prefix = obs_data_5625_shot_
+dx_tomo = 50    # [m] <float> 
+dy_tomo = 50    # [m] <float>
+dz_tomo = 50    # [m] <float>
 
-estimated_model_folder = 
-convergence_map_folder = 
+tk_order = 2       # Tikhonov regularization order <int>
+tk_param = 1e5     # Regularization parameter <float>
+
+obs_data_folder = ../inputs/data/
+obs_data_prefix = fsm_data_22500_shot_
+
+convergence_map_folder = ../outputs/convergence/
+estimated_model_folder = ../outputs/recovered_models/
 
 #---------------------------------------------------------------------------------------------------
 # Migration parameters 

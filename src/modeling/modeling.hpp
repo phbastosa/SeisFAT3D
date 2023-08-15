@@ -31,9 +31,6 @@ protected:
 
     bool export_receiver_output;
     bool export_wavefield_output;
-
-    float * receiver_output = nullptr;
-    float * wavefield_output = nullptr;
     
     std::string modeling_method;
     std::string modeling_message;
@@ -71,6 +68,9 @@ public:
     int nbxl, nbxr, nbyl, nbyr, nbzu, nbzd;
 
     float * Vp = nullptr;
+
+    float * receiver_output = nullptr;
+    float * wavefield_output = nullptr;
 
     void set_runtime();
     void get_runtime();

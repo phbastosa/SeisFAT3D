@@ -128,9 +128,7 @@ void Modeling::set_velocity_model()
 {
     Vp = new float[nPoints]();
 
-    // import_binary_float(catch_parameter("vp_model_file", file), Vp, nPoints);
-
-    for (int index = 0; index < nPoints; index++) Vp[index] = 1500.0f; 
+    import_binary_float(catch_parameter("vp_model_file", file), Vp, nPoints);
 }
 
 void Modeling::expand_boundary(float * input, float * output)
