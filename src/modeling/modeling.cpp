@@ -26,17 +26,17 @@ void Modeling::check_geometry_overflow()
 {
     for (int shot = 0; shot < total_shots; shot++)
     {
-        if ((geometry->shots.x[shot] < 0) && (geometry->shots.x[shot] > (nx-1)*dx) && 
-            (geometry->shots.y[shot] < 0) && (geometry->shots.y[shot] > (ny-1)*dy) &&
-            (geometry->shots.z[shot] < 0) && (geometry->shots.z[shot] > (nz-1)*dz))       
+        if ((geometry->shots.x[shot] < 0) || (geometry->shots.x[shot] > (nx-1)*dx) || 
+            (geometry->shots.y[shot] < 0) || (geometry->shots.y[shot] > (ny-1)*dy) ||
+            (geometry->shots.z[shot] < 0) || (geometry->shots.z[shot] > (nz-1)*dz))       
         throw std::invalid_argument("\033[31mError: shots geometry overflow!\033[0;0m");
     }
 
     for (int node = 0; node < total_nodes; node++)
     {
-        if ((geometry->nodes.x[node] < 0) && (geometry->nodes.x[node] > (nx-1)*dx) && 
-            (geometry->nodes.y[node] < 0) && (geometry->nodes.y[node] > (ny-1)*dy) &&
-            (geometry->nodes.z[node] < 0) && (geometry->nodes.z[node] > (nz-1)*dz))       
+        if ((geometry->nodes.x[node] < 0) || (geometry->nodes.x[node] > (nx-1)*dx) || 
+            (geometry->nodes.y[node] < 0) || (geometry->nodes.y[node] > (ny-1)*dy) ||
+            (geometry->nodes.z[node] < 0) || (geometry->nodes.z[node] > (nz-1)*dz))       
         throw std::invalid_argument("\033[31mError: nodes geometry overflow!\033[0;0m");
     }
 }

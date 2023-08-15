@@ -21,7 +21,7 @@ protected:
     std::string obs_data_folder;
     std::string obs_data_prefix;
 
-    std::string convergence_folder;
+    std::string convergence_map_folder;
     std::string estimated_model_folder;
 
     void set_general_parameters();

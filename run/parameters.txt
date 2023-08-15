@@ -35,19 +35,19 @@ nodes_file = ../inputs/geometry/xyz_node_positions.txt     # <str>
 shots_nlines = [1, 150, 150]       # <int> (z, x, y)     
 nodes_nlines = [1, 21, 21]         # <int> (z, x, y)            
 
-shots_SW = [50, 50, 50]        # [m] <float> (z, x, y) NW            
-shots_NW = [50, 50, 14950]     # [m] <float> (z, x, y)  |            
-shots_SE = [50, 14950, 50]     # [m] <float> (z, x, y) SW -- SE     
+shots_SW = [50, 50, 50]            # [m] <float> (z, x, y) NW            
+shots_NW = [50, 50, 14950]         # [m] <float> (z, x, y)  |            
+shots_SE = [50, 14950, 50]         # [m] <float> (z, x, y) SW -- SE     
 
-nodes_SW = [50, 500, 500]      # [m] <float> (z, x, y) NW           
-nodes_NW = [50, 500, 14500]    # [m] <float> (z, x, y)  |         
-nodes_SE = [50, 14500, 500]    # [m] <float> (z, x, y) SW -- SE   
+nodes_SW = [50, 500, 500]          # [m] <float> (z, x, y) NW           
+nodes_NW = [50, 500, 14500]        # [m] <float> (z, x, y)  |         
+nodes_SE = [50, 14500, 500]        # [m] <float> (z, x, y) SW -- SE   
 
 # Circular geometry --------------------------------------------------------------------------------                                            
 
-spacing = 100                     # [m] <float>
-center  = [1000, 1000, 1000]      # [m] <float> (z, x, y)        
-offsets = [1000, 1000, 1000]      # [m] <float>
+spacing = 100                      # [m] <float>
+center  = [1000, 1000, 1000]       # [m] <float> (z, x, y)        
+offsets = [1000, 1000, 1000]       # [m] <float>
 
 #---------------------------------------------------------------------------------------------------
 # Modeling parameters ------------------------------------------------------------------------------
@@ -97,17 +97,17 @@ wavefield_output_folder = ../outputs/snapshots/     # <str>
 #   [2] - Scalar Isotropic FWI
 #---------------------------------------------------------------------------------------------------
 
-inversion_type = 0
+inversion_type = 0      # <int> 
 
-tolerance = 1000
-max_iteration = 1 
+tolerance = 1000        # <float>
+max_iteration = 1       # <int>
 
-dx_tomo = 50    # [m] <float> 
-dy_tomo = 50    # [m] <float>
-dz_tomo = 50    # [m] <float>
+dx_tomo = 50            # [m] <float> 
+dy_tomo = 50            # [m] <float>
+dz_tomo = 50            # [m] <float>
 
-tk_order = 2       # Tikhonov regularization order <int>
-tk_param = 1e5     # Regularization parameter <float>
+tk_order = 2            # Tikhonov regularization order <int>
+tk_param = 1e5          # Regularization parameter <float>
 
 obs_data_folder = ../inputs/data/
 obs_data_prefix = fsm_data_22500_shot_

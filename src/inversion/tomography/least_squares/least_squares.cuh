@@ -1,6 +1,10 @@
 # ifndef LEAST_SQUARES_CUH
 # define LEAST_SQUARES_CUH
 
+# include <cuda.h>
+# include <cusparse.h>
+# include <cublas_v2.h>
+
 # include "../tomography.hpp"
 
 class Least_Squares : public Tomography
@@ -31,6 +35,9 @@ private:
     float * x = nullptr;             // A x = B
 
     void gradient_ray_tracing();
+    void apply_regularization();
+    void solve_linear_system_lscg();
+    void slowness_variation_rescaling();
 
 public:
 

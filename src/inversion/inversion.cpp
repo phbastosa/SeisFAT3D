@@ -8,6 +8,6 @@ void Inversion::set_general_parameters()
     obs_data_folder = catch_parameter("obs_data_folder", file);
     obs_data_prefix = catch_parameter("obs_data_prefix", file);
 
-    convergence_folder = catch_parameter("convergence_map_folder", file);
+    convergence_map_folder = catch_parameter("convergence_map_folder", file);
     estimated_model_folder = catch_parameter("estimated_mode_folder", file);
 }

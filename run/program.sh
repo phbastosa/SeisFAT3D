@@ -61,7 +61,7 @@ modeling_all="$modeling $eikonal_all $wave_all"
 inversion_all="$inversion $tomography_all $waveform_all"
 migration_all=""
 
-flags="-Xcompiler=-fopenmp --std=c++11 --relocatable-device-code=true -lm -O3"
+flags="-Xcompiler=-fopenmp --std=c++11 --relocatable-device-code=true -lm -lcublas -lcusparse -O3"
 
 # Main dialogue ------------------------------------------------------------------------------------------
 

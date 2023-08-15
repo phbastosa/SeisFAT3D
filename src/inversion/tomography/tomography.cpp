@@ -27,6 +27,17 @@ void Tomography::set_main_components()
 
     dm = new float[modeling->nPoints]();
     model = new float[modeling->nPoints]();
+
+    for (int index = 0; index < modeling->nPoints; index++)
+    {
+        int k = (int) (index / (modeling->nx*modeling->nz));        
+        int j = (int) (index - k*modeling->nx*modeling->nz) / modeling->nz;    
+        int i = (int) (index - j*modeling->nz - k*modeling->nx*modeling->nz); 
+
+        int indB = (i + modeling->nbzu) + (j + modeling->nbxl)*modeling->nzz + (k + modeling->nbyl)*modeling->nxx*modeling->nzz;
+
+        model[index] = modeling->S[indB];
+    }
 }
 
 void Tomography::import_obs_data()
@@ -71,6 +82,8 @@ void Tomography::check_convergence()
 
 void Tomography::tomography_message()
 {
+    modeling->info_message();
+
     if (iteration == max_iteration)
     { 
         std::cout<<"------- Checking final residuo ------------\n\n";
@@ -91,14 +104,42 @@ void Tomography::extract_calculated_data()
 
 void Tomography::model_update()
 {
+    for (int index = 0; index < modeling->nPoints; index++)
+    {
+        model[index] += dm[index];
 
+        int k = (int) (index / (modeling->nx*modeling->nz));        
+        int j = (int) (index - k*modeling->nx*modeling->nz) / modeling->nz;    
+        int i = (int) (index - j*modeling->nz - k*modeling->nx*modeling->nz); 
 
+        int indB = (i + modeling->nbzu) + (j + modeling->nbxl)*modeling->nzz + (k + modeling->nbyl)*modeling->nxx*modeling->nzz;
+
+        modeling->S[indB] = model[index];
+    }
 }
 
 void Tomography::export_results()
 {
+    float * final_model = new float[modeling->nPoints]();
 
+    for (int index = 0; index < modeling->nPoints; index++)
+    {
+        final_model[index] = 1.0f / model[index];
+    }
     
+    std::string estimated_model_path = estimated_model_folder + "final_model_iteration_" + std::to_string(iteration) + ".bin";
+    std::string convergence_map_path = convergence_map_folder + "convergency.txt"; 
+
+    export_binary_float(estimated_model_path, final_model, modeling->nPoints);
+
+    std::ofstream resFile(convergence_map_path, std::ios::out);
+    
+    for (int r = 0; r < residuo.size(); r++) 
+        resFile << residuo[r] << "\n";
+
+    resFile.close();
+
+    delete[] final_model;
 }
 
 
