@@ -102,12 +102,12 @@ inversion_type = 0      # <int>
 tolerance = 0.001       # <float>
 max_iteration = 5       # <int>
 
-dx_tomo = 500           # [m] <float> 
-dy_tomo = 500           # [m] <float>
+dx_tomo = 250           # [m] <float> 
+dy_tomo = 250           # [m] <float>
 dz_tomo = 100           # [m] <float>
 
 tk_order = 2            # Tikhonov regularization order <int>
-tk_param = 1e6          # Regularization parameter <float>
+tk_param = 1e6          # Tikhonov regularization parameter <float>
 
 obs_data_folder = ../inputs/data/
 obs_data_prefix = fsm_data_5625_shot_

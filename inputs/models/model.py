@@ -29,7 +29,7 @@ true_model.flatten("F").astype("float32", order = "F").tofile("true_model_51x301
 init_model = np.zeros((nz,nx,ny))
 
 vi = 1800.0
-dv = 0.4
+dv = 0.3
 
 z = np.arange(nz) * dh
 
