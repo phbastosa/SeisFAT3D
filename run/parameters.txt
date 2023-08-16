@@ -2,15 +2,15 @@
 # Model paramenters --------------------------------------------------------------------------------
 #---------------------------------------------------------------------------------------------------
 
-x_samples = 301          # <int>  
-y_samples = 301          # <int>  
+x_samples = 501          # <int>  
+y_samples = 501          # <int>  
 z_samples = 51           # <int>  
 
 x_spacing = 50           # [m] <float> 
 y_spacing = 50           # [m] <float> 
 z_spacing = 50           # [m] <float> 
 
-vp_model_file = ../inputs/models/init_model_51x301x301_50m.bin  # <str> 
+vp_model_file = ../inputs/models/true_model_51x501x501_50m.bin  # <str> 
 vs_model_file = ../inputs/models/vs_model_51x301x101_10m.bin    # <str>
 rho_model_file = ../inputs/models/rho_model_51x301x101_10m.bin  # <str> 
 
@@ -36,12 +36,12 @@ shots_nlines = [1, 75, 75]         # <int> (z, x, y)
 nodes_nlines = [1, 15, 15]         # <int> (z, x, y)            
 
 shots_SW = [50, 100, 100]          # [m] <float> (z, x, y) NW            
-shots_NW = [50, 100, 14900]        # [m] <float> (z, x, y)  |            
-shots_SE = [50, 14900, 100]        # [m] <float> (z, x, y) SW -- SE     
+shots_NW = [50, 100, 24900]        # [m] <float> (z, x, y)  |            
+shots_SE = [50, 24900, 100]        # [m] <float> (z, x, y) SW -- SE     
 
 nodes_SW = [50, 500, 500]          # [m] <float> (z, x, y) NW           
-nodes_NW = [50, 500, 14500]        # [m] <float> (z, x, y)  |         
-nodes_SE = [50, 14500, 500]        # [m] <float> (z, x, y) SW -- SE   
+nodes_NW = [50, 500, 24500]        # [m] <float> (z, x, y)  |         
+nodes_SE = [50, 24500, 500]        # [m] <float> (z, x, y) SW -- SE   
 
 # Circular geometry --------------------------------------------------------------------------------                                            
 
