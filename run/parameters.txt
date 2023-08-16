@@ -100,11 +100,11 @@ wavefield_output_folder = ../outputs/snapshots/     # <str>
 inversion_type = 0      # <int> 
 
 tolerance = 0.001       # <float>
-max_iteration = 1       # <int>
+max_iteration = 5       # <int>
 
 dx_tomo = 500           # [m] <float> 
 dy_tomo = 500           # [m] <float>
-dz_tomo = 50            # [m] <float>
+dz_tomo = 100           # [m] <float>
 
 tk_order = 2            # Tikhonov regularization order <int>
 tk_param = 1e6          # Regularization parameter <float>

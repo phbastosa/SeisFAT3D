@@ -73,12 +73,20 @@ void Least_Squares::initial_setup()
     vG.reserve(ray_path_estimated_samples);
 
     for (int index = 0; index < modeling->nPoints; index++)
-    {
+    {    
+        int k = (int) (index / (modeling->nx*modeling->nz));        
+        int j = (int) (index - k*modeling->nx*modeling->nz) / modeling->nz;    
+        int i = (int) (index - j*modeling->nz - k*modeling->nx*modeling->nz);          
+
+        int indB = (i+modeling->nbzu) + (j+modeling->nbxl)*modeling->nzz + (k+modeling->nbyl)*modeling->nxx*modeling->nzz;
+
+        modeling->S[indB] = model[index];
+
         gradient[index] = 0.0f;
         illumination[index] = 0.0f;
     }
 
-    for (int i = 0; i < n_data; i++) dcal[i] = 0.0f;
+    for (int i = 0; i < n_data; i++) dcal[i] = 0.0f;    
 }
 
 void Least_Squares::gradient_ray_tracing()
@@ -382,7 +390,9 @@ void Least_Squares::slowness_variation_rescaling()
 
         dm[index] = 0.0f;
 
-        if ((i >= 0) && (i < modeling->nz) && (j >= 0) && (j < modeling->nx) && (k >= 0) && (k < modeling->ny))
+        if ((i >= (int)(dz_tomo/modeling->dz)) && (i < modeling->nz-(int)(dz_tomo/modeling->dz)) && 
+            (j >= (int)(dx_tomo/modeling->dx)) && (j < modeling->nx-(int)(dx_tomo/modeling->dx)) && 
+            (k >= (int)(dy_tomo/modeling->dy)) && (k < modeling->ny-(int)(dy_tomo/modeling->dy)))
         {
             int idz = (int)(zp/dz_tomo);
             int idx = (int)(xp/dx_tomo);

@@ -38,8 +38,6 @@ void Podvin_and_Lecomte::set_modeling_volumes()
     cudaMalloc((void**)&(d_K), volsize*sizeof(float));     
     cudaMalloc((void**)&(d_nK), volsize*sizeof(float));     
     cudaMalloc((void**)&(d_nT), volsize*sizeof(float));   
-
-    cudaMemcpy(d_S, S, volsize*sizeof(float), cudaMemcpyHostToDevice);
 }
 
 void Podvin_and_Lecomte::check_spatial_spacing()
@@ -134,7 +132,8 @@ void Podvin_and_Lecomte::forward_solver()
     cudaMemcpy(d_K, K, volsize*sizeof(float), cudaMemcpyHostToDevice);
     cudaMemcpy(d_T, T, volsize*sizeof(float), cudaMemcpyHostToDevice);
     cudaMemcpy(d_nT, T, volsize*sizeof(float), cudaMemcpyHostToDevice);
-
+    cudaMemcpy(d_S, S, volsize*sizeof(float), cudaMemcpyHostToDevice);
+    
     int blocksPerGrid = volsize / threadsPerBlock;
 
     float dh = dx;

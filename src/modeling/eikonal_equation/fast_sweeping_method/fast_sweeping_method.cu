@@ -69,8 +69,6 @@ void Fast_Sweeping_Method::set_modeling_volumes()
 	cudaMemcpy(d_sgnv, h_sgnv, nSweeps*meshDim*sizeof(int), cudaMemcpyHostToDevice);
 	cudaMemcpy(d_sgnt, h_sgnt, nSweeps*meshDim*sizeof(int), cudaMemcpyHostToDevice);
 
-	cudaMemcpy(d_S, S, volsize*sizeof(float), cudaMemcpyHostToDevice);
-
     delete[] h_sgnt;
     delete[] h_sgnv;
 
@@ -137,6 +135,7 @@ void Fast_Sweeping_Method::initial_setup()
 void Fast_Sweeping_Method::forward_solver()
 {
 	cudaMemcpy(d_T, T, volsize*sizeof(float), cudaMemcpyHostToDevice);
+    cudaMemcpy(d_S, S, volsize*sizeof(float), cudaMemcpyHostToDevice);
 
     for (int sweep = 0; sweep < nSweeps; sweep++)
 	{ 
