@@ -84,7 +84,6 @@ void Fast_Iterative_Method::info_message()
 {
     general_modeling_message();
 
-    std::cout<<"Running:\n";
     std::cout<<"[1] - Fast Iterative Method (Jeong & Whitaker, 2008)\n\n";
 }
 

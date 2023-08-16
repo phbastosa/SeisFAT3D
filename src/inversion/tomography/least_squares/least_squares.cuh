@@ -23,6 +23,8 @@ private:
     std::vector<int> jG;
     std::vector<float> vG;
 
+    size_t ray_path_estimated_samples;
+
     int M, N, NNZ;
 
     int tk_order;   
@@ -32,8 +34,12 @@ private:
     int * jA = nullptr;
     float * vA = nullptr;
     float * B = nullptr;
-    float * x = nullptr;             // A x = B
+    float * x = nullptr; 
 
+    float * gradient;
+    float * illumination;
+
+    void initial_setup();
     void gradient_ray_tracing();
     void apply_regularization();
     void solve_linear_system_lscg();

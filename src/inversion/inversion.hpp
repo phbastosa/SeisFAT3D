@@ -24,6 +24,8 @@ protected:
     std::string convergence_map_folder;
     std::string estimated_model_folder;
 
+    std::string inversion_method;
+
     void set_general_parameters();
 
 public:

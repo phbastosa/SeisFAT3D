@@ -16,6 +16,8 @@ void Tomography::set_forward_modeling()
     modeling->file = file;
 
     modeling->set_parameters();
+
+    modeling->set_runtime();
 }
 
 void Tomography::set_main_components()
@@ -61,16 +63,16 @@ void Tomography::import_obs_data()
 
 void Tomography::check_convergence()
 {
-    float r = 0.0f;
+    float square_difference = 0.0f;
 
     for (int i = 0; i < n_data; i++)
-        r += powf(dobs[i] - dcal[i], 2.0f);
+        square_difference += powf(dobs[i] - dcal[i], 2.0f);
 
-    residuo.push_back(sqrtf(r));
+    residuo.push_back(sqrtf(square_difference));
 
     if ((iteration >= max_iteration) || (residuo.back() <= tolerance))
     {
-        std::cout << "\nFinal residuo: "<< residuo.back() << std::endl;
+        std::cout << "Final residuo: "<< residuo.back() <<"\n\n";
         converged = true;
     }
     else
@@ -82,7 +84,8 @@ void Tomography::check_convergence()
 
 void Tomography::tomography_message()
 {
-    modeling->info_message();
+    std::cout<<"Inversion:"<<"\n";
+    std::cout<<inversion_method<<"\n\n";
 
     if (iteration == max_iteration)
     { 
@@ -127,7 +130,7 @@ void Tomography::export_results()
         final_model[index] = 1.0f / model[index];
     }
     
-    std::string estimated_model_path = estimated_model_folder + "final_model_iteration_" + std::to_string(iteration) + ".bin";
+    std::string estimated_model_path = estimated_model_folder + "final_model.bin";
     std::string convergence_map_path = convergence_map_folder + "convergency.txt"; 
 
     export_binary_float(estimated_model_path, final_model, modeling->nPoints);
@@ -138,6 +141,10 @@ void Tomography::export_results()
         resFile << residuo[r] << "\n";
 
     resFile.close();
+
+    std::cout<<"Text file "<<convergence_map_path<<" was successfully written."<<std::endl;
+
+    modeling->get_runtime();
 
     delete[] final_model;
 }

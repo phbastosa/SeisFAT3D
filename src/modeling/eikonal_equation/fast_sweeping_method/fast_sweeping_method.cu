@@ -82,7 +82,6 @@ void Fast_Sweeping_Method::info_message()
 {
     general_modeling_message();
 
-    std::cout<<"Running:\n";
     std::cout<<"[2] - Fast Sweeping Method (Detrixhe et al., 2013; Noble et al., 2014)\n\n"; 
 }
 

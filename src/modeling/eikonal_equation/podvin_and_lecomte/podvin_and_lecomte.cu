@@ -52,7 +52,6 @@ void Podvin_and_Lecomte::info_message()
 {
     general_modeling_message();
 
-    std::cout<<"Running:\n";
     std::cout<<"[0] - Podvin & Lecomte (1991)\n\n"; 
 }
 

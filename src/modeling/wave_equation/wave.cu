@@ -157,8 +157,6 @@ void Wave::show_progress()
 
 void Wave::set_modeling_message()
 {
-    std::cout<<"Running:\n";
-
     std::cout<<modeling_message; 
 
     std::cout<<"Modeling progress: " << floorf(100.0f * (float)(time_id+1) / (float)(nt)) <<" %\n\n";

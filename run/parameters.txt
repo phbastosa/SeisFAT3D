@@ -23,21 +23,21 @@ rho_model_file = ../inputs/models/rho_model_51x301x101_10m.bin  # <str>
 #   [1] - regular nodes and circular shots  
 #---------------------------------------------------------------------------------------------------
 
-geometry_type = 0                 # <int>
-reciprocity = true                # <bool>     
-import_geometry = false           # <bool>
+geometry_type = 0                  # <int>
+reciprocity = true                 # <bool>     
+import_geometry = false            # <bool>
 
 shots_file = ../inputs/geometry/xyz_shot_positions.txt     # <str>         
 nodes_file = ../inputs/geometry/xyz_node_positions.txt     # <str>
 
 # Regular geometry ---------------------------------------------------------------------------------               
 
-shots_nlines = [1, 150, 150]       # <int> (z, x, y)     
-nodes_nlines = [1, 21, 21]         # <int> (z, x, y)            
+shots_nlines = [1, 75, 75]         # <int> (z, x, y)     
+nodes_nlines = [1, 15, 15]         # <int> (z, x, y)            
 
-shots_SW = [50, 50, 50]            # [m] <float> (z, x, y) NW            
-shots_NW = [50, 50, 14950]         # [m] <float> (z, x, y)  |            
-shots_SE = [50, 14950, 50]         # [m] <float> (z, x, y) SW -- SE     
+shots_SW = [50, 100, 100]          # [m] <float> (z, x, y) NW            
+shots_NW = [50, 100, 14900]        # [m] <float> (z, x, y)  |            
+shots_SE = [50, 14900, 100]        # [m] <float> (z, x, y) SW -- SE     
 
 nodes_SW = [50, 500, 500]          # [m] <float> (z, x, y) NW           
 nodes_NW = [50, 500, 14500]        # [m] <float> (z, x, y)  |         
@@ -83,7 +83,7 @@ n_snapshots = 11                 # <int>
 export_receiver_output = true    # <bool> 
 export_wavefield_output = false  # <bool>
 
-receiver_output_folder = ../outputs/seismograms/    # <str>
+receiver_output_folder = ../inputs/data/    # <str>
 wavefield_output_folder = ../outputs/snapshots/     # <str>
 
 #---------------------------------------------------------------------------------------------------
@@ -99,18 +99,18 @@ wavefield_output_folder = ../outputs/snapshots/     # <str>
 
 inversion_type = 0      # <int> 
 
-tolerance = 1000        # <float>
+tolerance = 0.001       # <float>
 max_iteration = 1       # <int>
 
-dx_tomo = 50            # [m] <float> 
-dy_tomo = 50            # [m] <float>
+dx_tomo = 500           # [m] <float> 
+dy_tomo = 500           # [m] <float>
 dz_tomo = 50            # [m] <float>
 
 tk_order = 2            # Tikhonov regularization order <int>
-tk_param = 1e5          # Regularization parameter <float>
+tk_param = 1e6          # Regularization parameter <float>
 
 obs_data_folder = ../inputs/data/
-obs_data_prefix = fsm_data_22500_shot_
+obs_data_prefix = fsm_data_5625_shot_
 
 convergence_map_folder = ../outputs/convergence/
 estimated_model_folder = ../outputs/recovered_models/

@@ -16,14 +16,40 @@ void Least_Squares::set_parameters()
     nx_tomo = (int)((modeling->nx-1) * modeling->dx / dx_tomo) + 1;    
     ny_tomo = (int)((modeling->ny-1) * modeling->dy / dy_tomo) + 1;  
 
+    lambda = std::stof(catch_parameter("tk_param", file));
+    tk_order = std::stoi(catch_parameter("tk_order", file));
+
     n_model = nx_tomo * ny_tomo * nz_tomo;
+
+    inversion_method = "[0] - Classical least squares first arrival tomography";
+
+    ray_path_estimated_samples = 0;
+
+    for (int shot = 0; shot < modeling->total_shots; shot++)
+    {
+        for (int node = 0; node < modeling->total_nodes; node++)
+        {
+            float dx = (modeling->geometry->shots.x[shot] - modeling->geometry->nodes.x[node]) / modeling->dx;
+            float dy = (modeling->geometry->shots.y[shot] - modeling->geometry->nodes.y[node]) / modeling->dy;
+            float dz = (modeling->geometry->shots.z[shot] - modeling->geometry->nodes.z[node]) / modeling->dz;
+            
+            ray_path_estimated_samples += (size_t)(3.0f*sqrtf(dx*dx + dy*dy + dz*dz));
+        }
+    }
+
+    gradient = new float[modeling->nPoints]();
+    illumination = new float[modeling->nPoints]();
 }
 
 void Least_Squares::forward_modeling()
 {
+    initial_setup();
+
     for (int shot = 0; shot < modeling->total_shots; shot++)
     {
         modeling->shot_id = shot;
+    
+        modeling->info_message();
 
         tomography_message();
 
@@ -35,6 +61,24 @@ void Least_Squares::forward_modeling()
 
         gradient_ray_tracing();
     }
+
+    // compute_gradient()
+    // export_illumination()
+}
+
+void Least_Squares::initial_setup()
+{
+    iG.reserve(ray_path_estimated_samples);
+    jG.reserve(ray_path_estimated_samples);
+    vG.reserve(ray_path_estimated_samples);
+
+    for (int index = 0; index < modeling->nPoints; index++)
+    {
+        gradient[index] = 0.0f;
+        illumination[index] = 0.0f;
+    }
+
+    for (int i = 0; i < n_data; i++) dcal[i] = 0.0f;
 }
 
 void Least_Squares::gradient_ray_tracing()
@@ -42,7 +86,15 @@ void Least_Squares::gradient_ray_tracing()
     int nxx = modeling->nxx;
     int nzz = modeling->nzz;
 
+    int sIdz = (int)(modeling->geometry->shots.z[modeling->shot_id] / dz_tomo);
+    int sIdx = (int)(modeling->geometry->shots.x[modeling->shot_id] / dx_tomo);
+    int sIdy = (int)(modeling->geometry->shots.y[modeling->shot_id] / dy_tomo);
+
+    int sId = sIdz + sIdx*nz_tomo + sIdy*nx_tomo*nz_tomo;   
+
     float rayStep = 0.2f * modeling->dz;
+
+    std::vector < int > ray_index;
 
     for (int ray_id = 0; ray_id < modeling->total_nodes; ray_id++)
     {
@@ -50,13 +102,16 @@ void Least_Squares::gradient_ray_tracing()
         float xi = modeling->geometry->nodes.x[ray_id];
         float yi = modeling->geometry->nodes.y[ray_id];
 
-        std::vector < int > ray_index;
+        if ((modeling->geometry->shots.z[modeling->shot_id] == zi) && 
+            (modeling->geometry->shots.x[modeling->shot_id] == xi) && 
+            (modeling->geometry->shots.y[modeling->shot_id] == yi))
+            continue;
 
         while (true)
         {
-            int i = (int)(zi / modeling->dz);
-            int j = (int)(xi / modeling->dx);
-            int k = (int)(yi / modeling->dy);
+            int i = (int)(zi / modeling->dz) + modeling->nbzu;
+            int j = (int)(xi / modeling->dx) + modeling->nbxl;
+            int k = (int)(yi / modeling->dy) + modeling->nbyl;
 
             float dTz = (modeling->T[(i+1) + j*nzz + k*nxx*nzz] - modeling->T[(i-1) + j*nzz + k*nxx*nzz]) / (2.0f*modeling->dz);    
             float dTx = (modeling->T[i + (j+1)*nzz + k*nxx*nzz] - modeling->T[i + (j-1)*nzz + k*nxx*nzz]) / (2.0f*modeling->dx);    
@@ -74,49 +129,52 @@ void Least_Squares::gradient_ray_tracing()
 
             ray_index.push_back(im + jm*nz_tomo + km*nx_tomo*nz_tomo);
 
-            if (ray_index.back() == modeling->source_id) break;
+            int index = (i - modeling->nbzu) + (j - modeling->nbxl)*modeling->nz + (k - modeling->nbyl)*modeling->nx*modeling->nz;
+
+            illumination[index] += rayStep;
+
+            if (ray_index.back() == sId) break;
         }
-    
+   
         float final_distance = sqrtf(powf(zi - modeling->geometry->shots.z[modeling->shot_id],2.0f) + 
-                                     powf(xi - modeling->geometry->shots.x[modeling->shot_id],2.0f) + 
-                                     powf(yi - modeling->geometry->shots.y[modeling->shot_id],2.0f));
+                                    powf(xi - modeling->geometry->shots.x[modeling->shot_id],2.0f) + 
+                                    powf(yi - modeling->geometry->shots.y[modeling->shot_id],2.0f));
 
         std::sort(ray_index.begin(), ray_index.end());
 
-        int current = ray_index[0];
-        float distance = rayStep;
+        int current_voxel_index = ray_index[0];
+        float distance_per_voxel = rayStep;
 
         for (int index = 0; index < ray_index.size(); index++)
         {
-            if (ray_index[index] == current)
+            if (ray_index[index] == current_voxel_index)
             {
-                distance += rayStep;
+                distance_per_voxel += rayStep;
             }
             else
             {
-                vG.push_back(distance);
-                jG.push_back(current);
-                iG.push_back(ray_id + modeling->shot_id * modeling->total_nodes);
+                vG.emplace_back(distance_per_voxel);
+                jG.emplace_back(current_voxel_index);
+                iG.emplace_back(ray_id + modeling->shot_id * modeling->total_nodes);
 
-                if (current == modeling->source_id) 
-                    vG.back() = final_distance;
+                if (current_voxel_index == sId) vG.back() = final_distance;
 
-                distance = rayStep;
-                current = ray_index[index];    
+                distance_per_voxel = rayStep;
+                current_voxel_index = ray_index[index];    
             }
         }
 
-        if (current == modeling->source_id)
+        if (current_voxel_index == sId)
         {
-            vG.push_back(final_distance);
-            jG.push_back(modeling->source_id);
-            iG.push_back(ray_id + modeling->shot_id * modeling->total_nodes);
+            vG.emplace_back(final_distance);
+            jG.emplace_back(current_voxel_index);
+            iG.emplace_back(ray_id + modeling->shot_id * modeling->total_nodes);
         }
         else 
         {
-            vG.push_back(distance);
-            jG.push_back(current);
-            iG.push_back(ray_id + modeling->shot_id * modeling->total_nodes);
+            vG.emplace_back(distance_per_voxel);
+            jG.emplace_back(current_voxel_index);
+            iG.emplace_back(ray_id + modeling->shot_id * modeling->total_nodes);
         }
 
         std::vector < int >().swap(ray_index);
@@ -125,7 +183,7 @@ void Least_Squares::gradient_ray_tracing()
 
 void Least_Squares::optimization()
 {
-    std::cout<<"Solving linear system using Tikhonov regularization with order "+ std::to_string(tk_order) + "\n\n";
+    std::cout<<"Solving linear system using Tikhonov regularization with order " + std::to_string(tk_order) + "\n\n";
 
     M = n_model;                                  
     N = n_data + n_model - tk_order;                    
@@ -230,144 +288,76 @@ void Least_Squares::apply_regularization()
 
 void Least_Squares::solve_linear_system_lscg()
 {
-    int NIT = 10;
-    float TOL = 1e-6f;
-
-    cublasHandle_t cublasHandle = 0;
-    cublasStatus_t cublasStatus;
-
-    cublasStatus = cublasCreate(&cublasHandle);
-    if (cublasStatus != CUBLAS_STATUS_SUCCESS) printf("Error cublas\n");
-
-    cusparseHandle_t cusparseHandle = 0;
-    cusparseStatus_t cusparseStatus;
-
-    cusparseStatus = cusparseCreate(&cusparseHandle);
-    if (cusparseStatus != CUSPARSE_STATUS_SUCCESS) printf("Error cusparse\n");
-
-    size_t bsize;
-    void * buffer;
-    float beta = 0.0f;
-    float alpha = 1.0f;
     float a, b, qTq, rTr, rd;
+    int cg_max_iteration = 10;
 
-    int * d_iA_coo; cudaMalloc((void **)&d_iA_coo, NNZ * sizeof(int));
-    int * d_iA_csr; cudaMalloc((void **)&d_iA_csr,(N+1)* sizeof(int));
+    float * s = new float[N]();
+    float * q = new float[N]();
+    float * r = new float[M]();
+    float * p = new float[M]();
 
-    cudaMemcpy(d_iA_coo, iA, NNZ * sizeof(int), cudaMemcpyHostToDevice);
+    // s = d - G * x, where d = dobs - dcal and x = slowness variation
+    for (int i = 0; i < N; i++) 
+        s[i] = B[i]; 
 
-    cusparseXcoo2csr(cusparseHandle, d_iA_coo, NNZ, N, d_iA_csr, CUSPARSE_INDEX_BASE_ZERO);
+    // r = G' * s    
+    for (int i = 0; i < NNZ; i++) 
+        r[jA[i]] += vA[i] * s[iA[i]];        
 
-    cudaFree(d_iA_coo);
-
-    float * d_p; cudaMalloc((void **)&d_p, M * sizeof(float)); 
-    float * d_q; cudaMalloc((void **)&d_q, N * sizeof(float));  
-    float * d_r; cudaMalloc((void **)&d_r, M * sizeof(float)); 
-    float * d_s; cudaMalloc((void **)&d_s, N * sizeof(float)); 
-    float * d_x; cudaMalloc((void **)&d_x, M * sizeof(float)); 
-
-    float * d_vA; cudaMalloc((void **)&d_vA, NNZ * sizeof(float));     
-    int * d_jA_coo; cudaMalloc((void **)&d_jA_coo, NNZ * sizeof(int)); 
-
-    cudaMemset(d_x, 0, M * sizeof(float));    
-    cudaMemset(d_p, 0, M * sizeof(float));
-    cudaMemset(d_q, 0, N * sizeof(float));
-    cudaMemset(d_r, 0, M * sizeof(float));
-    cudaMemcpy(d_s, B, N * sizeof(float), cudaMemcpyHostToDevice);
-
-    cudaMemcpy(d_vA, vA, NNZ * sizeof(float), cudaMemcpyHostToDevice);
-    cudaMemcpy(d_jA_coo, jA, NNZ * sizeof(int), cudaMemcpyHostToDevice);
-
-    cusparseDnVecDescr_t Dn_p;    
-    cusparseDnVecDescr_t Dn_q;    
-    cusparseDnVecDescr_t Dn_r;    
-    cusparseDnVecDescr_t Dn_s;    
-    cusparseSpMatDescr_t Sp_matA; 
-    
-    cusparseCreateDnVec(&Dn_p, M, d_p, CUDA_R_32F);
-    cusparseCreateDnVec(&Dn_q, N, d_q, CUDA_R_32F);
-    cusparseCreateDnVec(&Dn_r, M, d_r, CUDA_R_32F);
-    cusparseCreateDnVec(&Dn_s, N, d_s, CUDA_R_32F);
-
-    cusparseCreateCsr(&Sp_matA, N, M, NNZ, d_iA_csr, d_jA_coo, d_vA, CUSPARSE_INDEX_32I, CUSPARSE_INDEX_32I, CUSPARSE_INDEX_BASE_ZERO, CUDA_R_32F);
-
-    alpha = 1.0f;
-    beta = 0.0f;
-
-    cusparseSpMV_bufferSize(cusparseHandle, CUSPARSE_OPERATION_TRANSPOSE, &alpha, Sp_matA, Dn_s, &beta, Dn_r, CUDA_R_32F, CUSPARSE_SPMV_CSR_ALG1, &bsize);
-    cudaMalloc(&buffer, bsize);
-
-    cusparseSpMV(cusparseHandle, CUSPARSE_OPERATION_TRANSPOSE, &alpha, Sp_matA, Dn_s, &beta, Dn_r, CUDA_R_32F, CUSPARSE_SPMV_CSR_ALG1, buffer);
-    cudaDeviceSynchronize();    
-
-    cublasScopy_v2(cublasHandle, M, d_r, 1, d_p, 1);
-
-    cusparseSpMV(cusparseHandle, CUSPARSE_OPERATION_NON_TRANSPOSE, &alpha, Sp_matA, Dn_p, &beta, Dn_q, CUDA_R_32F, CUSPARSE_SPMV_CSR_ALG1, buffer);
-    cudaDeviceSynchronize();    
-
-    for (int iteration = 0; iteration < NIT; iteration++)
+    // p = r and x = 0;
+    for (int i = 0; i < M; i++) 
     {
-        qTq = 0.0f;
-        cublasSdot_v2(cublasHandle, N, d_q, 1, d_q, 1, &qTq);
-        cudaDeviceSynchronize();    // qTq = q' * q
-
-        rTr = 0.0f;
-        cublasSdot_v2(cublasHandle, M, d_r, 1, d_r, 1, &rTr);
-        cudaDeviceSynchronize();    // rTr = r' * r 
-
-        a = rTr / qTq;              // a = (r' * r) / (q' * q)
-        cublasSaxpy_v2(cublasHandle, M, &a, d_p, 1, d_x, 1);
-        cudaDeviceSynchronize();    // x = x + a * p
-
-        a *= -1.0f;
-        cublasSaxpy_v2(cublasHandle, N, &a, d_q, 1, d_s, 1);
-        cudaDeviceSynchronize();    // s = s - a * q 
-
-        rd = 0.0f;
-        cublasSdot_v2(cublasHandle, M, d_r, 1, d_r, 1, &rd);
-        cudaDeviceSynchronize();    // rd = r' * r
-
-        if (sqrtf(rd) < TOL) break; // Convergence condition 
-
-        cusparseSpMV(cusparseHandle, CUSPARSE_OPERATION_TRANSPOSE, &alpha, Sp_matA, Dn_s, &beta, Dn_r, CUDA_R_32F, CUSPARSE_SPMV_CSR_ALG1, buffer);
-        cudaDeviceSynchronize();   // r = G' * s    
-
-        rTr = 0.0f;
-        cublasSdot_v2(cublasHandle, M, d_r, 1, d_r, 1, &rTr);
-        cudaDeviceSynchronize();   // rTr = r' * r 
-
-        b = rTr / rd;              // b = (r' * r) / rd  
-        cublasSscal_v2(cublasHandle, M, &b, d_p, 1);
-        cudaDeviceSynchronize();   // p = b * p  
-
-        b = 1.0f;
-        cublasSaxpy_v2(cublasHandle, M, &b, d_r, 1, d_p, 1);
-        cudaDeviceSynchronize();   // p += r  <---> p = r + b * p  
-
-        cusparseSpMV(cusparseHandle, CUSPARSE_OPERATION_NON_TRANSPOSE, &alpha, Sp_matA, Dn_p, &beta, Dn_q, CUDA_R_32F, CUSPARSE_SPMV_CSR_ALG1, buffer);
-        cudaDeviceSynchronize();   // q = G * p    
+        p[i] = r[i]; 
+        x[i] = 0.0f;
     }
 
-    cudaMemcpy(x, d_x, M * sizeof(float), cudaMemcpyDeviceToHost);
+    // q = G * p
+    for (int i = 0; i < NNZ; i++) 
+        q[iA[i]] += vA[i] * p[jA[i]];        
 
-    cusparseDestroyDnVec(Dn_p);
-    cusparseDestroyDnVec(Dn_q);
-    cusparseDestroyDnVec(Dn_r);
-    cusparseDestroyDnVec(Dn_s);
-    cusparseDestroySpMat(Sp_matA);
+    for (int i = 0; i < cg_max_iteration; i++)
+    {
+        qTq = 0.0f;
+        for (int k = 0; k < N; k++)           // q inner product
+            qTq += q[k] * q[k];               // qTq = q' * q
 
-    cudaFree(d_vA);
-    cudaFree(d_iA_csr);
-    cudaFree(d_jA_coo);
+        rTr = 0.0f;
+        for (int k = 0; k < M; k++)           // r inner product
+            rTr += r[k] * r[k];               // rTr = r' * r 
 
-    cudaFree(d_x);
-    cudaFree(d_p);
-    cudaFree(d_q);
-    cudaFree(d_r);
-    cudaFree(d_s);
+        a = rTr / qTq;                        // a = (r' * r) / (q' * q)                    
 
-    cusparseDestroy(cusparseHandle);
-    cublasDestroy_v2(cublasHandle);
+        for (int k = 0; k < M; k++)           // model atualization
+            x[k] += a * p[k];                 // x = x + a * p
+
+        for (int k = 0; k < N; k++)           // s atualization  
+            s[k] -= a * q[k];                 // s = s - a * q 
+
+        rd = 0.0f;
+        for (int k = 0; k < M; k++)           // r inner product for division 
+            rd += r[k] * r[k];                // rd = r' * r
+
+        for (int k = 0; k < M; k++)           // Zeroing r 
+            r[k] = 0.0f;                      // r = 0, for multiplication
+        
+        for (int k = 0; k < NNZ; k++)         // r atualization 
+            r[jA[k]] += vA[k] * s[iA[k]];     // r = G' * s    
+
+        rTr = 0.0f;                
+        for (int k = 0; k < M; k++)           // r inner product
+            rTr += r[k] * r[k];               // rTr = r' * r
+
+        b = rTr / rd;                         // b = (r' * r) / rd
+
+        for (int k = 0; k < M; k++)          
+            p[k] = r[k] + b * p[k];           // p = r + b * p 
+
+        for (int k = 0; k < N; k++) 
+            q[k] = 0.0f;                      // q = 0, for multiplication
+
+        for (int k = 0; k < NNZ; k++) 
+            q[iA[k]] += vA[k] * p[jA[k]];     // q = G * p   
+    }
 }
 
 void Least_Squares::slowness_variation_rescaling()

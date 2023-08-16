@@ -81,8 +81,8 @@ void Modeling::set_acquisition_geometry()
 
 void Modeling::general_modeling_message()
 {
-    get_RAM_usage();
-    get_GPU_usage();
+    // get_RAM_usage();
+    // get_GPU_usage();
 
     auto clear = system("clear");
         
@@ -94,9 +94,11 @@ void Modeling::general_modeling_message()
                                    <<geometry->shots.x[shot_id]<<", y = " 
                                    <<geometry->shots.y[shot_id]<<") m\n\n";
 
-    std::cout<<"Memory usage: \n";
-    std::cout<<"RAM = "<<RAM<<" Mb\n";
-    std::cout<<"GPU = "<<vRAM<<" Mb\n\n";
+    // std::cout<<"Memory usage: \n";
+    // std::cout<<"RAM = "<<RAM<<" Mb\n";
+    // std::cout<<"GPU = "<<vRAM<<" Mb\n\n";
+
+    std::cout<<"Modeling:\n";
 }
 
 void Modeling::general_modeling_parameters()
