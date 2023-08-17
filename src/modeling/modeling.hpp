@@ -45,8 +45,6 @@ protected:
     void general_modeling_message();
     void general_modeling_parameters();
 
-    void expand_boundary(float * input, float * output);
-
 public: 
 
     int shot_id;
@@ -75,6 +73,8 @@ public:
     void set_runtime();
     void get_runtime();
     void export_outputs();
+
+    void expand_boundary(float * input, float * output);
 
     virtual void set_parameters() = 0; 
 

@@ -9,6 +9,7 @@ void Least_Squares::set_parameters()
     set_main_components();
 
     illumination_folder = catch_parameter("illumination_folder", file);
+    write_illumination_per_iteration = str2bool(catch_parameter("export_illumination", file));
 
     dx_tomo = std::stof(catch_parameter("dx_tomo", file));
     dy_tomo = std::stof(catch_parameter("dy_tomo", file));
@@ -39,7 +40,6 @@ void Least_Squares::set_parameters()
         }
     }
 
-    gradient = new float[modeling->nPoints]();
     illumination = new float[modeling->nPoints]();
 }
 
@@ -64,6 +64,8 @@ void Least_Squares::forward_modeling()
     }
 
     compute_gradient();
+    
+    export_gradient();
     export_illumination();
 }
 
@@ -219,65 +221,54 @@ void Least_Squares::compute_gradient()
 
         gradient[index] = 0.0f;
 
-        if ((i >= (int)(dz_tomo/modeling->dz)) && (i < modeling->nz-(int)(dz_tomo/modeling->dz)) && 
-            (j >= (int)(dx_tomo/modeling->dx)) && (j < modeling->nx-(int)(dx_tomo/modeling->dx)) && 
-            (k >= (int)(dy_tomo/modeling->dy)) && (k < modeling->ny-(int)(dy_tomo/modeling->dy)))
-        {
-            int idz = (int)(zp/dz_tomo);
-            int idx = (int)(xp/dx_tomo);
-            int idy = (int)(yp/dy_tomo);
+        int idz = (int)(zp/dz_tomo);
+        int idx = (int)(xp/dx_tomo);
+        int idy = (int)(yp/dy_tomo);
 
-            int ind_m = (int)(idz + idx*nz_tomo + idy*nx_tomo*nz_tomo);
+        int ind_m = (int)(idz + idx*nz_tomo + idy*nx_tomo*nz_tomo);
 
-            float c000 = grad[ind_m];                  
-            float c001 = grad[ind_m + 1];
-            float c100 = grad[ind_m + nz_tomo];
-            float c101 = grad[ind_m + 1 + nz_tomo];
-            float c010 = grad[ind_m + nx_tomo*nz_tomo];
-            float c011 = grad[ind_m + 1 + nx_tomo*nz_tomo];
-            float c110 = grad[ind_m + nz_tomo + nx_tomo*nz_tomo];
-            float c111 = grad[ind_m + 1 + nz_tomo + nx_tomo*nz_tomo];  
+        float c000 = grad[ind_m];                  
+        float c001 = grad[ind_m + 1];
+        float c100 = grad[ind_m + nz_tomo];
+        float c101 = grad[ind_m + 1 + nz_tomo];
+        float c010 = grad[ind_m + nx_tomo*nz_tomo];
+        float c011 = grad[ind_m + 1 + nx_tomo*nz_tomo];
+        float c110 = grad[ind_m + nz_tomo + nx_tomo*nz_tomo];
+        float c111 = grad[ind_m + 1 + nz_tomo + nx_tomo*nz_tomo];  
 
-            float xd = (xp - x0) / (x1 - x0);
-            float yd = (yp - y0) / (y1 - y0);
-            float zd = (zp - z0) / (z1 - z0);
+        float xd = (xp - x0) / (x1 - x0);
+        float yd = (yp - y0) / (y1 - y0);
+        float zd = (zp - z0) / (z1 - z0);
 
-            float c00 = c000*(1 - xd) + c100*xd;    
-            float c01 = c001*(1 - xd) + c101*xd;    
-            float c10 = c010*(1 - xd) + c110*xd;    
-            float c11 = c011*(1 - xd) + c111*xd;    
+        float c00 = c000*(1 - xd) + c100*xd;    
+        float c01 = c001*(1 - xd) + c101*xd;    
+        float c10 = c010*(1 - xd) + c110*xd;    
+        float c11 = c011*(1 - xd) + c111*xd;    
 
-            float c0 = c00*(1 - yd) + c10*yd;
-            float c1 = c01*(1 - yd) + c11*yd;
+        float c0 = c00*(1 - yd) + c10*yd;
+        float c1 = c01*(1 - yd) + c11*yd;
 
-            float g_ijk = (c0*(1 - zd) + c1*zd);
+        float g_ijk = (c0*(1 - zd) + c1*zd);
 
-            gradient[i + j*modeling->nz + k*modeling->nx*modeling->nz] = g_ijk;            
-        }
+        gradient[i + j*modeling->nz + k*modeling->nx*modeling->nz] = g_ijk;            
     }    
 
     delete[] grad;
-
-    // iteration and dimensions in path name
-
-    std::string gradient_path = gradient_folder + "gradient.bin";
-
-    export_binary_float(gradient_path, gradient, modeling->nPoints);
 }
 
 void Least_Squares::export_illumination()
 {
-    // iteration and dimensions in path name
+    if (write_illumination_per_iteration)
+    {
+        std::string illumination_path = illumination_folder + "illumination_iteration_" + std::to_string(iteration) + "_" + std::to_string(modeling->nz) + "x" + std::to_string(modeling->nx) + "x" + std::to_string(modeling->ny) + ".bin";
 
-    std::string illumination_path = illumination_folder + "illumination.bin";
-
-    export_binary_float(illumination_path, illumination, modeling->nPoints);
+        export_binary_float(illumination_path, illumination, modeling->nPoints);
+    }
 }
-
 
 void Least_Squares::optimization()
 {
-    std::cout<<"Solving linear system using Tikhonov regularization with order " + std::to_string(tk_order) + "\n\n";
+    std::cout<<"\nSolving linear system using Tikhonov regularization with order " + std::to_string(tk_order) + "\n\n";
 
     M = n_model;                                  
     N = n_data + n_model - tk_order;                    
@@ -476,40 +467,35 @@ void Least_Squares::slowness_variation_rescaling()
 
         dm[index] = 0.0f;
 
-        if ((i >= (int)(dz_tomo/modeling->dz)) && (i < modeling->nz-(int)(dz_tomo/modeling->dz)) && 
-            (j >= (int)(dx_tomo/modeling->dx)) && (j < modeling->nx-(int)(dx_tomo/modeling->dx)) && 
-            (k >= (int)(dy_tomo/modeling->dy)) && (k < modeling->ny-(int)(dy_tomo/modeling->dy)))
-        {
-            int idz = (int)(zp/dz_tomo);
-            int idx = (int)(xp/dx_tomo);
-            int idy = (int)(yp/dy_tomo);
+        int idz = (int)(zp/dz_tomo);
+        int idx = (int)(xp/dx_tomo);
+        int idy = (int)(yp/dy_tomo);
 
-            int ind_m = (int)(idz + idx*nz_tomo + idy*nx_tomo*nz_tomo);
+        int ind_m = (int)(idz + idx*nz_tomo + idy*nx_tomo*nz_tomo);
 
-            float c000 = x[ind_m];                  
-            float c001 = x[ind_m + 1];
-            float c100 = x[ind_m + nz_tomo];
-            float c101 = x[ind_m + 1 + nz_tomo];
-            float c010 = x[ind_m + nx_tomo*nz_tomo];
-            float c011 = x[ind_m + 1 + nx_tomo*nz_tomo];
-            float c110 = x[ind_m + nz_tomo + nx_tomo*nz_tomo];
-            float c111 = x[ind_m + 1 + nz_tomo + nx_tomo*nz_tomo];  
+        float c000 = x[ind_m];                  
+        float c001 = x[ind_m + 1];
+        float c100 = x[ind_m + nz_tomo];
+        float c101 = x[ind_m + 1 + nz_tomo];
+        float c010 = x[ind_m + nx_tomo*nz_tomo];
+        float c011 = x[ind_m + 1 + nx_tomo*nz_tomo];
+        float c110 = x[ind_m + nz_tomo + nx_tomo*nz_tomo];
+        float c111 = x[ind_m + 1 + nz_tomo + nx_tomo*nz_tomo];  
 
-            float xd = (xp - x0) / (x1 - x0);
-            float yd = (yp - y0) / (y1 - y0);
-            float zd = (zp - z0) / (z1 - z0);
+        float xd = (xp - x0) / (x1 - x0);
+        float yd = (yp - y0) / (y1 - y0);
+        float zd = (zp - z0) / (z1 - z0);
 
-            float c00 = c000*(1 - xd) + c100*xd;    
-            float c01 = c001*(1 - xd) + c101*xd;    
-            float c10 = c010*(1 - xd) + c110*xd;    
-            float c11 = c011*(1 - xd) + c111*xd;    
+        float c00 = c000*(1 - xd) + c100*xd;    
+        float c01 = c001*(1 - xd) + c101*xd;    
+        float c10 = c010*(1 - xd) + c110*xd;    
+        float c11 = c011*(1 - xd) + c111*xd;    
 
-            float c0 = c00*(1 - yd) + c10*yd;
-            float c1 = c01*(1 - yd) + c11*yd;
+        float c0 = c00*(1 - yd) + c10*yd;
+        float c1 = c01*(1 - yd) + c11*yd;
 
-            float dm_ijk = (c0*(1 - zd) + c1*zd);
+        float dm_ijk = (c0*(1 - zd) + c1*zd);
 
-            dm[i + j*modeling->nz + k*modeling->nx*modeling->nz] = dm_ijk;            
-        }
+        dm[i + j*modeling->nz + k*modeling->nx*modeling->nz] = dm_ijk;            
     }
 }

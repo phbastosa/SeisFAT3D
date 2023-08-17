@@ -11,16 +11,12 @@ class Tomography : public Inversion
 {
 protected:
 
-    float * dm;
-    float * model;
-
     Eikonal * modeling;
-
-    std::string gradient_folder;
 
     void set_forward_modeling();
     void set_main_components();
     void tomography_message();
+    void export_gradient();
     
     void extract_calculated_data();
 

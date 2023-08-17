@@ -1,10 +1,6 @@
 # ifndef LEAST_SQUARES_CUH
 # define LEAST_SQUARES_CUH
 
-# include <cuda.h>
-# include <cusparse.h>
-# include <cublas_v2.h>
-
 # include "../tomography.hpp"
 
 class Least_Squares : public Tomography
@@ -30,16 +26,16 @@ private:
 
     size_t ray_path_estimated_samples;
 
-    std::string illumination_folder;
-
     int * iA = nullptr;
     int * jA = nullptr;
     float * vA = nullptr;
     float * B = nullptr;
     float * x = nullptr; 
 
-    float * gradient;
     float * illumination;
+
+    bool write_illumination_per_iteration;
+    std::string illumination_folder;
 
     void initial_setup();
     void compute_gradient();

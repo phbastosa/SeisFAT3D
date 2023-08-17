@@ -7,22 +7,28 @@ class Inversion
 {
 protected:
 
-    float * dobs = nullptr;
-    float * dcal = nullptr;
-
-    int n_data, n_model;
-    int max_iteration;
     int iteration;
+    int max_iteration;
+    int n_data, n_model;
 
     float tolerance;
 
-    bool model_per_iteration;
+    float * dobs = nullptr;
+    float * dcal = nullptr;
+
+    float * dm = nullptr;
+    float * model = nullptr;
+    float * gradient = nullptr;
+
+    bool write_model_per_iteration;
+    bool write_gradient_per_iteration;
 
     std::vector<float> residuo;
 
     std::string obs_data_folder;
     std::string obs_data_prefix;
 
+    std::string gradient_folder;
     std::string convergence_map_folder;
     std::string estimated_model_folder;
 

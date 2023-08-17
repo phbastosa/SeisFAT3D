@@ -30,6 +30,8 @@ void Tomography::set_main_components()
     dm = new float[modeling->nPoints]();
     model = new float[modeling->nPoints]();
 
+    gradient = new float[modeling->nPoints]();
+
     for (int index = 0; index < modeling->nPoints; index++)
     {
         int k = (int) (index / (modeling->nx*modeling->nz));        
@@ -40,8 +42,6 @@ void Tomography::set_main_components()
 
         model[index] = modeling->S[indB];
     }
-
-    gradient_folder = catch_parameter("gradient_folder", file);
 }
 
 void Tomography::import_obs_data()
@@ -74,7 +74,7 @@ void Tomography::check_convergence()
 
     if ((iteration >= max_iteration))
     {
-        std::cout << "Final residuo: "<< residuo.back() <<"\n\n";
+        std::cout << "\nFinal residuo: "<< residuo.back() <<"\n\n";
         converged = true;
     }
     else
@@ -126,9 +126,9 @@ void Tomography::model_update()
         model_it[index] = 1.0f / model[index]; 
     }
 
-    if (model_per_iteration)
+    if (write_model_per_iteration)
     {
-        std::string model_iteration_path = estimated_model_folder + "model_iteration.bin";
+        std::string model_iteration_path = estimated_model_folder + "model_iteration_" + std::to_string(iteration) + "_" + std::to_string(modeling->nz) + "x" + std::to_string(modeling->nx) + "x" + std::to_string(modeling->ny) + ".bin";
 
         export_binary_float(model_iteration_path, model_it, modeling->nPoints);
     }
@@ -145,8 +145,8 @@ void Tomography::export_results()
         final_model[index] = 1.0f / model[index];
     }
     
-    std::string estimated_model_path = estimated_model_folder + "final_model.bin";
-    std::string convergence_map_path = convergence_map_folder + "convergency.txt"; 
+    std::string estimated_model_path = estimated_model_folder + "final_model_" + std::to_string(modeling->nz) + "x" + std::to_string(modeling->nx) + "x" + std::to_string(modeling->ny) + ".bin";
+    std::string convergence_map_path = convergence_map_folder + "convergence_" + std::to_string(iteration) + "_iterations.txt"; 
 
     export_binary_float(estimated_model_path, final_model, modeling->nPoints);
 
@@ -164,5 +164,13 @@ void Tomography::export_results()
     delete[] final_model;
 }
 
+void Tomography::export_gradient()
+{
+    if (write_gradient_per_iteration)
+    {
+        std::string gradient_path = gradient_folder + "gradient_iteration_" + std::to_string(iteration) + "_" + std::to_string(modeling->nz) + "x" + std::to_string(modeling->nx) + "x" + std::to_string(modeling->ny) + ".bin";
 
+        export_binary_float(gradient_path, gradient, modeling->nPoints);
+    }
+}
 
