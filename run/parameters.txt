@@ -101,14 +101,16 @@ inversion_type = 0                  # <int>
 
 max_iteration = 5                   # <int>
 
-model_per_iteration = false         # <bool>
-
 dx_tomo = 250                       # [m] <float> 
 dy_tomo = 250                       # [m] <float>
 dz_tomo = 100                       # [m] <float>
 
 tk_order = 2                        # Tikhonov regularization order <int>
 tk_param = 1e6                      # Tikhonov regularization parameter <float>
+
+export_gradient = false             # <bool>
+export_illumination = false         # <bool> 
+export_model_per_iteration = false  # <bool>
 
 obs_data_folder = ../inputs/data/        
 obs_data_prefix = fsm_data_5625_shot_     

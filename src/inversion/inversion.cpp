@@ -10,5 +10,5 @@ void Inversion::set_general_parameters()
     convergence_map_folder = catch_parameter("convergence_map_folder", file);
     estimated_model_folder = catch_parameter("estimated_model_folder", file);
 
-    model_per_iteration = str2bool(catch_parameter("model_per_iteration", file));
+    model_per_iteration = str2bool(catch_parameter("export_model_per_iteration", file));
 }
