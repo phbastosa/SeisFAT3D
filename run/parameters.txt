@@ -3,12 +3,12 @@
 #---------------------------------------------------------------------------------------------------
 
 x_samples = 501          # <int>  
-y_samples = 501          # <int>  
-z_samples = 51           # <int>  
+y_samples = 501                     # <int>  
+z_samples = 51                      # <int>  
 
-x_spacing = 50           # [m] <float> 
-y_spacing = 50           # [m] <float> 
-z_spacing = 50           # [m] <float> 
+x_spacing = 50                      # [m] <float> 
+y_spacing = 50                      # [m] <float> 
+z_spacing = 50                      # [m] <float> 
 
 vp_model_file = ../inputs/models/true_model_51x501x501_50m.bin  # <str> 
 vs_model_file = ../inputs/models/vs_model_51x301x101_10m.bin    # <str>
