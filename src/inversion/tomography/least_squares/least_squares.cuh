@@ -11,6 +11,11 @@ class Least_Squares : public Tomography
 {
 private:
 
+    int tk_order;   
+    float lambda;
+
+    int M, N, NNZ;
+
     int nx_tomo;  
     int ny_tomo;  
     int nz_tomo; 
@@ -25,10 +30,7 @@ private:
 
     size_t ray_path_estimated_samples;
 
-    int M, N, NNZ;
-
-    int tk_order;   
-    float lambda;
+    std::string illumination_folder;
 
     int * iA = nullptr;
     int * jA = nullptr;
@@ -40,6 +42,8 @@ private:
     float * illumination;
 
     void initial_setup();
+    void compute_gradient();
+    void export_illumination();
     void gradient_ray_tracing();
     void apply_regularization();
     void solve_linear_system_lscg();

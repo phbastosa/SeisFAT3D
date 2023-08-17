@@ -40,6 +40,8 @@ void Tomography::set_main_components()
 
         model[index] = modeling->S[indB];
     }
+
+    gradient_folder = catch_parameter("gradient_folder", file);
 }
 
 void Tomography::import_obs_data()
@@ -70,7 +72,7 @@ void Tomography::check_convergence()
 
     residuo.push_back(sqrtf(square_difference));
 
-    if ((iteration >= max_iteration) || (residuo.back() <= tolerance))
+    if ((iteration >= max_iteration))
     {
         std::cout << "Final residuo: "<< residuo.back() <<"\n\n";
         converged = true;
@@ -107,6 +109,8 @@ void Tomography::extract_calculated_data()
 
 void Tomography::model_update()
 {
+    float * model_it = new float[modeling->nPoints]();
+
     for (int index = 0; index < modeling->nPoints; index++)
     {
         model[index] += dm[index];
@@ -118,7 +122,18 @@ void Tomography::model_update()
         int indB = (i + modeling->nbzu) + (j + modeling->nbxl)*modeling->nzz + (k + modeling->nbyl)*modeling->nxx*modeling->nzz;
 
         modeling->S[indB] = model[index];
+
+        model_it[index] = 1.0f / model[index]; 
     }
+
+    if (model_per_iteration)
+    {
+        std::string model_iteration_path = estimated_model_folder + "model_iteration.bin";
+
+        export_binary_float(model_iteration_path, model_it, modeling->nPoints);
+    }
+
+    delete[] model_it;
 }
 
 void Tomography::export_results()

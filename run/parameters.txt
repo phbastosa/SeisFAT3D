@@ -23,31 +23,31 @@ rho_model_file = ../inputs/models/rho_model_51x301x101_10m.bin  # <str>
 #   [1] - regular nodes and circular shots  
 #---------------------------------------------------------------------------------------------------
 
-geometry_type = 0                  # <int>
-reciprocity = true                 # <bool>     
-import_geometry = false            # <bool>
+geometry_type = 0                   # <int>
+reciprocity = true                  # <bool>     
+import_geometry = false             # <bool>
 
-shots_file = ../inputs/geometry/xyz_shot_positions.txt     # <str>         
-nodes_file = ../inputs/geometry/xyz_node_positions.txt     # <str>
+shots_file = ../inputs/geometry/xyz_shot_position.txt              
+nodes_file = ../inputs/geometry/xyz_node_position.txt     
 
 # Regular geometry ---------------------------------------------------------------------------------               
 
-shots_nlines = [1, 75, 75]         # <int> (z, x, y)     
-nodes_nlines = [1, 15, 15]         # <int> (z, x, y)            
+shots_nlines = [1, 75, 75]          # <int> (z, x, y)     
+nodes_nlines = [1, 15, 15]          # <int> (z, x, y)            
 
-shots_SW = [50, 100, 100]          # [m] <float> (z, x, y) NW            
-shots_NW = [50, 100, 24900]        # [m] <float> (z, x, y)  |            
-shots_SE = [50, 24900, 100]        # [m] <float> (z, x, y) SW -- SE     
+shots_SW = [50, 100, 100]           # [m] <float> (z, x, y) NW            
+shots_NW = [50, 100, 24900]         # [m] <float> (z, x, y)  |            
+shots_SE = [50, 24900, 100]         # [m] <float> (z, x, y) SW -- SE     
 
-nodes_SW = [50, 500, 500]          # [m] <float> (z, x, y) NW           
-nodes_NW = [50, 500, 24500]        # [m] <float> (z, x, y)  |         
-nodes_SE = [50, 24500, 500]        # [m] <float> (z, x, y) SW -- SE   
+nodes_SW = [50, 500, 500]           # [m] <float> (z, x, y) NW           
+nodes_NW = [50, 500, 24500]         # [m] <float> (z, x, y)  |         
+nodes_SE = [50, 24500, 500]         # [m] <float> (z, x, y) SW -- SE   
 
 # Circular geometry --------------------------------------------------------------------------------                                            
 
-spacing = 100                      # [m] <float>
-center  = [1000, 1000, 1000]       # [m] <float> (z, x, y)        
-offsets = [1000, 1000, 1000]       # [m] <float>
+spacing = 100                       # [m] <float>
+center  = [1000, 1000, 1000]        # [m] <float> (z, x, y)        
+offsets = [1000, 1000, 1000]        # [m] <float>
 
 #---------------------------------------------------------------------------------------------------
 # Modeling parameters ------------------------------------------------------------------------------
@@ -63,28 +63,28 @@ offsets = [1000, 1000, 1000]       # [m] <float>
 #   [5] - Elastic isotropic media
 #---------------------------------------------------------------------------------------------------
 
-modeling_type = 2                # <int>
+modeling_type = 2                   # <int>
 
-total_time = 2.0                 # [s] <float>
-time_spacing = 0.001             # [s] <float>
-wavelet_shift = 0.15             # [s] <float>
-max_frequency = 40.0             # [Hz] <float>
-max_amplitude = 1e5              # <float>
+total_time = 2.0                    # [s] <float>
+time_spacing = 0.001                # [s] <float>
+max_frequency = 40.0                # [Hz] <float>
 
-n_boundary = 50                  # <int> 
-boundary_damper = 0.0045         # <float>
-free_surface = false             # <bool>
+n_snapshots = 11                    # <int>
 
-import_wavelet = false           # <bool>
-wavelet_file = ../inputs/        # <str>
+n_boundary = 50                     # <int> 
+free_surface = false                # <bool>
+boundary_damper = 0.0045            # <float> (Cerjan et al. 1985) 
 
-n_snapshots = 11                 # <int>
+wavelet_shift = 0.15                # [s] <float>
+max_amplitude = 1e5                 # <float>
 
-export_receiver_output = true    # <bool> 
-export_wavefield_output = false  # <bool>
+import_wavelet = false              # <bool>
+export_receiver_output = true       # <bool> 
+export_wavefield_output = false     # <bool>
 
-receiver_output_folder = ../inputs/data/    # <str>
-wavefield_output_folder = ../outputs/snapshots/     # <str>
+wavelet_file = ../inputs/           
+receiver_output_folder = ../inputs/data/            
+wavefield_output_folder = ../outputs/snapshots/     
 
 #---------------------------------------------------------------------------------------------------
 # Inversion parameters 
@@ -97,30 +97,36 @@ wavefield_output_folder = ../outputs/snapshots/     # <str>
 #   [2] - Scalar Isotropic FWI
 #---------------------------------------------------------------------------------------------------
 
-inversion_type = 0      # <int> 
+inversion_type = 0                  # <int> 
 
-tolerance = 0.001       # <float>
-max_iteration = 5       # <int>
+max_iteration = 5                   # <int>
 
-dx_tomo = 250           # [m] <float> 
-dy_tomo = 250           # [m] <float>
-dz_tomo = 100           # [m] <float>
+model_per_iteration = false         # <bool>
 
-tk_order = 2            # Tikhonov regularization order <int>
-tk_param = 1e6          # Tikhonov regularization parameter <float>
+dx_tomo = 250                       # [m] <float> 
+dy_tomo = 250                       # [m] <float>
+dz_tomo = 100                       # [m] <float>
 
-obs_data_folder = ../inputs/data/
-obs_data_prefix = fsm_data_5625_shot_
+tk_order = 2                        # Tikhonov regularization order <int>
+tk_param = 1e6                      # Tikhonov regularization parameter <float>
 
-convergence_map_folder = ../outputs/convergence/
-estimated_model_folder = ../outputs/recovered_models/
+obs_data_folder = ../inputs/data/        
+obs_data_prefix = fsm_data_5625_shot_     
+
+gradient_folder = ../outputs/gradients/                  
+illumination_folder = ../outputs/illumination/           
+convergence_map_folder = ../outputs/convergence/         
+estimated_model_folder = ../outputs/recovered_models/    
 
 #---------------------------------------------------------------------------------------------------
 # Migration parameters 
 #---------------------------------------------------------------------------------------------------
+# Eikonal equation based: 
+#   [0] - Kirchhoff pre stack depth migration
 # 
+# Wave equation based:
+#   [1] - Revese Time Migration  
 #
-#  
 #---------------------------------------------------------------------------------------------------
 
 migration_type = 0

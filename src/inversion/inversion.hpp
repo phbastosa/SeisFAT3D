@@ -16,6 +16,8 @@ protected:
 
     float tolerance;
 
+    bool model_per_iteration;
+
     std::vector<float> residuo;
 
     std::string obs_data_folder;
