@@ -124,7 +124,7 @@ estimated_model_folder = ../outputs/recovered_models/
 # Migration parameters 
 #---------------------------------------------------------------------------------------------------
 # Eikonal equation based: 
-#   [0] - Kirchhoff pre stack depth migration
+#   [0] - Kirchhoff pre-stack depth migration
 # 
 # Wave equation based:
 #   [1] - Revese Time Migration  
