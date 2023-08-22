@@ -12,9 +12,6 @@ private:
 
     float * d_T = nullptr;
 
-    int * d_sgnv = nullptr;
-    int * d_sgnt = nullptr;
-
     float * source = nullptr;       
     float * adjoint = nullptr;
     

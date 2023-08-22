@@ -108,6 +108,10 @@ dz_tomo = 10                        # [m] <float>
 tk_order = 2                        # Tikhonov regularization order <int>
 tk_param = 1e5                      # Tikhonov regularization parameter <float>
 
+smooth_per_iteration = true         # <bool>
+gaussian_filter_samples = 5         # [odd number] <int> 
+gaussian_filter_stdv = 2.0          # <float>
+
 export_gradient = true              # <bool>
 export_illumination = true          # <bool> 
 export_model_per_iteration = true   # <bool>

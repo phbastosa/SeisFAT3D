@@ -109,7 +109,14 @@ void Tomography::extract_calculated_data()
 
 void Tomography::model_update()
 {
-    float * model_it = new float[modeling->nPoints]();
+    float * model_aux = new float[modeling->nPoints]();
+
+    if (smooth)
+    {
+        smoothing(dm, model_aux, modeling->nx, modeling->ny, modeling->nz);
+
+        std::swap(dm, model_aux);
+    }
 
     for (int index = 0; index < modeling->nPoints; index++)
     {
@@ -123,17 +130,17 @@ void Tomography::model_update()
 
         modeling->S[indB] = model[index];
 
-        model_it[index] = 1.0f / model[index]; 
+        model_aux[index] = 1.0f / model[index]; 
     }
 
     if (write_model_per_iteration)
     {
         std::string model_iteration_path = estimated_model_folder + "model_iteration_" + std::to_string(iteration) + "_" + std::to_string(modeling->nz) + "x" + std::to_string(modeling->nx) + "x" + std::to_string(modeling->ny) + ".bin";
 
-        export_binary_float(model_iteration_path, model_it, modeling->nPoints);
+        export_binary_float(model_iteration_path, model_aux, modeling->nPoints);
     }
 
-    delete[] model_it;
+    delete[] model_aux;
 }
 
 void Tomography::export_results()

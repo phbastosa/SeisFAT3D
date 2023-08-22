@@ -160,7 +160,7 @@ void Adjoint_State::adjoint_state_solver()
 
         int indp = (i+modeling->nbzu) + (j+modeling->nbxl)*modeling->nzz + (k+modeling->nbyl)*modeling->nxx*modeling->nzz;
 
-        gradient[index] += adjoint[indp]*modeling->S[indp]*modeling->S[indp]*cell_volume / modeling->total_shots;
+        gradient[index] += adjoint[indp]*modeling->S[indp]*modeling->S[indp]*cell_volume;
     }
 }
 
@@ -171,7 +171,7 @@ int Adjoint_State::iDivUp(int a, int b)
 
 void Adjoint_State::optimization()
 {
-
+    // gradient pre conditioning
 
 
 
