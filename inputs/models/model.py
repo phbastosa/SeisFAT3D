@@ -27,9 +27,9 @@ vp[:10,:,:] = 1800.0
 vs = vp / 1.7
 rho = 310.0*vp**0.25
 
-vp.flatten("F").astype("float32", order = "F").tofile("vp_model_51x501x501_10m.bin")
-vs.flatten("F").astype("float32", order = "F").tofile("vs_model_51x501x501_10m.bin")
-rho.flatten("F").astype("float32", order = "F").tofile("rho_model_51x501x501_10m.bin")
+# vp.flatten("F").astype("float32", order = "F").tofile("vp_model_51x501x501_10m.bin")
+# vs.flatten("F").astype("float32", order = "F").tofile("vs_model_51x501x501_10m.bin")
+# rho.flatten("F").astype("float32", order = "F").tofile("rho_model_51x501x501_10m.bin")
 
 vmin = np.min(vs)
 vmax = np.max(vp)
@@ -63,6 +63,7 @@ v = vi + dv*z
 for i in range(nz):
     init_model[i] = v[i]
 
+vp.flatten("F").astype("float32", order = "F").tofile("true_model_51x501x501_10m.bin")
 init_model.flatten("F").astype("float32", order = "F").tofile("init_model_51x501x501_10m.bin")
 
 plt.figure(1, figsize = (15,6))

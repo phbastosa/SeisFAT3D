@@ -18,35 +18,9 @@ void Adjoint_State::set_parameters()
     source = new float[modeling->volsize]();
     adjoint = new float[modeling->volsize]();
 
+    cudaMalloc((void**)&(d_T), modeling->volsize*sizeof(float));
     cudaMalloc((void**)&(d_source), modeling->volsize*sizeof(float));
     cudaMalloc((void**)&(d_adjoint), modeling->volsize*sizeof(float));
-
-    std::vector<std::vector<int>> sgnv = {{1,1,1}, {0,1,1}, {1,1,0}, {0,1,0}, {1,0,1}, {0,0,1}, {1,0,0}, {0,0,0}};
-    std::vector<std::vector<int>> sgnt = {{1,1,1}, {-1,1,1}, {1,1,-1}, {-1,1,-1}, {1,-1,1}, {-1,-1,1}, {1,-1,-1}, {-1,-1,-1}};
-
-	int * h_sgnv = new int [nSweeps * meshDim]();
-	int * h_sgnt = new int [nSweeps * meshDim](); 
-
-	for (int index = 0; index < nSweeps * meshDim; index++)
-	{
-		int j = index / nSweeps;
-		int i = index % nSweeps;				
-
-		h_sgnv[i + j * nSweeps] = sgnv[i][j];
-		h_sgnt[i + j * nSweeps] = sgnt[i][j];
-	}
-
-	cudaMalloc((void**)&(d_sgnv), nSweeps*meshDim*sizeof(int));
-	cudaMalloc((void**)&(d_sgnt), nSweeps*meshDim*sizeof(int));
-
-	cudaMemcpy(d_sgnv, h_sgnv, nSweeps*meshDim*sizeof(int), cudaMemcpyHostToDevice);
-	cudaMemcpy(d_sgnt, h_sgnt, nSweeps*meshDim*sizeof(int), cudaMemcpyHostToDevice);
-
-    delete[] h_sgnt;
-    delete[] h_sgnv;
-
-    std::vector<std::vector<int>>().swap(sgnv);
-    std::vector<std::vector<int>>().swap(sgnt);
 }
 
 void Adjoint_State::forward_modeling()

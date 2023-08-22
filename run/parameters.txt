@@ -10,7 +10,7 @@ x_spacing = 10                      # [m] <float>
 y_spacing = 10                      # [m] <float> 
 z_spacing = 10                      # [m] <float> 
 
-vp_model_file = ../inputs/models/init_model_51x501x501_10m.bin  # <str> 
+vp_model_file = ../inputs/models/true_model_51x501x501_10m.bin  # <str> 
 vs_model_file = ../inputs/models/vs_model_51x301x101_10m.bin    # <str>
 rho_model_file = ../inputs/models/rho_model_51x301x101_10m.bin  # <str> 
 
@@ -32,16 +32,16 @@ nodes_file = ../inputs/geometry/xyz_node_position.txt
 
 # Regular geometry ---------------------------------------------------------------------------------               
 
-shots_nlines = [1, 49, 49]          # <int> (z, x, y)     
-nodes_nlines = [1, 1, 1]          # <int> (z, x, y)            
+shots_nlines = [1, 97, 97]          # <int> (z, x, y)     
+nodes_nlines = [1, 11, 11]          # <int> (z, x, y)            
 
 shots_SW = [50, 100, 100]           # [m] <float> (z, x, y) NW            
 shots_NW = [50, 100, 4900]          # [m] <float> (z, x, y)  |            
 shots_SE = [50, 4900, 100]          # [m] <float> (z, x, y) SW -- SE     
 
 nodes_SW = [50, 500, 500]           # [m] <float> (z, x, y) NW           
-nodes_NW = [50, 500, 500]          # [m] <float> (z, x, y)  |         
-nodes_SE = [50, 500, 500]          # [m] <float> (z, x, y) SW -- SE   
+nodes_NW = [50, 500, 4500]          # [m] <float> (z, x, y)  |         
+nodes_SE = [50, 4500, 500]          # [m] <float> (z, x, y) SW -- SE   
 
 # Circular geometry --------------------------------------------------------------------------------                                            
 
@@ -113,7 +113,7 @@ export_illumination = true          # <bool>
 export_model_per_iteration = true   # <bool>
 
 obs_data_folder = ../inputs/data/        
-obs_data_prefix = fsm_data_2401_shot_     
+obs_data_prefix = fsm_data_9409_shot_     
 
 gradient_folder = ../outputs/gradient/                  
 illumination_folder = ../outputs/illumination/           
