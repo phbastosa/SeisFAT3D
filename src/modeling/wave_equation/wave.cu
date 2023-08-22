@@ -142,7 +142,7 @@ void Wave::build_outputs()
     if (export_receiver_output)
     {
         cudaMemcpy(receiver_output, seismogram, receiver_output_samples*sizeof(float), cudaMemcpyDeviceToHost);
-        receiver_output_file = receiver_output_folder + modeling_method + "_pressure_" + std::to_string(nt) + "x" + std::to_string(geometry->nodes.total) + "_shot_" + std::to_string(shot_id+1) + ".bin";
+        receiver_output_file = receiver_output_folder + modeling_method + "_pressure_" + std::to_string(nt) + "x" + std::to_string(total_nodes) + "_shot_" + std::to_string(shot_id+1) + ".bin";
     }
 
     if (export_wavefield_output)

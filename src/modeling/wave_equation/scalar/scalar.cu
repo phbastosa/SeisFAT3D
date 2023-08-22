@@ -6,13 +6,14 @@ void Scalar::set_parameters()
     wave_modeling_parameters();
 
     set_acquisition_geometry();
-    set_gridded_geometry();
 
     set_velocity_model();
 
     set_boundaries();
     set_model_boundaries();
 
+    set_gridded_geometry();
+    
     set_modeling_volumes();
 
     set_wavelet();

@@ -6,13 +6,14 @@ void Acoustic::set_parameters()
     wave_modeling_parameters();
 
     set_acquisition_geometry();
-    set_gridded_geometry();
 
     set_velocity_model();
     set_density_model();
 
     set_boundaries();
     set_model_boundaries();
+
+    set_gridded_geometry();
 
     set_modeling_volumes();
 
@@ -25,9 +26,7 @@ void Acoustic::set_density_model()
 {
     Rho = new float[nPoints]();
 
-    // import_binary_float(catch_parameter("rho_model_file", file), Rho, nPoints);
-
-    for (int index = 0; index < nPoints; index++) Rho[index] = 1000.0f; 
+    import_binary_float(catch_parameter("rho_model_file", file), Rho, nPoints);
 }
 
 void Acoustic::set_model_boundaries()
