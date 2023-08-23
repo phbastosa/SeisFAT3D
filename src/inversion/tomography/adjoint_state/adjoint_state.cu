@@ -170,14 +170,46 @@ int Adjoint_State::iDivUp(int a, int b)
 }
 
 void Adjoint_State::optimization()
-{
-    // gradient pre conditioning
+{ 
+    float * gk = new float[modeling->nPoints]();
+    float * pk = new float[modeling->nPoints]();
 
+    float function = residuo.back();
 
+    float norm = 0.0f;
+    float step = 1.0f;
+    float vmax = 0.0f;
 
+    float max_slowness_variation = 1e-4f;
 
+    for (int index = 0; index < modeling->nPoints; index++)
+    {
+        gk[index] = gradient[index] / modeling->total_shots;
+        pk[index] = -1.0f*gk[index];
 
+        norm += gk[index]*pk[index];
+    }
 
+    step = -0.1f*function/norm;
+
+    for (int index = 0; index < modeling->nPoints; index++)
+    {
+        gk[index] = step*pk[index];
+
+        if (vmax < fabsf(gk[index])) 
+            vmax = fabsf(gk[index]);
+    }
+
+    if (vmax > max_slowness_variation)
+        step = max_slowness_variation / vmax;
+    else 
+        step = 1.0f;    
+
+    for (int index = 0; index < modeling->nPoints; index++)
+        dm[index] = step*gk[index];
+
+    delete[] gk;
+    delete[] pk;
 }
 
 __global__ void adjoint_state_kernel(float * adjoint, float * source, float * T, int level, int xOffset, int yOffset, 

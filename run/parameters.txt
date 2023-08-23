@@ -10,7 +10,7 @@ x_spacing = 10                      # [m] <float>
 y_spacing = 10                      # [m] <float> 
 z_spacing = 10                      # [m] <float> 
 
-vp_model_file = ../inputs/models/true_model_51x501x501_10m.bin  # <str> 
+vp_model_file = ../inputs/models/init_model_51x501x501_10m.bin  # <str> 
 vs_model_file = ../inputs/models/vs_model_51x301x101_10m.bin    # <str>
 rho_model_file = ../inputs/models/rho_model_51x301x101_10m.bin  # <str> 
 
@@ -83,7 +83,7 @@ export_receiver_output = true       # <bool>
 export_wavefield_output = false     # <bool>
 
 wavelet_file = ../inputs/           
-receiver_output_folder = ../inputs/data/            
+receiver_output_folder = ../outputs/seismograms/            
 wavefield_output_folder = ../outputs/snapshots/     
 
 #---------------------------------------------------------------------------------------------------
@@ -109,11 +109,11 @@ tk_order = 2                        # Tikhonov regularization order <int>
 tk_param = 1e5                      # Tikhonov regularization parameter <float>
 
 smooth_per_iteration = true         # <bool>
-gaussian_filter_samples = 5         # [odd number] <int> 
-gaussian_filter_stdv = 2.0          # <float>
+gaussian_filter_samples = 7         # [odd number] <int> 
+gaussian_filter_stdv = 5.0          # <float>
 
 export_gradient = true              # <bool>
-export_illumination = true          # <bool> 
+export_illumination = false         # <bool> 
 export_model_per_iteration = true   # <bool>
 
 obs_data_folder = ../inputs/data/        
