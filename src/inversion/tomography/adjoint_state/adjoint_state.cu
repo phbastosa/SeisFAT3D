@@ -86,29 +86,27 @@ void Adjoint_State::adjoint_state_solver()
         }
     }
 
+    modeling->expand_boundary(modeling->wavefield_output, modeling->T);
+
     for (int node = 0; node < modeling->total_nodes; node++)
     {
-        int node_id = node + modeling->shot_id*modeling->total_nodes;
+        int current_node = node + modeling->shot_id*modeling->total_nodes;
 
-        float tmp = dcal[node_id] + modeling->t0 - dobs[node_id]; 
+        int i = (int)(modeling->geometry->nodes.z[node] / modeling->dz) + modeling->nbzu;
+        int j = (int)(modeling->geometry->nodes.x[node] / modeling->dx) + modeling->nbxl;
+        int k = (int)(modeling->geometry->nodes.y[node] / modeling->dy) + modeling->nbyl;
 
-        int i = (int)(modeling->geometry->nodes.z[node] / modeling->dz);
-        int j = (int)(modeling->geometry->nodes.x[node] / modeling->dx);
-        int k = (int)(modeling->geometry->nodes.y[node] / modeling->dy);
+        int index = i + j*modeling->nzz + k*modeling->nxx*modeling->nzz;
 
-        int index = i + j*modeling->nzz + k*modeling->nzz*modeling->nxx;
-
-        source[index] += tmp / cell_volume; 
-        source[index + 1] += tmp / cell_volume; 
-        source[index + modeling->nzz] += tmp / cell_volume; 
-        source[index + 1 + modeling->nzz] += tmp / cell_volume; 
-        source[index + modeling->nxx*modeling->nzz] += tmp / cell_volume; 
-        source[index + 1 + modeling->nxx*modeling->nzz] += tmp / cell_volume; 
-        source[index + modeling->nzz + modeling->nxx*modeling->nzz] += tmp / cell_volume; 
-        source[index + 1 + modeling->nzz + modeling->nxx*modeling->nzz] += tmp / cell_volume; 
+        source[index] += (dobs[current_node] - modeling->T[index]) / cell_volume; 
+        source[index - 1] += (dobs[current_node] - modeling->T[index + 1]) / cell_volume; 
+        source[index - modeling->nzz] += (dobs[current_node] - modeling->T[index + modeling->nzz]) / cell_volume;         
+        source[index - 1 - modeling->nzz] += (dobs[current_node] - modeling->T[index + 1 + modeling->nzz]) / cell_volume; 
+        source[index - modeling->nxx*modeling->nzz] += (dobs[current_node] - modeling->T[index + modeling->nxx*modeling->nzz]) / cell_volume; 
+        source[index - 1 - modeling->nxx*modeling->nzz] += (dobs[current_node] - modeling->T[index + 1 + modeling->nxx*modeling->nzz]) / cell_volume; 
+        source[index - modeling->nzz - modeling->nxx*modeling->nzz] += (dobs[current_node] - modeling->T[index + modeling->nzz + modeling->nxx*modeling->nzz]) / cell_volume; 
+        source[index - 1 - modeling->nzz - modeling->nxx*modeling->nzz] += (dobs[current_node] - modeling->T[index + 1 + modeling->nzz + modeling->nxx*modeling->nzz]) / cell_volume;     
     }
-
-    modeling->expand_boundary(modeling->wavefield_output, modeling->T);
 
 	cudaMemcpy(d_T, modeling->T, modeling->volsize*sizeof(float), cudaMemcpyHostToDevice);
 	cudaMemcpy(d_source, source, modeling->volsize*sizeof(float), cudaMemcpyHostToDevice);
@@ -120,9 +118,9 @@ void Adjoint_State::adjoint_state_solver()
 		int end = (start == meshDim) ? totalLevels + 1 : meshDim - 1;
 		int incr = (start == meshDim) ? true : false;
 
-		int xSweepOff = (sweep == 3 || sweep == 4) ? modeling->nxx : 0;
-		int ySweepOff = (sweep == 2 || sweep == 5) ? modeling->nyy : 0;
-		int zSweepOff = (sweep == 1 || sweep == 6) ? modeling->nzz : 0;
+		int xSweepOff = (sweep == 3 || sweep == 4) ? modeling->nxx + 1 : 0;
+		int ySweepOff = (sweep == 2 || sweep == 5) ? modeling->nyy + 1 : 0;
+		int zSweepOff = (sweep == 1 || sweep == 6) ? modeling->nzz + 1 : 0;
 		
 		for (int level = start; level != end; level = (incr) ? level + 1 : level - 1)
 		{			
@@ -152,6 +150,8 @@ void Adjoint_State::adjoint_state_solver()
 
     cudaMemcpy(adjoint, d_adjoint, modeling->volsize*sizeof(float), cudaMemcpyDeviceToHost);
 
+    preconditioning();
+
     for (int index = 0; index < modeling->nPoints; index++) 
     {
         int k = (int) (index / (modeling->nx*modeling->nz));        
@@ -169,47 +169,72 @@ int Adjoint_State::iDivUp(int a, int b)
     return ( (a % b) != 0 ) ? (a / b + 1) : (a / b); 
 }
 
-void Adjoint_State::optimization()
+void Adjoint_State::preconditioning() 
+{
+    int sidx = (int)(modeling->geometry->shots.x[modeling->shot_id] / modeling->dx) + modeling->nbxl;
+    int sidy = (int)(modeling->geometry->shots.y[modeling->shot_id] / modeling->dy) + modeling->nbyl;
+
+    # pragma omp parallel for
+    for (int i = 0; i < modeling->nzz; i++)
+    {
+        for (int j = 0; j < modeling->nxx; j++)
+        {
+            adjoint[i + j*modeling->nzz + sidy*modeling->nxx*modeling->nzz] = 0.5f*(adjoint[i + j*modeling->nzz + (sidy+1)*modeling->nxx*modeling->nzz] + adjoint[i + j*modeling->nzz + (sidy-1)*modeling->nxx*modeling->nzz]);
+        }
+
+        for (int k = 0; k < modeling->nyy; k++)    
+        {
+            adjoint[i + sidx*modeling->nzz + k*modeling->nxx*modeling->nzz] = 0.5f*(adjoint[i + (sidx+1)*modeling->nzz + k*modeling->nxx*modeling->nzz] + adjoint[i + (sidx-1)*modeling->nzz + k*modeling->nxx*modeling->nzz]);
+        }
+    }
+    
+    if (smooth)
+    {
+        int gnx = modeling->nx + 2*smoother_samples;
+        int gny = modeling->ny + 2*smoother_samples;
+        int gnz = modeling->nz + 2*smoother_samples;
+
+        int gnPoints = gnx*gny*gnz;
+
+        float * grad_aux = new float[gnPoints]();
+        float * grad_smooth = new float[gnPoints]();
+
+        # pragma omp parallel for
+        for (int index = 0; index < modeling->volsize; index++)
+        {
+            int k = (int) (index / (modeling->nxx*modeling->nzz));        
+            int j = (int) (index - k*modeling->nxx*modeling->nzz) / modeling->nzz;    
+            int i = (int) (index - j*modeling->nzz - k*modeling->nxx*modeling->nzz);          
+
+            int ind_filt = (i + smoother_samples) + (j + smoother_samples)*gnz + (k + smoother_samples)*gnx*gnz;
+
+            grad_aux[ind_filt] = adjoint[i + j*modeling->nzz + k*modeling->nxx*modeling->nzz];
+        }
+
+        smoothing(grad_aux, grad_smooth, gnx, gny, gnz);
+
+        # pragma omp parallel for
+        for (int index = 0; index < modeling->volsize; index++)
+        {
+            int k = (int) (index / (modeling->nxx*modeling->nzz));        
+            int j = (int) (index - k*modeling->nxx*modeling->nzz) / modeling->nzz;    
+            int i = (int) (index - j*modeling->nzz - k*modeling->nxx*modeling->nzz);          
+
+            int ind_filt = (i + smoother_samples) + (j + smoother_samples)*gnz + (k + smoother_samples)*gnx*gnz;
+
+            adjoint[i + j*modeling->nzz + k*modeling->nxx*modeling->nzz] = grad_smooth[ind_filt];
+        }
+    
+        delete[] grad_aux;
+        delete[] grad_smooth;
+    }
+}
+
+void Adjoint_State::optimization() 
 { 
-    float * gk = new float[modeling->nPoints]();
-    float * pk = new float[modeling->nPoints]();
 
-    float function = residuo.back();
 
-    float norm = 0.0f;
-    float step = 1.0f;
-    float vmax = 0.0f;
 
-    float max_slowness_variation = 1e-4f;
-
-    for (int index = 0; index < modeling->nPoints; index++)
-    {
-        gk[index] = gradient[index] / modeling->total_shots;
-        pk[index] = -1.0f*gk[index];
-
-        norm += gk[index]*pk[index];
-    }
-
-    step = -0.1f*function/norm;
-
-    for (int index = 0; index < modeling->nPoints; index++)
-    {
-        gk[index] = step*pk[index];
-
-        if (vmax < fabsf(gk[index])) 
-            vmax = fabsf(gk[index]);
-    }
-
-    if (vmax > max_slowness_variation)
-        step = max_slowness_variation / vmax;
-    else 
-        step = 1.0f;    
-
-    for (int index = 0; index < modeling->nPoints; index++)
-        dm[index] = step*gk[index];
-
-    delete[] gk;
-    delete[] pk;
 }
 
 __global__ void adjoint_state_kernel(float * adjoint, float * source, float * T, int level, int xOffset, int yOffset, 
@@ -223,11 +248,11 @@ __global__ void adjoint_state_kernel(float * adjoint, float * source, float * T,
 	{
 		int z = level - (x + y);
 		
-		if ((z > 0) && (z <= nzz))	
+		if ((z >= 0) && (z <= nzz))	
 		{
-			int i = abs(z - zSweepOffset);
-			int j = abs(x - xSweepOffset);
-			int k = abs(y - ySweepOffset);
+			int i = (int)abs(z - zSweepOffset);
+			int j = (int)abs(x - xSweepOffset);
+			int k = (int)abs(y - ySweepOffset);
 
 			if ((i > 0) && (i < nzz-1) && (j > 0) && (j < nxx-1) && (k > 0) && (k < nyy-1))
 			{		
@@ -257,7 +282,7 @@ __global__ void adjoint_state_kernel(float * adjoint, float * source, float * T,
 
                 float d = (ap2 - am1)/dx + (bp2 - bm1)/dy + (cp2 - cm1)/dz;
 
-                if (d < 1e-6f)
+                if (abs(d) < 1e-6f)
                 {
                     adjoint[i + j*nzz + k*nxx*nzz] = 0.0f;    
                 }
@@ -268,8 +293,9 @@ __global__ void adjoint_state_kernel(float * adjoint, float * source, float * T,
                               (cp1*adjoint[(i-1) + j*nzz + k*nxx*nzz] - cm2*adjoint[(i+1) + j*nzz + k*nxx*nzz]) / dz;
 
                     float f = (e + source[i + j*nzz + k*nxx*nzz]) / d;
-            
-                    adjoint[i + j*nzz + k*nxx*nzz] = min(adjoint[i + j*nzz + k*nxx*nzz], f);
+                    float g = adjoint[i + j*nzz + k*nxx*nzz];
+
+                    if (g > f) adjoint[i + j*nzz + k*nxx*nzz] = f;
                 }
             }
         }

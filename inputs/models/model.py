@@ -63,8 +63,11 @@ v = vi + dv*z
 for i in range(nz):
     init_model[i] = v[i]
 
+delta_vp = vp - init_model 
+
 vp.flatten("F").astype("float32", order = "F").tofile("true_model_51x501x501_10m.bin")
 init_model.flatten("F").astype("float32", order = "F").tofile("init_model_51x501x501_10m.bin")
+delta_vp.flatten("F").astype("float32", order = "F").tofile("delta_model_51x501x501_10m.bin")
 
 plt.figure(1, figsize = (15,6))
 plt.subplot(211)

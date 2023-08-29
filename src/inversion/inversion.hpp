@@ -14,8 +14,8 @@ protected:
     float tolerance;
 
     bool smooth;
-    int samples;
-    float stdv;
+    int smoother_samples;
+    float smoother_stdv;
 
     float * dobs = nullptr;
     float * dcal = nullptr;

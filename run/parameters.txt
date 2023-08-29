@@ -33,7 +33,7 @@ nodes_file = ../inputs/geometry/xyz_node_position.txt
 # Regular geometry ---------------------------------------------------------------------------------               
 
 shots_nlines = [1, 97, 97]          # <int> (z, x, y)     
-nodes_nlines = [1, 11, 11]          # <int> (z, x, y)            
+nodes_nlines = [1, 21, 21]          # <int> (z, x, y)            
 
 shots_SW = [50, 100, 100]           # [m] <float> (z, x, y) NW            
 shots_NW = [50, 100, 4900]          # [m] <float> (z, x, y)  |            
@@ -83,7 +83,7 @@ export_receiver_output = true       # <bool>
 export_wavefield_output = false     # <bool>
 
 wavelet_file = ../inputs/           
-receiver_output_folder = ../outputs/seismograms/            
+receiver_output_folder = ../inputs/data/            
 wavefield_output_folder = ../outputs/snapshots/     
 
 #---------------------------------------------------------------------------------------------------
@@ -108,13 +108,13 @@ dz_tomo = 10                        # [m] <float>
 tk_order = 2                        # Tikhonov regularization order <int>
 tk_param = 1e5                      # Tikhonov regularization parameter <float>
 
-smooth_per_iteration = true         # <bool>
-gaussian_filter_samples = 7         # [odd number] <int> 
-gaussian_filter_stdv = 5.0          # <float>
+smooth_per_iteration = false        # <bool>
+gaussian_filter_samples = 5         # [odd number] <int> 
+gaussian_filter_stdv = 2.0          # <float>
 
-export_gradient = true              # <bool>
+export_gradient = false             # <bool>
 export_illumination = false         # <bool> 
-export_model_per_iteration = true   # <bool>
+export_model_per_iteration = false  # <bool>
 
 obs_data_folder = ../inputs/data/        
 obs_data_prefix = fsm_data_9409_shot_     

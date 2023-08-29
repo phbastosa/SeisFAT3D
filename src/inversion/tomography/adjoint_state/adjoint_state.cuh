@@ -20,6 +20,7 @@ private:
 
     void initial_setup();
     void adjoint_state_solver();
+    void preconditioning();
 
     int iDivUp(int a, int b);
 
