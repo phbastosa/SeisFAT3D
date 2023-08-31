@@ -13,6 +13,8 @@ protected:
 
     Eikonal * modeling;
 
+    float max_slowness_variation;
+
     void set_forward_modeling();
     void set_main_components();
     void tomography_message();

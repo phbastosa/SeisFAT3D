@@ -109,7 +109,7 @@ void Tomography::extract_calculated_data()
 
 void Tomography::model_update()
 {
-    float * velocity_per_iteration = new float[modeling->nPoints]();
+    float * velocity = new float[modeling->nPoints]();
 
     if (smooth)
     {
@@ -157,31 +157,24 @@ void Tomography::model_update()
     {
         model[index] += dm[index];
 
-        int k = (int) (index / (modeling->nx*modeling->nz));        
-        int j = (int) (index - k*modeling->nx*modeling->nz) / modeling->nz;    
-        int i = (int) (index - j*modeling->nz - k*modeling->nx*modeling->nz); 
-
-        int indB = (i + modeling->nbzu) + (j + modeling->nbxl)*modeling->nzz + (k + modeling->nbyl)*modeling->nxx*modeling->nzz;
-
-        modeling->S[indB] = model[index];
-
-        velocity_per_iteration[index] = 1.0f / model[index]; 
+        velocity[index] = 1.0f / model[index]; 
     }
 
     if (write_model_per_iteration)
     {
         std::string model_iteration_path = estimated_model_folder + "model_iteration_" + std::to_string(iteration) + "_" + std::to_string(modeling->nz) + "x" + std::to_string(modeling->nx) + "x" + std::to_string(modeling->ny) + ".bin";
 
-        export_binary_float(model_iteration_path, velocity_per_iteration, modeling->nPoints);
+        export_binary_float(model_iteration_path, velocity, modeling->nPoints);
     }
 
-    delete[] velocity_per_iteration;
+    delete[] velocity;
 }
 
 void Tomography::export_results()
 {
     float * final_model = new float[modeling->nPoints]();
 
+    # pragma omp parallel for
     for (int index = 0; index < modeling->nPoints; index++)
     {
         final_model[index] = 1.0f / model[index];

@@ -12,6 +12,8 @@ private:
 
     float Tmax, cell_volume;
 
+    float f0, f1, f2, norm, alpha;
+
     float * d_T = nullptr;
 
     float * source = nullptr;       
@@ -20,9 +22,15 @@ private:
     float * d_source = nullptr;
     float * d_adjoint = nullptr;
 
-    void initial_setup();
+    void adjoint_initial_setup();
     void adjoint_state_solver();
     void adjoint_conditioning();
+
+    void gradient_normalizing();
+    void backtracking_linesearch();
+    void steepest_descent();
+
+    float get_objective_function(float step, float * grad);
 
     int iDivUp(int a, int b);
 

@@ -33,7 +33,7 @@ nodes_file = ../inputs/geometry/xyz_node_position.txt
 # Regular geometry ---------------------------------------------------------------------------------               
 
 shots_nlines = [1, 97, 97]          # <int> (z, x, y)     
-nodes_nlines = [1, 21, 21]          # <int> (z, x, y)            
+nodes_nlines = [1, 11, 11]          # <int> (z, x, y)            
 
 shots_SW = [50, 100, 100]           # [m] <float> (z, x, y) NW            
 shots_NW = [50, 100, 4900]          # [m] <float> (z, x, y)  |            
@@ -99,7 +99,7 @@ wavefield_output_folder = ../outputs/snapshots/
 
 inversion_type = 1                  # <int> 
 
-max_iteration = 1                   # <int>
+max_iteration = 2                   # <int>
 
 dx_tomo = 200                       # [m] <float> 
 dy_tomo = 200                       # [m] <float>
@@ -108,13 +108,13 @@ dz_tomo = 10                        # [m] <float>
 tk_order = 2                        # Tikhonov regularization order <int>
 tk_param = 1e5                      # Tikhonov regularization parameter <float>
 
-smooth_per_iteration = false        # <bool>
+smooth_per_iteration = false         # <bool>
 gaussian_filter_samples = 5         # [odd number] <int> 
-gaussian_filter_stdv = 2.0          # <float>
+gaussian_filter_stdv = 0.5          # <float>
 
-export_gradient = true             # <bool>
+export_gradient = true              # <bool>
 export_illumination = false         # <bool> 
-export_model_per_iteration = false  # <bool>
+export_model_per_iteration = true   # <bool>
 
 obs_data_folder = ../inputs/data/        
 obs_data_prefix = fsm_data_9409_shot_     

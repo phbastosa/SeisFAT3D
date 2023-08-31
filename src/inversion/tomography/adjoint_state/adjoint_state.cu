@@ -16,6 +16,8 @@ void Adjoint_State::set_parameters()
     nSweeps = 8;
     meshDim = 3;
 
+    max_slowness_variation = 1e-4f;
+
 	totalLevels = (modeling->nxx - 1) + (modeling->nyy - 1) + (modeling->nzz - 1);
 
     inversion_method = "[1] - Adjoint State first arrival tomography";
@@ -30,7 +32,7 @@ void Adjoint_State::set_parameters()
 
 void Adjoint_State::forward_modeling()
 {
-    initial_setup();
+    adjoint_initial_setup();
 
     for (int shot = 0; shot < modeling->total_shots; shot++)
     {
@@ -52,10 +54,11 @@ void Adjoint_State::forward_modeling()
     export_gradient();
 }
 
-void Adjoint_State::initial_setup()
+void Adjoint_State::adjoint_initial_setup()
 {
-    for (int index = 0; index < modeling->nPoints; index++)
-    {    
+    # pragma omp parallel for
+    for (int index = 0; index < modeling->nPoints; index++) 
+    {
         int k = (int) (index / (modeling->nx*modeling->nz));        
         int j = (int) (index - k*modeling->nx*modeling->nz) / modeling->nz;    
         int i = (int) (index - j*modeling->nz - k*modeling->nx*modeling->nz);          
@@ -67,7 +70,9 @@ void Adjoint_State::initial_setup()
         gradient[index] = 0.0f;
     }
 
-    for (int i = 0; i < n_data; i++) dcal[i] = 0.0f; 
+    # pragma omp parallel for
+    for (int i = 0; i < n_data; i++) 
+        dcal[i] = 0.0f; 
 }
 
 void Adjoint_State::adjoint_state_solver()
@@ -75,6 +80,8 @@ void Adjoint_State::adjoint_state_solver()
     Tmax = 0.0f;
 
     cell_volume = modeling->dx * modeling->dy * modeling->dz;
+
+    modeling->expand_boundary(modeling->wavefield_output, modeling->T);
 
     # pragma omp parallel for
     for (int index = 0; index < modeling->volsize; index++) 
@@ -93,12 +100,9 @@ void Adjoint_State::adjoint_state_solver()
             adjoint[index] = 0.0f;        
         }
 
-        if (Tmax < modeling->T[index]) Tmax = modeling->T[index];
+        if (Tmax < modeling->T[index]) Tmax = modeling->T[index];    
     }
 
-    modeling->expand_boundary(modeling->wavefield_output, modeling->T);
-
-    # pragma omp parallel for
     for (int node = 0; node < modeling->total_nodes; node++)
     {
         int current_node = node + modeling->shot_id*modeling->total_nodes;
@@ -170,7 +174,7 @@ void Adjoint_State::adjoint_state_solver()
         int j = (int) (index - k*modeling->nx*modeling->nz) / modeling->nz;    
         int i = (int) (index - j*modeling->nz - k*modeling->nx*modeling->nz);  
 
-        int indp = (i+modeling->nbzu) + (j+modeling->nbxl)*modeling->nzz + (k+modeling->nbyl)*modeling->nxx*modeling->nzz;
+        int indp = (i + modeling->nbzu) + (j + modeling->nbxl)*modeling->nzz + (k + modeling->nbyl)*modeling->nxx*modeling->nzz;
 
         gradient[index] += adjoint[indp]*modeling->S[indp]*modeling->S[indp]*cell_volume;
     }
@@ -204,9 +208,83 @@ void Adjoint_State::adjoint_conditioning()
 
 void Adjoint_State::optimization() 
 { 
+    gradient_normalizing();
+  
+    parabolic_linesearch();
+
+    steepest_descent();
+}
+
+void Adjoint_State::gradient_normalizing()
+{
+    norm = 0.0f;
+
+    for (int index = 0; index < modeling->nPoints; index++)
+    {
+        if (norm < abs(gradient[index]))
+            norm = abs(gradient[index]);        
+    }    
+
+    norm /= max_slowness_variation;
+}
+
+void Adjoint_State::backtracking_linesearch()
+{
+    std::cout<<"\nRunning parabolic linesearch\n"<<std::endl;
+
+    f0 = residuo.back();
+
+    f1 = get_objective_function(a1, gradient);
+   
 
 
 
+
+
+}
+
+float Adjoint_State::get_objective_function(float step, float * grad)
+{
+    # pragma omp parallel for
+    for (int index = 0; index < modeling->nPoints; index++)
+    {
+        int k = (int) (index / (modeling->nx*modeling->nz));        
+        int j = (int) (index - k*modeling->nx*modeling->nz) / modeling->nz;    
+        int i = (int) (index - j*modeling->nz - k*modeling->nx*modeling->nz);          
+
+        int indB = (i + modeling->nbzu) + (j + modeling->nbxl)*modeling->nzz + (k + modeling->nbyl)*modeling->nxx*modeling->nzz;
+        
+        modeling->S[indB] = model[index] + step*grad[index]/norm;
+    }
+
+    std::cout<<"Objective function using a model updated with "<<100.0f*step<<" % of the normalized gradient"<<std::endl;
+
+    for (int shot = 0; shot < modeling->total_shots; shot++)
+    {
+        modeling->shot_id = shot;
+
+        modeling->initial_setup();
+        modeling->forward_solver();
+        modeling->build_outputs();
+
+        extract_calculated_data();
+    }
+
+    float function = 0.0f;
+
+    for (int i = 0; i < n_data; i++)
+        function += powf(dobs[i] - dcal[i], 2.0f);
+
+    function = sqrtf(function);
+
+    return function;
+}
+
+void Adjoint_State::steepest_descent()
+{
+    # pragma omp parallel for    
+    for (int index = 0; index < modeling->nPoints; index++)
+        dm[index] = alpha*gradient[index]/norm;
 }
 
 __global__ void adjoint_state_kernel(float * adjoint, float * source, float * T, int level, int xOffset, int yOffset, 
