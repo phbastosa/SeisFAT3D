@@ -1,5 +1,10 @@
 # include "adjoint_state.cuh"
 
+int Adjoint_State::iDivUp(int a, int b) 
+{ 
+    return ( (a % b) != 0 ) ? (a / b + 1) : (a / b); 
+}
+
 void Adjoint_State::set_parameters()
 {
     set_general_parameters();
@@ -67,8 +72,11 @@ void Adjoint_State::initial_setup()
 
 void Adjoint_State::adjoint_state_solver()
 {
-    float cell_volume = modeling->dx * modeling->dy * modeling->dz;
+    Tmax = 0.0f;
 
+    cell_volume = modeling->dx * modeling->dy * modeling->dz;
+
+    # pragma omp parallel for
     for (int index = 0; index < modeling->volsize; index++) 
     {
         source[index] = 0.0f;    
@@ -84,10 +92,13 @@ void Adjoint_State::adjoint_state_solver()
         {    
             adjoint[index] = 0.0f;        
         }
+
+        if (Tmax < modeling->T[index]) Tmax = modeling->T[index];
     }
 
     modeling->expand_boundary(modeling->wavefield_output, modeling->T);
 
+    # pragma omp parallel for
     for (int node = 0; node < modeling->total_nodes; node++)
     {
         int current_node = node + modeling->shot_id*modeling->total_nodes;
@@ -99,13 +110,13 @@ void Adjoint_State::adjoint_state_solver()
         int index = i + j*modeling->nzz + k*modeling->nxx*modeling->nzz;
 
         source[index] += (dobs[current_node] - modeling->T[index]) / cell_volume; 
-        source[index - 1] += (dobs[current_node] - modeling->T[index + 1]) / cell_volume; 
-        source[index - modeling->nzz] += (dobs[current_node] - modeling->T[index + modeling->nzz]) / cell_volume;         
-        source[index - 1 - modeling->nzz] += (dobs[current_node] - modeling->T[index + 1 + modeling->nzz]) / cell_volume; 
-        source[index - modeling->nxx*modeling->nzz] += (dobs[current_node] - modeling->T[index + modeling->nxx*modeling->nzz]) / cell_volume; 
-        source[index - 1 - modeling->nxx*modeling->nzz] += (dobs[current_node] - modeling->T[index + 1 + modeling->nxx*modeling->nzz]) / cell_volume; 
-        source[index - modeling->nzz - modeling->nxx*modeling->nzz] += (dobs[current_node] - modeling->T[index + modeling->nzz + modeling->nxx*modeling->nzz]) / cell_volume; 
-        source[index - 1 - modeling->nzz - modeling->nxx*modeling->nzz] += (dobs[current_node] - modeling->T[index + 1 + modeling->nzz + modeling->nxx*modeling->nzz]) / cell_volume;     
+        source[index + 1] += (dobs[current_node] - modeling->T[index + 1]) / cell_volume; 
+        source[index + modeling->nzz] += (dobs[current_node] - modeling->T[index + modeling->nzz]) / cell_volume;         
+        source[index + 1 + modeling->nzz] += (dobs[current_node] - modeling->T[index + 1 + modeling->nzz]) / cell_volume; 
+        source[index + modeling->nxx*modeling->nzz] += (dobs[current_node] - modeling->T[index + modeling->nxx*modeling->nzz]) / cell_volume; 
+        source[index + 1 + modeling->nxx*modeling->nzz] += (dobs[current_node] - modeling->T[index + 1 + modeling->nxx*modeling->nzz]) / cell_volume; 
+        source[index + modeling->nzz + modeling->nxx*modeling->nzz] += (dobs[current_node] - modeling->T[index + modeling->nzz + modeling->nxx*modeling->nzz]) / cell_volume; 
+        source[index + 1 + modeling->nzz + modeling->nxx*modeling->nzz] += (dobs[current_node] - modeling->T[index + 1 + modeling->nzz + modeling->nxx*modeling->nzz]) / cell_volume;     
     }
 
 	cudaMemcpy(d_T, modeling->T, modeling->volsize*sizeof(float), cudaMemcpyHostToDevice);
@@ -150,8 +161,9 @@ void Adjoint_State::adjoint_state_solver()
 
     cudaMemcpy(adjoint, d_adjoint, modeling->volsize*sizeof(float), cudaMemcpyDeviceToHost);
 
-    preconditioning();
+    adjoint_conditioning();
 
+    # pragma omp parallel for
     for (int index = 0; index < modeling->nPoints; index++) 
     {
         int k = (int) (index / (modeling->nx*modeling->nz));        
@@ -164,12 +176,7 @@ void Adjoint_State::adjoint_state_solver()
     }
 }
 
-int Adjoint_State::iDivUp(int a, int b) 
-{ 
-    return ( (a % b) != 0 ) ? (a / b + 1) : (a / b); 
-}
-
-void Adjoint_State::preconditioning() 
+void Adjoint_State::adjoint_conditioning() 
 {
     int sidx = (int)(modeling->geometry->shots.x[modeling->shot_id] / modeling->dx) + modeling->nbxl;
     int sidy = (int)(modeling->geometry->shots.y[modeling->shot_id] / modeling->dy) + modeling->nbyl;
@@ -188,45 +195,10 @@ void Adjoint_State::preconditioning()
         }
     }
     
-    if (smooth)
+    # pragma omp parallel for
+    for (int index = 0; index < modeling->volsize; index++)
     {
-        int gnx = modeling->nx + 2*smoother_samples;
-        int gny = modeling->ny + 2*smoother_samples;
-        int gnz = modeling->nz + 2*smoother_samples;
-
-        int gnPoints = gnx*gny*gnz;
-
-        float * grad_aux = new float[gnPoints]();
-        float * grad_smooth = new float[gnPoints]();
-
-        # pragma omp parallel for
-        for (int index = 0; index < modeling->volsize; index++)
-        {
-            int k = (int) (index / (modeling->nxx*modeling->nzz));        
-            int j = (int) (index - k*modeling->nxx*modeling->nzz) / modeling->nzz;    
-            int i = (int) (index - j*modeling->nzz - k*modeling->nxx*modeling->nzz);          
-
-            int ind_filt = (i + smoother_samples) + (j + smoother_samples)*gnz + (k + smoother_samples)*gnx*gnz;
-
-            grad_aux[ind_filt] = adjoint[i + j*modeling->nzz + k*modeling->nxx*modeling->nzz];
-        }
-
-        smoothing(grad_aux, grad_smooth, gnx, gny, gnz);
-
-        # pragma omp parallel for
-        for (int index = 0; index < modeling->volsize; index++)
-        {
-            int k = (int) (index / (modeling->nxx*modeling->nzz));        
-            int j = (int) (index - k*modeling->nxx*modeling->nzz) / modeling->nzz;    
-            int i = (int) (index - j*modeling->nzz - k*modeling->nxx*modeling->nzz);          
-
-            int ind_filt = (i + smoother_samples) + (j + smoother_samples)*gnz + (k + smoother_samples)*gnx*gnz;
-
-            adjoint[i + j*modeling->nzz + k*modeling->nxx*modeling->nzz] = grad_smooth[ind_filt];
-        }
-    
-        delete[] grad_aux;
-        delete[] grad_smooth;
+        adjoint[index] *= modeling->T[index] / Tmax;
     }
 }
 

@@ -39,7 +39,7 @@ protected:
     std::string inversion_method;
 
     void set_general_parameters();
-    void smoothing(float * input, float * output, int nx, int ny, int nz);
+    void smooth_volume(float * input, float * output, int nx, int ny, int nz);
 
 public:
 

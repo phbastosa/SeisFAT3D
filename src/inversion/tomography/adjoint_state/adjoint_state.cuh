@@ -10,6 +10,8 @@ private:
     int totalLevels;
     int nSweeps, meshDim;
 
+    float Tmax, cell_volume;
+
     float * d_T = nullptr;
 
     float * source = nullptr;       
@@ -20,7 +22,7 @@ private:
 
     void initial_setup();
     void adjoint_state_solver();
-    void preconditioning();
+    void adjoint_conditioning();
 
     int iDivUp(int a, int b);
 

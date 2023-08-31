@@ -112,7 +112,7 @@ smooth_per_iteration = false        # <bool>
 gaussian_filter_samples = 5         # [odd number] <int> 
 gaussian_filter_stdv = 2.0          # <float>
 
-export_gradient = false             # <bool>
+export_gradient = true             # <bool>
 export_illumination = false         # <bool> 
 export_model_per_iteration = false  # <bool>
 

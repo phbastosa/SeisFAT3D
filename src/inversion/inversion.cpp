@@ -20,7 +20,7 @@ void Inversion::set_general_parameters()
     write_model_per_iteration = str2bool(catch_parameter("export_model_per_iteration", file));
 }
 
-void Inversion::smoothing(float * input, float * output, int nx, int ny, int nz)
+void Inversion::smooth_volume(float * input, float * output, int nx, int ny, int nz)
 {
     int init = smoother_samples / 2;
     int nPoints = nx * ny * nz;
