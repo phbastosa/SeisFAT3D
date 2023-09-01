@@ -247,11 +247,10 @@ void Adjoint_State::backtracking_linesearch()
 
     float f1 = get_objective_function(alpha, gradient);
 
-    std::cout<<f1<<std::endl;
-    std::cout<<f0 - k1*alpha*dot_product<<std::endl;
-
-    //while (f1 > f0 + k1*alpha*dot_product)
-    //alpha *= k2;
+    while (f1 > f0 - k1*alpha*dot_product)
+    {
+        alpha *= k2;
+    }
 }
 
 float Adjoint_State::get_objective_function(float step, float * grad)
