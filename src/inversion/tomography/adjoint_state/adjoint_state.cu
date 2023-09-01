@@ -208,14 +208,14 @@ void Adjoint_State::adjoint_conditioning()
 
 void Adjoint_State::optimization() 
 { 
-    gradient_normalizing();
+    gradient_normalization();
   
-    parabolic_linesearch();
+    backtracking_linesearch();
 
-    steepest_descent();
+    nonlinear_conjugate_gradient();
 }
 
-void Adjoint_State::gradient_normalizing()
+void Adjoint_State::gradient_normalization()
 {
     norm = 0.0f;
 
@@ -230,17 +230,28 @@ void Adjoint_State::gradient_normalizing()
 
 void Adjoint_State::backtracking_linesearch()
 {
-    std::cout<<"\nRunning parabolic linesearch\n"<<std::endl;
+    std::cout<<"\nRunning backtracking linesearch\n"<<std::endl;
 
-    f0 = residuo.back();
+    float k1 = 1e-4f;
+    float k2 = 0.85f;
 
-    f1 = get_objective_function(a1, gradient);
-   
+    float dot_product = 0.0f;
 
+    # pragma omp parallel for reduction(+:dot_product)
+    for (int index = 0; index < modeling->nPoints; index++)
+        dot_product += (gradient[index]) * (gradient[index]);       
 
+    alpha = 1.0f;
 
+    float f0 = residuo.back();
 
+    float f1 = get_objective_function(alpha, gradient);
 
+    std::cout<<f1<<std::endl;
+    std::cout<<f0 - k1*alpha*dot_product<<std::endl;
+
+    //while (f1 > f0 + k1*alpha*dot_product)
+    //alpha *= k2;
 }
 
 float Adjoint_State::get_objective_function(float step, float * grad)
@@ -256,8 +267,6 @@ float Adjoint_State::get_objective_function(float step, float * grad)
         
         modeling->S[indB] = model[index] + step*grad[index]/norm;
     }
-
-    std::cout<<"Objective function using a model updated with "<<100.0f*step<<" % of the normalized gradient"<<std::endl;
 
     for (int shot = 0; shot < modeling->total_shots; shot++)
     {
@@ -280,11 +289,20 @@ float Adjoint_State::get_objective_function(float step, float * grad)
     return function;
 }
 
-void Adjoint_State::steepest_descent()
+void Adjoint_State::nonlinear_conjugate_gradient()
 {
+    // if (iteration == 1)
+
+    // else
+
     # pragma omp parallel for    
     for (int index = 0; index < modeling->nPoints; index++)
         dm[index] = alpha*gradient[index]/norm;
+
+
+
+
+
 }
 
 __global__ void adjoint_state_kernel(float * adjoint, float * source, float * T, int level, int xOffset, int yOffset, 
