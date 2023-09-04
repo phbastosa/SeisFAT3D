@@ -53,21 +53,13 @@ plt.show()
 
 init_model = np.zeros_like(vp)
 
-vi = 2000.0
-dv = 0.7
-
-z = np.arange(nz) * dh
-
-v = vi + dv*z
-
-for i in range(nz):
-    init_model[i] = v[i]
+init_model[:25] = vp[0]
+init_model[25:] = vp[-1]
 
 delta_vp = vp - init_model 
 
 vp.flatten("F").astype("float32", order = "F").tofile("true_model_51x501x501_10m.bin")
 init_model.flatten("F").astype("float32", order = "F").tofile("init_model_51x501x501_10m.bin")
-delta_vp.flatten("F").astype("float32", order = "F").tofile("delta_model_51x501x501_10m.bin")
 
 plt.figure(1, figsize = (15,6))
 plt.subplot(211)

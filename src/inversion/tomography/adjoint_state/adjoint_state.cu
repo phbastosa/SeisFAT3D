@@ -16,7 +16,7 @@ void Adjoint_State::set_parameters()
     nSweeps = 8;
     meshDim = 3;
 
-    max_slowness_variation = 1e-4f;
+    max_slowness_variation = 1e-5f;
 
 	totalLevels = (modeling->nxx - 1) + (modeling->nyy - 1) + (modeling->nzz - 1);
 
@@ -50,8 +50,6 @@ void Adjoint_State::forward_modeling()
         
         adjoint_state_solver();
     }
-
-    export_gradient();
 }
 
 void Adjoint_State::adjoint_initial_setup()
@@ -207,9 +205,9 @@ void Adjoint_State::adjoint_conditioning()
 }
 
 void Adjoint_State::optimization() 
-{ 
+{
     gradient_normalization();
-  
+
     backtracking_linesearch();
 
     nonlinear_conjugate_gradient();
@@ -300,8 +298,7 @@ void Adjoint_State::nonlinear_conjugate_gradient()
 
 
 
-
-
+    export_binary_float("dm.bin", dm, modeling->nPoints);
 }
 
 __global__ void adjoint_state_kernel(float * adjoint, float * source, float * T, int level, int xOffset, int yOffset, 
