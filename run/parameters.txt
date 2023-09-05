@@ -99,7 +99,7 @@ wavefield_output_folder = ../outputs/snapshots/
 
 inversion_type = 1                  # <int> 
 
-max_iteration = 2                   # <int>
+max_iteration = 1                   # <int>
 
 dx_tomo = 200                       # [m] <float> 
 dy_tomo = 200                       # [m] <float>

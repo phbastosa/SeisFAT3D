@@ -1,6 +1,8 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
+from scipy.ndimage import gaussian_filter
+
 nx = 501
 ny = 501
 nz = 51
@@ -34,29 +36,24 @@ rho = 310.0*vp**0.25
 vmin = np.min(vs)
 vmax = np.max(vp)
 
-plt.figure(1, figsize=(15,7))
+# plt.figure(1, figsize=(15,7))
 
-plt.subplot(311)
-plt.imshow(vp[:,:,int(ny/2)], vmin = vmin, vmax = vmax)
-plt.colorbar()
+# plt.subplot(311)
+# plt.imshow(vp[:,:,int(ny/2)], vmin = vmin, vmax = vmax)
+# plt.colorbar()
 
-plt.subplot(312)
-plt.imshow(vs[:,:,int(ny/2)], vmin = vmin, vmax = vmax)
-plt.colorbar()
+# plt.subplot(312)
+# plt.imshow(vs[:,:,int(ny/2)], vmin = vmin, vmax = vmax)
+# plt.colorbar()
 
-plt.subplot(313)
-plt.imshow(rho[:,:,int(ny/2)], vmin = vmin, vmax = vmax)
-plt.colorbar()
+# plt.subplot(313)
+# plt.imshow(rho[:,:,int(ny/2)], vmin = vmin, vmax = vmax)
+# plt.colorbar()
 
-plt.tight_layout()
-plt.show()
+# plt.tight_layout()
+# plt.show()
 
-init_model = np.zeros_like(vp)
-
-init_model[:25] = vp[0]
-init_model[25:] = vp[-1]
-
-delta_vp = vp - init_model 
+init_model = 1.0 / gaussian_filter(1.0 / vp, 5.0)
 
 vp.flatten("F").astype("float32", order = "F").tofile("true_model_51x501x501_10m.bin")
 init_model.flatten("F").astype("float32", order = "F").tofile("init_model_51x501x501_10m.bin")

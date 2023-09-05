@@ -243,12 +243,12 @@ void Adjoint_State::backtracking_linesearch()
 
     float f0 = residuo.back();
 
-    float f1 = get_objective_function(alpha, gradient);
+    // float f1 = get_objective_function(alpha, gradient);
 
-    while (f1 > f0 - k1*alpha*dot_product)
-    {
-        alpha *= k2;
-    }
+    // while (f1 > f0 - k1*alpha*dot_product)
+    // {
+    //     alpha *= k2;
+    // }
 }
 
 float Adjoint_State::get_objective_function(float step, float * grad)
