@@ -10,7 +10,7 @@ private:
     int totalLevels;
     int nSweeps, meshDim;
 
-    float Tmax, cell_volume;
+    float cell_volume;
 
     float norm, alpha;
 
@@ -24,8 +24,8 @@ private:
 
     void adjoint_initial_setup();
     void adjoint_state_solver();
-    void adjoint_conditioning();
-
+    
+    void gradient_conditioning();
     void gradient_normalization();
     void backtracking_linesearch();
     void nonlinear_conjugate_gradient();

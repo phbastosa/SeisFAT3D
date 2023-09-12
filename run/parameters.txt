@@ -2,17 +2,17 @@
 # Model paramenters --------------------------------------------------------------------------------
 #---------------------------------------------------------------------------------------------------
 
-x_samples = 501                     # <int>  
-y_samples = 501                     # <int>  
+x_samples = 201                     # <int>  
+y_samples = 201                     # <int>  
 z_samples = 51                      # <int>  
 
 x_spacing = 10                      # [m] <float> 
 y_spacing = 10                      # [m] <float> 
 z_spacing = 10                      # [m] <float> 
 
-vp_model_file = ../inputs/models/init_model_51x501x501_10m.bin  # <str> 
-vs_model_file = ../inputs/models/vs_model_51x301x101_10m.bin    # <str>
-rho_model_file = ../inputs/models/rho_model_51x301x101_10m.bin  # <str> 
+vp_model_file = ../inputs/models/vp_model_101x301x201_10m.bin  # <str> 
+vs_model_file = ../inputs/models/vs_model_101x301x201_10m.bin    # <str>
+rho_model_file = ../inputs/models/rho_model_101x301x201_10m.bin  # <str> 
 
 #---------------------------------------------------------------------------------------------------
 # Geometry parameters ------------------------------------------------------------------------------
@@ -32,16 +32,16 @@ nodes_file = ../inputs/geometry/xyz_node_position.txt
 
 # Regular geometry ---------------------------------------------------------------------------------               
 
-shots_nlines = [1, 97, 97]          # <int> (z, x, y)     
-nodes_nlines = [1, 11, 11]          # <int> (z, x, y)            
+shots_nlines = [1, 20, 20]          # <int> (z, x, y)     
+nodes_nlines = [1, 19, 19]          # <int> (z, x, y)            
 
-shots_SW = [50, 100, 100]           # [m] <float> (z, x, y) NW            
-shots_NW = [50, 100, 4900]          # [m] <float> (z, x, y)  |            
-shots_SE = [50, 4900, 100]          # [m] <float> (z, x, y) SW -- SE     
+shots_SW = [10, 50, 50]             # [m] <float> (z, x, y) NW            
+shots_NW = [10, 50, 1950]           # [m] <float> (z, x, y)  |            
+shots_SE = [10, 1950, 50]           # [m] <float> (z, x, y) SW -- SE     
 
-nodes_SW = [50, 500, 500]           # [m] <float> (z, x, y) NW           
-nodes_NW = [50, 500, 4500]          # [m] <float> (z, x, y)  |         
-nodes_SE = [50, 4500, 500]          # [m] <float> (z, x, y) SW -- SE   
+nodes_SW = [490, 100, 100]          # [m] <float> (z, x, y) NW           
+nodes_NW = [490, 100, 1900]         # [m] <float> (z, x, y)  |         
+nodes_SE = [490, 1900, 100]         # [m] <float> (z, x, y) SW -- SE   
 
 # Circular geometry --------------------------------------------------------------------------------                                            
 
@@ -82,8 +82,8 @@ import_wavelet = false              # <bool>
 export_receiver_output = true       # <bool> 
 export_wavefield_output = false     # <bool>
 
-wavelet_file = ../inputs/           
-receiver_output_folder = ../inputs/data/            
+wavelet_file = ../inputs/input_wavelet.bin           
+receiver_output_folder = ../outputs/seismograms/            
 wavefield_output_folder = ../outputs/snapshots/     
 
 #---------------------------------------------------------------------------------------------------
@@ -97,18 +97,18 @@ wavefield_output_folder = ../outputs/snapshots/
 #   [2] - Scalar Isotropic FWI
 #---------------------------------------------------------------------------------------------------
 
-inversion_type = 1                  # <int> 
+inversion_type = 0                  # <int> 
 
 max_iteration = 1                   # <int>
 
-dx_tomo = 200                       # [m] <float> 
-dy_tomo = 200                       # [m] <float>
+dx_tomo = 100                       # [m] <float> 
+dy_tomo = 100                       # [m] <float>
 dz_tomo = 10                        # [m] <float>
 
 tk_order = 2                        # Tikhonov regularization order <int>
 tk_param = 1e5                      # Tikhonov regularization parameter <float>
 
-smooth_per_iteration = false         # <bool>
+smooth_per_iteration = false        # <bool>
 gaussian_filter_samples = 5         # [odd number] <int> 
 gaussian_filter_stdv = 0.5          # <float>
 
@@ -117,7 +117,7 @@ export_illumination = false         # <bool>
 export_model_per_iteration = true   # <bool>
 
 obs_data_folder = ../inputs/data/        
-obs_data_prefix = fsm_data_9409_shot_     
+obs_data_prefix = fsm_data_400_shot_     
 
 gradient_folder = ../outputs/gradient/                  
 illumination_folder = ../outputs/illumination/           

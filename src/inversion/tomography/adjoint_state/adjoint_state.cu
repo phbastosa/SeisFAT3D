@@ -16,8 +16,6 @@ void Adjoint_State::set_parameters()
     nSweeps = 8;
     meshDim = 3;
 
-    max_slowness_variation = 1e-5f;
-
 	totalLevels = (modeling->nxx - 1) + (modeling->nyy - 1) + (modeling->nzz - 1);
 
     inversion_method = "[1] - Adjoint State first arrival tomography";
@@ -75,11 +73,12 @@ void Adjoint_State::adjoint_initial_setup()
 
 void Adjoint_State::adjoint_state_solver()
 {
-    Tmax = 0.0f;
-
     cell_volume = modeling->dx * modeling->dy * modeling->dz;
 
     modeling->expand_boundary(modeling->wavefield_output, modeling->T);
+
+    int sidx = (int)(modeling->geometry->shots.x[modeling->shot_id] / modeling->dx) + modeling->nbxl;
+    int sidy = (int)(modeling->geometry->shots.y[modeling->shot_id] / modeling->dy) + modeling->nbyl;
 
     # pragma omp parallel for
     for (int index = 0; index < modeling->volsize; index++) 
@@ -97,8 +96,6 @@ void Adjoint_State::adjoint_state_solver()
         {    
             adjoint[index] = 0.0f;        
         }
-
-        if (Tmax < modeling->T[index]) Tmax = modeling->T[index];    
     }
 
     for (int node = 0; node < modeling->total_nodes; node++)
@@ -163,26 +160,6 @@ void Adjoint_State::adjoint_state_solver()
 
     cudaMemcpy(adjoint, d_adjoint, modeling->volsize*sizeof(float), cudaMemcpyDeviceToHost);
 
-    adjoint_conditioning();
-
-    # pragma omp parallel for
-    for (int index = 0; index < modeling->nPoints; index++) 
-    {
-        int k = (int) (index / (modeling->nx*modeling->nz));        
-        int j = (int) (index - k*modeling->nx*modeling->nz) / modeling->nz;    
-        int i = (int) (index - j*modeling->nz - k*modeling->nx*modeling->nz);  
-
-        int indp = (i + modeling->nbzu) + (j + modeling->nbxl)*modeling->nzz + (k + modeling->nbyl)*modeling->nxx*modeling->nzz;
-
-        gradient[index] += adjoint[indp]*modeling->S[indp]*modeling->S[indp]*cell_volume;
-    }
-}
-
-void Adjoint_State::adjoint_conditioning() 
-{
-    int sidx = (int)(modeling->geometry->shots.x[modeling->shot_id] / modeling->dx) + modeling->nbxl;
-    int sidy = (int)(modeling->geometry->shots.y[modeling->shot_id] / modeling->dy) + modeling->nbyl;
-
     # pragma omp parallel for
     for (int i = 0; i < modeling->nzz; i++)
     {
@@ -196,21 +173,37 @@ void Adjoint_State::adjoint_conditioning()
             adjoint[i + sidx*modeling->nzz + k*modeling->nxx*modeling->nzz] = 0.5f*(adjoint[i + (sidx+1)*modeling->nzz + k*modeling->nxx*modeling->nzz] + adjoint[i + (sidx-1)*modeling->nzz + k*modeling->nxx*modeling->nzz]);
         }
     }
-    
+
     # pragma omp parallel for
-    for (int index = 0; index < modeling->volsize; index++)
+    for (int index = 0; index < modeling->nPoints; index++) 
     {
-        adjoint[index] *= modeling->T[index] / Tmax;
+        int k = (int) (index / (modeling->nx*modeling->nz));        
+        int j = (int) (index - k*modeling->nx*modeling->nz) / modeling->nz;    
+        int i = (int) (index - j*modeling->nz - k*modeling->nx*modeling->nz);  
+
+        int indp = (i + modeling->nbzu) + (j + modeling->nbxl)*modeling->nzz + (k + modeling->nbyl)*modeling->nxx*modeling->nzz;
+
+        gradient[index] += adjoint[indp]*modeling->S[indp]*modeling->S[indp]*cell_volume / modeling->total_shots;
     }
 }
 
 void Adjoint_State::optimization() 
 {
-    gradient_normalization();
+    // gradient_conditioning();
 
-    backtracking_linesearch();
+    export_gradient();
 
-    nonlinear_conjugate_gradient();
+    // backtracking_linesearch();
+
+    // nonlinear_conjugate_gradient();
+}
+
+void Adjoint_State::gradient_conditioning()
+{
+
+
+
+
 }
 
 void Adjoint_State::gradient_normalization()
@@ -223,15 +216,15 @@ void Adjoint_State::gradient_normalization()
             norm = abs(gradient[index]);        
     }    
 
-    norm /= max_slowness_variation;
+    
 }
 
 void Adjoint_State::backtracking_linesearch()
 {
     std::cout<<"\nRunning backtracking linesearch\n"<<std::endl;
 
-    float k1 = 1e-4f;
-    float k2 = 0.85f;
+    // float k1 = 1e-4f;
+    // float k2 = 0.85f;
 
     float dot_product = 0.0f;
 
@@ -297,8 +290,6 @@ void Adjoint_State::nonlinear_conjugate_gradient()
         dm[index] = alpha*gradient[index]/norm;
 
 
-
-    export_binary_float("dm.bin", dm, modeling->nPoints);
 }
 
 __global__ void adjoint_state_kernel(float * adjoint, float * source, float * T, int level, int xOffset, int yOffset, 
