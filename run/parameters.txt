@@ -10,9 +10,9 @@ x_spacing = 10                      # [m] <float>
 y_spacing = 10                      # [m] <float> 
 z_spacing = 10                      # [m] <float> 
 
-vp_model_file = ../inputs/models/vp_model_101x301x201_10m.bin  # <str> 
-vs_model_file = ../inputs/models/vs_model_101x301x201_10m.bin    # <str>
-rho_model_file = ../inputs/models/rho_model_101x301x201_10m.bin  # <str> 
+vp_model_file = ../inputs/models/init_model_51x201x201_10m.bin  # <str> 
+vs_model_file = ../inputs/models/vs_model_301x901x51_10m.bin    # <str>
+rho_model_file = ../inputs/models/rho_model_301x901x51_10m.bin  # <str> 
 
 #---------------------------------------------------------------------------------------------------
 # Geometry parameters ------------------------------------------------------------------------------
@@ -63,11 +63,11 @@ offsets = [1000, 1000, 1000]        # [m] <float>
 #   [5] - Elastic isotropic media
 #---------------------------------------------------------------------------------------------------
 
-modeling_type = 2                   # <int>
+modeling_type = 1                   # <int>
 
-total_time = 2.0                    # [s] <float>
+total_time = 4.0                    # [s] <float>
 time_spacing = 0.001                # [s] <float>
-max_frequency = 40.0                # [Hz] <float>
+max_frequency = 30.0                # [Hz] <float>
 
 n_snapshots = 11                    # <int>
 
@@ -83,7 +83,7 @@ export_receiver_output = true       # <bool>
 export_wavefield_output = false     # <bool>
 
 wavelet_file = ../inputs/input_wavelet.bin           
-receiver_output_folder = ../outputs/seismograms/            
+receiver_output_folder = ../inputs/data/            
 wavefield_output_folder = ../outputs/snapshots/     
 
 #---------------------------------------------------------------------------------------------------
@@ -99,7 +99,7 @@ wavefield_output_folder = ../outputs/snapshots/
 
 inversion_type = 0                  # <int> 
 
-max_iteration = 1                   # <int>
+max_iteration = 5                   # <int>
 
 dx_tomo = 100                       # [m] <float> 
 dy_tomo = 100                       # [m] <float>
@@ -108,16 +108,12 @@ dz_tomo = 10                        # [m] <float>
 tk_order = 2                        # Tikhonov regularization order <int>
 tk_param = 1e5                      # Tikhonov regularization parameter <float>
 
-smooth_per_iteration = false        # <bool>
-gaussian_filter_samples = 5         # [odd number] <int> 
-gaussian_filter_stdv = 0.5          # <float>
-
 export_gradient = true              # <bool>
-export_illumination = false         # <bool> 
+export_illumination = true          # <bool> 
 export_model_per_iteration = true   # <bool>
 
 obs_data_folder = ../inputs/data/        
-obs_data_prefix = fsm_data_400_shot_     
+obs_data_prefix = fim_data_400_shot_     
 
 gradient_folder = ../outputs/gradient/                  
 illumination_folder = ../outputs/illumination/           

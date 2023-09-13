@@ -13,10 +13,6 @@ protected:
 
     float tolerance;
 
-    bool smooth;
-    int smoother_samples;
-    float smoother_stdv;
-
     float * dobs = nullptr;
     float * dcal = nullptr;
 
@@ -39,7 +35,6 @@ protected:
     std::string inversion_method;
 
     void set_general_parameters();
-    void smooth_volume(float * input, float * output, int nx, int ny, int nz);
 
 public:
 

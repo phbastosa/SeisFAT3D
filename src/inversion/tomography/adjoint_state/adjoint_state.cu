@@ -30,7 +30,25 @@ void Adjoint_State::set_parameters()
 
 void Adjoint_State::forward_modeling()
 {
-    adjoint_initial_setup();
+    export_binary_float("model_adj_pre.bin", model, modeling->nPoints);
+
+    for (int index = 0; index < modeling->nPoints; index++) 
+    {
+        int k = (int) (index / (modeling->nx*modeling->nz));        
+        int j = (int) (index - k*modeling->nx*modeling->nz) / modeling->nz;    
+        int i = (int) (index - j*modeling->nz - k*modeling->nx*modeling->nz);          
+
+        int indB = (i + modeling->nbzu) + (j + modeling->nbxl)*modeling->nzz + (k + modeling->nbyl)*modeling->nxx*modeling->nzz;
+
+        modeling->S[indB] = model[index];
+
+        gradient[index] = 0.0f;
+    }
+
+    export_binary_float("model_adj_pos.bin", model, modeling->nPoints);
+
+    for (int i = 0; i < n_data; i++) 
+        dcal[i] = 0.0f; 
 
     for (int shot = 0; shot < modeling->total_shots; shot++)
     {
@@ -50,26 +68,10 @@ void Adjoint_State::forward_modeling()
     }
 }
 
-void Adjoint_State::adjoint_initial_setup()
-{
-    # pragma omp parallel for
-    for (int index = 0; index < modeling->nPoints; index++) 
-    {
-        int k = (int) (index / (modeling->nx*modeling->nz));        
-        int j = (int) (index - k*modeling->nx*modeling->nz) / modeling->nz;    
-        int i = (int) (index - j*modeling->nz - k*modeling->nx*modeling->nz);          
+// void Adjoint_State::adjoint_initial_setup()
+// {
 
-        int indB = (i+modeling->nbzu) + (j+modeling->nbxl)*modeling->nzz + (k+modeling->nbyl)*modeling->nxx*modeling->nzz;
-
-        modeling->S[indB] = model[index];
-
-        gradient[index] = 0.0f;
-    }
-
-    # pragma omp parallel for
-    for (int i = 0; i < n_data; i++) 
-        dcal[i] = 0.0f; 
-}
+// }
 
 void Adjoint_State::adjoint_state_solver()
 {
@@ -195,28 +197,27 @@ void Adjoint_State::optimization()
 
     // backtracking_linesearch();
 
-    // nonlinear_conjugate_gradient();
+    nonlinear_conjugate_gradient();
 }
 
 void Adjoint_State::gradient_conditioning()
 {
+    // for (int node = 0; node < modeling->total_nodes; node++)
+    // {
+    //     int i = (int)(modeling->geometry->nodes.z[node] / modeling->dz);
+    //     int j = (int)(modeling->geometry->nodes.x[node] / modeling->dx);
+    //     int k = (int)(modeling->geometry->nodes.y[node] / modeling->dy);
+
+    //     int index = i + j*modeling->nzz + k*modeling->nxx*modeling->nzz;
+
+
+
+    // }
 
 
 
 
-}
 
-void Adjoint_State::gradient_normalization()
-{
-    norm = 0.0f;
-
-    for (int index = 0; index < modeling->nPoints; index++)
-    {
-        if (norm < abs(gradient[index]))
-            norm = abs(gradient[index]);        
-    }    
-
-    
 }
 
 void Adjoint_State::backtracking_linesearch()
@@ -232,7 +233,7 @@ void Adjoint_State::backtracking_linesearch()
     for (int index = 0; index < modeling->nPoints; index++)
         dot_product += (gradient[index]) * (gradient[index]);       
 
-    alpha = 1.0f;
+    alpha = 0.5f;
 
     float f0 = residuo.back();
 
@@ -244,53 +245,63 @@ void Adjoint_State::backtracking_linesearch()
     // }
 }
 
-float Adjoint_State::get_objective_function(float step, float * grad)
-{
-    # pragma omp parallel for
-    for (int index = 0; index < modeling->nPoints; index++)
-    {
-        int k = (int) (index / (modeling->nx*modeling->nz));        
-        int j = (int) (index - k*modeling->nx*modeling->nz) / modeling->nz;    
-        int i = (int) (index - j*modeling->nz - k*modeling->nx*modeling->nz);          
-
-        int indB = (i + modeling->nbzu) + (j + modeling->nbxl)*modeling->nzz + (k + modeling->nbyl)*modeling->nxx*modeling->nzz;
-        
-        modeling->S[indB] = model[index] + step*grad[index]/norm;
-    }
-
-    for (int shot = 0; shot < modeling->total_shots; shot++)
-    {
-        modeling->shot_id = shot;
-
-        modeling->initial_setup();
-        modeling->forward_solver();
-        modeling->build_outputs();
-
-        extract_calculated_data();
-    }
-
-    float function = 0.0f;
-
-    for (int i = 0; i < n_data; i++)
-        function += powf(dobs[i] - dcal[i], 2.0f);
-
-    function = sqrtf(function);
-
-    return function;
-}
-
 void Adjoint_State::nonlinear_conjugate_gradient()
 {
     // if (iteration == 1)
 
     // else
 
+    alpha = 0.01f;
+
     # pragma omp parallel for    
     for (int index = 0; index < modeling->nPoints; index++)
-        dm[index] = alpha*gradient[index]/norm;
+    {
+        int k = (int) (index / (modeling->nx*modeling->nz));        
+        int j = (int) (index - k*modeling->nx*modeling->nz) / modeling->nz;    
+        int i = (int) (index - j*modeling->nz - k*modeling->nx*modeling->nz);  
 
-
+        if ((i >= 5) && (i < modeling->nz - 5) && (j >= 5) && (j < modeling->nx - 5) && (k >= 5) && (k < modeling->ny - 5)) 
+        {
+            dm[index] = alpha*gradient[index];
+        }
+    }    
 }
+
+// float Adjoint_State::get_objective_function(float step, float * grad)
+// {
+//     # pragma omp parallel for
+//     for (int index = 0; index < modeling->nPoints; index++)
+//     {
+//         int k = (int) (index / (modeling->nx*modeling->nz));        
+//         int j = (int) (index - k*modeling->nx*modeling->nz) / modeling->nz;    
+//         int i = (int) (index - j*modeling->nz - k*modeling->nx*modeling->nz);          
+
+//         int indB = (i + modeling->nbzu) + (j + modeling->nbxl)*modeling->nzz + (k + modeling->nbyl)*modeling->nxx*modeling->nzz;
+        
+//         modeling->S[indB] = model[index] + step*grad[index]/norm;
+//     }
+
+//     for (int shot = 0; shot < modeling->total_shots; shot++)
+//     {
+//         modeling->shot_id = shot;
+
+//         modeling->initial_setup();
+//         modeling->forward_solver();
+//         modeling->build_outputs();
+
+//         extract_calculated_data();
+//     }
+
+//     float function = 0.0f;
+
+//     for (int i = 0; i < n_data; i++)
+//         function += powf(dobs[i] - dcal[i], 2.0f);
+
+//     function = sqrtf(function);
+
+//     return function;
+// }
+
 
 __global__ void adjoint_state_kernel(float * adjoint, float * source, float * T, int level, int xOffset, int yOffset, 
                                      int xSweepOffset, int ySweepOffset, int zSweepOffset, int nxx, int nyy, int nzz, 

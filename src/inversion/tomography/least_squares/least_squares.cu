@@ -41,6 +41,10 @@ void Least_Squares::set_parameters()
     }
 
     illumination = new float[modeling->nPoints]();
+
+    iG.reserve(ray_path_estimated_samples);
+    jG.reserve(ray_path_estimated_samples);
+    vG.reserve(ray_path_estimated_samples);
 }
 
 void Least_Squares::forward_modeling()
@@ -71,10 +75,6 @@ void Least_Squares::forward_modeling()
 
 void Least_Squares::initial_setup()
 {
-    iG.reserve(ray_path_estimated_samples);
-    jG.reserve(ray_path_estimated_samples);
-    vG.reserve(ray_path_estimated_samples);
-
     for (int index = 0; index < modeling->nPoints; index++)
     {    
         int k = (int) (index / (modeling->nx*modeling->nz));        

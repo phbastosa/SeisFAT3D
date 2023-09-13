@@ -4,6 +4,24 @@ import matplotlib.pyplot as plt
 
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 
+def analytical_firstArrival(v, z, x):
+    direct_wave = x / v[0]
+
+    first_arrivals = np.zeros(len(x))
+    refracted_waves = np.zeros((len(z), len(x)))
+
+    for n in range(len(z)):
+    
+        refracted_waves[n,:] = x / v[n+1]
+        for i in range(n+1):
+            angle = np.arcsin(v[i] / v[n+1])
+            refracted_waves[n,:] += 2.0*z[i]*np.cos(angle) / v[i]
+    
+    for offset in range(len(x)):
+        first_arrivals[offset] = np.min(np.append(refracted_waves[:, offset], direct_wave[offset]))
+
+    return first_arrivals
+
 def catch_parameter(filename, target):
     file = open(filename,'r')
     for line in file.readlines():

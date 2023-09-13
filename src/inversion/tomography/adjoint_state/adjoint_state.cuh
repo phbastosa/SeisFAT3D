@@ -26,7 +26,6 @@ private:
     void adjoint_state_solver();
     
     void gradient_conditioning();
-    void gradient_normalization();
     void backtracking_linesearch();
     void nonlinear_conjugate_gradient();
 

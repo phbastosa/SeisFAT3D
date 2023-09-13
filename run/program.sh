@@ -4,7 +4,7 @@
 
 io="../src/utils/input_output/io.cpp"
 
-# Acquisittion geometry functions ------------------------------------------------------------------------
+# Acquisition geometry functions ------------------------------------------------------------------------
 
 geometry="../src/geometry/geometry.cpp"
 regular="../src/geometry/regular/regular.cpp"
@@ -92,8 +92,8 @@ case "$1" in
 
     echo -e "Compiling the stand-alone executables!\n"
 
-    echo -e "../bin/\033[31mmodeling.exe\033[m" 
-    nvcc $io $geometry_all $modeling_all $modeling_main $flags -o ../bin/modeling.exe
+    # echo -e "../bin/\033[31mmodeling.exe\033[m" 
+    # nvcc $io $geometry_all $modeling_all $modeling_main $flags -o ../bin/modeling.exe
 
     echo -e "../bin/\033[31minversion.exe\033[m" 
     nvcc $io $geometry_all $modeling_all $inversion_all $inversion_main $flags -o ../bin/inversion.exe
