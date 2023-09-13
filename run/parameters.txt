@@ -63,7 +63,7 @@ offsets = [1000, 1000, 1000]        # [m] <float>
 #   [5] - Elastic isotropic media
 #---------------------------------------------------------------------------------------------------
 
-modeling_type = 1                   # <int>
+modeling_type = 2                   # <int>
 
 total_time = 4.0                    # [s] <float>
 time_spacing = 0.001                # [s] <float>
@@ -80,10 +80,10 @@ max_amplitude = 1e5                 # <float>
 
 import_wavelet = false              # <bool>
 export_receiver_output = true       # <bool> 
-export_wavefield_output = true     # <bool>
+export_wavefield_output = false     # <bool>
 
 wavelet_file = ../inputs/wavelet.bin           
-receiver_output_folder = ../outputs/seismograms/            
+receiver_output_folder = ../ouputs/seismograms/            
 wavefield_output_folder = ../outputs/snapshots/     
 
 #---------------------------------------------------------------------------------------------------
@@ -99,7 +99,7 @@ wavefield_output_folder = ../outputs/snapshots/
 
 inversion_type = 1                    # <int> 
 
-max_iteration = 5                     # <int>
+max_iteration = 1                     # <int>
 
 dx_tomo = 50                          # [m] <float> 
 dy_tomo = 50                          # [m] <float>
@@ -112,7 +112,7 @@ export_model_per_iteration = true     # <bool>
 export_gradient_per_iteration = true  # <bool>
 
 obs_data_folder = ../inputs/data/        
-obs_data_prefix = fim_data_400_shot_     
+obs_data_prefix = fsm_data_400_shot_     
 
 gradient_folder = ../outputs/gradients/                  
 convergence_folder = ../outputs/convergence/         
