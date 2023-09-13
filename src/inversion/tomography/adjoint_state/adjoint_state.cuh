@@ -22,7 +22,6 @@ private:
     float * d_source = nullptr;
     float * d_adjoint = nullptr;
 
-    void adjoint_initial_setup();
     void adjoint_state_solver();
     
     void gradient_conditioning();

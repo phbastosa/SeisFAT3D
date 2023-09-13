@@ -30,25 +30,7 @@ void Adjoint_State::set_parameters()
 
 void Adjoint_State::forward_modeling()
 {
-    export_binary_float("model_adj_pre.bin", model, modeling->nPoints);
-
-    for (int index = 0; index < modeling->nPoints; index++) 
-    {
-        int k = (int) (index / (modeling->nx*modeling->nz));        
-        int j = (int) (index - k*modeling->nx*modeling->nz) / modeling->nz;    
-        int i = (int) (index - j*modeling->nz - k*modeling->nx*modeling->nz);          
-
-        int indB = (i + modeling->nbzu) + (j + modeling->nbxl)*modeling->nzz + (k + modeling->nbyl)*modeling->nxx*modeling->nzz;
-
-        modeling->S[indB] = model[index];
-
-        gradient[index] = 0.0f;
-    }
-
-    export_binary_float("model_adj_pos.bin", model, modeling->nPoints);
-
-    for (int i = 0; i < n_data; i++) 
-        dcal[i] = 0.0f; 
+    init_modeling();
 
     for (int shot = 0; shot < modeling->total_shots; shot++)
     {
@@ -67,11 +49,6 @@ void Adjoint_State::forward_modeling()
         adjoint_state_solver();
     }
 }
-
-// void Adjoint_State::adjoint_initial_setup()
-// {
-
-// }
 
 void Adjoint_State::adjoint_state_solver()
 {
@@ -92,9 +69,9 @@ void Adjoint_State::adjoint_state_solver()
         int j = (int) (index - k*modeling->nxx*modeling->nzz) / modeling->nzz;    
         int i = (int) (index - j*modeling->nzz - k*modeling->nxx*modeling->nzz);  
 
-        if ((i == 0) || (i == modeling->nzz-1) || 
-            (j == 0) || (j == modeling->nxx-1) || 
-            (k == 0) || (k == modeling->nyy-1))  
+        if ((i == 0) || (i == modeling->nzz - 1) || 
+            (j == 0) || (j == modeling->nxx - 1) || 
+            (k == 0) || (k == modeling->nyy - 1))  
         {    
             adjoint[index] = 0.0f;        
         }
@@ -124,41 +101,44 @@ void Adjoint_State::adjoint_state_solver()
 	cudaMemcpy(d_source, source, modeling->volsize*sizeof(float), cudaMemcpyHostToDevice);
 	cudaMemcpy(d_adjoint, adjoint, modeling->volsize*sizeof(float), cudaMemcpyHostToDevice);
 
-    for (int sweep = 0; sweep < nSweeps; sweep++)
-	{ 
-		int start = (sweep == 3 || sweep == 5 || sweep == 6 || sweep == 7) ? totalLevels : meshDim;
-		int end = (start == meshDim) ? totalLevels + 1 : meshDim - 1;
-		int incr = (start == meshDim) ? true : false;
+    for (int it = 0; it < 3; it++)
+    {
+        for (int sweep = 0; sweep < nSweeps; sweep++)
+        { 
+            int start = (sweep == 3 || sweep == 5 || sweep == 6 || sweep == 7) ? totalLevels : meshDim;
+            int end = (start == meshDim) ? totalLevels + 1 : meshDim - 1;
+            int incr = (start == meshDim) ? true : false;
 
-		int xSweepOff = (sweep == 3 || sweep == 4) ? modeling->nxx + 1 : 0;
-		int ySweepOff = (sweep == 2 || sweep == 5) ? modeling->nyy + 1 : 0;
-		int zSweepOff = (sweep == 1 || sweep == 6) ? modeling->nzz + 1 : 0;
-		
-		for (int level = start; level != end; level = (incr) ? level + 1 : level - 1)
-		{			
-			int xs = max(1, level - (modeling->nyy + modeling->nzz));	
-			int ys = max(1, level - (modeling->nxx + modeling->nzz));
+            int xSweepOff = (sweep == 3 || sweep == 4) ? modeling->nxx + 1 : 0;
+            int ySweepOff = (sweep == 2 || sweep == 5) ? modeling->nyy + 1 : 0;
+            int zSweepOff = (sweep == 1 || sweep == 6) ? modeling->nzz + 1 : 0;
+            
+            for (int level = start; level != end; level = (incr) ? level + 1 : level - 1)
+            {			
+                int xs = max(1, level - (modeling->nyy + modeling->nzz));	
+                int ys = max(1, level - (modeling->nxx + modeling->nzz));
 
-			int xe = min(modeling->nxx, level - (meshDim - 1));
-			int ye = min(modeling->nyy, level - (meshDim - 1));	
-		
-			int xr = xe - xs + 1;
-			int yr = ye - ys + 1;
+                int xe = min(modeling->nxx, level - (meshDim - 1));
+                int ye = min(modeling->nyy, level - (meshDim - 1));	
+            
+                int xr = xe - xs + 1;
+                int yr = ye - ys + 1;
 
-			int nThreads = xr * yr;
-				
-			dim3 bs(16, 16, 1);
+                int nThreads = xr * yr;
+                    
+                dim3 bs(16, 16, 1);
 
-			if (nThreads < modeling->threadsPerBlock) { bs.x = xr; bs.y = yr; } 
+                if (nThreads < modeling->threadsPerBlock) { bs.x = xr; bs.y = yr; } 
 
-			dim3 gs(iDivUp(xr, bs.x), iDivUp(yr , bs.y), 1);
+                dim3 gs(iDivUp(xr, bs.x), iDivUp(yr , bs.y), 1);
 
-            adjoint_state_kernel<<<gs,bs>>>(d_adjoint, d_source, d_T, level, xs, ys, xSweepOff, ySweepOff, zSweepOff, 
-                                            modeling->nxx, modeling->nyy, modeling->nzz, modeling->dx, modeling->dy, modeling->dz);
+                adjoint_state_kernel<<<gs,bs>>>(d_adjoint, d_source, d_T, level, xs, ys, xSweepOff, ySweepOff, zSweepOff, 
+                                                modeling->nxx, modeling->nyy, modeling->nzz, modeling->dx, modeling->dy, modeling->dz);
 
-            cudaDeviceSynchronize();
-		}
-	}
+                cudaDeviceSynchronize();
+            }
+        }
+    }
 
     cudaMemcpy(adjoint, d_adjoint, modeling->volsize*sizeof(float), cudaMemcpyDeviceToHost);
 
@@ -251,7 +231,7 @@ void Adjoint_State::nonlinear_conjugate_gradient()
 
     // else
 
-    alpha = 0.01f;
+    alpha = 0.005f;
 
     # pragma omp parallel for    
     for (int index = 0; index < modeling->nPoints; index++)
@@ -302,7 +282,6 @@ void Adjoint_State::nonlinear_conjugate_gradient()
 //     return function;
 // }
 
-
 __global__ void adjoint_state_kernel(float * adjoint, float * source, float * T, int level, int xOffset, int yOffset, 
                                      int xSweepOffset, int ySweepOffset, int zSweepOffset, int nxx, int nyy, int nzz, 
                                      float dx, float dy, float dz)
@@ -320,9 +299,9 @@ __global__ void adjoint_state_kernel(float * adjoint, float * source, float * T,
 			int j = (int)abs(x - xSweepOffset);
 			int k = (int)abs(y - ySweepOffset);
 
-			if ((i > 0) && (i < nzz-1) && (j > 0) && (j < nxx-1) && (k > 0) && (k < nyy-1))
-			{		
-                float a1 = -1.0f*(T[i + j*nzz + k*nxx*nzz] - T[i + (j-1)*nzz + k*nxx*nzz]) / dx;
+            if ((i > 0) && (i < nzz - 1) && (j > 0) && (j < nxx - 1) && (k > 0) && (k < nyy - 1))
+            {
+                float a1 = -1.0f*(T[i + j*nzz + k*nxx*nzz] - T[i + (j-1)*nzz + k*nxx*nzz]) / dx;                                                
                 float ap1 = (a1 + abs(a1)) / 2.0f;
                 float am1 = (a1 - abs(a1)) / 2.0f;
 
@@ -342,7 +321,7 @@ __global__ void adjoint_state_kernel(float * adjoint, float * source, float * T,
                 float cp1 = (c1 + abs(c1)) / 2.0f;
                 float cm1 = (c1 - abs(c1)) / 2.0f;
 
-                float c2 = -1.0f*(T[(i+1) + j*nzz + k*nxx*nzz] - T[i + j*nzz + k*nxx*nzz]) / dz;
+                float c2 = -1.0f*(T[(i+1) + j*nzz + k*nxx*nzz] - T[i + j*nzz + k*nxx*nzz]) / dz;        
                 float cp2 = (c2 + abs(c2)) / 2.0f;
                 float cm2 = (c2 - abs(c2)) / 2.0f;
 

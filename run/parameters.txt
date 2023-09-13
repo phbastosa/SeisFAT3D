@@ -10,9 +10,9 @@ x_spacing = 10                      # [m] <float>
 y_spacing = 10                      # [m] <float> 
 z_spacing = 10                      # [m] <float> 
 
-vp_model_file = ../inputs/models/init_model_51x201x201_10m.bin  # <str> 
-vs_model_file = ../inputs/models/vs_model_301x901x51_10m.bin    # <str>
-rho_model_file = ../inputs/models/rho_model_301x901x51_10m.bin  # <str> 
+vp_model_file = ../inputs/models/init_model_51x201x201_10m.bin   
+vs_model_file = ../inputs/models/vs_model_301x901x51_10m.bin    
+rho_model_file = ../inputs/models/rho_model_301x901x51_10m.bin   
 
 #---------------------------------------------------------------------------------------------------
 # Geometry parameters ------------------------------------------------------------------------------
@@ -80,10 +80,10 @@ max_amplitude = 1e5                 # <float>
 
 import_wavelet = false              # <bool>
 export_receiver_output = true       # <bool> 
-export_wavefield_output = false     # <bool>
+export_wavefield_output = true     # <bool>
 
-wavelet_file = ../inputs/input_wavelet.bin           
-receiver_output_folder = ../inputs/data/            
+wavelet_file = ../inputs/wavelet.bin           
+receiver_output_folder = ../outputs/seismograms/            
 wavefield_output_folder = ../outputs/snapshots/     
 
 #---------------------------------------------------------------------------------------------------
@@ -97,27 +97,25 @@ wavefield_output_folder = ../outputs/snapshots/
 #   [2] - Scalar Isotropic FWI
 #---------------------------------------------------------------------------------------------------
 
-inversion_type = 0                  # <int> 
+inversion_type = 1                    # <int> 
 
-max_iteration = 5                   # <int>
+max_iteration = 5                     # <int>
 
-dx_tomo = 100                       # [m] <float> 
-dy_tomo = 100                       # [m] <float>
-dz_tomo = 10                        # [m] <float>
+dx_tomo = 50                          # [m] <float> 
+dy_tomo = 50                          # [m] <float>
+dz_tomo = 10                          # [m] <float>
 
-tk_order = 2                        # Tikhonov regularization order <int>
-tk_param = 1e5                      # Tikhonov regularization parameter <float>
+tk_order = 2                          # Tikhonov regularization order <int>
+tk_param = 1e5                        # Tikhonov regularization parameter <float>
 
-export_gradient = true              # <bool>
-export_illumination = true          # <bool> 
-export_model_per_iteration = true   # <bool>
+export_model_per_iteration = true     # <bool>
+export_gradient_per_iteration = true  # <bool>
 
 obs_data_folder = ../inputs/data/        
 obs_data_prefix = fim_data_400_shot_     
 
-gradient_folder = ../outputs/gradient/                  
-illumination_folder = ../outputs/illumination/           
-convergence_map_folder = ../outputs/convergence/         
+gradient_folder = ../outputs/gradients/                  
+convergence_folder = ../outputs/convergence/         
 estimated_model_folder = ../outputs/recovered_models/    
 
 #---------------------------------------------------------------------------------------------------

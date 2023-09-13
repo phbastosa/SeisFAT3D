@@ -63,6 +63,23 @@ void Tomography::import_obs_data()
     delete[] data;    
 }
 
+void Tomography::init_modeling()
+{
+    # pragma omp parallel for
+    for (int index = 0; index < modeling->nPoints; index++)
+    {    
+        int k = (int) (index / (modeling->nx*modeling->nz));        
+        int j = (int) (index - k*modeling->nx*modeling->nz) / modeling->nz;    
+        int i = (int) (index - j*modeling->nz - k*modeling->nx*modeling->nz);          
+
+        int indB = (i+modeling->nbzu) + (j+modeling->nbxl)*modeling->nzz + (k+modeling->nbyl)*modeling->nxx*modeling->nzz;
+
+        modeling->S[indB] = model[index];
+
+        gradient[index] = 0.0f;
+    }
+}
+
 void Tomography::check_convergence()
 {
     float square_difference = 0.0f;

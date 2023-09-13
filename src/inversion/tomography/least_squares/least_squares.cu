@@ -8,9 +8,6 @@ void Least_Squares::set_parameters()
 
     set_main_components();
 
-    illumination_folder = catch_parameter("illumination_folder", file);
-    write_illumination_per_iteration = str2bool(catch_parameter("export_illumination", file));
-
     dx_tomo = std::stof(catch_parameter("dx_tomo", file));
     dy_tomo = std::stof(catch_parameter("dy_tomo", file));
     dz_tomo = std::stof(catch_parameter("dz_tomo", file));
@@ -40,8 +37,6 @@ void Least_Squares::set_parameters()
         }
     }
 
-    illumination = new float[modeling->nPoints]();
-
     iG.reserve(ray_path_estimated_samples);
     jG.reserve(ray_path_estimated_samples);
     vG.reserve(ray_path_estimated_samples);
@@ -49,7 +44,7 @@ void Least_Squares::set_parameters()
 
 void Least_Squares::forward_modeling()
 {
-    initial_setup();
+    init_modeling();
 
     for (int shot = 0; shot < modeling->total_shots; shot++)
     {
@@ -68,28 +63,7 @@ void Least_Squares::forward_modeling()
     }
 
     compute_gradient();
-    
     export_gradient();
-    export_illumination();
-}
-
-void Least_Squares::initial_setup()
-{
-    for (int index = 0; index < modeling->nPoints; index++)
-    {    
-        int k = (int) (index / (modeling->nx*modeling->nz));        
-        int j = (int) (index - k*modeling->nx*modeling->nz) / modeling->nz;    
-        int i = (int) (index - j*modeling->nz - k*modeling->nx*modeling->nz);          
-
-        int indB = (i+modeling->nbzu) + (j+modeling->nbxl)*modeling->nzz + (k+modeling->nbyl)*modeling->nxx*modeling->nzz;
-
-        modeling->S[indB] = model[index];
-
-        gradient[index] = 0.0f;
-        illumination[index] = 0.0f;
-    }
-
-    for (int i = 0; i < n_data; i++) dcal[i] = 0.0f;    
 }
 
 void Least_Squares::gradient_ray_tracing()
@@ -140,16 +114,12 @@ void Least_Squares::gradient_ray_tracing()
 
             ray_index.push_back(im + jm*nz_tomo + km*nx_tomo*nz_tomo);
 
-            int index = (i - modeling->nbzu) + (j - modeling->nbxl)*modeling->nz + (k - modeling->nbyl)*modeling->nx*modeling->nz;
-
-            illumination[index] += rayStep;
-
             if (ray_index.back() == sId) break;
         }
    
         float final_distance = sqrtf(powf(zi - modeling->geometry->shots.z[modeling->shot_id],2.0f) + 
-                                    powf(xi - modeling->geometry->shots.x[modeling->shot_id],2.0f) + 
-                                    powf(yi - modeling->geometry->shots.y[modeling->shot_id],2.0f));
+                                     powf(xi - modeling->geometry->shots.x[modeling->shot_id],2.0f) + 
+                                     powf(yi - modeling->geometry->shots.y[modeling->shot_id],2.0f));
 
         std::sort(ray_index.begin(), ray_index.end());
 
@@ -254,16 +224,6 @@ void Least_Squares::compute_gradient()
     }    
 
     delete[] grad;
-}
-
-void Least_Squares::export_illumination()
-{
-    if (write_illumination_per_iteration)
-    {
-        std::string illumination_path = illumination_folder + "illumination_iteration_" + std::to_string(iteration) + "_" + std::to_string(modeling->nz) + "x" + std::to_string(modeling->nx) + "x" + std::to_string(modeling->ny) + ".bin";
-
-        export_binary_float(illumination_path, illumination, modeling->nPoints);
-    }
 }
 
 void Least_Squares::optimization()

@@ -17,6 +17,7 @@ protected:
     void set_main_components();
     void tomography_message();
     void export_gradient();
+    void init_modeling();
     
     void extract_calculated_data();
 

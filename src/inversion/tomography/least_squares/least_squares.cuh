@@ -32,14 +32,7 @@ private:
     float * B = nullptr;
     float * x = nullptr; 
 
-    float * illumination;
-
-    bool write_illumination_per_iteration;
-    std::string illumination_folder;
-
-    void initial_setup();
     void compute_gradient();
-    void export_illumination();
     void gradient_ray_tracing();
     void apply_regularization();
     void solve_linear_system_lscg();
