@@ -44,6 +44,8 @@ void Least_Squares::set_parameters()
 
 void Least_Squares::forward_modeling()
 {
+    init_modeling();
+
     for (int shot = 0; shot < modeling->total_shots; shot++)
     {
         modeling->shot_id = shot;
