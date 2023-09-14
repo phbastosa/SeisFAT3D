@@ -44,8 +44,6 @@ void Least_Squares::set_parameters()
 
 void Least_Squares::forward_modeling()
 {
-    init_modeling();
-
     for (int shot = 0; shot < modeling->total_shots; shot++)
     {
         modeling->shot_id = shot;
@@ -59,11 +57,10 @@ void Least_Squares::forward_modeling()
         modeling->build_outputs();
 
         extract_calculated_data();
-        gradient_ray_tracing();
+        
+        if (iteration != max_iteration)
+            gradient_ray_tracing();
     }
-
-    compute_gradient();
-    export_gradient();
 }
 
 void Least_Squares::gradient_ray_tracing()
@@ -162,6 +159,48 @@ void Least_Squares::gradient_ray_tracing()
     }
 }
 
+void Least_Squares::optimization()
+{
+    compute_gradient();
+    export_gradient();
+
+    std::cout<<"\nSolving linear system using Tikhonov regularization with order " + std::to_string(tk_order) + "\n\n";
+
+    M = n_model;                                  
+    N = n_data + n_model - tk_order;                    
+    NNZ = vG.size() + (tk_order + 1) * (n_model - tk_order);
+
+    iA = new int[NNZ]();
+    jA = new int[NNZ]();
+    vA = new float[NNZ]();
+
+    B = new float[N]();
+    x = new float[M]();
+
+    for (int index = 0; index < n_data; index++) 
+        B[index] = dobs[index] - dcal[index];
+
+    for (int index = 0; index < vG.size(); index++)
+    {
+        iA[index] = iG[index];
+        jA[index] = jG[index];
+        vA[index] = vG[index];
+    }
+
+    std::vector< int >().swap(iG);
+    std::vector< int >().swap(jG);
+    std::vector<float>().swap(vG);
+
+    apply_regularization();
+    solve_linear_system_lscg();
+    slowness_variation_rescaling();
+
+    delete[] B;
+    delete[] iA;
+    delete[] jA;
+    delete[] vA;
+}
+
 void Least_Squares::compute_gradient()
 {
     float * grad = new float[n_model]();
@@ -224,45 +263,6 @@ void Least_Squares::compute_gradient()
     }    
 
     delete[] grad;
-}
-
-void Least_Squares::optimization()
-{
-    std::cout<<"\nSolving linear system using Tikhonov regularization with order " + std::to_string(tk_order) + "\n\n";
-
-    M = n_model;                                  
-    N = n_data + n_model - tk_order;                    
-    NNZ = vG.size() + (tk_order + 1) * (n_model - tk_order);
-
-    iA = new int[NNZ]();
-    jA = new int[NNZ]();
-    vA = new float[NNZ]();
-
-    B = new float[N]();
-    x = new float[M]();
-
-    for (int index = 0; index < n_data; index++) 
-        B[index] = dobs[index] - dcal[index];
-
-    for (int index = 0; index < vG.size(); index++)
-    {
-        iA[index] = iG[index];
-        jA[index] = jG[index];
-        vA[index] = vG[index];
-    }
-
-    std::vector< int >().swap(iG);
-    std::vector< int >().swap(jG);
-    std::vector<float>().swap(vG);
-
-    apply_regularization();
-    solve_linear_system_lscg();
-    slowness_variation_rescaling();
-
-    delete[] B;
-    delete[] iA;
-    delete[] jA;
-    delete[] vA;
 }
 
 void Least_Squares::apply_regularization()

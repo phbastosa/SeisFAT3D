@@ -45,8 +45,9 @@ void Adjoint_State::forward_modeling()
         modeling->build_outputs();
 
         extract_calculated_data();
-        
-        adjoint_state_solver();
+    
+        if (iteration != max_iteration)
+            adjoint_state_solver();
     }
 }
 
@@ -59,7 +60,6 @@ void Adjoint_State::adjoint_state_solver()
     int sidx = (int)(modeling->geometry->shots.x[modeling->shot_id] / modeling->dx) + modeling->nbxl;
     int sidy = (int)(modeling->geometry->shots.y[modeling->shot_id] / modeling->dy) + modeling->nbyl;
 
-    # pragma omp parallel for
     for (int index = 0; index < modeling->volsize; index++) 
     {
         source[index] = 0.0f;    
@@ -101,7 +101,7 @@ void Adjoint_State::adjoint_state_solver()
 	cudaMemcpy(d_source, source, modeling->volsize*sizeof(float), cudaMemcpyHostToDevice);
 	cudaMemcpy(d_adjoint, adjoint, modeling->volsize*sizeof(float), cudaMemcpyHostToDevice);
 
-    for (int it = 0; it < 3; it++)
+    for (int it = 0; it < meshDim; it++)
     {
         for (int sweep = 0; sweep < nSweeps; sweep++)
         { 
@@ -142,7 +142,6 @@ void Adjoint_State::adjoint_state_solver()
 
     cudaMemcpy(adjoint, d_adjoint, modeling->volsize*sizeof(float), cudaMemcpyDeviceToHost);
 
-    # pragma omp parallel for
     for (int i = 0; i < modeling->nzz; i++)
     {
         for (int j = 0; j < modeling->nxx; j++)
@@ -156,7 +155,6 @@ void Adjoint_State::adjoint_state_solver()
         }
     }
 
-    # pragma omp parallel for
     for (int index = 0; index < modeling->nPoints; index++) 
     {
         int k = (int) (index / (modeling->nx*modeling->nz));        
@@ -171,116 +169,155 @@ void Adjoint_State::adjoint_state_solver()
 
 void Adjoint_State::optimization() 
 {
-    // gradient_conditioning();
+    gradient_conditioning();
 
-    export_gradient();
+    parabolical_linesearch();
 
-    // backtracking_linesearch();
-
-    nonlinear_conjugate_gradient();
+    limited_steepest_descent();
 }
 
 void Adjoint_State::gradient_conditioning()
-{
+{    
+    // int window = 5; 
+
     // for (int node = 0; node < modeling->total_nodes; node++)
     // {
     //     int i = (int)(modeling->geometry->nodes.z[node] / modeling->dz);
     //     int j = (int)(modeling->geometry->nodes.x[node] / modeling->dx);
     //     int k = (int)(modeling->geometry->nodes.y[node] / modeling->dy);
 
-    //     int index = i + j*modeling->nzz + k*modeling->nxx*modeling->nzz;
+    //     for (int wy = k - window; wy <= k + window; wy++)
+    //     {
+    //         for (int wx = j - window; wx <= j + window; wx++)
+    //         {
+    //             for (int wz = i - window; wz <= i + window; wz++)
+    //             {
+    //                 if ((i >= 0) && (i < modeling->nz) && (j >= 0) && (j < modeling->nx) && (k >= 0) && (k < modeling->ny))
+    //                 {
+    //                     float distance = sqrtf(powf((i - wz)*modeling->dz, 2.0f) + 
+    //                                            powf((j - wx)*modeling->dx, 2.0f) + 
+    //                                            powf((k - wy)*modeling->dy, 2.0f));
 
 
 
+    //                 }
+    //             }
+    //         }
+    //     }
     // }
 
-
-
-
-
-}
-
-void Adjoint_State::backtracking_linesearch()
-{
-    std::cout<<"\nRunning backtracking linesearch\n"<<std::endl;
-
-    // float k1 = 1e-4f;
-    // float k2 = 0.85f;
-
-    float dot_product = 0.0f;
-
-    # pragma omp parallel for reduction(+:dot_product)
-    for (int index = 0; index < modeling->nPoints; index++)
-        dot_product += (gradient[index]) * (gradient[index]);       
-
-    alpha = 0.5f;
-
-    float f0 = residuo.back();
-
-    // float f1 = get_objective_function(alpha, gradient);
-
-    // while (f1 > f0 - k1*alpha*dot_product)
+    // for (int shot = 0; shot < modeling->total_shots; shot++)
     // {
-    //     alpha *= k2;
+    //     int i = (int)(modeling->geometry->shots.z[shot] / modeling->dz);
+    //     int j = (int)(modeling->geometry->shots.x[shot] / modeling->dx);
+    //     int k = (int)(modeling->geometry->shots.y[shot] / modeling->dy);
+
+    //     for (int wy = k - window; wy <= k + window; wy++)
+    //     {
+    //         for (int wx = j - window; wx <= j + window; wx++)
+    //         {
+    //             for (int wz = i - window; wz <= i + window; wz++)
+    //             {
+    //                 if ((i >= 0) && (i < modeling->nz) && (j >= 0) && (j < modeling->nx) && (k >= 0) && (k < modeling->ny))
+    //                 {
+    //                     float distance = sqrtf(powf((i - wz)*modeling->dz, 2.0f) + 
+    //                                            powf((j - wx)*modeling->dx, 2.0f) + 
+    //                                            powf((k - wy)*modeling->dy, 2.0f));
+
+    //                 }
+    //             }
+    //         }
+    //     }
     // }
-}
 
-void Adjoint_State::nonlinear_conjugate_gradient()
-{
-    // if (iteration == 1)
-
-    // else
-
-    alpha = 0.005f;
-
-    # pragma omp parallel for    
     for (int index = 0; index < modeling->nPoints; index++)
     {
         int k = (int) (index / (modeling->nx*modeling->nz));        
         int j = (int) (index - k*modeling->nx*modeling->nz) / modeling->nz;    
-        int i = (int) (index - j*modeling->nz - k*modeling->nx*modeling->nz);  
+        int i = (int) (index - j*modeling->nz - k*modeling->nx*modeling->nz);          
 
-        if ((i >= 5) && (i < modeling->nz - 5) && (j >= 5) && (j < modeling->nx - 5) && (k >= 5) && (k < modeling->ny - 5)) 
+        if ((i < 5) || (i >= modeling->nz - 5) || (j < 5) || (j >= modeling->nx - 5) || (k < 5) || (k >= modeling->ny - 5))
         {
-            dm[index] = alpha*gradient[index];
+            gradient[index] = 0.0f;
         }
-    }    
+    }
+
+    export_gradient();
 }
 
-// float Adjoint_State::get_objective_function(float step, float * grad)
-// {
-//     # pragma omp parallel for
-//     for (int index = 0; index < modeling->nPoints; index++)
-//     {
-//         int k = (int) (index / (modeling->nx*modeling->nz));        
-//         int j = (int) (index - k*modeling->nx*modeling->nz) / modeling->nz;    
-//         int i = (int) (index - j*modeling->nz - k*modeling->nx*modeling->nz);          
+void Adjoint_State::parabolical_linesearch()
+{
+    std::cout<<"\nRunning parabolical linesearch\n"<<std::endl;
 
-//         int indB = (i + modeling->nbzu) + (j + modeling->nbxl)*modeling->nzz + (k + modeling->nbyl)*modeling->nxx*modeling->nzz;
+    float x1 = 0.0f;
+    float x2 = 0.2f / static_cast<float>(iteration);
+    float x3 = 0.6f / static_cast<float>(iteration);
+
+    float f1 = residuo.back();
+    float f2 = get_objective_function(x2, gradient);
+    float f3 = get_objective_function(x3, gradient);
+
+    float D = x2*x3*x3 + x1*x2*x2 + x1*x1*x3 - (x1*x1*x2 + x1*x3*x3 + x2*x2*x3);
+    float Da = x2*f3 + x1*f2 + f1*x3 - (f1*x2 + x1*f3 + f2*x3);
+    float Db = f2*x3*x3 + f1*x2*x2 + x1*x1*f3 - (x1*x1*f2 + f1*x3*x3 + x2*x2*f3);
+
+    float a = Da / D;
+    float b = Db / D; 
+
+    alpha = - b / (2.0f * a);
+}
+
+void Adjoint_State::limited_steepest_descent()
+{
+    float max_perturbation = 1e-4f / static_cast<float>(iteration);
+
+    for (int index = 0; index < modeling->nPoints; index++)
+    {
+        dm[index] = alpha*gradient[index];    
+
+        if (fabsf(dm[index]) > max_perturbation)
+        {
+            if (dm[index] < 0.0f) 
+                dm[index] = -max_perturbation;
+            else 
+                dm[index] = max_perturbation;    
+        } 
+    }
+}
+
+float Adjoint_State::get_objective_function(float step, float * grad)
+{
+    for (int index = 0; index < modeling->nPoints; index++)
+    {
+        int k = (int) (index / (modeling->nx*modeling->nz));        
+        int j = (int) (index - k*modeling->nx*modeling->nz) / modeling->nz;    
+        int i = (int) (index - j*modeling->nz - k*modeling->nx*modeling->nz);          
+
+        int indB = (i + modeling->nbzu) + (j + modeling->nbxl)*modeling->nzz + (k + modeling->nbyl)*modeling->nxx*modeling->nzz;
         
-//         modeling->S[indB] = model[index] + step*grad[index]/norm;
-//     }
+        modeling->S[indB] = model[index] + step*grad[index];
+    }
 
-//     for (int shot = 0; shot < modeling->total_shots; shot++)
-//     {
-//         modeling->shot_id = shot;
+    for (int shot = 0; shot < modeling->total_shots; shot++)
+    {
+        modeling->shot_id = shot;
 
-//         modeling->initial_setup();
-//         modeling->forward_solver();
-//         modeling->build_outputs();
+        modeling->initial_setup();
+        modeling->forward_solver();
+        modeling->build_outputs();
 
-//         extract_calculated_data();
-//     }
+        extract_calculated_data();
+    }
 
-//     float function = 0.0f;
+    float function = 0.0f;
 
-//     for (int i = 0; i < n_data; i++)
-//         function += powf(dobs[i] - dcal[i], 2.0f);
+    for (int i = 0; i < n_data; i++)
+        function += powf(dobs[i] - dcal[i], 2.0f);
 
-//     function = sqrtf(function);
+    function = sqrtf(function);
 
-//     return function;
-// }
+    return function;
+}
 
 __global__ void adjoint_state_kernel(float * adjoint, float * source, float * T, int level, int xOffset, int yOffset, 
                                      int xSweepOffset, int ySweepOffset, int zSweepOffset, int nxx, int nyy, int nzz, 

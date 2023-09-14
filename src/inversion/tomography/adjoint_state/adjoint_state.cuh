@@ -10,9 +10,7 @@ private:
     int totalLevels;
     int nSweeps, meshDim;
 
-    float cell_volume;
-
-    float norm, alpha;
+    float alpha, cell_volume;
 
     float * d_T = nullptr;
 
@@ -25,8 +23,8 @@ private:
     void adjoint_state_solver();
     
     void gradient_conditioning();
-    void backtracking_linesearch();
-    void nonlinear_conjugate_gradient();
+    void parabolical_linesearch();
+    void limited_steepest_descent();
 
     float get_objective_function(float step, float * grad);
 
