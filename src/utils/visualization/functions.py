@@ -49,8 +49,8 @@ def check_geometry(models, shots, nodes, dh, slices, subplots):
         maxModelDistance = np.max(np.shape(models))
         minModelDistance = np.min(np.shape(models))
 
-        vmin = np.min(models)
-        vmax = np.max(models)
+        vmin = -500 #np.min(models)
+        vmax = 500 #np.max(models)
 
     else:
         modelShape = np.array(np.shape(models[0]))

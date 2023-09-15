@@ -458,6 +458,11 @@ void Least_Squares::slowness_variation_rescaling()
 
         float dm_ijk = (c0*(1 - zd) + c1*zd);
 
-        dm[i + j*modeling->nz + k*modeling->nx*modeling->nz] = dm_ijk;            
+        dm[index] = dm_ijk;            
+
+        if ((i < 5) || (i >= modeling->nz - 5) || (j < 5) || (j >= modeling->nx - 5) || (k < 5) || (k >= modeling->ny - 5))
+        {
+            dm[index] = 0.0f;
+        }    
     }
 }

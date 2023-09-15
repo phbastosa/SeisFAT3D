@@ -10,7 +10,7 @@ x_spacing = 10                      # [m] <float>
 y_spacing = 10                      # [m] <float> 
 z_spacing = 10                      # [m] <float> 
 
-vp_model_file = ../inputs/models/init_model_51x201x201_10m.bin   
+vp_model_file = ../inputs/models/true_model_51x201x201_10m.bin   
 vs_model_file = ../inputs/models/vs_model_301x901x51_10m.bin    
 rho_model_file = ../inputs/models/rho_model_301x901x51_10m.bin   
 
@@ -27,13 +27,13 @@ geometry_type = 0                   # <int>
 reciprocity = true                  # <bool>     
 import_geometry = false             # <bool>
 
-shots_file = ../inputs/geometry/xyz_shot_position.txt              
-nodes_file = ../inputs/geometry/xyz_node_position.txt     
+shots_file = ../inputs/geometry/xyz_shot_positions.txt              
+nodes_file = ../inputs/geometry/xyz_node_positions.txt     
 
 # Regular geometry ---------------------------------------------------------------------------------               
 
 shots_nlines = [1, 20, 20]          # <int> (z, x, y)     
-nodes_nlines = [1, 19, 19]          # <int> (z, x, y)            
+nodes_nlines = [1, 4, 4]          # <int> (z, x, y)            
 
 shots_SW = [10, 50, 50]             # [m] <float> (z, x, y) NW            
 shots_NW = [10, 50, 1950]           # [m] <float> (z, x, y)  |            
@@ -83,7 +83,7 @@ export_receiver_output = true       # <bool>
 export_wavefield_output = false     # <bool>
 
 wavelet_file = ../inputs/wavelet.bin           
-receiver_output_folder = ../ouputs/seismograms/            
+receiver_output_folder = ../inputs/data/            
 wavefield_output_folder = ../outputs/snapshots/     
 
 #---------------------------------------------------------------------------------------------------
@@ -101,12 +101,12 @@ inversion_type = 0                    # <int>
 
 max_iteration = 2                     # <int>
 
-dx_tomo = 50                         # [m] <float> 
-dy_tomo = 50                         # [m] <float>
+dx_tomo = 50                          # [m] <float> 
+dy_tomo = 50                          # [m] <float>
 dz_tomo = 20                          # [m] <float>
 
 tk_order = 2                          # Tikhonov regularization order <int>
-tk_param = 1e5                        # Tikhonov regularization parameter <float>
+tk_param = 1e3                        # Tikhonov regularization parameter <float>
 
 smooth_per_iteration = true           # <bool>
 gaussian_filter_samples = 5           # [odd number] <int> 

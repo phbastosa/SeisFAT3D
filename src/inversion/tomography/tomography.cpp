@@ -113,7 +113,7 @@ void Tomography::tomography_message()
     else
         std::cout<<"------- Computing iteration "<<iteration+1<<" of "<<max_iteration<<" ------------\n\n";
 
-    if (iteration > 0) std::cout<<"Previous iteration residuo: "<<residuo.back()<<"\n\n";    
+    if (iteration > 0) std::cout<<"Previous residuo: "<<residuo.back()<<"\n\n";    
 }
 
 void Tomography::extract_calculated_data()

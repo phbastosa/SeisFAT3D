@@ -249,9 +249,11 @@ void Adjoint_State::parabolical_linesearch()
 {
     std::cout<<"\nRunning parabolical linesearch\n"<<std::endl;
 
+    float pit = static_cast<float>(iteration);
+
     float x1 = 0.0f;
-    float x2 = 0.2f / static_cast<float>(iteration);
-    float x3 = 0.6f / static_cast<float>(iteration);
+    float x2 = 0.2f / pit;
+    float x3 = 0.5f / pit;
 
     float f1 = residuo.back();
     float f2 = get_objective_function(x2, gradient);
@@ -269,7 +271,7 @@ void Adjoint_State::parabolical_linesearch()
 
 void Adjoint_State::limited_steepest_descent()
 {
-    float max_perturbation = 1e-4f / static_cast<float>(iteration);
+    float max_perturbation = 2e-4f / static_cast<float>(iteration);
 
     for (int index = 0; index < modeling->nPoints; index++)
     {
