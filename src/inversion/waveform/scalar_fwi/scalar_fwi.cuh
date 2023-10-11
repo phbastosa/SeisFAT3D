@@ -3,7 +3,7 @@
 
 # include "../waveform.hpp"
 
-class Scalar_Isotropic_FWI : public Waveform
+class Scalar_FWI : public Waveform
 {
 private:
 

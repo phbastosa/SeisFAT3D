@@ -1,10 +1,10 @@
 #!/bin/bash
 
-# Input Output functions ---------------------------------------------------------------------------------
+# Input Output scripts --------------------------------------------------------------------------------
 
 io="../src/utils/input_output/io.cpp"
 
-# Acquisition geometry functions ------------------------------------------------------------------------
+# Acquisition geometry scripts ------------------------------------------------------------------------
 
 geometry="../src/geometry/geometry.cpp"
 regular="../src/geometry/regular/regular.cpp"
@@ -12,7 +12,7 @@ circular="../src/geometry/circular/circular.cpp"
 
 geometry_all="$geometry $regular $circular"
 
-# Seismic modeling functions -----------------------------------------------------------------------------
+# Seismic modeling scripts ----------------------------------------------------------------------------
 
 modeling="../src/modeling/modeling.cpp"
 
@@ -21,8 +21,6 @@ pod="../src/modeling/eikonal_equation/podvin_and_lecomte/podvin_and_lecomte.cu"
 fsm="../src/modeling/eikonal_equation/fast_sweeping_method/fast_sweeping_method.cu"
 fim="../src/modeling/eikonal_equation/fast_iterative_method/fast_iterative_method.cu"
 
-eikonal_all="$eikonal $pod $fim $fsm"
-
 wave="../src/modeling/wave_equation/wave.cu"
 scalar="../src/modeling/wave_equation/scalar/scalar.cu"
 acoustic="../src/modeling/wave_equation/acoustic/acoustic.cu"
@@ -30,9 +28,9 @@ elastic="../src/modeling/wave_equation/elastic/elastic.cu"
 
 modeling_main="../src/main/modeling_main.cpp"
 
-wave_all="$wave $scalar $acoustic $elastic"
+modeling_all="$modeling $eikonal $pod $fim $fsm $wave $scalar $acoustic $elastic"
 
-# Seismic inversion functions ----------------------------------------------------------------------------
+# Seismic inversion scripts ---------------------------------------------------------------------------
 
 inversion="../src/inversion/inversion.cpp"
 
@@ -40,30 +38,28 @@ tomography="../src/inversion/tomography/tomography.cpp"
 least_squares="../src/inversion/tomography/least_squares/least_squares.cu"
 adjoint_state="../src/inversion/tomography/adjoint_state/adjoint_state.cu"
 
-tomography_all="$tomography $least_squares $adjoint_state"
-
 waveform="../src/inversion/waveform/waveform.cpp"
-# scalar_iso_fwi="../src/inversion/waveform/scalar_isotropic_fwi/scalar_isotropic_fwi.cu"
-
-waveform_all="$waveform $scalar_fwi"
+scalar_fwi="../src/inversion/waveform/scalar_fwi/scalar_fwi.cpp"
 
 inversion_main="../src/main/inversion_main.cpp"
 
-# Seismic migration functions ----------------------------------------------------------------------------
+inversion_all="$inversion $tomography $least_squares $adjoint_state $waveform $scalar_fwi"
 
-# migration="../src/migration/migration.cpp"
-# kirchhoff="../src/migration/kirchhoff/kirchhoff.cpp"
-# migration_main="../src/main/migration_main.cpp"
+# Seismic migration scripts ---------------------------------------------------------------------------
 
-# Path unification ---------------------------------------------------------------------------------------
+migration="../src/migration/migration.cpp"
+kirchhoff="../src/migration/kirchhoff/kirchhoff.cpp"
+rtm="../src/migration/rtm/rtm.cpp"
 
-modeling_all="$modeling $eikonal_all $wave_all"
-inversion_all="$inversion $tomography_all $waveform_all"
-migration_all=""
+migration_main="../src/main/migration_main.cpp"
+
+migration_all="$migration $kirchhoff $rtm"
+
+# Compiler flags --------------------------------------------------------------------------------------
 
 flags="-Xcompiler=-fopenmp --std=c++11 --relocatable-device-code=true -lm -O3"
 
-# Main dialogue ------------------------------------------------------------------------------------------
+# Main dialogue ---------------------------------------------------------------------------------------
 
 USER_MESSAGE="
 Usage:\n
@@ -71,8 +67,6 @@ Usage:\n
     $ $0 -modeling       # Perform eikonal solver          
     $ $0 -inversion      # Perform adjoint-state tomography
     $ $0 -migration      # Perform kirchhoff depth migration   
-
-    
 "
 
 [ -z "$1" ] && 
