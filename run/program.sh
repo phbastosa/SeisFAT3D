@@ -71,6 +71,8 @@ Usage:\n
     $ $0 -modeling       # Perform eikonal solver          
     $ $0 -inversion      # Perform adjoint-state tomography
     $ $0 -migration      # Perform kirchhoff depth migration   
+
+    
 "
 
 [ -z "$1" ] && 
@@ -92,8 +94,8 @@ case "$1" in
 
     echo -e "Compiling the stand-alone executables!\n"
 
-    # echo -e "../bin/\033[31mmodeling.exe\033[m" 
-    # nvcc $io $geometry_all $modeling_all $modeling_main $flags -o ../bin/modeling.exe
+    echo -e "../bin/\033[31mmodeling.exe\033[m" 
+    nvcc $io $geometry_all $modeling_all $modeling_main $flags -o ../bin/modeling.exe
 
     echo -e "../bin/\033[31minversion.exe\033[m" 
     nvcc $io $geometry_all $modeling_all $inversion_all $inversion_main $flags -o ../bin/inversion.exe
