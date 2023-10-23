@@ -1,7 +1,7 @@
 # ifndef GEOMETRY_HPP
 # define GEOMETRY_HPP
 
-# include "../utils/input_output/io.hpp"
+# include "../io/io.hpp"
 
 class Coord
 {

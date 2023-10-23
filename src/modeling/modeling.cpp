@@ -1,7 +1,5 @@
 # include "modeling.hpp"
 
-// Public methods according to main fluxogram 
-
 void Modeling::set_parameters()
 {
     set_general_parameters();
@@ -78,6 +76,10 @@ void Modeling::get_runtime()
     tf = std::chrono::system_clock::now();
 
     std::chrono::duration<double> elapsed_seconds = tf - ti;
+
+    std::ofstream runTimeFile("runTime.txt",std::ios::in | std::ios::app);
+    runTimeFile << eikonal_method + " " + std::to_string(dx) + " m --> " + std::to_string(elapsed_seconds.count()) + " s\n";
+    runTimeFile.close();
 
     std::cout<<"\nRun time: "<<elapsed_seconds.count()<<" s."<<std::endl;
 }
@@ -185,8 +187,6 @@ void Modeling::reduce_boundary(float * input, float * output)
     }
 }
 
-// Protected methods
-
 void Modeling::set_general_parameters()
 {
     get_GPU_initMem();
@@ -238,7 +238,7 @@ void Modeling::set_velocity_model()
 {
     V = new float[nPoints]();
 
-    import_binary_float(catch_parameter("vp_model_file", file), V, nPoints);
+    import_binary_float(catch_parameter("input_model_file", file), V, nPoints);
 }
 
 void Modeling::set_boundaries()
@@ -272,8 +272,6 @@ void Modeling::set_outputs()
     receiver_output = new float[receiver_output_samples]();
     wavefield_output = new float[wavefield_output_samples]();
 }
-
-// Private Methods
 
 void Modeling::get_RAM_usage()
 {
@@ -365,5 +363,5 @@ void Modeling::get_first_arrivals()
         receiver_output[r] = c0*(1 - zd) + c1*zd;
     }
 
-    receiver_output_file = receiver_output_folder + eikonal_method + "_data_" + std::to_string(total_nodes) + "_shot_" + std::to_string(shot_id+1) + ".bin";
+    receiver_output_file = receiver_output_folder + eikonal_method + "_data_nRec" + std::to_string(total_nodes) + "_shot_" + std::to_string(shot_id+1) + ".bin";
 }

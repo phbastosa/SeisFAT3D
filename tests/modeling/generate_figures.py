@@ -4,6 +4,17 @@ import matplotlib.pyplot as plt
 
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 
+def readBinaryArray(n,filename):
+    return np.fromfile(filename, dtype = np.float32, count = n)
+
+def readBinaryMatrix(n1,n2,filename):
+    data = np.fromfile(filename, dtype = np.float32, count = n1*n2)    
+    return np.reshape(data, [n1,n2], order='F')
+
+def readBinaryVolume(n1,n2,n3,filename):
+    data = np.fromfile(filename, dtype = np.float32, count = n1*n2*n3)    
+    return np.reshape(data, [n1,n2,n3], order='F')
+
 def analytical_firstArrival(v, z, x):
     direct_wave = x / v[0]
 
@@ -22,26 +33,6 @@ def analytical_firstArrival(v, z, x):
 
     return first_arrivals
 
-def catch_parameter(filename, target):
-    file = open(filename,'r')
-    for line in file.readlines():
-        if line[0] != '#':
-            splitted = line.split()
-            if len(splitted) != 0:
-                if splitted[0] == target: 
-                    return splitted[2]
-
-def readBinaryArray(n,filename):
-    return np.fromfile(filename, dtype = np.float32, count = n)
-
-def readBinaryMatrix(n1,n2,filename):
-    data = np.fromfile(filename, dtype = np.float32, count = n1*n2)    
-    return np.reshape(data, [n1,n2], order='F')
-
-def readBinaryVolume(n1,n2,n3,filename):
-    data = np.fromfile(filename, dtype = np.float32, count = n1*n2*n3)    
-    return np.reshape(data, [n1,n2,n3], order='F')
-
 def check_geometry(models, shots, nodes, dh, slices, subplots):
     
     if np.sum(subplots) == 2:
@@ -49,8 +40,8 @@ def check_geometry(models, shots, nodes, dh, slices, subplots):
         maxModelDistance = np.max(np.shape(models))
         minModelDistance = np.min(np.shape(models))
 
-        vmin = -500 #np.min(models)
-        vmax = 500 #np.max(models)
+        vmin = np.min(models)
+        vmax = np.max(models)
 
     else:
         modelShape = np.array(np.shape(models[0]))
@@ -61,7 +52,7 @@ def check_geometry(models, shots, nodes, dh, slices, subplots):
         vmax = np.max(models[0])
 
     nz, nx, ny = modelShape
-    [z, x, y] = 2.5 * (minModelDistance / maxModelDistance) * modelShape / maxModelDistance
+    [z, x, y] = 2.8 * (minModelDistance / maxModelDistance) * modelShape / maxModelDistance
 
     px = 1/plt.rcParams['figure.dpi']  
     ticks = np.array([3,7,7], dtype = int)
@@ -110,18 +101,20 @@ def check_geometry(models, shots, nodes, dh, slices, subplots):
     zy_plane_shot_y = np.array([])
     zy_plane_shot_z = np.array([])
 
-    for i in range(len(shots)):
-        if int(slices[2]) == int(shots[i,0]/dh[0]):
-            zy_plane_shot_y = np.append(zy_plane_shot_y, shots[i,1]/dh[1])        
-            zy_plane_shot_z = np.append(zy_plane_shot_z, shots[i,2]/dh[2])        
+    if np.size(shots) > 3:
+        for i in range(len(shots)):    
+            if int(slices[2]) == int(shots[i,0]/dh[0]):
+                zy_plane_shot_y = np.append(zy_plane_shot_y, shots[i,1]/dh[1])        
+                zy_plane_shot_z = np.append(zy_plane_shot_z, shots[i,2]/dh[2])        
 
     zx_plane_shot_x = np.array([])
     zx_plane_shot_z = np.array([]) 
 
-    for i in range(len(shots)):
-        if int(slices[1]) == int(shots[i,1]/dh[1]):
-            zx_plane_shot_x = np.append(zx_plane_shot_x, shots[i,0]/dh[0])        
-            zx_plane_shot_z = np.append(zx_plane_shot_z, shots[i,2]/dh[2])        
+    if np.size(shots) > 3:
+        for i in range(len(shots)):
+            if int(slices[1]) == int(shots[i,1]/dh[1]):
+                zx_plane_shot_x = np.append(zx_plane_shot_x, shots[i,0]/dh[0])        
+                zx_plane_shot_z = np.append(zx_plane_shot_z, shots[i,2]/dh[2])        
 
     zy_plane_node_y = np.array([])
     zy_plane_node_z = np.array([])
@@ -153,9 +146,14 @@ def check_geometry(models, shots, nodes, dh, slices, subplots):
             else:
                 ims = [models[ind, slices[0],:,:].T, models[ind,:,slices[2],:].T, models[ind,:,:,slices[1]]]
 
-            xshot = [shots[:,0]/dh[0],zy_plane_shot_z,zx_plane_shot_x]
-            yshot = [shots[:,1]/dh[1],zy_plane_shot_y,zx_plane_shot_z]
-            
+            if np.size(shots) > 3:
+                xshot = [shots[:,0]/dh[0],zy_plane_shot_z,zx_plane_shot_x]
+                yshot = [shots[:,1]/dh[1],zy_plane_shot_y,zx_plane_shot_z]
+            else:
+                xshot = [shots[0]/dh[0],zy_plane_shot_z,zx_plane_shot_x]
+                yshot = [shots[1]/dh[1],zy_plane_shot_y,zx_plane_shot_z]
+
+
             xnode = [nodes[:,0]/dh[0],zy_plane_node_z,zx_plane_node_x]
             ynode = [nodes[:,1]/dh[1],zy_plane_node_y,zx_plane_node_z]
 
@@ -217,4 +215,36 @@ def check_geometry(models, shots, nodes, dh, slices, subplots):
                        ax.invert_yaxis()
     
     return None
+
+# plot completo do modelo e geometria
+
+nx = 881
+ny = 881
+nz = 201
+
+dx = 25
+dy = 25
+dz = 25
+
+model = readBinaryVolume(nz, nx, ny, f"../inputs/models/testModel_{nz}x{nx}x{ny}_{dx}m.bin")
+
+shots_file = "../inputs/geometry/xyz_shot_positions.txt"
+nodes_file = "../inputs/geometry/xyz_node_positions.txt"
+
+shots = np.loadtxt(shots_file, delimiter = ',')
+nodes = np.loadtxt(nodes_file, delimiter = ',')
+
+subplots = np.array([1, 1], dtype = int)
+slices = np.array([nz/2, nx/2, ny/2], dtype = int) # [xy, zy, zx]
+dh = np.array([dx, dy, dz])
+
+check_geometry(model, shots, nodes, dh, slices, subplots)
+plt.show()
+# plt.savefig(f"ls_diff_model.png", dpi = 200)
+
+# plot completo dos dados gerados
+
+n = 1256
+
+pod_100m = np.fromfile("../outputs/seismograms/100m_pod_data_nRec1256_shot_1.bin", dtype = np.float32, count = n)
 

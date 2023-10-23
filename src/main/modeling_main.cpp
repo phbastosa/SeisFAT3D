@@ -11,32 +11,27 @@ int main(int argc, char **argv)
         new Accurate_FSM(),        
     };
     
-    for (int file = 0; file < argc; file++)
-        std::cout<<argv[file]<<std::endl;
-        
+    auto file = std::string(argv[1]);
+    auto type = std::stoi(catch_parameter("modeling_type", file));
 
+    modeling[type]->file = file;
 
-    // auto file = std::string(argv[1]);
-    // auto type = std::stoi(catch_parameter("modeling_type", file));
+    modeling[type]->set_parameters();
+    modeling[type]->set_runtime();
 
-    // modeling[type]->file = file;
+    for (int shot = 0; shot < modeling[type]->total_shots; shot++)
+    {
+        modeling[type]->shot_id = shot;
 
-    // modeling[type]->set_parameters();
-    // modeling[type]->set_runtime();
+        modeling[type]->info_message();
+        modeling[type]->initial_setup();
+        modeling[type]->forward_solver();
+        modeling[type]->build_outputs();
+        modeling[type]->export_outputs();
+    }
 
-    // for (int shot = 0; shot < modeling[type]->total_shots; shot++)
-    // {
-    //     modeling[type]->shot_id = shot;
-
-    //     modeling[type]->info_message();
-    //     modeling[type]->initial_setup();
-    //     modeling[type]->forward_solver();
-    //     modeling[type]->build_outputs();
-    //     modeling[type]->export_outputs();
-    // }
-
-    // modeling[type]->get_runtime();
-    // modeling[type]->free_space();    
+    modeling[type]->get_runtime();
+    modeling[type]->free_space();    
 
     return 0;
 }

@@ -2,7 +2,7 @@
 
 # Input Output scripts --------------------------------------------------------------------------------
 
-io="../src/utils/input_output/io.cpp"
+io="../src/io/io.cpp"
 
 # Acquisition geometry scripts ------------------------------------------------------------------------
 
@@ -118,7 +118,20 @@ case "$1" in
 
 -test_modeling)
 
-    echo "testing a small modeling experiment"
+    echo "Testing a small modeling experiment"
+
+    python3 ../tests/modeling/generate_models.py
+
+    spacings=(100 50 25)
+    methods=("pod" "fim" "fsm")
+
+    for method in ${methods[@]}; do 
+        for spacing in ${spacings[@]}; do 
+            ./../bin/modeling.exe ../tests/modeling/parameters_"$method"_"$spacing"m.txt; 
+        done    
+    done 
+
+    python3 ../tests/modeling/generate_figures.py
 
 	exit 0
 ;;
