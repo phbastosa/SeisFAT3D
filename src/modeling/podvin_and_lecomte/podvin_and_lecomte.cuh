@@ -1,9 +1,9 @@
 # ifndef PODVIN_AND_LECOMTE_HPP
 # define PODVIN_AND_LECOMTE_HPP
 
-# include "../eikonal.hpp"
+# include "../modeling.hpp"
 
-class Podvin_and_Lecomte : public Eikonal
+class Podvin_and_Lecomte : public Modeling
 {
 private:
 
@@ -17,18 +17,13 @@ private:
     float * d_T = nullptr;
     float * d_S = nullptr;
 
-    void set_boundaries();
-    void set_modeling_volumes();
-    void check_spatial_spacing();
+    void set_specific_boundary();
+    void set_eikonal_volumes();
+    void initialization();
 
 public:
 
-    void set_parameters(); 
-
-    void info_message();
-    void initial_setup();
     void forward_solver();
-
     void free_space();
 };
 

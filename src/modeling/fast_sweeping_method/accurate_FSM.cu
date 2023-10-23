@@ -1,32 +1,16 @@
-# include "fast_sweeping_method.cuh"
+# include "accurate_FSM.cuh"
 
-void Fast_Sweeping_Method::set_parameters()
-{
-    general_modeling_parameters();
-
-    set_acquisition_geometry();
-
-    set_velocity_model();
-    
-    set_boundaries();
-    set_model_boundaries();
-    
-    set_slowness_model();
-    set_outputs();
-
-    set_modeling_volumes();
-}
-
-void Fast_Sweeping_Method::set_boundaries()
+void Accurate_FSM::set_specific_boundary()
 {
     nbxl = 1; nbxr = 1;
     nbyl = 1; nbyr = 1;
     nbzu = 1; nbzd = 1;
 }
 
-void Fast_Sweeping_Method::set_modeling_volumes()
+void Accurate_FSM::set_eikonal_volumes()
 {
-    modeling_method = std::string("fsm");
+    eikonal_method = std::string("fsm");
+    eikonal_message = std::string("[2] - Accurate FSM (Detrixhe et al., 2013; Noble et al., 2014)");
 
     nSweeps = 8;
     meshDim = 3;
@@ -76,22 +60,10 @@ void Fast_Sweeping_Method::set_modeling_volumes()
     std::vector<std::vector<int>>().swap(sgnt);
 }
 
-void Fast_Sweeping_Method::info_message()
+void Accurate_FSM::initialization()
 {
-    general_modeling_message();
-
-    std::cout<<"[2] - Fast Sweeping Method (Detrixhe et al., 2013; Noble et al., 2014)\n\n"; 
-}
-
-void Fast_Sweeping_Method::initial_setup()
-{
-    int sidx = (int)(geometry->shots.x[shot_id] / dx) + nbxl;
-    int sidy = (int)(geometry->shots.y[shot_id] / dy) + nbyl;
-    int sidz = (int)(geometry->shots.z[shot_id] / dz) + nbzu;
-
-    source_id = sidz + sidx*nzz + sidy*nxx*nzz;
-
-    for (int index = 0; index < volsize; index++) T[index] = 1e6f;
+    for (int index = 0; index < volsize; index++) 
+        T[index] = 1e6f;
 
     T[source_id] = S[source_id] * sqrtf(powf((sidx-nbxl)*dx - geometry->shots.x[shot_id], 2.0f) + powf((sidy-nbyl)*dy - geometry->shots.y[shot_id], 2.0f) + powf((sidz-nbzu)*dz - geometry->shots.z[shot_id], 2.0f));
 
@@ -128,11 +100,9 @@ void Fast_Sweeping_Method::initial_setup()
     T[source_id - 1 - nzz + nxx*nzz] = S[source_id] * sqrtf(powf(((sidx-nbxl)-1)*dx - geometry->shots.x[shot_id], 2.0f) + powf(((sidy-nbyl)+1)*dy - geometry->shots.y[shot_id], 2.0f) + powf(((sidz-nbzu)-1)*dz - geometry->shots.z[shot_id], 2.0f));
     T[source_id - 1 + nzz - nxx*nzz] = S[source_id] * sqrtf(powf(((sidx-nbxl)+1)*dx - geometry->shots.x[shot_id], 2.0f) + powf(((sidy-nbyl)-1)*dy - geometry->shots.y[shot_id], 2.0f) + powf(((sidz-nbzu)-1)*dz - geometry->shots.z[shot_id], 2.0f));
     T[source_id - 1 - nzz - nxx*nzz] = S[source_id] * sqrtf(powf(((sidx-nbxl)-1)*dx - geometry->shots.x[shot_id], 2.0f) + powf(((sidy-nbyl)-1)*dy - geometry->shots.y[shot_id], 2.0f) + powf(((sidz-nbzu)-1)*dz - geometry->shots.z[shot_id], 2.0f));
-
-    t0 = T[source_id];
 }
 
-void Fast_Sweeping_Method::forward_solver()
+void Accurate_FSM::forward_solver()
 {
 	cudaMemcpy(d_T, T, volsize*sizeof(float), cudaMemcpyHostToDevice);
     cudaMemcpy(d_S, S, volsize*sizeof(float), cudaMemcpyHostToDevice);
@@ -181,18 +151,18 @@ void Fast_Sweeping_Method::forward_solver()
     cudaMemcpy(T, d_T, volsize*sizeof(float), cudaMemcpyDeviceToHost);
 }
 
-int Fast_Sweeping_Method::iDivUp(int a, int b) 
-{ 
-    return ( (a % b) != 0 ) ? (a / b + 1) : (a / b); 
-}
-
-void Fast_Sweeping_Method::free_space()
+void Accurate_FSM::free_space()
 {
     cudaFree(d_T);
     cudaFree(d_S);
 
     cudaFree(d_sgnt);
     cudaFree(d_sgnv);
+}
+
+int Accurate_FSM::iDivUp(int a, int b) 
+{ 
+    return ( (a % b) != 0 ) ? (a / b + 1) : (a / b); 
 }
 
 __global__ void fast_sweeping_kernel(float * S, float * T, int * sgnt, int * sgnv, int sgni, int sgnj, int sgnk, 
@@ -206,11 +176,11 @@ __global__ void fast_sweeping_kernel(float * S, float * T, int * sgnt, int * sgn
     float ta, tb, tc, t1, t2, t3, Sref;
     float t1D1, t1D2, t1D3, t1D, t2D1, t2D2, t2D3, t2D, t3D;
 
-	if ((x <= nxx) && (y <= nyy)) 
+	if ((x < nxx) && (y < nyy)) 
 	{
 		int z = level - (x + y);
 		
-		if ((z > 0) && (z <= nzz))	
+		if ((z >= 0) && (z < nzz))	
 		{
 			int i = abs(z - zSweepOffset);
 			int j = abs(x - xSweepOffset);

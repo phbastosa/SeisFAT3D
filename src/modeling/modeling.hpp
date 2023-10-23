@@ -1,7 +1,6 @@
 # ifndef MODELING_HPP
 # define MODELING_HPP
 
-# include <omp.h>
 # include <chrono>
 # include <cuda_runtime.h>
 # include <sys/resource.h>
@@ -12,8 +11,6 @@
 
 class Modeling
 {
-private:
-
     int RAM, vRAM, ivRAM;
 
     void get_RAM_usage();
@@ -26,24 +23,38 @@ private:
 
 protected:
 
+    int nbxl, nbxr, nbyl; 
+    int nbyr, nbzu, nbzd;
+    int sidx, sidy, sidz;
+
     int receiver_output_samples;
     int wavefield_output_samples;
 
     bool export_receiver_output;
     bool export_wavefield_output;
     
-    std::string modeling_method;
-    std::string modeling_message;
+    std::string eikonal_method;
+    std::string eikonal_message;
 
     std::string receiver_output_file;
     std::string wavefield_output_file;
     std::string receiver_output_folder;
     std::string wavefield_output_folder;
 
+    void set_outputs();
+    void set_boundaries();
     void set_velocity_model();
+    void set_slowness_model();
+    void set_general_message();
+    void set_general_parameters();
     void set_acquisition_geometry();
-    void general_modeling_message();
-    void general_modeling_parameters();
+
+    void get_travel_times();
+    void get_first_arrivals();
+
+    virtual void initialization() = 0;
+    virtual void set_eikonal_volumes() = 0;
+    virtual void set_specific_boundary() = 0;
 
 public: 
 
@@ -62,27 +73,29 @@ public:
 
     int source_id, time_id;
     int nx, ny, nz, nPoints;
-    int nxx, nyy, nzz, nb, volsize;
-    int nbxl, nbxr, nbyl, nbyr, nbzu, nbzd;
+    int nxx, nyy, nzz, volsize;
 
-    float * Vp = nullptr;
+    float * V = nullptr;
+    float * S = nullptr;
+    float * T = nullptr;
 
     float * receiver_output = nullptr;
     float * wavefield_output = nullptr;
 
-    void set_runtime();
-    void get_runtime();
+    void expand_boundary(float * input, float * output);
+    void reduce_boundary(float * input, float * output);
+
+    virtual void forward_solver() = 0;
+    virtual void free_space() = 0;
+
+    void set_parameters(); 
+    void info_message();
+    void initial_setup();
+    void build_outputs();
     void export_outputs();
 
-    void expand_boundary(float * input, float * output);
-
-    virtual void set_parameters() = 0; 
-
-    virtual void info_message() = 0;
-    virtual void initial_setup() = 0;
-    virtual void forward_solver() = 0;
-    virtual void build_outputs() = 0;
-    virtual void free_space() = 0;
+    void set_runtime();
+    void get_runtime();
 };
 
 # endif

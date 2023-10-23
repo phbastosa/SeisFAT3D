@@ -1,14 +1,13 @@
-Desirable chart of the modeling project
+## Modeling project
 
 ```mermaid
 graph TD;
+
 Modeling-->Eikonal;
-Modeling-->Elastic;
 
-Eikonal-->Isotropic_FSM;
-Eikonal-->Anisotropic_FSM;
+Eikonal-->Block_FIM;
 
-Elastic-->Isotropic_media;
-Elastic-->Anisotropic_madia;
+Eikonal-->Parallel_Accurate_FSM;
 
+Eikonal-->Podvin_and_Lecomte;
 ```

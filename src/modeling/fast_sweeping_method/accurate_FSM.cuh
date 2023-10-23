@@ -1,9 +1,9 @@
-# ifndef FAST_SWEEPING_METHOD_HPP
-# define FAST_SWEEPING_METHOD_HPP
+# ifndef ACCURATE_FSM_HPP
+# define ACCURATE_FSM_HPP
 
-# include "../eikonal.hpp"
+# include "../modeling.hpp"
 
-class Fast_Sweeping_Method : public Eikonal
+class Accurate_FSM : public Modeling
 {
 private:
 
@@ -21,17 +21,13 @@ private:
 
     int iDivUp(int a, int b);
 
-    void set_boundaries();
-    void set_modeling_volumes();
+    void set_specific_boundary();
+    void set_eikonal_volumes();
+    void initialization();
 
 public:
 
-    void set_parameters(); 
-
-    void info_message();
-    void initial_setup();
     void forward_solver();
-
     void free_space();
 };
 

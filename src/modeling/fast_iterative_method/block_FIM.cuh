@@ -1,7 +1,7 @@
-# ifndef FAST_ITERATIVE_METHOD_HPP
-# define FAST_ITERATIVE_METHOD_HPP
+# ifndef BLOCK_FIM_HPP
+# define BLOCK_FIM_HPP
 
-# include "../eikonal.hpp"
+# include "../modeling.hpp"
 
 # include <cassert>
 
@@ -13,7 +13,7 @@
 # define SOL(i,j,k) _sol[i][j][k]
 # define SPD(i,j,k) _spd[i][j][k]
 
-class Fast_Iterative_Method : public Eikonal
+class Block_FIM : public Modeling
 {
 private:
 
@@ -39,18 +39,13 @@ private:
     float * d_time = nullptr; 
     float * t_time = nullptr;
 
-    void set_boundaries();
-    void set_modeling_volumes();
-    void check_spatial_spacing();
+    void set_specific_boundary();
+    void set_eikonal_volumes();
+    void initialization();
 
 public:
 
-    void set_parameters(); 
-
-    void info_message();
-    void initial_setup();
     void forward_solver();
-
     void free_space();
 };
 

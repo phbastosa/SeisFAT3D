@@ -1,8 +1,6 @@
 # include "../inversion/tomography/least_squares/least_squares.cuh"
 # include "../inversion/tomography/adjoint_state/adjoint_state.cuh"
 
-# include "../inversion/waveform/scalar_isotropic_fwi/scalar_isotropic_fwi.cuh"
-
 int main(int argc, char **argv)
 {
     std::vector<Inversion *> inversion = 

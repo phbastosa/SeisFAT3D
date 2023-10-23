@@ -1,37 +1,22 @@
 # include "podvin_and_lecomte.cuh"
 
-void Podvin_and_Lecomte::set_parameters()
-{
-    general_modeling_parameters();
-
-    set_acquisition_geometry();
-
-    set_velocity_model();
-    
-    set_boundaries();
-    set_model_boundaries();
-    
-    set_slowness_model();
-    set_outputs();
-
-    set_modeling_volumes();
-}
-
-void Podvin_and_Lecomte::set_boundaries()
+void Podvin_and_Lecomte::set_specific_boundary()
 {
     nbxl = 1; nbxr = 1;
     nbyl = 1; nbyr = 1;
     nbzu = 1; nbzd = 1;
 }
 
-void Podvin_and_Lecomte::set_modeling_volumes()
+void Podvin_and_Lecomte::set_eikonal_volumes()
 {
-    modeling_method = std::string("pod");
+    eikonal_method = std::string("pod");
+    eikonal_message = std::string("[0] - Podvin & Lecomte (1991)");
 
     T = new float[volsize](); 
     K = new float[volsize]();
 
-    check_spatial_spacing();
+    if ((dx != dy) || (dx != dz))
+        throw std::invalid_argument("\033[31mError: Podvin and Lecomte method must to be the model spacing fixed (dx = dy = dz).\033[0;0m");
 
     cudaMalloc((void**)&(d_S), volsize*sizeof(float));     
     cudaMalloc((void**)&(d_T), volsize*sizeof(float));     
@@ -40,33 +25,8 @@ void Podvin_and_Lecomte::set_modeling_volumes()
     cudaMalloc((void**)&(d_nT), volsize*sizeof(float));   
 }
 
-void Podvin_and_Lecomte::check_spatial_spacing()
+void Podvin_and_Lecomte::initialization()
 {
-    if ((dx != dy) || (dx != dz))
-        throw std::invalid_argument("\033[31mError: For Podvin and Lecomte method the model spacing must to be fixed (dx = dy = dz).\033[0;0m");
-}
-
-void Podvin_and_Lecomte::info_message()
-{
-    general_modeling_message();
-
-    std::cout<<"[0] - Podvin & Lecomte (1991)\n\n"; 
-}
-
-void Podvin_and_Lecomte::initial_setup()
-{
-    nit = 0;
-    
-    int sidx = (int)(geometry->shots.x[shot_id] / dx) + nbxl;
-    int sidy = (int)(geometry->shots.y[shot_id] / dy) + nbyl;
-    int sidz = (int)(geometry->shots.z[shot_id] / dz) + nbzu;
-
-    source_id = sidz + sidx*nzz + sidy*nxx*nzz;
-
-    t0 = S[source_id] * sqrtf(powf((float)((sidx-nbxl)*dx) - geometry->shots.x[shot_id], 2.0f) +
-                              powf((float)((sidy-nbyl)*dy) - geometry->shots.y[shot_id], 2.0f) +
-                              powf((float)((sidz-nbzu)*dz) - geometry->shots.z[shot_id], 2.0f));
-
     for (int index = 0; index < volsize; index++)
     {    
         T[index] = 1e6f;
@@ -75,6 +35,8 @@ void Podvin_and_Lecomte::initial_setup()
 
     T[source_id] = S[source_id] * sqrtf(powf((sidx-nbxl)*dx - geometry->shots.x[shot_id], 2.0f) + powf((sidy-nbyl)*dy - geometry->shots.y[shot_id], 2.0f) + powf((sidz-nbzu)*dz - geometry->shots.z[shot_id], 2.0f));
 
+    nit = 0;
+    
     int aux = (int)sqrtf(powf(sidx, 2.0f) + powf(sidy,2.0f) + powf(sidz,2.0f)); 
     if (aux > nit) nit = aux;
 

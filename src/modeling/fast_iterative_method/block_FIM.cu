@@ -1,23 +1,6 @@
-# include "fast_iterative_method.cuh"
+# include "block_FIM.cuh"
 
-void Fast_Iterative_Method::set_parameters()
-{
-    general_modeling_parameters();
-
-    set_acquisition_geometry();
-
-    set_velocity_model();
-    
-    set_boundaries();
-    set_model_boundaries();
-    
-    set_slowness_model();
-    set_outputs();
-
-    set_modeling_volumes();
-}
-
-void Fast_Iterative_Method::set_boundaries()
+void Block_FIM::set_specific_boundary()
 {
     int pdx = (BLOCK_LENGTH - nx % BLOCK_LENGTH) % BLOCK_LENGTH;
     int pdy = (BLOCK_LENGTH - ny % BLOCK_LENGTH) % BLOCK_LENGTH;
@@ -39,9 +22,10 @@ void Fast_Iterative_Method::set_boundaries()
     else if (pdz == 3) { nbzu = 4; nbzd = 3; }
 }
 
-void Fast_Iterative_Method::set_modeling_volumes()
+void Block_FIM::set_eikonal_volumes()
 {
-    modeling_method = std::string("fim");
+    eikonal_method = std::string("fim");
+	eikonal_message = std::string("[1] - Block FIM (Jeong & Whitaker, 2008)");
 
 	blksize = BLOCK_LENGTH * BLOCK_LENGTH * BLOCK_LENGTH;
 
@@ -61,7 +45,8 @@ void Fast_Iterative_Method::set_modeling_volumes()
 	h_listed = new bool[nblk]();    
 	h_listVol = new bool[nblk]();   
 
-    check_spatial_spacing();
+    if ((dx != dy) || (dx != dz))
+        throw std::invalid_argument("\033[31mError: Block_FIM algorithm must to be the model spacing fixed (dx = dy = dz).\033[0;0m");
 
     T = new float[volsize](); 
 
@@ -74,20 +59,7 @@ void Fast_Iterative_Method::set_modeling_volumes()
 	cudaMalloc((void**)&(d_listVol), nblk*sizeof(bool));
 }
 
-void Fast_Iterative_Method::check_spatial_spacing()
-{
-    if ((dx != dy) || (dx != dz))
-        throw std::invalid_argument("\033[31mError: For Podvin and Lecomte method the model spacing must to be fixed (dx = dy = dz).\033[0;0m");
-}
-
-void Fast_Iterative_Method::info_message()
-{
-    general_modeling_message();
-
-    std::cout<<"[1] - Fast Iterative Method (Jeong & Whitaker, 2008)\n\n";
-}
-
-void Fast_Iterative_Method::initial_setup()
+void Block_FIM::initialization()
 {
     uint idx = 0;
     uint blk_idx = 0;
@@ -95,15 +67,9 @@ void Fast_Iterative_Method::initial_setup()
     
 	nActiveBlock = 0;
 
-    int sidx = (int)(geometry->shots.x[shot_id] / dx) + nbxl;
-    int sidy = (int)(geometry->shots.y[shot_id] / dy) + nbyl;
-    int sidz = (int)(geometry->shots.z[shot_id] / dz) + nbzu;
-
-	source_id = sidz + sidx*nzz + sidy*nxx*nzz;
-
-    t0 = S[source_id] * sqrtf(powf((float)(sidx*dx) - geometry->shots.x[shot_id], 2.0f) +
-                              powf((float)(sidy*dy) - geometry->shots.y[shot_id], 2.0f) +
-                              powf((float)(sidz*dz) - geometry->shots.z[shot_id], 2.0f));
+    float t0 = S[source_id] * sqrtf(powf((float)(sidx*dx) - geometry->shots.x[shot_id], 2.0f) +
+                                    powf((float)(sidy*dy) - geometry->shots.y[shot_id], 2.0f) +
+                                    powf((float)(sidz*dz) - geometry->shots.z[shot_id], 2.0f));
 
   	for(int zStr = 0; zStr < nzz; zStr += BLOCK_LENGTH) 
 	{
@@ -162,7 +128,7 @@ void Fast_Iterative_Method::initial_setup()
     cudaMemcpy(d_listVol, h_listVol, nblk*sizeof(bool), cudaMemcpyHostToDevice);
 }
 
-void Fast_Iterative_Method::forward_solver()
+void Block_FIM::forward_solver()
 {
     float dh = dx;
 
@@ -300,7 +266,7 @@ void Fast_Iterative_Method::forward_solver()
 	}
 }
 
-void Fast_Iterative_Method::free_space()
+void Block_FIM::free_space()
 {
 	delete[] h_mask;
 	delete[] h_slow;

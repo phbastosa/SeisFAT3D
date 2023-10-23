@@ -16,19 +16,13 @@ geometry_all="$geometry $regular $circular"
 
 modeling="../src/modeling/modeling.cpp"
 
-eikonal="../src/modeling/eikonal_equation/eikonal.cpp"
-pod="../src/modeling/eikonal_equation/podvin_and_lecomte/podvin_and_lecomte.cu"
-fsm="../src/modeling/eikonal_equation/fast_sweeping_method/fast_sweeping_method.cu"
-fim="../src/modeling/eikonal_equation/fast_iterative_method/fast_iterative_method.cu"
-
-wave="../src/modeling/wave_equation/wave.cu"
-scalar="../src/modeling/wave_equation/scalar/scalar.cu"
-acoustic="../src/modeling/wave_equation/acoustic/acoustic.cu"
-elastic="../src/modeling/wave_equation/elastic/elastic.cu"
+pod="../src/modeling/podvin_and_lecomte/podvin_and_lecomte.cu"
+fim="../src/modeling/fast_iterative_method/block_FIM.cu"
+fsm="../src/modeling/fast_sweeping_method/accurate_FSM.cu"
 
 modeling_main="../src/main/modeling_main.cpp"
 
-modeling_all="$modeling $eikonal $pod $fim $fsm $wave $scalar $acoustic $elastic"
+modeling_all="$modeling $pod $fim $fsm $modeling_main"
 
 # Seismic inversion scripts ---------------------------------------------------------------------------
 
@@ -38,26 +32,22 @@ tomography="../src/inversion/tomography/tomography.cpp"
 least_squares="../src/inversion/tomography/least_squares/least_squares.cu"
 adjoint_state="../src/inversion/tomography/adjoint_state/adjoint_state.cu"
 
-waveform="../src/inversion/waveform/waveform.cpp"
-scalar_fwi="../src/inversion/waveform/scalar_fwi/scalar_fwi.cpp"
-
 inversion_main="../src/main/inversion_main.cpp"
 
-inversion_all="$inversion $tomography $least_squares $adjoint_state $waveform $scalar_fwi"
+inversion_all="$inversion $tomography $least_squares $adjoint_state $inversion_main"
 
 # Seismic migration scripts ---------------------------------------------------------------------------
 
 migration="../src/migration/migration.cpp"
 kirchhoff="../src/migration/kirchhoff/kirchhoff.cpp"
-rtm="../src/migration/rtm/rtm.cpp"
 
 migration_main="../src/main/migration_main.cpp"
 
-migration_all="$migration $kirchhoff $rtm"
+migration_all="$migration $kirchhoff $migration_main"
 
 # Compiler flags --------------------------------------------------------------------------------------
 
-flags="-Xcompiler=-fopenmp --std=c++11 --relocatable-device-code=true -lm -O3"
+flags="--std=c++11 -lm -O3"
 
 # Main dialogue ---------------------------------------------------------------------------------------
 
@@ -65,8 +55,13 @@ USER_MESSAGE="
 Usage:\n
     $ $0 -compile        # Create executables 
     $ $0 -modeling       # Perform eikonal solver          
-    $ $0 -inversion      # Perform adjoint-state tomography
+    $ $0 -inversion      # Perform first arrival tomography
     $ $0 -migration      # Perform kirchhoff depth migration   
+
+Tests:\n
+    $ $0 -test_modeling       # Perform a small modeling experiment          
+    $ $0 -test_inversion      # Perform a small inversion experiment
+    $ $0 -test_migration      # Perform a small migration experiment          
 "
 
 [ -z "$1" ] && 
@@ -89,13 +84,13 @@ case "$1" in
     echo -e "Compiling the stand-alone executables!\n"
 
     echo -e "../bin/\033[31mmodeling.exe\033[m" 
-    nvcc $io $geometry_all $modeling_all $modeling_main $flags -o ../bin/modeling.exe
+    nvcc $io $geometry_all $modeling_all $flags -o ../bin/modeling.exe
 
-    echo -e "../bin/\033[31minversion.exe\033[m" 
-    nvcc $io $geometry_all $modeling_all $inversion_all $inversion_main $flags -o ../bin/inversion.exe
+    # echo -e "../bin/\033[31minversion.exe\033[m" 
+    # nvcc $io $geometry_all $modeling_all $inversion_all $flags -o ../bin/inversion.exe
 
     # echo -e "../bin/\033[31mmigration.exe\033[m"
-    # nvcc $io $geometry $regular $circular $modeling $eikonal $migration $kirchhoff $migration_main $flags -o ../bin/migration.exe
+    # nvcc $io $geometry_all $modeling_all $migration_all $flags -o ../bin/migration.exe
 
 	exit 0
 ;;
@@ -117,6 +112,27 @@ case "$1" in
 -migration) 
     
     ./../bin/migration.exe parameters.txt
+
+	exit 0
+;;
+
+-test_modeling)
+
+    echo "testing a small modeling experiment"
+
+	exit 0
+;;
+
+-test_inversion)
+
+    echo "testing a small inversion experiment"
+
+	exit 0
+;;
+
+-test_migration)
+
+    echo "testing a small migration experiment"
 
 	exit 0
 ;;

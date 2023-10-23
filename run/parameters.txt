@@ -10,9 +10,7 @@ x_spacing = 10                      # [m] <float>
 y_spacing = 10                      # [m] <float> 
 z_spacing = 10                      # [m] <float> 
 
-vp_model_file = ../inputs/models/true_model_51x201x201_10m.bin   
-vs_model_file = ../inputs/models/vs_model_301x901x51_10m.bin    
-rho_model_file = ../inputs/models/rho_model_301x901x51_10m.bin   
+input_model_file = ../inputs/models/true_model_51x201x201_10m.bin   
 
 #---------------------------------------------------------------------------------------------------
 # Geometry parameters ------------------------------------------------------------------------------
@@ -33,7 +31,7 @@ nodes_file = ../inputs/geometry/xyz_node_positions.txt
 # Regular geometry ---------------------------------------------------------------------------------               
 
 shots_nlines = [1, 20, 20]          # <int> (z, x, y)     
-nodes_nlines = [1, 4, 4]          # <int> (z, x, y)            
+nodes_nlines = [1, 4, 4]            # <int> (z, x, y)            
 
 shots_SW = [10, 50, 50]             # [m] <float> (z, x, y) NW            
 shots_NW = [10, 50, 1950]           # [m] <float> (z, x, y)  |            
@@ -52,49 +50,24 @@ offsets = [1000, 1000, 1000]        # [m] <float>
 #---------------------------------------------------------------------------------------------------
 # Modeling parameters ------------------------------------------------------------------------------
 #---------------------------------------------------------------------------------------------------
-#   Eikonal equation solvers: 
 #   [0] - Podvin & Lecomte (1991) 
-#   [1] - Fast Iterative Method (Jeong & Whitaker, 2008)
-#   [2] - Fast Sweeping Method (Detrixhe et al., 2013; Noble et al., 2014)   
-#
-#   Wave equation solvers:
-#   [3] - Constant density acoustic isotropic media   
-#   [4] - Variable density acoustic isotropic media   
-#   [5] - Elastic isotropic media
+#   [1] - Block FIM (Jeong & Whitaker, 2008)
+#   [2] - Accurate FSM (Detrixhe et al., 2013; Noble et al., 2014)   
 #---------------------------------------------------------------------------------------------------
 
 modeling_type = 2                   # <int>
 
-total_time = 4.0                    # [s] <float>
-time_spacing = 0.001                # [s] <float>
-max_frequency = 30.0                # [Hz] <float>
-
-n_snapshots = 11                    # <int>
-
-n_boundary = 50                     # <int> 
-free_surface = false                # <bool>
-boundary_damper = 0.0045            # <float> (Cerjan et al. 1985) 
-
-wavelet_shift = 0.15                # [s] <float>
-max_amplitude = 1e5                 # <float>
-
-import_wavelet = false              # <bool>
 export_receiver_output = true       # <bool> 
 export_wavefield_output = false     # <bool>
 
-wavelet_file = ../inputs/wavelet.bin           
 receiver_output_folder = ../inputs/data/            
 wavefield_output_folder = ../outputs/snapshots/     
 
 #---------------------------------------------------------------------------------------------------
 # Inversion parameters 
 #---------------------------------------------------------------------------------------------------
-# Seismic First Arrival Tomography 
-#   [0] - Classical least squares approach 
-#   [1] - Adjoint state operators approach
-#       
-# Full Waveform Inversion
-#   [2] - Scalar Isotropic FWI
+#   [0] - Least squares first arrival tomography 
+#   [1] - Adjoint state first arrival tomography
 #---------------------------------------------------------------------------------------------------
 
 inversion_type = 0                    # <int> 
@@ -124,13 +97,8 @@ estimated_model_folder = ../outputs/recovered_models/
 
 #---------------------------------------------------------------------------------------------------
 # Migration parameters 
-#---------------------------------------------------------------------------------------------------
-# Eikonal equation based: 
-#   [0] - Kirchhoff pre-stack depth migration
-# 
-# Wave equation based:
-#   [1] - Revese Time Migration  
-#
+#--------------------------------------------------------------------------------------------------- 
+#   [0] - Kirchhoff pre-stack depth migration 
 #---------------------------------------------------------------------------------------------------
 
 migration_type = 0
