@@ -106,6 +106,8 @@ def check_geometry(models, shots, nodes, dh, slices, subplots):
             if int(slices[2]) == int(shots[i,0]/dh[0]):
                 zy_plane_shot_y = np.append(zy_plane_shot_y, shots[i,1]/dh[1])        
                 zy_plane_shot_z = np.append(zy_plane_shot_z, shots[i,2]/dh[2])        
+    else:
+        pass
 
     zx_plane_shot_x = np.array([])
     zx_plane_shot_z = np.array([]) 
@@ -115,23 +117,33 @@ def check_geometry(models, shots, nodes, dh, slices, subplots):
             if int(slices[1]) == int(shots[i,1]/dh[1]):
                 zx_plane_shot_x = np.append(zx_plane_shot_x, shots[i,0]/dh[0])        
                 zx_plane_shot_z = np.append(zx_plane_shot_z, shots[i,2]/dh[2])        
+    else:
+        pass
 
     zy_plane_node_y = np.array([])
     zy_plane_node_z = np.array([])
 
-    for i in range(len(nodes)):
-        if int(slices[2]) == int(nodes[i,0]/dh[0]):
-            zy_plane_node_y = np.append(zy_plane_node_y, nodes[i,1]/dh[1])        
-            zy_plane_node_z = np.append(zy_plane_node_z, nodes[i,2]/dh[2])        
+    if np.size(nodes) > 3:
+        for i in range(len(nodes)):
+            if int(slices[2]) == int(nodes[i,0]/dh[0]):
+                zy_plane_node_y = np.append(zy_plane_node_y, nodes[i,1]/dh[1])        
+                zy_plane_node_z = np.append(zy_plane_node_z, nodes[i,2]/dh[2])        
+    else:
+        pass
 
     zx_plane_node_x = np.array([])
     zx_plane_node_z = np.array([]) 
 
-    for i in range(len(nodes)):
-        if int(slices[1]) == int(nodes[i,1]/dh[1]):
-            zx_plane_node_x = np.append(zx_plane_node_x, nodes[i,0]/dh[0])        
-            zx_plane_node_z = np.append(zx_plane_node_z, nodes[i,2]/dh[2])        
-    
+    if np.size(nodes) > 3:
+        for i in range(len(nodes)):
+            if int(slices[1]) == int(nodes[i,1]/dh[1]):
+                zx_plane_node_x = np.append(zx_plane_node_x, nodes[i,0]/dh[0])        
+                zx_plane_node_z = np.append(zx_plane_node_z, nodes[i,2]/dh[2])        
+    else:
+        pass
+
+
+
     #--------------------------------------------------------------------------------    
 
     subfigs = fig.subfigures(subplots[0], subplots[1])
@@ -153,12 +165,14 @@ def check_geometry(models, shots, nodes, dh, slices, subplots):
                 xshot = [shots[0]/dh[0],zy_plane_shot_z,zx_plane_shot_x]
                 yshot = [shots[1]/dh[1],zy_plane_shot_y,zx_plane_shot_z]
 
-
-            xnode = [nodes[:,0]/dh[0],zy_plane_node_z,zx_plane_node_x]
-            ynode = [nodes[:,1]/dh[1],zy_plane_node_y,zx_plane_node_z]
+            if np.size(shots) > 3:
+                xnode = [nodes[:,0]/dh[0],zy_plane_node_z,zx_plane_node_x]
+                ynode = [nodes[:,1]/dh[1],zy_plane_node_y,zx_plane_node_z]
+            else:
+                xnode = [nodes[0]/dh[0],zy_plane_node_z,zx_plane_node_x]
+                ynode = [nodes[1]/dh[1],zy_plane_node_y,zx_plane_node_z]
 
             for k, axs in enumerate(axes):
-
                 # Adjusting acording subplot size      
                 if subplots[0] == 1:
                     if subplots[1] == 1:
@@ -171,15 +185,12 @@ def check_geometry(models, shots, nodes, dh, slices, subplots):
                         ax = subfigs.add_axes(axs)        
                     else:    
                         ax = subfigs[i].add_axes(axs)
-                
                 else:
                     ax = subfigs[i,j].add_axes(axs)
 
                 # Setting colorbar
                 if k == 3:
-
                     ax.axis("off")
-
                     cmap = mpl.colormaps["jet"]
                     norm = mpl.colors.Normalize(vmin*1e-3, vmax*1e-3)
                     divider = make_axes_locatable(ax)
@@ -190,7 +201,6 @@ def check_geometry(models, shots, nodes, dh, slices, subplots):
                 
                 # plotting model slices 
                 else:
-                    
                     ax.imshow(ims[k], aspect = 'auto', cmap = "jet", vmin = vmin, vmax = vmax)    
 
                     ax.plot(xSlices[k][0], xSlices[k][1], xSlices[k][2], linewidth = 0.5)
@@ -239,8 +249,7 @@ slices = np.array([nz/2, nx/2, ny/2], dtype = int) # [xy, zy, zx]
 dh = np.array([dx, dy, dz])
 
 check_geometry(model, shots, nodes, dh, slices, subplots)
-plt.show()
-# plt.savefig(f"ls_diff_model.png", dpi = 200)
+plt.savefig(f"testModel.png", dpi = 200)
 
 # plot completo dos dados gerados
 
