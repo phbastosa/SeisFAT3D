@@ -38,7 +38,7 @@ ___
 
 #### Objective: Verify accuracy, performance and memory usage of the eikonal modeling methods 
 
-First of all, yiou have to compile the code to generate the executables. Make sure you're in run folder.
+First of all, you have to compile the code to generate the executables. Make sure you're inside the run folder.
 
 ```console
 $ ./program -compile
