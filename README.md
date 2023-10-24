@@ -17,7 +17,7 @@ ____
 
 ```console
 seismic_imaging_3D$ cd run/
-seismic_imaging_3D/run/$ ./program.sh -help
+seismic_imaging_3D/run/$ ./program.sh -h
 
 Usage:
 
