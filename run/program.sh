@@ -125,7 +125,7 @@ case "$1" in
 
     for method in ${methods[@]}; do 
         for spacing in ${spacings[@]}; do 
-            ./../bin/modeling.exe ../tests/modeling/parameters_"$method"_"$spacing"m.txt; 
+            ./../bin/modeling.exe ../tests/modeling/parFiles/parameters_"$method"_"$spacing"m.txt; 
         done    
     done 
 

@@ -2,15 +2,15 @@
 # Model paramenters --------------------------------------------------------------------------------
 #---------------------------------------------------------------------------------------------------
 
-x_samples = 441                     # <int>  
-y_samples = 441                     # <int>  
-z_samples = 101                     # <int>  
+x_samples = 221                     # <int>  
+y_samples = 221                     # <int>  
+z_samples = 51                      # <int>  
 
-x_spacing = 50                     # [m] <float> 
-y_spacing = 50                     # [m] <float> 
-z_spacing = 50                     # [m] <float> 
+x_spacing = 100                     # [m] <float> 
+y_spacing = 100                     # [m] <float> 
+z_spacing = 100                     # [m] <float> 
 
-input_model_file = ../inputs/models/testModel_101x441x441_50m.bin   
+input_model_file = ../inputs/models/testModel_51x221x221_100m.bin   
 
 #---------------------------------------------------------------------------------------------------
 # Geometry parameters ------------------------------------------------------------------------------
@@ -55,13 +55,13 @@ offsets = [10000]                   # [m] <float>
 #   [2] - Accurate FSM (Detrixhe et al., 2013; Noble et al., 2014)   
 #---------------------------------------------------------------------------------------------------
 
-modeling_type = 0                   # <int>
+modeling_type = 2                   # <int>
 
 export_receiver_output = true       # <bool> 
 export_wavefield_output = false     # <bool>
 
-receiver_output_folder = ../outputs/seismograms/50m_            
-wavefield_output_folder = ../outputs/snapshots/     
+receiver_output_folder = ../outputs/first_arrivals/100m_         
+wavefield_output_folder = ../outputs/travel_times/     
 
 #---------------------------------------------------------------------------------------------------
 # Inversion parameters 

@@ -2,9 +2,9 @@
 # Model paramenters --------------------------------------------------------------------------------
 #---------------------------------------------------------------------------------------------------
 
-x_samples = 881                    # <int>  
-y_samples = 881                    # <int>  
-z_samples = 201                    # <int>  
+x_samples = 881                     # <int>  
+y_samples = 881                     # <int>  
+z_samples = 201                     # <int>  
 
 x_spacing = 25                     # [m] <float> 
 y_spacing = 25                     # [m] <float> 
@@ -55,13 +55,13 @@ offsets = [10000]                   # [m] <float>
 #   [2] - Accurate FSM (Detrixhe et al., 2013; Noble et al., 2014)   
 #---------------------------------------------------------------------------------------------------
 
-modeling_type = 2                   # <int>
+modeling_type = 0                   # <int>
 
 export_receiver_output = true       # <bool> 
 export_wavefield_output = false     # <bool>
 
-receiver_output_folder = ../outputs/seismograms/25m_         
-wavefield_output_folder = ../outputs/snapshots/     
+receiver_output_folder = ../outputs/first_arrivals/25m_            
+wavefield_output_folder = ../outputs/travel_times/     
 
 #---------------------------------------------------------------------------------------------------
 # Inversion parameters 

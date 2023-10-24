@@ -2,15 +2,15 @@
 # Model paramenters --------------------------------------------------------------------------------
 #---------------------------------------------------------------------------------------------------
 
-x_samples = 441                     # <int>  
-y_samples = 441                     # <int>  
-z_samples = 101                     # <int>  
+x_samples = 881                     # <int>  
+y_samples = 881                     # <int>  
+z_samples = 201                     # <int>  
 
-x_spacing = 50                     # [m] <float> 
-y_spacing = 50                     # [m] <float> 
-z_spacing = 50                     # [m] <float> 
+x_spacing = 25                     # [m] <float> 
+y_spacing = 25                     # [m] <float> 
+z_spacing = 25                     # [m] <float> 
 
-input_model_file = ../inputs/models/testModel_101x441x441_50m.bin   
+input_model_file = ../inputs/models/testModel_201x881x881_25m.bin   
 
 #---------------------------------------------------------------------------------------------------
 # Geometry parameters ------------------------------------------------------------------------------
@@ -60,8 +60,8 @@ modeling_type = 1                   # <int>
 export_receiver_output = true       # <bool> 
 export_wavefield_output = false     # <bool>
 
-receiver_output_folder = ../outputs/seismograms/50m_          
-wavefield_output_folder = ../outputs/snapshots/     
+receiver_output_folder = ../outputs/first_arrivals/25m_          
+wavefield_output_folder = ../outputs/travel_times/     
 
 #---------------------------------------------------------------------------------------------------
 # Inversion parameters 

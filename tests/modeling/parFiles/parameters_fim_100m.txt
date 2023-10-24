@@ -55,13 +55,13 @@ offsets = [10000]                   # [m] <float>
 #   [2] - Accurate FSM (Detrixhe et al., 2013; Noble et al., 2014)   
 #---------------------------------------------------------------------------------------------------
 
-modeling_type = 0                   # <int>
+modeling_type = 1                   # <int>
 
 export_receiver_output = true       # <bool> 
 export_wavefield_output = false     # <bool>
 
-receiver_output_folder = ../outputs/seismograms/100m_            
-wavefield_output_folder = ../outputs/snapshots/     
+receiver_output_folder = ../outputs/first_arrivals/100m_          
+wavefield_output_folder = ../outputs/travel_times/     
 
 #---------------------------------------------------------------------------------------------------
 # Inversion parameters 
