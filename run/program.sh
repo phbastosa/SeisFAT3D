@@ -118,8 +118,6 @@ case "$1" in
 
 -test_modeling)
 
-    echo "Testing a small modeling experiment"
-
     python3 ../tests/modeling/generate_models.py
 
     spacings=(100 50 25)
@@ -132,6 +130,8 @@ case "$1" in
     done 
 
     python3 ../tests/modeling/generate_figures.py
+
+    rm runTime.txt
 
 	exit 0
 ;;

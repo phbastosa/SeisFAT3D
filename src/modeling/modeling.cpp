@@ -47,9 +47,9 @@ void Modeling::info_message()
 
 void Modeling::initial_setup()
 {
-    int sidx = (int)(geometry->shots.x[shot_id] / dx) + nbxl;
-    int sidy = (int)(geometry->shots.y[shot_id] / dy) + nbyl;
-    int sidz = (int)(geometry->shots.z[shot_id] / dz) + nbzu;
+    sidx = (int)(geometry->shots.x[shot_id] / dx) + nbxl;
+    sidy = (int)(geometry->shots.y[shot_id] / dy) + nbyl;
+    sidz = (int)(geometry->shots.z[shot_id] / dz) + nbzu;
 
     source_id = sidz + sidx*nzz + sidy*nxx*nzz;
 
@@ -78,7 +78,9 @@ void Modeling::get_runtime()
     std::chrono::duration<double> elapsed_seconds = tf - ti;
 
     std::ofstream runTimeFile("runTime.txt",std::ios::in | std::ios::app);
-    runTimeFile << eikonal_method + " " + std::to_string(dx) + " m --> " + std::to_string(elapsed_seconds.count()) + " s\n";
+    runTimeFile << "# " + eikonal_method + " - Spacing: " + std::to_string(dx) + " m\n";
+    runTimeFile << "# Run Time [s]; RAM usage [MB]; GPU memory usage [MB]\n";
+    runTimeFile << std::to_string(elapsed_seconds.count()) + ";" + std::to_string(RAM) + ";" + std::to_string(vRAM) + "\n";
     runTimeFile.close();
 
     std::cout<<"\nRun time: "<<elapsed_seconds.count()<<" s."<<std::endl;

@@ -22,7 +22,6 @@ def analytical_firstArrival(v, z, x):
     refracted_waves = np.zeros((len(z), len(x)))
 
     for n in range(len(z)):
-    
         refracted_waves[n,:] = x / v[n+1]
         for i in range(n+1):
             angle = np.arcsin(v[i] / v[n+1])
@@ -33,7 +32,7 @@ def analytical_firstArrival(v, z, x):
 
     return first_arrivals
 
-def check_geometry(models, shots, nodes, dh, slices, subplots):
+def check_geometry(models, shots, nodes, dh, slices, subplots, scale = 2.0):
     
     if np.sum(subplots) == 2:
         modelShape = np.array(np.shape(models))
@@ -52,7 +51,7 @@ def check_geometry(models, shots, nodes, dh, slices, subplots):
         vmax = np.max(models[0])
 
     nz, nx, ny = modelShape
-    [z, x, y] = 2.8 * (minModelDistance / maxModelDistance) * modelShape / maxModelDistance
+    [z, x, y] = scale * (minModelDistance / maxModelDistance) * modelShape / maxModelDistance
 
     px = 1/plt.rcParams['figure.dpi']  
     ticks = np.array([3,7,7], dtype = int)
@@ -101,49 +100,55 @@ def check_geometry(models, shots, nodes, dh, slices, subplots):
     zy_plane_shot_y = np.array([])
     zy_plane_shot_z = np.array([])
 
-    if np.size(shots) > 3:
+    if np.size(shots) != 3:
         for i in range(len(shots)):    
-            if int(slices[2]) == int(shots[i,0]/dh[0]):
+            if int(shots[i,0]/dh[0])-1 <= int(slices[2]) <= int(shots[i,0]/dh[0])+1:
                 zy_plane_shot_y = np.append(zy_plane_shot_y, shots[i,1]/dh[1])        
                 zy_plane_shot_z = np.append(zy_plane_shot_z, shots[i,2]/dh[2])        
     else:
-        pass
+        if int(shots[0]/dh[0])-1 <= int(slices[2]) <= int(shots[0]/dh[0])+1:
+            zy_plane_shot_y = np.append(zy_plane_shot_y, shots[1]/dh[1])        
+            zy_plane_shot_z = np.append(zy_plane_shot_z, shots[2]/dh[2])        
 
     zx_plane_shot_x = np.array([])
     zx_plane_shot_z = np.array([]) 
 
-    if np.size(shots) > 3:
+    if np.size(shots) != 3:
         for i in range(len(shots)):
-            if int(slices[1]) == int(shots[i,1]/dh[1]):
+            if int(shots[i,1]/dh[1])-1 <= int(slices[1]) <= int(shots[i,1]/dh[1])+1:
                 zx_plane_shot_x = np.append(zx_plane_shot_x, shots[i,0]/dh[0])        
                 zx_plane_shot_z = np.append(zx_plane_shot_z, shots[i,2]/dh[2])        
     else:
-        pass
-
+        if int(shots[1]/dh[1])-1 <= int(slices[1]) <= int(shots[1]/dh[1])+1:
+            zx_plane_shot_x = np.append(zx_plane_shot_x, shots[0]/dh[0])        
+            zx_plane_shot_z = np.append(zx_plane_shot_z, shots[2]/dh[2])        
+        
     zy_plane_node_y = np.array([])
     zy_plane_node_z = np.array([])
 
-    if np.size(nodes) > 3:
+    if np.size(nodes) != 3:
         for i in range(len(nodes)):
-            if int(slices[2]) == int(nodes[i,0]/dh[0]):
+            if int(nodes[i,0]/dh[0])-1 <= int(slices[2]) <= int(nodes[i,0]/dh[0])+1:
                 zy_plane_node_y = np.append(zy_plane_node_y, nodes[i,1]/dh[1])        
                 zy_plane_node_z = np.append(zy_plane_node_z, nodes[i,2]/dh[2])        
     else:
-        pass
+        if int(nodes[0]/dh[0])-1 <= int(slices[2]) <= int(nodes[0]/dh[0])+1:
+            zy_plane_node_y = np.append(zy_plane_node_y, nodes[1]/dh[1])        
+            zy_plane_node_z = np.append(zy_plane_node_z, nodes[2]/dh[2])        
 
     zx_plane_node_x = np.array([])
     zx_plane_node_z = np.array([]) 
 
-    if np.size(nodes) > 3:
+    if np.size(nodes) != 3:
         for i in range(len(nodes)):
-            if int(slices[1]) == int(nodes[i,1]/dh[1]):
+            if int(nodes[i,1]/dh[1])-1 <= int(slices[1]) <= int(nodes[i,1]/dh[1])+1:
                 zx_plane_node_x = np.append(zx_plane_node_x, nodes[i,0]/dh[0])        
                 zx_plane_node_z = np.append(zx_plane_node_z, nodes[i,2]/dh[2])        
     else:
-        pass
-
-
-
+        if int(nodes[1]/dh[1])-1 <= int(slices[1]) <= int(nodes[1]/dh[1])+1:
+            zx_plane_node_x = np.append(zx_plane_node_x, nodes[0]/dh[0])        
+            zx_plane_node_z = np.append(zx_plane_node_z, nodes[2]/dh[2])        
+        
     #--------------------------------------------------------------------------------    
 
     subfigs = fig.subfigures(subplots[0], subplots[1])
@@ -158,28 +163,26 @@ def check_geometry(models, shots, nodes, dh, slices, subplots):
             else:
                 ims = [models[ind, slices[0],:,:].T, models[ind,:,slices[2],:].T, models[ind,:,:,slices[1]]]
 
-            if np.size(shots) > 3:
+            if np.size(shots) != 3:
                 xshot = [shots[:,0]/dh[0],zy_plane_shot_z,zx_plane_shot_x]
                 yshot = [shots[:,1]/dh[1],zy_plane_shot_y,zx_plane_shot_z]
             else:
                 xshot = [shots[0]/dh[0],zy_plane_shot_z,zx_plane_shot_x]
                 yshot = [shots[1]/dh[1],zy_plane_shot_y,zx_plane_shot_z]
 
-            if np.size(shots) > 3:
+            if np.size(nodes) != 3:
                 xnode = [nodes[:,0]/dh[0],zy_plane_node_z,zx_plane_node_x]
                 ynode = [nodes[:,1]/dh[1],zy_plane_node_y,zx_plane_node_z]
             else:
                 xnode = [nodes[0]/dh[0],zy_plane_node_z,zx_plane_node_x]
                 ynode = [nodes[1]/dh[1],zy_plane_node_y,zx_plane_node_z]
 
-            for k, axs in enumerate(axes):
-                # Adjusting acording subplot size      
+            for k, axs in enumerate(axes):      
                 if subplots[0] == 1:
                     if subplots[1] == 1:
                         ax = subfigs.add_axes(axs)                         
                     else:
                         ax = subfigs[j].add_axes(axs)
-
                 elif subplots[1] == 1:
                     if subplots[0] == 1:
                         ax = subfigs.add_axes(axs)        
@@ -197,7 +200,7 @@ def check_geometry(models, shots, nodes, dh, slices, subplots):
                     cax = divider.append_axes("bottom", size="10%", pad=0)
                     cbar = fig.colorbar(mpl.cm.ScalarMappable(norm=norm, cmap=cmap), cax = cax, ticks = np.linspace(vmin*1e-3, vmax*1e-3, 5), orientation = "horizontal")
                     cbar.ax.set_xticklabels(np.around(np.linspace(vmin*1e-3, vmax*1e-3, 5), decimals = 1))
-                    cbar.set_label("Velocidade [km/s]")
+                    cbar.set_label("Velocity [km/s]")
                 
                 # plotting model slices 
                 else:
@@ -206,8 +209,8 @@ def check_geometry(models, shots, nodes, dh, slices, subplots):
                     ax.plot(xSlices[k][0], xSlices[k][1], xSlices[k][2], linewidth = 0.5)
                     ax.plot(ySlices[k][0], ySlices[k][1], ySlices[k][2], linewidth = 0.5)
                     
-                    ax.scatter(xshot[k], yshot[k], s = 20.0, color = "magenta")
-                    ax.scatter(xnode[k], ynode[k], s = 20.0, color = "black")
+                    ax.scatter(xshot[k], yshot[k], s = 20.0, color = "brown")
+                    ax.scatter(xnode[k], ynode[k], s = 20.0, color = "gray")
 
                     ax.tick_params(direction = xTickDirection[k], axis='x') 
                     ax.tick_params(direction = yTickDirection[k], axis='y') 
@@ -226,7 +229,7 @@ def check_geometry(models, shots, nodes, dh, slices, subplots):
     
     return None
 
-# plot completo do modelo e geometria
+#-------------------------------------------------------------------------
 
 nx = 881
 ny = 881
@@ -248,12 +251,100 @@ subplots = np.array([1, 1], dtype = int)
 slices = np.array([nz/2, nx/2, ny/2], dtype = int) # [xy, zy, zx]
 dh = np.array([dx, dy, dz])
 
-check_geometry(model, shots, nodes, dh, slices, subplots)
-plt.savefig(f"testModel.png", dpi = 200)
+check_geometry(model, shots, nodes, dh, slices, subplots, 2.8)
+plt.savefig(f"modelTest.png", dpi = 200)
 
-# plot completo dos dados gerados
+#-------------------------------------------------------------------------
+
+v = np.array([1500, 2000, 3000, 4000])
+z = np.array([1000, 1500, 2000])
+
+x = np.sqrt((nodes[:,0] - shots[0])**2 + (nodes[:,1] - shots[1])**2)
+
+fba = analytical_firstArrival(v, z, x)
 
 n = 1256
 
-pod_100m = np.fromfile("../outputs/seismograms/100m_pod_data_nRec1256_shot_1.bin", dtype = np.float32, count = n)
+dh = np.array([100, 50, 25], dtype = int)
 
+pod = np.zeros((len(dh), n))
+fim = np.zeros((len(dh), n))
+fsm = np.zeros((len(dh), n))
+
+for i in range(len(dh)):
+    
+    pod[i] = np.fromfile(f"../outputs/seismograms/{dh[i]}m_pod_data_nRec1256_shot_1.bin", dtype = np.float32, count = n)
+    fim[i] = np.fromfile(f"../outputs/seismograms/{dh[i]}m_fim_data_nRec1256_shot_1.bin", dtype = np.float32, count = n)
+    fsm[i] = np.fromfile(f"../outputs/seismograms/{dh[i]}m_fsm_data_nRec1256_shot_1.bin", dtype = np.float32, count = n)
+
+offset = np.arange(n)
+
+colors = ["blue", "orange", "green"]
+styles = ["dashed", "dotted", "solid"]
+titles = ["Podvin & Lecomte (1991)", "Jeong & Whitaker (2008)", "Detrixhe et al. (2013) | Noble et al. (2014)"]
+
+xloc = np.linspace(0, n, 11, dtype = int)
+
+fig, ax = plt.subplots(nrows = 3, ncols = 2, figsize = (15,8))
+
+ax[0,0].plot(fba, color = "black")
+ax[1,0].plot(fba, color = "black")
+ax[2,0].plot(fba, color = "black")
+
+for k in range(len(dh)):
+    ax[0,0].plot(offset, pod[k], linestyle = styles[k], color = colors[0])
+    ax[1,0].plot(offset, fim[k], linestyle = styles[k], color = colors[1])
+    ax[2,0].plot(offset, fsm[k], linestyle = styles[k], color = colors[2])
+    ax[0,1].plot(offset, fba - pod[k], linestyle = styles[k], color = colors[0])
+    ax[1,1].plot(offset, fba - fim[k], linestyle = styles[k], color = colors[1])
+    ax[2,1].plot(offset, fba - fsm[k], linestyle = styles[k], color = colors[2])
+
+    for i in range(len(dh)):
+        ax[i,0].set_xlabel("Trace index", fontsize= 15)
+        ax[i,0].set_ylabel("Time [s]", fontsize = 15)
+        ax[i,0].set_title(titles[i], fontsize = 18)
+
+        ax[i,1].set_xlabel("Trace index", fontsize = 15)
+        ax[i,1].set_ylabel("Diff = Ta - Tn [s]", fontsize = 15)
+        ax[i,1].set_title(titles[i], fontsize = 18)
+
+    for i in range(2):
+        ax[k,i].set_xticks(xloc)
+        ax[k,i].set_xticklabels(xloc)
+        ax[k,i].set_xlim([0,n])
+
+    ax[k,0].set_ylim([5.6, 6.4])
+    ax[k,0].invert_yaxis()
+
+plt.tight_layout()
+plt.savefig(f"accuracyTest.png", dpi = 200)
+
+#-------------------------------------------------------------------------
+
+benchmark = np.loadtxt("runTime.txt", delimiter = ";", comments = "#")
+
+bench_pod = benchmark[:3]
+bench_fim = benchmark[3:6]
+bench_fsm = benchmark[6:]
+
+yaxis = ["Elapsed time [s]", "RAM usage [MB]", "GPU memory usage [MB]"]
+
+xloc = [0, 1, 2]
+xlab = ["2.9", "19.6", "156.1"]
+
+fig, ax = plt.subplots(nrows = 3,ncols = 1, figsize = (10,9))
+
+for i in range(len(dh)):
+    ax[i].plot(bench_pod[:,i], "o--", label = "Podvin & Lecomte (1991)")
+    ax[i].plot(bench_fim[:,i], "o--", label = "Jeong & Whitaker (2008)")
+    ax[i].plot(bench_fsm[:,i], "o--", label = "Detrixhe et al. (2013) | Noble et al. (2014)")
+
+    ax[i].set_xticks(xloc)
+    ax[i].set_xticklabels(xlab)
+
+    ax[i].legend(loc = "upper left")
+    ax[i].set_ylabel(yaxis[i], fontsize = 15)
+    ax[i].set_xlabel("Total samples in model [x 10⁶]", fontsize = 15)
+
+plt.tight_layout()
+plt.savefig(f"benchmarkTest.png", dpi = 200)
