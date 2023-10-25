@@ -23,7 +23,7 @@ fsm="../src/modeling/fast_sweeping_method/accurate_FSM.cu"
 
 modeling_main="../src/main/modeling_main.cpp"
 
-modeling_all="$eikonal $pod $fim $fsm $modeling_main"
+modeling_all="$eikonal $pod $fim $fsm"
 
 # Seismic inversion scripts ---------------------------------------------------------------------------
 
@@ -34,7 +34,7 @@ adjoint_state="../src/inversion/adjoint_state/adjoint_state.cu"
 
 inversion_main="../src/main/inversion_main.cpp"
 
-inversion_all="$tomography $least_squares $adjoint_state $inversion_main"
+inversion_all="$tomography $least_squares $adjoint_state"
 
 # Seismic migration scripts ---------------------------------------------------------------------------
 
@@ -42,7 +42,7 @@ kirchhoff="../src/migration/kirchhoff.cpp"
 
 migration_main="../src/main/migration_main.cpp"
 
-migration_all="$kirchhoff $migration_main"
+migration_all="$kirchhoff"
 
 # Compiler flags --------------------------------------------------------------------------------------
 
@@ -83,10 +83,10 @@ case "$1" in
     echo -e "Compiling the stand-alone executables!\n"
 
     echo -e "../bin/\033[31mmodeling.exe\033[m" 
-    nvcc $io $geometry_all $modeling_all $flags -o ../bin/modeling.exe
+    nvcc $io $geometry_all $modeling_all $modeling_main $flags -o ../bin/modeling.exe
 
-    # echo -e "../bin/\033[31minversion.exe\033[m" 
-    # nvcc $io $geometry_all $modeling_all $inversion_all $flags -o ../bin/inversion.exe
+    echo -e "../bin/\033[31minversion.exe\033[m" 
+    nvcc $io $geometry_all $modeling_all $inversion_all $inversion_main $flags -o ../bin/inversion.exe
 
     # echo -e "../bin/\033[31mmigration.exe\033[m"
     # nvcc $io $geometry_all $modeling_all $migration_all $flags -o ../bin/migration.exe
@@ -137,7 +137,14 @@ case "$1" in
 
 -test_inversion)
 
-    echo "testing a small inversion experiment"
+    # python3 ../tests/inversion/generate_models.py
+
+    # ./../bin/modeling.exe ../tests/inversion/parFiles/parameters_obsData.txt
+
+    # ./../bin/inversion.exe ../tests/inversion/parFiles/parameters_leastSquares.txt
+    ./../bin/inversion.exe ../tests/inversion/parFiles/parameters_adjointState.txt
+
+    # python3 ../tests/inversion/generate_figures.py
 
 	exit 0
 ;;

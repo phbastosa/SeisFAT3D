@@ -19,11 +19,11 @@ void Tomography::set_parameters()
     write_model_per_iteration = str2bool(catch_parameter("export_model_per_iteration", file));
     write_gradient_per_iteration = str2bool(catch_parameter("export_gradient_per_iteration", file));
 
-    set_specific_parameters();
-
     set_forward_modeling();
 
     set_inversion_volumes();
+
+    set_specific_parameters();
 } 
 
 void Tomography::set_forward_modeling()
@@ -246,7 +246,7 @@ void Tomography::export_gradient()
 {
     if (write_gradient_per_iteration)
     {
-        std::string gradient_path = gradient_folder + "gradient_iteration_" + std::to_string(iteration) + "_" + std::to_string(modeling->nz) + "x" + std::to_string(modeling->nx) + "x" + std::to_string(modeling->ny) + ".bin";
+        std::string gradient_path = gradient_folder + "gradient_iteration_" + std::to_string(iteration+1) + "_" + std::to_string(modeling->nz) + "x" + std::to_string(modeling->nx) + "x" + std::to_string(modeling->ny) + ".bin";
 
         export_binary_float(gradient_path, gradient, modeling->nPoints);
     }

@@ -72,59 +72,56 @@ void Adjoint_State::apply_inversion_technique()
 	cudaMemcpy(d_source, source, modeling->volsize*sizeof(float), cudaMemcpyHostToDevice);
 	cudaMemcpy(d_adjoint, adjoint, modeling->volsize*sizeof(float), cudaMemcpyHostToDevice);
 
-    for (int it = 0; it < meshDim; it++)
-    {
-        for (int sweep = 0; sweep < nSweeps; sweep++)
-        { 
-            int start = (sweep == 3 || sweep == 5 || sweep == 6 || sweep == 7) ? totalLevels : meshDim;
-            int end = (start == meshDim) ? totalLevels + 1 : meshDim - 1;
-            int incr = (start == meshDim) ? true : false;
+    for (int sweep = 0; sweep < nSweeps; sweep++)
+    { 
+        int start = (sweep == 3 || sweep == 5 || sweep == 6 || sweep == 7) ? totalLevels : meshDim;
+        int end = (start == meshDim) ? totalLevels + 1 : meshDim - 1;
+        int incr = (start == meshDim) ? true : false;
 
-            int xSweepOff = (sweep == 3 || sweep == 4) ? modeling->nxx + 1 : 0;
-            int ySweepOff = (sweep == 2 || sweep == 5) ? modeling->nyy + 1 : 0;
-            int zSweepOff = (sweep == 1 || sweep == 6) ? modeling->nzz + 1 : 0;
-            
-            for (int level = start; level != end; level = (incr) ? level + 1 : level - 1)
-            {			
-                int xs = max(1, level - (modeling->nyy + modeling->nzz));	
-                int ys = max(1, level - (modeling->nxx + modeling->nzz));
+        int xSweepOff = (sweep == 3 || sweep == 4) ? modeling->nxx : 0;
+        int ySweepOff = (sweep == 2 || sweep == 5) ? modeling->nyy : 0;
+        int zSweepOff = (sweep == 1 || sweep == 6) ? modeling->nzz : 0;
+        
+        for (int level = start; level != end; level = (incr) ? level + 1 : level - 1)
+        {			
+            int xs = max(1, level - (modeling->nyy + modeling->nzz));	
+            int ys = max(1, level - (modeling->nxx + modeling->nzz));
 
-                int xe = min(modeling->nxx, level - (meshDim - 1));
-                int ye = min(modeling->nyy, level - (meshDim - 1));	
-            
-                int xr = xe - xs + 1;
-                int yr = ye - ys + 1;
+            int xe = min(modeling->nxx, level - (meshDim - 1));
+            int ye = min(modeling->nyy, level - (meshDim - 1));	
+        
+            int xr = xe - xs + 1;
+            int yr = ye - ys + 1;
 
-                int nThreads = xr * yr;
-                    
-                dim3 bs(16, 16, 1);
+            int nThreads = xr * yr;
+                
+            dim3 bs(16, 16, 1);
 
-                if (nThreads < modeling->threadsPerBlock) { bs.x = xr; bs.y = yr; } 
+            if (nThreads < modeling->threadsPerBlock) { bs.x = xr; bs.y = yr; } 
 
-                dim3 gs(iDivUp(xr, bs.x), iDivUp(yr , bs.y), 1);
+            dim3 gs(iDivUp(xr, bs.x), iDivUp(yr , bs.y), 1);
 
-                adjoint_state_kernel<<<gs,bs>>>(d_adjoint, d_source, d_T, level, xs, ys, xSweepOff, ySweepOff, zSweepOff, 
-                                                modeling->nxx, modeling->nyy, modeling->nzz, modeling->dx, modeling->dy, modeling->dz);
+            adjoint_state_kernel<<<gs,bs>>>(d_adjoint, d_source, d_T, level, xs, ys, xSweepOff, ySweepOff, zSweepOff, 
+                                            modeling->nxx, modeling->nyy, modeling->nzz, modeling->dx, modeling->dy, modeling->dz);
 
-                cudaDeviceSynchronize();
-            }
+            cudaDeviceSynchronize();
         }
     }
 
     cudaMemcpy(adjoint, d_adjoint, modeling->volsize*sizeof(float), cudaMemcpyDeviceToHost);
 
-    for (int i = 0; i < modeling->nzz; i++)
-    {
-        for (int j = 0; j < modeling->nxx; j++)
-        {
-            adjoint[i + j*modeling->nzz + sidy*modeling->nxx*modeling->nzz] = 0.5f*(adjoint[i + j*modeling->nzz + (sidy+1)*modeling->nxx*modeling->nzz] + adjoint[i + j*modeling->nzz + (sidy-1)*modeling->nxx*modeling->nzz]);
-        }
+    // for (int i = 0; i < modeling->nzz; i++)
+    // {
+    //     for (int j = 0; j < modeling->nxx; j++)
+    //     {
+    //         adjoint[i + j*modeling->nzz + sidy*modeling->nxx*modeling->nzz] = 0.5f*(adjoint[i + j*modeling->nzz + (sidy+1)*modeling->nxx*modeling->nzz] + adjoint[i + j*modeling->nzz + (sidy-1)*modeling->nxx*modeling->nzz]);
+    //     }
 
-        for (int k = 0; k < modeling->nyy; k++)    
-        {
-            adjoint[i + sidx*modeling->nzz + k*modeling->nxx*modeling->nzz] = 0.5f*(adjoint[i + (sidx+1)*modeling->nzz + k*modeling->nxx*modeling->nzz] + adjoint[i + (sidx-1)*modeling->nzz + k*modeling->nxx*modeling->nzz]);
-        }
-    }
+    //     for (int k = 0; k < modeling->nyy; k++)    
+    //     {
+    //         adjoint[i + sidx*modeling->nzz + k*modeling->nxx*modeling->nzz] = 0.5f*(adjoint[i + (sidx+1)*modeling->nzz + k*modeling->nxx*modeling->nzz] + adjoint[i + (sidx-1)*modeling->nzz + k*modeling->nxx*modeling->nzz]);
+    //     }
+    // }
 
     for (int index = 0; index < modeling->nPoints; index++) 
     {
@@ -192,19 +189,17 @@ void Adjoint_State::gradient_preconditioning()
     //     }
     // }
 
-    for (int index = 0; index < modeling->nPoints; index++)
-    {
-        int k = (int) (index / (modeling->nx*modeling->nz));        
-        int j = (int) (index - k*modeling->nx*modeling->nz) / modeling->nz;    
-        int i = (int) (index - j*modeling->nz - k*modeling->nx*modeling->nz);          
+    // for (int index = 0; index < modeling->nPoints; index++)
+    // {
+    //     int k = (int) (index / (modeling->nx*modeling->nz));        
+    //     int j = (int) (index - k*modeling->nx*modeling->nz) / modeling->nz;    
+    //     int i = (int) (index - j*modeling->nz - k*modeling->nx*modeling->nz);          
 
-        if ((i < 5) || (i >= modeling->nz - 5) || (j < 5) || (j >= modeling->nx - 5) || (k < 5) || (k >= modeling->ny - 5))
-        {
-            gradient[index] = 0.0f;
-        }
-    }
-
-    export_gradient();
+    //     if ((i < 5) || (i >= modeling->nz - 5) || (j < 5) || (j >= modeling->nx - 5) || (k < 5) || (k >= modeling->ny - 5))
+    //     {
+    //         gradient[index] = 0.0f;
+    //     }
+    // }
 }
 
 void Adjoint_State::optimization() 
@@ -297,11 +292,11 @@ __global__ void adjoint_state_kernel(float * adjoint, float * source, float * T,
 	int x = (blockIdx.x * blockDim.x + threadIdx.x) + xOffset;
 	int y = (blockIdx.y * blockDim.y + threadIdx.y) + yOffset;
 
-	if ((x <= nxx) && (y <= nyy)) 
+	if ((x < nxx) && (y < nyy)) 
 	{
 		int z = level - (x + y);
 		
-		if ((z >= 0) && (z <= nzz))	
+		if ((z >= 0) && (z < nzz))	
 		{
 			int i = (int)abs(z - zSweepOffset);
 			int j = (int)abs(x - xSweepOffset);

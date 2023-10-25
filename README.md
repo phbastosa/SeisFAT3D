@@ -32,6 +32,12 @@ Tests:
     $ ./program.sh -test_inversion      # Perform a small inversion experiment
     $ ./program.sh -test_migration      # Perform a small migration experiment         
 ```
+
+The following tests was performed using a laptop with the configuration below:
+
+* CPU: AMD Ryzen 5 2500U with Radeon Vega Mobile Gfx (8) @ 2.000GHz
+* GPU: NVIDIA GeForce GTX 1050 Mobile 4GB 
+* RAM: 16 GB       
 ___
 
 ### Modeling Benchmark:

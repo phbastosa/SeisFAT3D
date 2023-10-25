@@ -148,49 +148,54 @@ void Least_Squares::gradient_preconditioning()
         int k = (int) (index / (modeling->nx*modeling->nz));        
         int j = (int) (index - k*modeling->nx*modeling->nz) / modeling->nz;    
         int i = (int) (index - j*modeling->nz - k*modeling->nx*modeling->nz);  
-
-        float xp = j*modeling->dx; 
-        float yp = k*modeling->dy; 
-        float zp = i*modeling->dz; 
-
-        float x0 = floorf(xp/dx_tomo)*dx_tomo;
-        float y0 = floorf(yp/dy_tomo)*dy_tomo;
-        float z0 = floorf(zp/dz_tomo)*dz_tomo;
-
-        float x1 = floorf(xp/dx_tomo)*dx_tomo + dx_tomo;
-        float y1 = floorf(yp/dy_tomo)*dy_tomo + dy_tomo;
-        float z1 = floorf(zp/dz_tomo)*dz_tomo + dz_tomo;
-
-        int idz = (int)(zp/dz_tomo);
-        int idx = (int)(xp/dx_tomo);
-        int idy = (int)(yp/dy_tomo);
-
-        int ind_m = (int)(idz + idx*nz_tomo + idy*nx_tomo*nz_tomo);
         
-        float c000 = grad[ind_m];                  
-        float c001 = grad[ind_m + 1];
-        float c100 = grad[ind_m + nz_tomo];
-        float c101 = grad[ind_m + 1 + nz_tomo];
-        float c010 = grad[ind_m + nx_tomo*nz_tomo];
-        float c011 = grad[ind_m + 1 + nx_tomo*nz_tomo];
-        float c110 = grad[ind_m + nz_tomo + nx_tomo*nz_tomo];
-        float c111 = grad[ind_m + 1 + nz_tomo + nx_tomo*nz_tomo];  
+        if ((i >= (int)(0.5f*dz_tomo/modeling->dz)) && (i < modeling->nz - (int)(0.5f*dz_tomo/modeling->dz)) &&
+            (j >= (int)(0.5f*dx_tomo/modeling->dx)) && (j < modeling->nx - (int)(0.5f*dx_tomo/modeling->dx)) &&
+            (k >= (int)(0.5f*dy_tomo/modeling->dy)) && (k < modeling->ny - (int)(0.5f*dy_tomo/modeling->dy)))
+        {
+            float zp = (i - (int)(0.5f*dz_tomo/modeling->dz))*modeling->dz; 
+            float xp = (j - (int)(0.5f*dx_tomo/modeling->dx))*modeling->dx; 
+            float yp = (k - (int)(0.5f*dy_tomo/modeling->dy))*modeling->dy; 
 
-        float xd = (xp - x0) / (x1 - x0);
-        float yd = (yp - y0) / (y1 - y0);
-        float zd = (zp - z0) / (z1 - z0);
+            float x0 = floorf(xp/dx_tomo)*dx_tomo;
+            float y0 = floorf(yp/dy_tomo)*dy_tomo;
+            float z0 = floorf(zp/dz_tomo)*dz_tomo;
 
-        float c00 = c000*(1 - xd) + c100*xd;    
-        float c01 = c001*(1 - xd) + c101*xd;    
-        float c10 = c010*(1 - xd) + c110*xd;    
-        float c11 = c011*(1 - xd) + c111*xd;    
+            float x1 = floorf(xp/dx_tomo)*dx_tomo + dx_tomo;
+            float y1 = floorf(yp/dy_tomo)*dy_tomo + dy_tomo;
+            float z1 = floorf(zp/dz_tomo)*dz_tomo + dz_tomo;
 
-        float c0 = c00*(1 - yd) + c10*yd;
-        float c1 = c01*(1 - yd) + c11*yd;
+            int idz = (int)(zp/dz_tomo);
+            int idx = (int)(xp/dx_tomo);
+            int idy = (int)(yp/dy_tomo);
 
-        float g_ijk = (c0*(1 - zd) + c1*zd);
+            int ind_m = (int)(idz + idx*nz_tomo + idy*nx_tomo*nz_tomo);
+            
+            float c000 = grad[ind_m];                  
+            float c001 = grad[ind_m + 1];
+            float c100 = grad[ind_m + nz_tomo];
+            float c101 = grad[ind_m + 1 + nz_tomo];
+            float c010 = grad[ind_m + nx_tomo*nz_tomo];
+            float c011 = grad[ind_m + 1 + nx_tomo*nz_tomo];
+            float c110 = grad[ind_m + nz_tomo + nx_tomo*nz_tomo];
+            float c111 = grad[ind_m + 1 + nz_tomo + nx_tomo*nz_tomo];  
 
-        gradient[i + j*modeling->nz + k*modeling->nx*modeling->nz] = g_ijk;                        
+            float xd = (xp - x0) / (x1 - x0);
+            float yd = (yp - y0) / (y1 - y0);
+            float zd = (zp - z0) / (z1 - z0);
+
+            float c00 = c000*(1 - xd) + c100*xd;    
+            float c01 = c001*(1 - xd) + c101*xd;    
+            float c10 = c010*(1 - xd) + c110*xd;    
+            float c11 = c011*(1 - xd) + c111*xd;    
+
+            float c0 = c00*(1 - yd) + c10*yd;
+            float c1 = c01*(1 - yd) + c11*yd;
+
+            float g_ijk = (c0*(1 - zd) + c1*zd);
+
+            gradient[i + j*modeling->nz + k*modeling->nx*modeling->nz] = g_ijk;                        
+        }
     }    
 
     delete[] grad;
@@ -382,48 +387,53 @@ void Least_Squares::slowness_variation_rescaling()
         int k = (int) (index / (modeling->nx*modeling->nz));        
         int j = (int) (index - k*modeling->nx*modeling->nz) / modeling->nz;    
         int i = (int) (index - j*modeling->nz - k*modeling->nx*modeling->nz);  
+        
+        if ((i >= (int)(0.5f*dz_tomo/modeling->dz)) && (i < modeling->nz - (int)(0.5f*dz_tomo/modeling->dz)) &&
+            (j >= (int)(0.5f*dx_tomo/modeling->dx)) && (j < modeling->nx - (int)(0.5f*dx_tomo/modeling->dx)) &&
+            (k >= (int)(0.5f*dy_tomo/modeling->dy)) && (k < modeling->ny - (int)(0.5f*dy_tomo/modeling->dy)))
+        {
+            float zp = (i - (int)(0.5f*dz_tomo/modeling->dz))*modeling->dz; 
+            float xp = (j - (int)(0.5f*dx_tomo/modeling->dx))*modeling->dx; 
+            float yp = (k - (int)(0.5f*dy_tomo/modeling->dy))*modeling->dy; 
+            
+            float x0 = floorf(xp/dx_tomo)*dx_tomo;
+            float y0 = floorf(yp/dy_tomo)*dy_tomo;
+            float z0 = floorf(zp/dz_tomo)*dz_tomo;
 
-        float xp = j*modeling->dx; 
-        float yp = k*modeling->dy; 
-        float zp = i*modeling->dz; 
+            float x1 = floorf(xp/dx_tomo)*dx_tomo + dx_tomo;
+            float y1 = floorf(yp/dy_tomo)*dy_tomo + dy_tomo;
+            float z1 = floorf(zp/dz_tomo)*dz_tomo + dz_tomo;
 
-        float x0 = floorf(xp/dx_tomo)*dx_tomo;
-        float y0 = floorf(yp/dy_tomo)*dy_tomo;
-        float z0 = floorf(zp/dz_tomo)*dz_tomo;
+            int idz = (int)(zp/dz_tomo);
+            int idx = (int)(xp/dx_tomo);
+            int idy = (int)(yp/dy_tomo);
 
-        float x1 = floorf(xp/dx_tomo)*dx_tomo + dx_tomo;
-        float y1 = floorf(yp/dy_tomo)*dy_tomo + dy_tomo;
-        float z1 = floorf(zp/dz_tomo)*dz_tomo + dz_tomo;
+            int ind_m = (int)(idz + idx*nz_tomo + idy*nx_tomo*nz_tomo);
 
-        int idz = (int)(zp/dz_tomo);
-        int idx = (int)(xp/dx_tomo);
-        int idy = (int)(yp/dy_tomo);
+            float c000 = x[ind_m];                  
+            float c001 = x[ind_m + 1];
+            float c100 = x[ind_m + nz_tomo];
+            float c101 = x[ind_m + 1 + nz_tomo];
+            float c010 = x[ind_m + nx_tomo*nz_tomo];
+            float c011 = x[ind_m + 1 + nx_tomo*nz_tomo];
+            float c110 = x[ind_m + nz_tomo + nx_tomo*nz_tomo];
+            float c111 = x[ind_m + 1 + nz_tomo + nx_tomo*nz_tomo];  
 
-        int ind_m = (int)(idz + idx*nz_tomo + idy*nx_tomo*nz_tomo);
+            float xd = (xp - x0) / (x1 - x0);
+            float yd = (yp - y0) / (y1 - y0);
+            float zd = (zp - z0) / (z1 - z0);
 
-        float c000 = x[ind_m];                  
-        float c001 = x[ind_m + 1];
-        float c100 = x[ind_m + nz_tomo];
-        float c101 = x[ind_m + 1 + nz_tomo];
-        float c010 = x[ind_m + nx_tomo*nz_tomo];
-        float c011 = x[ind_m + 1 + nx_tomo*nz_tomo];
-        float c110 = x[ind_m + nz_tomo + nx_tomo*nz_tomo];
-        float c111 = x[ind_m + 1 + nz_tomo + nx_tomo*nz_tomo];  
+            float c00 = c000*(1 - xd) + c100*xd;    
+            float c01 = c001*(1 - xd) + c101*xd;    
+            float c10 = c010*(1 - xd) + c110*xd;    
+            float c11 = c011*(1 - xd) + c111*xd;    
 
-        float xd = (xp - x0) / (x1 - x0);
-        float yd = (yp - y0) / (y1 - y0);
-        float zd = (zp - z0) / (z1 - z0);
+            float c0 = c00*(1 - yd) + c10*yd;
+            float c1 = c01*(1 - yd) + c11*yd;
 
-        float c00 = c000*(1 - xd) + c100*xd;    
-        float c01 = c001*(1 - xd) + c101*xd;    
-        float c10 = c010*(1 - xd) + c110*xd;    
-        float c11 = c011*(1 - xd) + c111*xd;    
+            float dm_ijk = (c0*(1 - zd) + c1*zd);
 
-        float c0 = c00*(1 - yd) + c10*yd;
-        float c1 = c01*(1 - yd) + c11*yd;
-
-        float dm_ijk = (c0*(1 - zd) + c1*zd);
-
-        dm[index] = dm_ijk;            
+            dm[index] = dm_ijk;            
+        } 
     }
 }
