@@ -110,19 +110,6 @@ void Adjoint_State::apply_inversion_technique()
 
     cudaMemcpy(adjoint, d_adjoint, modeling->volsize*sizeof(float), cudaMemcpyDeviceToHost);
 
-    // for (int i = 0; i < modeling->nzz; i++)
-    // {
-    //     for (int j = 0; j < modeling->nxx; j++)
-    //     {
-    //         adjoint[i + j*modeling->nzz + sidy*modeling->nxx*modeling->nzz] = 0.5f*(adjoint[i + j*modeling->nzz + (sidy+1)*modeling->nxx*modeling->nzz] + adjoint[i + j*modeling->nzz + (sidy-1)*modeling->nxx*modeling->nzz]);
-    //     }
-
-    //     for (int k = 0; k < modeling->nyy; k++)    
-    //     {
-    //         adjoint[i + sidx*modeling->nzz + k*modeling->nxx*modeling->nzz] = 0.5f*(adjoint[i + (sidx+1)*modeling->nzz + k*modeling->nxx*modeling->nzz] + adjoint[i + (sidx-1)*modeling->nzz + k*modeling->nxx*modeling->nzz]);
-    //     }
-    // }
-
     for (int index = 0; index < modeling->nPoints; index++) 
     {
         int k = (int) (index / (modeling->nx*modeling->nz));        
@@ -136,70 +123,45 @@ void Adjoint_State::apply_inversion_technique()
 }
 
 void Adjoint_State::gradient_preconditioning()
-{    
-    // int window = 5; 
+{       
+    if (smooth)
+    { 
+        int aux_nx = modeling->nx + 2*smoother_samples;
+        int aux_ny = modeling->ny + 2*smoother_samples;
+        int aux_nz = modeling->nz + 2*smoother_samples;
 
-    // for (int node = 0; node < modeling->total_nodes; node++)
-    // {
-    //     int i = (int)(modeling->geometry->nodes.z[node] / modeling->dz);
-    //     int j = (int)(modeling->geometry->nodes.x[node] / modeling->dx);
-    //     int k = (int)(modeling->geometry->nodes.y[node] / modeling->dy);
+        int aux_nPoints = aux_nx*aux_ny*aux_nz;
 
-    //     for (int wy = k - window; wy <= k + window; wy++)
-    //     {
-    //         for (int wx = j - window; wx <= j + window; wx++)
-    //         {
-    //             for (int wz = i - window; wz <= i + window; wz++)
-    //             {
-    //                 if ((i >= 0) && (i < modeling->nz) && (j >= 0) && (j < modeling->nx) && (k >= 0) && (k < modeling->ny))
-    //                 {
-    //                     float distance = sqrtf(powf((i - wz)*modeling->dz, 2.0f) + 
-    //                                            powf((j - wx)*modeling->dx, 2.0f) + 
-    //                                            powf((k - wy)*modeling->dy, 2.0f));
+        float * grad_aux = new float[aux_nPoints]();
+        float * grad_smooth = new float[aux_nPoints]();
 
+        for (int index = 0; index < modeling->nPoints; index++)
+        {
+            int k = (int) (index / (modeling->nx*modeling->nz));        
+            int j = (int) (index - k*modeling->nx*modeling->nz) / modeling->nz;    
+            int i = (int) (index - j*modeling->nz - k*modeling->nx*modeling->nz);          
 
+            int ind_filt = (i + smoother_samples) + (j + smoother_samples)*aux_nz + (k + smoother_samples)*aux_nx*aux_nz;
 
-    //                 }
-    //             }
-    //         }
-    //     }
-    // }
+            grad_aux[ind_filt] = gradient[i + j*modeling->nz + k*modeling->nx*modeling->nz];
+        }
 
-    // for (int shot = 0; shot < modeling->total_shots; shot++)
-    // {
-    //     int i = (int)(modeling->geometry->shots.z[shot] / modeling->dz);
-    //     int j = (int)(modeling->geometry->shots.x[shot] / modeling->dx);
-    //     int k = (int)(modeling->geometry->shots.y[shot] / modeling->dy);
+        smooth_volume(grad_aux, grad_smooth, aux_nx, aux_ny, aux_nz);
 
-    //     for (int wy = k - window; wy <= k + window; wy++)
-    //     {
-    //         for (int wx = j - window; wx <= j + window; wx++)
-    //         {
-    //             for (int wz = i - window; wz <= i + window; wz++)
-    //             {
-    //                 if ((i >= 0) && (i < modeling->nz) && (j >= 0) && (j < modeling->nx) && (k >= 0) && (k < modeling->ny))
-    //                 {
-    //                     float distance = sqrtf(powf((i - wz)*modeling->dz, 2.0f) + 
-    //                                            powf((j - wx)*modeling->dx, 2.0f) + 
-    //                                            powf((k - wy)*modeling->dy, 2.0f));
+        for (int index = 0; index < modeling->nPoints; index++)
+        {
+            int k = (int) (index / (modeling->nx*modeling->nz));        
+            int j = (int) (index - k*modeling->nx*modeling->nz) / modeling->nz;    
+            int i = (int) (index - j*modeling->nz - k*modeling->nx*modeling->nz);          
 
-    //                 }
-    //             }
-    //         }
-    //     }
-    // }
+            int ind_filt = (i + smoother_samples) + (j + smoother_samples)*aux_nz + (k + smoother_samples)*aux_nx*aux_nz;
 
-    // for (int index = 0; index < modeling->nPoints; index++)
-    // {
-    //     int k = (int) (index / (modeling->nx*modeling->nz));        
-    //     int j = (int) (index - k*modeling->nx*modeling->nz) / modeling->nz;    
-    //     int i = (int) (index - j*modeling->nz - k*modeling->nx*modeling->nz);          
-
-    //     if ((i < 5) || (i >= modeling->nz - 5) || (j < 5) || (j >= modeling->nx - 5) || (k < 5) || (k >= modeling->ny - 5))
-    //     {
-    //         gradient[index] = 0.0f;
-    //     }
-    // }
+            gradient[i + j*modeling->nz + k*modeling->nx*modeling->nz] = grad_smooth[ind_filt];
+        }
+    
+        delete[] grad_aux;
+        delete[] grad_smooth;
+    }
 }
 
 void Adjoint_State::optimization() 
