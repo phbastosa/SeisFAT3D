@@ -1,9 +1,9 @@
 # ifndef PODVIN_AND_LECOMTE_HPP
 # define PODVIN_AND_LECOMTE_HPP
 
-# include "../modeling.hpp"
+# include "../eikonal.hpp"
 
-class Podvin_and_Lecomte : public Modeling
+class Podvin_and_Lecomte : public Eikonal
 {
 private:
 

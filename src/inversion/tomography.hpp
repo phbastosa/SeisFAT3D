@@ -1,9 +1,11 @@
-# ifndef INVERSION_HPP
-# define INVERSION_HPP
+# ifndef TOMOGRAPHY_HPP
+# define TOMOGRAPHY_HPP
 
-# include "../utils/input_output/io.hpp"
+# include "../modeling/podvin_and_lecomte/podvin_and_lecomte.cuh"
+# include "../modeling/fast_iterative_method/block_FIM.cuh"
+# include "../modeling/fast_sweeping_method/accurate_FSM.cuh"
 
-class Inversion
+class Tomography
 {
 protected:
 
@@ -38,25 +40,36 @@ protected:
 
     std::string inversion_method;
 
-    void set_general_parameters();
-    
+    Eikonal * modeling;
+
+    virtual void set_specific_parameters() = 0;
+    virtual void apply_inversion_technique() = 0;
+    virtual void gradient_preconditioning() = 0;
+
+    void extract_calculated_data();
+    void set_tomography_message();
+    void set_inversion_volumes();
+    void set_forward_modeling();
+    void export_gradient();    
+
     void smooth_volume(float * input, float * output, int nx, int ny, int nz);
-    
+
 public:
 
     bool converged;
 
     std::string file;
 
-    virtual void set_parameters() = 0;
-    virtual void import_obs_data() = 0;
+    void set_parameters();
+    void import_obs_data();
 
-    virtual void forward_modeling() = 0;
-    virtual void check_convergence() = 0;
+    void forward_modeling();
+    void check_convergence();
 
     virtual void optimization() = 0;
-    virtual void model_update() = 0;
-    virtual void export_results() = 0;
+    
+    void model_update();
+    void export_results();
 };
 
 # endif

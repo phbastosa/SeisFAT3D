@@ -5,14 +5,8 @@ int Adjoint_State::iDivUp(int a, int b)
     return ( (a % b) != 0 ) ? (a / b + 1) : (a / b); 
 }
 
-void Adjoint_State::set_parameters()
+void Adjoint_State::set_specific_parameters()
 {
-    set_general_parameters();
-    
-    set_forward_modeling();
-
-    set_main_components();
-
     nSweeps = 8;
     meshDim = 3;
 
@@ -28,30 +22,7 @@ void Adjoint_State::set_parameters()
     cudaMalloc((void**)&(d_adjoint), modeling->volsize*sizeof(float));
 }
 
-void Adjoint_State::forward_modeling()
-{
-    init_modeling();
-
-    for (int shot = 0; shot < modeling->total_shots; shot++)
-    {
-        modeling->shot_id = shot;
-    
-        modeling->info_message();
-
-        tomography_message();
-
-        modeling->initial_setup();
-        modeling->forward_solver();
-        modeling->build_outputs();
-
-        extract_calculated_data();
-    
-        if (iteration != max_iteration)
-            adjoint_state_solver();
-    }
-}
-
-void Adjoint_State::adjoint_state_solver()
+void Adjoint_State::apply_inversion_technique()
 {
     cell_volume = modeling->dx * modeling->dy * modeling->dz;
 
@@ -167,16 +138,7 @@ void Adjoint_State::adjoint_state_solver()
     }
 }
 
-void Adjoint_State::optimization() 
-{
-    gradient_conditioning();
-
-    parabolical_linesearch();
-
-    limited_steepest_descent();
-}
-
-void Adjoint_State::gradient_conditioning()
+void Adjoint_State::gradient_preconditioning()
 {    
     // int window = 5; 
 
@@ -243,6 +205,13 @@ void Adjoint_State::gradient_conditioning()
     }
 
     export_gradient();
+}
+
+void Adjoint_State::optimization() 
+{
+    parabolical_linesearch();
+
+    limited_steepest_descent();
 }
 
 void Adjoint_State::parabolical_linesearch()

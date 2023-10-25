@@ -1,9 +1,9 @@
-# include "../inversion/tomography/least_squares/least_squares.cuh"
-# include "../inversion/tomography/adjoint_state/adjoint_state.cuh"
+# include "../inversion/least_squares/least_squares.cuh"
+# include "../inversion/adjoint_state/adjoint_state.cuh"
 
 int main(int argc, char **argv)
 {
-    std::vector<Inversion *> inversion = 
+    std::vector<Tomography *> inversion = 
     {
         new Least_Squares(), 
         new Adjoint_State(), 

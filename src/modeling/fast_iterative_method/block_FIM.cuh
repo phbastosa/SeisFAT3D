@@ -1,7 +1,7 @@
 # ifndef BLOCK_FIM_HPP
 # define BLOCK_FIM_HPP
 
-# include "../modeling.hpp"
+# include "../eikonal.hpp"
 
 # include <cassert>
 
@@ -13,7 +13,7 @@
 # define SOL(i,j,k) _sol[i][j][k]
 # define SPD(i,j,k) _spd[i][j][k]
 
-class Block_FIM : public Modeling
+class Block_FIM : public Eikonal
 {
 private:
 

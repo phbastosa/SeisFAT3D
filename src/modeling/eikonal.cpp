@@ -1,6 +1,6 @@
-# include "modeling.hpp"
+# include "eikonal.hpp"
 
-void Modeling::set_parameters()
+void Eikonal::set_parameters()
 {
     set_general_parameters();
 
@@ -17,12 +17,12 @@ void Modeling::set_parameters()
     set_eikonal_volumes();
 }
 
-void Modeling::set_runtime()
+void Eikonal::set_runtime()
 {
     ti = std::chrono::system_clock::now();
 }
 
-void Modeling::info_message()
+void Eikonal::info_message()
 {
     get_RAM_usage();
     get_GPU_usage();
@@ -41,11 +41,11 @@ void Modeling::info_message()
     std::cout<<"RAM = "<<RAM<<" Mb\n";
     std::cout<<"GPU = "<<vRAM<<" Mb\n\n";
 
-    std::cout<<"Modeling:\n";
+    std::cout<<"Eikonal solver:\n";
     std::cout<<eikonal_message<<"\n\n";
 }
 
-void Modeling::initial_setup()
+void Eikonal::initial_setup()
 {
     sidx = (int)(geometry->shots.x[shot_id] / dx) + nbxl;
     sidy = (int)(geometry->shots.y[shot_id] / dy) + nbyl;
@@ -56,13 +56,13 @@ void Modeling::initial_setup()
     initialization();
 }
 
-void Modeling::build_outputs()
+void Eikonal::build_outputs()
 {
     get_travel_times();
     get_first_arrivals();
 }
 
-void Modeling::export_outputs()
+void Eikonal::export_outputs()
 {
     if (export_receiver_output) 
         export_binary_float(receiver_output_file, receiver_output, receiver_output_samples);
@@ -71,7 +71,7 @@ void Modeling::export_outputs()
         export_binary_float(wavefield_output_file, wavefield_output, wavefield_output_samples);
 }
 
-void Modeling::get_runtime()
+void Eikonal::get_runtime()
 {
     tf = std::chrono::system_clock::now();
 
@@ -86,7 +86,7 @@ void Modeling::get_runtime()
     std::cout<<"\nRun time: "<<elapsed_seconds.count()<<" s."<<std::endl;
 }
 
-void Modeling::expand_boundary(float * input, float * output)
+void Eikonal::expand_boundary(float * input, float * output)
 {
     for (int y = nbyl; y < nyy - nbyr; y++)
     {
@@ -177,7 +177,7 @@ void Modeling::expand_boundary(float * input, float * output)
     }
 }
 
-void Modeling::reduce_boundary(float * input, float * output)
+void Eikonal::reduce_boundary(float * input, float * output)
 {
     for (int index = 0; index < nPoints; index++)
     {
@@ -189,7 +189,7 @@ void Modeling::reduce_boundary(float * input, float * output)
     }
 }
 
-void Modeling::set_general_parameters()
+void Eikonal::set_general_parameters()
 {
     get_GPU_initMem();
 
@@ -212,7 +212,7 @@ void Modeling::set_general_parameters()
     wavefield_output_folder = catch_parameter("wavefield_output_folder", file);
 }
 
-void Modeling::set_acquisition_geometry()
+void Eikonal::set_acquisition_geometry()
 {
     std::vector<Geometry *> possibilities = 
     {
@@ -236,14 +236,14 @@ void Modeling::set_acquisition_geometry()
     std::vector<Geometry *>().swap(possibilities); 
 }
 
-void Modeling::set_velocity_model()
+void Eikonal::set_velocity_model()
 {
     V = new float[nPoints]();
 
     import_binary_float(catch_parameter("input_model_file", file), V, nPoints);
 }
 
-void Modeling::set_boundaries()
+void Eikonal::set_boundaries()
 {
     nxx = nx + nbxl + nbxr;
     nyy = ny + nbyl + nbyr;
@@ -252,7 +252,7 @@ void Modeling::set_boundaries()
     volsize = nxx*nyy*nzz;
 }
 
-void Modeling::set_slowness_model()
+void Eikonal::set_slowness_model()
 {
     S = new float[volsize]();
 
@@ -266,7 +266,7 @@ void Modeling::set_slowness_model()
     delete[] V;
 }
 
-void Modeling::set_outputs()
+void Eikonal::set_outputs()
 {
     wavefield_output_samples = nPoints;
     receiver_output_samples = total_nodes;
@@ -275,14 +275,14 @@ void Modeling::set_outputs()
     wavefield_output = new float[wavefield_output_samples]();
 }
 
-void Modeling::get_RAM_usage()
+void Eikonal::get_RAM_usage()
 {
     struct rusage usage;
     getrusage(RUSAGE_SELF, &usage);
     RAM = (int) (usage.ru_maxrss / 1024);
 }
 
-void Modeling::get_GPU_usage()
+void Eikonal::get_GPU_usage()
 {
 	size_t freeMem, totalMem;
 	cudaMemGetInfo(&freeMem, &totalMem);
@@ -290,14 +290,14 @@ void Modeling::get_GPU_usage()
     vRAM -= ivRAM;
 }
 
-void Modeling::get_GPU_initMem()
+void Eikonal::get_GPU_initMem()
 {
 	size_t freeMem, totalMem;
 	cudaMemGetInfo(&freeMem, &totalMem);
     ivRAM = (int) ((totalMem - freeMem) / (1024 * 1024));
 }
 
-void Modeling::check_geometry_overflow()
+void Eikonal::check_geometry_overflow()
 {
     for (int shot = 0; shot < total_shots; shot++)
     {
@@ -316,14 +316,14 @@ void Modeling::check_geometry_overflow()
     }
 }
 
-void Modeling::get_travel_times()
+void Eikonal::get_travel_times()
 {
     reduce_boundary(T, wavefield_output);
 
     wavefield_output_file = wavefield_output_folder + eikonal_method + "_time_volume_" + std::to_string(nz) + "x" + std::to_string(nx) + "x" + std::to_string(ny) + "_shot_" + std::to_string(shot_id+1) + ".bin";
 }
 
-void Modeling::get_first_arrivals()
+void Eikonal::get_first_arrivals()
 {
     for (int r = 0; r < total_nodes; r++)
     {

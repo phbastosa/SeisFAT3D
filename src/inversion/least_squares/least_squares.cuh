@@ -32,17 +32,17 @@ private:
     float * B = nullptr;
     float * x = nullptr; 
 
-    void compute_gradient();
-    void gradient_ray_tracing();
     void apply_regularization();
     void solve_linear_system_lscg();
     void slowness_variation_rescaling();
 
+    void apply_inversion_technique();
+    void set_specific_parameters();
+    void gradient_preconditioning();
+
 public:
 
     void optimization();
-    void set_parameters();
-    void forward_modeling();
 };
 
 # endif

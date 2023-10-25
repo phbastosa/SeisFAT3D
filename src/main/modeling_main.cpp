@@ -4,7 +4,7 @@
 
 int main(int argc, char **argv)
 {
-    std::vector<Modeling *> modeling = 
+    std::vector<Eikonal *> modeling = 
     {
         new Podvin_and_Lecomte(),
         new Block_FIM(),

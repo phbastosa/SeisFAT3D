@@ -1,9 +1,9 @@
 # ifndef ACCURATE_FSM_HPP
 # define ACCURATE_FSM_HPP
 
-# include "../modeling.hpp"
+# include "../eikonal.hpp"
 
-class Accurate_FSM : public Modeling
+class Accurate_FSM : public Eikonal
 {
 private:
 

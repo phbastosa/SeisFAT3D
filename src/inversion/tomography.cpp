@@ -1,12 +1,38 @@
 # include "tomography.hpp"
 
+void Tomography::set_parameters()
+{
+    max_iteration = std::stoi(catch_parameter("max_iteration", file));
+
+    obs_data_folder = catch_parameter("obs_data_folder", file);
+    obs_data_prefix = catch_parameter("obs_data_prefix", file);
+
+    smooth = str2bool(catch_parameter("smooth_per_iteration", file));
+    smoother_samples = std::stoi(catch_parameter("gaussian_filter_samples", file));
+    smoother_stdv = std::stoi(catch_parameter("gaussian_filter_stdv", file));
+    
+    convergence_map_folder = catch_parameter("convergence_folder", file);
+    estimated_model_folder = catch_parameter("estimated_model_folder", file);
+
+    gradient_folder = catch_parameter("gradient_folder", file);
+
+    write_model_per_iteration = str2bool(catch_parameter("export_model_per_iteration", file));
+    write_gradient_per_iteration = str2bool(catch_parameter("export_gradient_per_iteration", file));
+
+    set_specific_parameters();
+
+    set_forward_modeling();
+
+    set_inversion_volumes();
+} 
+
 void Tomography::set_forward_modeling()
 {
     std::vector<Eikonal *> possibilities = 
     {
         new Podvin_and_Lecomte(),
-        new Fast_Iterative_Method(),
-        new Fast_Sweeping_Method()
+        new Block_FIM(),
+        new Accurate_FSM()
     };
     
     auto type = std::stoi(catch_parameter("modeling_type", file));
@@ -20,7 +46,7 @@ void Tomography::set_forward_modeling()
     modeling->set_runtime();
 }
 
-void Tomography::set_main_components()
+void Tomography::set_inversion_volumes()
 {
     n_data = modeling->total_shots * modeling->total_nodes;
     
@@ -32,16 +58,7 @@ void Tomography::set_main_components()
 
     gradient = new float[modeling->nPoints]();
 
-    for (int index = 0; index < modeling->nPoints; index++)
-    {
-        int k = (int) (index / (modeling->nx*modeling->nz));
-        int j = (int) (index - k*modeling->nx*modeling->nz) / modeling->nz;  
-        int i = (int) (index - j*modeling->nz - k*modeling->nx*modeling->nz);
-
-        int indB = (i + modeling->nbzu) + (j + modeling->nbxl)*modeling->nzz + (k + modeling->nbyl)*modeling->nxx*modeling->nzz;
-
-        model[index] = modeling->S[indB];
-    }
+    modeling->reduce_boundary(modeling->S, model);
 }
 
 void Tomography::import_obs_data()
@@ -63,21 +80,57 @@ void Tomography::import_obs_data()
     delete[] data;    
 }
 
-void Tomography::init_modeling()
+void Tomography::forward_modeling()
 {
-    # pragma omp parallel for
-    for (int index = 0; index < modeling->nPoints; index++)
-    {    
-        int k = (int) (index / (modeling->nx*modeling->nz));        
-        int j = (int) (index - k*modeling->nx*modeling->nz) / modeling->nz;    
-        int i = (int) (index - j*modeling->nz - k*modeling->nx*modeling->nz);          
+    modeling->expand_boundary(model, modeling->S);
 
-        int indB = (i+modeling->nbzu) + (j+modeling->nbxl)*modeling->nzz + (k+modeling->nbyl)*modeling->nxx*modeling->nzz;
-
-        modeling->S[indB] = model[index];
-
+    for (int index = 0; index < modeling->nPoints; index++)    
         gradient[index] = 0.0f;
+
+    for (int shot = 0; shot < modeling->total_shots; shot++)
+    {
+        modeling->shot_id = shot;
+    
+        modeling->info_message();
+
+        set_tomography_message();
+
+        modeling->initial_setup();
+        modeling->forward_solver();
+        modeling->build_outputs();
+
+        extract_calculated_data();
+        
+        if (iteration != max_iteration)
+            apply_inversion_technique();
     }
+
+    gradient_preconditioning();
+
+    export_gradient();
+}
+
+void Tomography::set_tomography_message()
+{
+    std::cout<<"Tomography:"<<"\n";
+    std::cout<<inversion_method<<"\n\n";
+
+    if (iteration == max_iteration)
+    { 
+        std::cout<<"------- Checking final residuo ------------\n\n";
+    }
+    else
+        std::cout<<"------- Computing iteration "<<iteration+1<<" of "<<max_iteration<<" ------------\n\n";
+
+    if (iteration > 0) std::cout<<"Previous residuo: "<<residuo.back()<<"\n\n";    
+}
+
+void Tomography::extract_calculated_data()
+{
+    int skipped = modeling->shot_id * modeling->total_nodes;
+
+    for (int i = 0; i < modeling->total_nodes; i++) 
+        dcal[i + skipped] = modeling->receiver_output[i];
 }
 
 void Tomography::check_convergence()
@@ -99,29 +152,6 @@ void Tomography::check_convergence()
         iteration += 1;
         converged = false;
     }
-}
-
-void Tomography::tomography_message()
-{
-    std::cout<<"Inversion:"<<"\n";
-    std::cout<<inversion_method<<"\n\n";
-
-    if (iteration == max_iteration)
-    { 
-        std::cout<<"------- Checking final residuo ------------\n\n";
-    }
-    else
-        std::cout<<"------- Computing iteration "<<iteration+1<<" of "<<max_iteration<<" ------------\n\n";
-
-    if (iteration > 0) std::cout<<"Previous residuo: "<<residuo.back()<<"\n\n";    
-}
-
-void Tomography::extract_calculated_data()
-{
-    int skipped = modeling->shot_id * modeling->total_nodes;
-
-    for (int i = 0; i < modeling->total_nodes; i++) 
-        dcal[i + skipped] = modeling->receiver_output[i];
 }
 
 void Tomography::model_update()
@@ -221,4 +251,85 @@ void Tomography::export_gradient()
         export_binary_float(gradient_path, gradient, modeling->nPoints);
     }
 }
+
+void Tomography::smooth_volume(float * input, float * output, int nx, int ny, int nz)
+{
+    int init = smoother_samples / 2;
+    int nPoints = nx * ny * nz;
+    int nKernel = smoother_samples * smoother_samples * smoother_samples;
+
+    float pi = 4.0f * atanf(1.0f); 
+
+    float * kernel = new float[nKernel]();
+
+    # pragma omp parallel for
+    for (int i = 0; i < nPoints; i++) 
+        output[i] = input[i];
+
+    int mid = (int)(smoother_samples / 2); 
+
+    kernel[mid + mid*smoother_samples + mid*smoother_samples*smoother_samples] = 1.0f;
+
+    if (smoother_stdv != 0.0f)
+    {
+        float sum = 0.0f;
+
+        for (int y = -init; y <= init; y++)
+        {
+            for (int x = -init; x <= init; x++)
+            {
+                for (int z = -init; z <= init; z++)
+                {          
+                    int index = (z+init) + (x+init)*smoother_samples + (y+init)*smoother_samples*smoother_samples; 
+                    
+                    float r = sqrtf(x*x + y*y + z*z);
+
+                    kernel[index] = 1.0f / (pi*smoother_stdv) * expf(-((r*r)/(2.0f*smoother_stdv*smoother_stdv)));
+        
+                    sum += kernel[index]; 
+                }
+            }
+        }
+
+        for (int i = 0; i < nKernel; i++) 
+            kernel[i] /= sum;
+    }
+        
+    for (int k = init; k < ny - init; k++)
+    {   
+        for (int j = init; j < nx - init; j++)
+        {
+            for (int i = init; i < nz - init; i++)
+            {       
+                float accum = 0.0f;
+                
+                for (int yk = 0; yk < smoother_samples; yk++)
+                {      
+                    for (int xk = 0; xk < smoother_samples; xk++)
+                    {      
+                        for (int zk = 0; zk < smoother_samples; zk++)
+                        {   
+                            int index = zk + xk*smoother_samples + yk*smoother_samples*smoother_samples;   
+                            int partial = (i-init+zk) + (j-init+xk)*nz + (k-init+yk)*nx*nz; 
+
+                            accum += input[partial] * kernel[index];
+                        }        
+                    }
+                }
+                
+                output[i + j*nz + k*nx*nz] = accum;
+            }
+        }   
+    }
+
+    delete[] kernel;
+}
+
+
+
+
+
+
+
+
 

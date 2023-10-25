@@ -1,13 +1,7 @@
 # include "least_squares.cuh"
 
-void Least_Squares::set_parameters()
+void Least_Squares::set_specific_parameters()
 {
-    set_general_parameters();
-    
-    set_forward_modeling();
-
-    set_main_components();
-
     dx_tomo = std::stof(catch_parameter("dx_tomo", file));
     dy_tomo = std::stof(catch_parameter("dy_tomo", file));
     dz_tomo = std::stof(catch_parameter("dz_tomo", file));
@@ -33,7 +27,7 @@ void Least_Squares::set_parameters()
             float dy = (modeling->geometry->shots.y[shot] - modeling->geometry->nodes.y[node]) / modeling->dy;
             float dz = (modeling->geometry->shots.z[shot] - modeling->geometry->nodes.z[node]) / modeling->dz;
             
-            ray_path_estimated_samples += (size_t)(3.0f*sqrtf(dx*dx + dy*dy + dz*dz));
+            ray_path_estimated_samples += (size_t)(2.0f*sqrtf(dx*dx + dy*dy + dz*dz));
         }
     }
 
@@ -42,30 +36,7 @@ void Least_Squares::set_parameters()
     vG.reserve(ray_path_estimated_samples);
 }
 
-void Least_Squares::forward_modeling()
-{
-    init_modeling();
-
-    for (int shot = 0; shot < modeling->total_shots; shot++)
-    {
-        modeling->shot_id = shot;
-    
-        modeling->info_message();
-
-        tomography_message();
-
-        modeling->initial_setup();
-        modeling->forward_solver();
-        modeling->build_outputs();
-
-        extract_calculated_data();
-        
-        if (iteration != max_iteration)
-            gradient_ray_tracing();
-    }
-}
-
-void Least_Squares::gradient_ray_tracing()
+void Least_Squares::apply_inversion_technique()
 {
     int nxx = modeling->nxx;
     int nzz = modeling->nzz;
@@ -111,7 +82,9 @@ void Least_Squares::gradient_ray_tracing()
             int jm = (int)(xi / dx_tomo); 
             int km = (int)(yi / dy_tomo); 
 
-            ray_index.push_back(im + jm*nz_tomo + km*nx_tomo*nz_tomo);
+            int index = im + jm*nz_tomo + km*nx_tomo*nz_tomo;
+            
+            ray_index.push_back(index);
 
             if (ray_index.back() == sId) break;
         }
@@ -158,14 +131,73 @@ void Least_Squares::gradient_ray_tracing()
         }
 
         std::vector < int >().swap(ray_index);
+    }    
+}
+
+void Least_Squares::gradient_preconditioning()
+{
+    float * grad = new float[n_model]();
+
+    for (int index = 0; index < vG.size(); index++)
+    {
+        grad[jG[index]] += (dobs[iG[index]] - dcal[iG[index]]) / vG[index];
     }
+
+    for (int index = 0; index < modeling->nPoints; index++)
+    {
+        int k = (int) (index / (modeling->nx*modeling->nz));        
+        int j = (int) (index - k*modeling->nx*modeling->nz) / modeling->nz;    
+        int i = (int) (index - j*modeling->nz - k*modeling->nx*modeling->nz);  
+
+        float xp = j*modeling->dx; 
+        float yp = k*modeling->dy; 
+        float zp = i*modeling->dz; 
+
+        float x0 = floorf(xp/dx_tomo)*dx_tomo;
+        float y0 = floorf(yp/dy_tomo)*dy_tomo;
+        float z0 = floorf(zp/dz_tomo)*dz_tomo;
+
+        float x1 = floorf(xp/dx_tomo)*dx_tomo + dx_tomo;
+        float y1 = floorf(yp/dy_tomo)*dy_tomo + dy_tomo;
+        float z1 = floorf(zp/dz_tomo)*dz_tomo + dz_tomo;
+
+        int idz = (int)(zp/dz_tomo);
+        int idx = (int)(xp/dx_tomo);
+        int idy = (int)(yp/dy_tomo);
+
+        int ind_m = (int)(idz + idx*nz_tomo + idy*nx_tomo*nz_tomo);
+        
+        float c000 = grad[ind_m];                  
+        float c001 = grad[ind_m + 1];
+        float c100 = grad[ind_m + nz_tomo];
+        float c101 = grad[ind_m + 1 + nz_tomo];
+        float c010 = grad[ind_m + nx_tomo*nz_tomo];
+        float c011 = grad[ind_m + 1 + nx_tomo*nz_tomo];
+        float c110 = grad[ind_m + nz_tomo + nx_tomo*nz_tomo];
+        float c111 = grad[ind_m + 1 + nz_tomo + nx_tomo*nz_tomo];  
+
+        float xd = (xp - x0) / (x1 - x0);
+        float yd = (yp - y0) / (y1 - y0);
+        float zd = (zp - z0) / (z1 - z0);
+
+        float c00 = c000*(1 - xd) + c100*xd;    
+        float c01 = c001*(1 - xd) + c101*xd;    
+        float c10 = c010*(1 - xd) + c110*xd;    
+        float c11 = c011*(1 - xd) + c111*xd;    
+
+        float c0 = c00*(1 - yd) + c10*yd;
+        float c1 = c01*(1 - yd) + c11*yd;
+
+        float g_ijk = (c0*(1 - zd) + c1*zd);
+
+        gradient[i + j*modeling->nz + k*modeling->nx*modeling->nz] = g_ijk;                        
+    }    
+
+    delete[] grad;
 }
 
 void Least_Squares::optimization()
 {
-    compute_gradient();
-    export_gradient();
-
     std::cout<<"\nSolving linear system using Tikhonov regularization with order " + std::to_string(tk_order) + "\n\n";
 
     M = n_model;                                  
@@ -201,70 +233,6 @@ void Least_Squares::optimization()
     delete[] iA;
     delete[] jA;
     delete[] vA;
-}
-
-void Least_Squares::compute_gradient()
-{
-    float * grad = new float[n_model]();
-
-    for (int index = 0; index < vG.size(); index++)
-    {
-        grad[jG[index]] += vG[index] * (dobs[iG[index]] - dcal[iG[index]]);
-    }
-
-    for (int index = 0; index < modeling->nPoints; index++)
-    {
-        int k = (int) (index / (modeling->nx*modeling->nz));        
-        int j = (int) (index - k*modeling->nx*modeling->nz) / modeling->nz;    
-        int i = (int) (index - j*modeling->nz - k*modeling->nx*modeling->nz);  
-
-        float xp = j*modeling->dx; 
-        float yp = k*modeling->dy; 
-        float zp = i*modeling->dz; 
-
-        float x0 = floorf(xp/dx_tomo)*dx_tomo;
-        float y0 = floorf(yp/dy_tomo)*dy_tomo;
-        float z0 = floorf(zp/dz_tomo)*dz_tomo;
-
-        float x1 = floorf(xp/dx_tomo)*dx_tomo + dx_tomo;
-        float y1 = floorf(yp/dy_tomo)*dy_tomo + dy_tomo;
-        float z1 = floorf(zp/dz_tomo)*dz_tomo + dz_tomo;
-
-        gradient[index] = 0.0f;
-
-        int idz = (int)(zp/dz_tomo);
-        int idx = (int)(xp/dx_tomo);
-        int idy = (int)(yp/dy_tomo);
-
-        int ind_m = (int)(idz + idx*nz_tomo + idy*nx_tomo*nz_tomo);
-
-        float c000 = grad[ind_m];                  
-        float c001 = grad[ind_m + 1];
-        float c100 = grad[ind_m + nz_tomo];
-        float c101 = grad[ind_m + 1 + nz_tomo];
-        float c010 = grad[ind_m + nx_tomo*nz_tomo];
-        float c011 = grad[ind_m + 1 + nx_tomo*nz_tomo];
-        float c110 = grad[ind_m + nz_tomo + nx_tomo*nz_tomo];
-        float c111 = grad[ind_m + 1 + nz_tomo + nx_tomo*nz_tomo];  
-
-        float xd = (xp - x0) / (x1 - x0);
-        float yd = (yp - y0) / (y1 - y0);
-        float zd = (zp - z0) / (z1 - z0);
-
-        float c00 = c000*(1 - xd) + c100*xd;    
-        float c01 = c001*(1 - xd) + c101*xd;    
-        float c10 = c010*(1 - xd) + c110*xd;    
-        float c11 = c011*(1 - xd) + c111*xd;    
-
-        float c0 = c00*(1 - yd) + c10*yd;
-        float c1 = c01*(1 - yd) + c11*yd;
-
-        float g_ijk = (c0*(1 - zd) + c1*zd);
-
-        gradient[i + j*modeling->nz + k*modeling->nx*modeling->nz] = g_ijk;            
-    }    
-
-    delete[] grad;
 }
 
 void Least_Squares::apply_regularization()
@@ -427,8 +395,6 @@ void Least_Squares::slowness_variation_rescaling()
         float y1 = floorf(yp/dy_tomo)*dy_tomo + dy_tomo;
         float z1 = floorf(zp/dz_tomo)*dz_tomo + dz_tomo;
 
-        dm[index] = 0.0f;
-
         int idz = (int)(zp/dz_tomo);
         int idx = (int)(xp/dx_tomo);
         int idy = (int)(yp/dy_tomo);
@@ -459,10 +425,5 @@ void Least_Squares::slowness_variation_rescaling()
         float dm_ijk = (c0*(1 - zd) + c1*zd);
 
         dm[index] = dm_ijk;            
-
-        if ((i < 5) || (i >= modeling->nz - 5) || (j < 5) || (j >= modeling->nx - 5) || (k < 5) || (k >= modeling->ny - 5))
-        {
-            dm[index] = 0.0f;
-        }    
     }
 }

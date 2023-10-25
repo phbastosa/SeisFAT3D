@@ -1,5 +1,5 @@
-# ifndef MODELING_HPP
-# define MODELING_HPP
+# ifndef EIKONAL_HPP
+# define EIKONAL_HPP
 
 # include <chrono>
 # include <cuda_runtime.h>
@@ -9,7 +9,7 @@
 # include "../geometry/regular/regular.hpp"
 # include "../geometry/circular/circular.hpp"
 
-class Modeling
+class Eikonal
 {
     int RAM, vRAM, ivRAM;
 
@@ -23,8 +23,6 @@ class Modeling
 
 protected:
 
-    int nbxl, nbxr, nbyl; 
-    int nbyr, nbzu, nbzd;
     int sidx, sidy, sidz;
 
     int receiver_output_samples;
@@ -45,7 +43,6 @@ protected:
     void set_boundaries();
     void set_velocity_model();
     void set_slowness_model();
-    void set_general_message();
     void set_general_parameters();
     void set_acquisition_geometry();
 
@@ -67,6 +64,8 @@ public:
     Geometry * geometry;
 
     float dx, dy, dz;
+    int nbxl, nbxr, nbyl; 
+    int nbyr, nbzu, nbzd;
 
     int blocksPerGrid;
     int threadsPerBlock;

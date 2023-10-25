@@ -19,10 +19,7 @@ private:
     
     float * d_source = nullptr;
     float * d_adjoint = nullptr;
-
-    void adjoint_state_solver();
     
-    void gradient_conditioning();
     void parabolical_linesearch();
     void limited_steepest_descent();
 
@@ -30,11 +27,13 @@ private:
 
     int iDivUp(int a, int b);
 
+    void apply_inversion_technique();
+    void set_specific_parameters();
+    void gradient_preconditioning();
+
 public:
 
     void optimization();
-    void set_parameters();
-    void forward_modeling();
 };
 
 # endif

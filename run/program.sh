@@ -7,6 +7,7 @@ io="../src/io/io.cpp"
 # Acquisition geometry scripts ------------------------------------------------------------------------
 
 geometry="../src/geometry/geometry.cpp"
+
 regular="../src/geometry/regular/regular.cpp"
 circular="../src/geometry/circular/circular.cpp"
 
@@ -14,7 +15,7 @@ geometry_all="$geometry $regular $circular"
 
 # Seismic modeling scripts ----------------------------------------------------------------------------
 
-modeling="../src/modeling/modeling.cpp"
+eikonal="../src/modeling/eikonal.cpp"
 
 pod="../src/modeling/podvin_and_lecomte/podvin_and_lecomte.cu"
 fim="../src/modeling/fast_iterative_method/block_FIM.cu"
@@ -22,28 +23,26 @@ fsm="../src/modeling/fast_sweeping_method/accurate_FSM.cu"
 
 modeling_main="../src/main/modeling_main.cpp"
 
-modeling_all="$modeling $pod $fim $fsm $modeling_main"
+modeling_all="$eikonal $pod $fim $fsm $modeling_main"
 
 # Seismic inversion scripts ---------------------------------------------------------------------------
 
-inversion="../src/inversion/inversion.cpp"
+tomography="../src/inversion/tomography.cpp"
 
-tomography="../src/inversion/tomography/tomography.cpp"
-least_squares="../src/inversion/tomography/least_squares/least_squares.cu"
-adjoint_state="../src/inversion/tomography/adjoint_state/adjoint_state.cu"
+least_squares="../src/inversion/least_squares/least_squares.cu"
+adjoint_state="../src/inversion/adjoint_state/adjoint_state.cu"
 
 inversion_main="../src/main/inversion_main.cpp"
 
-inversion_all="$inversion $tomography $least_squares $adjoint_state $inversion_main"
+inversion_all="$tomography $least_squares $adjoint_state $inversion_main"
 
 # Seismic migration scripts ---------------------------------------------------------------------------
 
-migration="../src/migration/migration.cpp"
-kirchhoff="../src/migration/kirchhoff/kirchhoff.cpp"
+kirchhoff="../src/migration/kirchhoff.cpp"
 
 migration_main="../src/main/migration_main.cpp"
 
-migration_all="$migration $kirchhoff $migration_main"
+migration_all="$kirchhoff $migration_main"
 
 # Compiler flags --------------------------------------------------------------------------------------
 
