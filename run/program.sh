@@ -147,7 +147,9 @@ case "$1" in
 
     python3 ../tests/inversion/generate_figures.py
 
-	exit 0
+    rm runTime.txt
+	
+    exit 0
 ;;
 
 -test_migration)
