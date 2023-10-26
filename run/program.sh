@@ -142,6 +142,7 @@ case "$1" in
     ./../bin/modeling.exe ../tests/inversion/parFiles/parameters_obsData.txt
 
     ./../bin/inversion.exe ../tests/inversion/parFiles/parameters_leastSquares.txt
+
     ./../bin/inversion.exe ../tests/inversion/parFiles/parameters_adjointState.txt
 
     python3 ../tests/inversion/generate_figures.py

@@ -229,20 +229,34 @@ dh = np.array([dx, dy, dz])
 
 check_geometry(model, shots, nodes, dh, slices, subplots, 1.2)
 plt.savefig(f"trueModel.png", dpi = 200)
+plt.show()
 
+check_geometry(1500.0*np.ones_like(model), shots, nodes, dh, slices, subplots, 1.2)
+plt.savefig(f"initModel.png", dpi = 200)
 # --------------------------------------------------
 
-convergence_ls = np.loadtxt("../outputs/convergence/convergence_2_iterations.txt")
+convergence_ls = np.loadtxt("../outputs/convergence/ls_convergence_3_iterations.txt")
+convergence_adj = np.loadtxt("../outputs/convergence/adj_convergence_3_iterations.txt")
 
-# plt.plot(convergence_ls, "o--")
-# plt.show()
+plt.figure(2, figsize = (15,6))
+plt.plot(convergence_ls, "o--", label = "Least squares approach")
+plt.plot(convergence_adj, "o--", label = "Adjoint state approach")
+
+plt.title("Convergence curve", fontsize = 18)
+plt.xlabel("Iteration number", fontsize = 15)
+plt.ylabel("Objective function L2 norm", fontsize = 15)
+
+plt.legend(loc = "upper right", fontsize = 12)
+plt.tight_layout()
 
 #-----------------------------------------------
 
-final_model = readBinaryVolume(nz, nx, ny, f"../outputs/gradients/gradient_iteration_1_{nz}x{nx}x{ny}.bin")
-# final_model = readBinaryVolume(nz, nx, ny, f"../outputs/recovered_models/final_model_{nz}x{nx}x{ny}.bin")
+final_model_ls = readBinaryVolume(nz, nx, ny, f"../outputs/recovered_models/ls_final_model_{nz}x{nx}x{ny}.bin")
+final_model_adj = readBinaryVolume(nz, nx, ny, f"../outputs/recovered_models/adj_final_model_{nz}x{nx}x{ny}.bin")
 
-check_geometry(final_model, shots, nodes, dh, slices, subplots, 1.2)
-# # plt.savefig(f"trueModel.png", dpi = 200)
-plt.show()
+check_geometry(final_model_ls, shots, nodes, dh, slices, subplots, 1.2)
+plt.savefig(f"final_model_ls.png", dpi = 200)
+
+check_geometry(final_model_adj, shots, nodes, dh, slices, subplots, 1.2)
+plt.savefig(f"final_model_adj.png", dpi = 200)
 

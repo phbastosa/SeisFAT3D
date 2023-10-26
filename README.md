@@ -68,6 +68,11 @@ ___
 
 Basic inversion scheme with all steps to perform it.
 
+![trueModel](https://github.com/phbastosa/first_break_imaging_3D/assets/44127778/e94c42ea-48c4-4210-b00d-e7d769f6ac01) ![initModel](https://github.com/phbastosa/first_break_imaging_3D/assets/44127778/0f3dafd0-66fd-4e74-8fe6-f3abc5ec2210)
+
+
+![final_model_ls](https://github.com/phbastosa/first_break_imaging_3D/assets/44127778/9ed6027b-0ace-4c57-b745-29aae8dc1e2f) ![final_model_adj](https://github.com/phbastosa/first_break_imaging_3D/assets/44127778/245e629f-c73e-473a-88cb-bafbcbae6110)
+
 ___
 
 ### Migration Benchmark:

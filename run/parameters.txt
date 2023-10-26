@@ -81,6 +81,8 @@ dz_tomo = 20                          # [m] <float>
 tk_order = 2                          # Tikhonov regularization order <int>
 tk_param = 1e3                        # Tikhonov regularization parameter <float>
 
+max_slowness = 1e-4                   # Max slowness variation <float>
+
 smooth_per_iteration = true           # <bool>
 gaussian_filter_samples = 5           # [odd number] <int> 
 gaussian_filter_stdv = 2.0            # <float>
