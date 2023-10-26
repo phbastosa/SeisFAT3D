@@ -436,4 +436,43 @@ void Least_Squares::slowness_variation_rescaling()
             dm[index] = dm_ijk;            
         } 
     }
+
+    if (smooth)
+    {
+        int aux_nx = modeling->nx + 2*smoother_samples;
+        int aux_ny = modeling->ny + 2*smoother_samples;
+        int aux_nz = modeling->nz + 2*smoother_samples;
+
+        int aux_nPoints = aux_nx*aux_ny*aux_nz;
+
+        float * dm_aux = new float[aux_nPoints]();
+        float * dm_smooth = new float[aux_nPoints]();
+
+        for (int index = 0; index < modeling->nPoints; index++)
+        {
+            int k = (int) (index / (modeling->nx*modeling->nz));        
+            int j = (int) (index - k*modeling->nx*modeling->nz) / modeling->nz;    
+            int i = (int) (index - j*modeling->nz - k*modeling->nx*modeling->nz);          
+
+            int ind_filt = (i + smoother_samples) + (j + smoother_samples)*aux_nz + (k + smoother_samples)*aux_nx*aux_nz;
+
+            dm_aux[ind_filt] = dm[i + j*modeling->nz + k*modeling->nx*modeling->nz];
+        }
+
+        smooth_volume(dm_aux, dm_smooth, aux_nx, aux_ny, aux_nz);
+
+        for (int index = 0; index < modeling->nPoints; index++)
+        {
+            int k = (int) (index / (modeling->nx*modeling->nz));        
+            int j = (int) (index - k*modeling->nx*modeling->nz) / modeling->nz;    
+            int i = (int) (index - j*modeling->nz - k*modeling->nx*modeling->nz);          
+
+            int ind_filt = (i + smoother_samples) + (j + smoother_samples)*aux_nz + (k + smoother_samples)*aux_nx*aux_nz;
+
+            dm[i + j*modeling->nz + k*modeling->nx*modeling->nz] = dm_smooth[ind_filt];
+        }
+    
+        delete[] dm_aux;
+        delete[] dm_smooth;
+    }    
 }

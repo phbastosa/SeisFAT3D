@@ -17,16 +17,16 @@ int main(int argc, char **argv)
     inversion[type]->set_parameters();
     inversion[type]->import_obs_data();
 
-    // while (true)
-    // {
+    while (true)
+    {
         inversion[type]->forward_modeling();
         inversion[type]->check_convergence();
 
-    //     if (inversion[type]->converged) break; 
+        if (inversion[type]->converged) break; 
 
-    //     inversion[type]->optimization();
-    //     inversion[type]->model_update();
-    // }
+        inversion[type]->optimization();
+        inversion[type]->model_update();
+    }
 
     inversion[type]->export_results();
 

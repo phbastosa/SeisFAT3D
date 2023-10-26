@@ -26,6 +26,8 @@ protected:
     float * model = nullptr;
     float * gradient = nullptr;
 
+    float max_slowness_variation;
+
     bool write_model_per_iteration;
     bool write_gradient_per_iteration;
 

@@ -243,5 +243,6 @@ final_model = readBinaryVolume(nz, nx, ny, f"../outputs/gradients/gradient_itera
 # final_model = readBinaryVolume(nz, nx, ny, f"../outputs/recovered_models/final_model_{nz}x{nx}x{ny}.bin")
 
 check_geometry(final_model, shots, nodes, dh, slices, subplots, 1.2)
-# plt.savefig(f"trueModel.png", dpi = 200)
+# # plt.savefig(f"trueModel.png", dpi = 200)
 plt.show()
+

@@ -72,42 +72,45 @@ void Adjoint_State::apply_inversion_technique()
 	cudaMemcpy(d_source, source, modeling->volsize*sizeof(float), cudaMemcpyHostToDevice);
 	cudaMemcpy(d_adjoint, adjoint, modeling->volsize*sizeof(float), cudaMemcpyHostToDevice);
 
-    for (int sweep = 0; sweep < nSweeps; sweep++)
-    { 
-        int start = (sweep == 3 || sweep == 5 || sweep == 6 || sweep == 7) ? totalLevels : meshDim;
-        int end = (start == meshDim) ? totalLevels + 1 : meshDim - 1;
-        int incr = (start == meshDim) ? true : false;
+    for (int sweepCount = 0; sweepCount <= meshDim; sweepCount++)
+    {
+        for (int sweep = 0; sweep < nSweeps; sweep++)
+        { 
+            int start = (sweep == 3 || sweep == 5 || sweep == 6 || sweep == 7) ? totalLevels : meshDim;
+            int end = (start == meshDim) ? totalLevels + 1 : meshDim - 1;
+            int incr = (start == meshDim) ? true : false;
 
-        int xSweepOff = (sweep == 3 || sweep == 4) ? modeling->nxx : 0;
-        int ySweepOff = (sweep == 2 || sweep == 5) ? modeling->nyy : 0;
-        int zSweepOff = (sweep == 1 || sweep == 6) ? modeling->nzz : 0;
-        
-        for (int level = start; level != end; level = (incr) ? level + 1 : level - 1)
-        {			
-            int xs = max(1, level - (modeling->nyy + modeling->nzz));	
-            int ys = max(1, level - (modeling->nxx + modeling->nzz));
+            int xSweepOff = (sweep == 3 || sweep == 4) ? modeling->nxx : 0;
+            int ySweepOff = (sweep == 2 || sweep == 5) ? modeling->nyy : 0;
+            int zSweepOff = (sweep == 1 || sweep == 6) ? modeling->nzz : 0;
+            
+            for (int level = start; level != end; level = (incr) ? level + 1 : level - 1)
+            {			
+                int xs = max(1, level - (modeling->nyy + modeling->nzz));	
+                int ys = max(1, level - (modeling->nxx + modeling->nzz));
 
-            int xe = min(modeling->nxx, level - (meshDim - 1));
-            int ye = min(modeling->nyy, level - (meshDim - 1));	
-        
-            int xr = xe - xs + 1;
-            int yr = ye - ys + 1;
+                int xe = min(modeling->nxx, level - (meshDim - 1));
+                int ye = min(modeling->nyy, level - (meshDim - 1));	
+            
+                int xr = xe - xs + 1;
+                int yr = ye - ys + 1;
 
-            int nThreads = xr * yr;
-                
-            dim3 bs(16, 16, 1);
+                int nThreads = xr * yr;
+                    
+                dim3 bs(16, 16, 1);
 
-            if (nThreads < modeling->threadsPerBlock) { bs.x = xr; bs.y = yr; } 
+                if (nThreads < modeling->threadsPerBlock) { bs.x = xr; bs.y = yr; } 
 
-            dim3 gs(iDivUp(xr, bs.x), iDivUp(yr , bs.y), 1);
+                dim3 gs(iDivUp(xr, bs.x), iDivUp(yr , bs.y), 1);
 
-            adjoint_state_kernel<<<gs,bs>>>(d_adjoint, d_source, d_T, level, xs, ys, xSweepOff, ySweepOff, zSweepOff, 
-                                            modeling->nxx, modeling->nyy, modeling->nzz, modeling->dx, modeling->dy, modeling->dz);
+                adjoint_state_kernel<<<gs,bs>>>(d_adjoint, d_source, d_T, level, xs, ys, xSweepOff, ySweepOff, zSweepOff, 
+                                                modeling->nxx, modeling->nyy, modeling->nzz, modeling->dx, modeling->dy, modeling->dz);
 
-            cudaDeviceSynchronize();
+                cudaDeviceSynchronize();
+            }
         }
     }
-
+    
     cudaMemcpy(adjoint, d_adjoint, modeling->volsize*sizeof(float), cudaMemcpyDeviceToHost);
 
     for (int index = 0; index < modeling->nPoints; index++) 
@@ -166,90 +169,24 @@ void Adjoint_State::gradient_preconditioning()
 
 void Adjoint_State::optimization() 
 {
-    parabolical_linesearch();
-
-    limited_steepest_descent();
-}
-
-void Adjoint_State::parabolical_linesearch()
-{
-    std::cout<<"\nRunning parabolical linesearch\n"<<std::endl;
-
-    float pit = static_cast<float>(iteration);
-
-    float x1 = 0.0f;
-    float x2 = 0.2f / pit;
-    float x3 = 0.5f / pit;
-
-    float f1 = residuo.back();
-    float f2 = get_objective_function(x2, gradient);
-    float f3 = get_objective_function(x3, gradient);
-
-    float D = x2*x3*x3 + x1*x2*x2 + x1*x1*x3 - (x1*x1*x2 + x1*x3*x3 + x2*x2*x3);
-    float Da = x2*f3 + x1*f2 + f1*x3 - (f1*x2 + x1*f3 + f2*x3);
-    float Db = f2*x3*x3 + f1*x2*x2 + x1*x1*f3 - (x1*x1*f2 + f1*x3*x3 + x2*x2*f3);
-
-    float a = Da / D;
-    float b = Db / D; 
-
-    alpha = - b / (2.0f * a);
-}
-
-void Adjoint_State::limited_steepest_descent()
-{
-    float max_perturbation = 2e-4f / static_cast<float>(iteration);
+    float gmax = 0.0f;
 
     for (int index = 0; index < modeling->nPoints; index++)
     {
-        dm[index] = alpha*gradient[index];    
-
-        if (fabsf(dm[index]) > max_perturbation)
-        {
-            if (dm[index] < 0.0f) 
-                dm[index] = -max_perturbation;
-            else 
-                dm[index] = max_perturbation;    
-        } 
+        if (gmax < fabsf(gradient[index]))
+            gmax = fabsf(gradient[index]);
     }
-}
 
-float Adjoint_State::get_objective_function(float step, float * grad)
-{
+    float dumping = 1.0f / static_cast<float>(iteration);
+
     for (int index = 0; index < modeling->nPoints; index++)
     {
-        int k = (int) (index / (modeling->nx*modeling->nz));        
-        int j = (int) (index - k*modeling->nx*modeling->nz) / modeling->nz;    
-        int i = (int) (index - j*modeling->nz - k*modeling->nx*modeling->nz);          
-
-        int indB = (i + modeling->nbzu) + (j + modeling->nbxl)*modeling->nzz + (k + modeling->nbyl)*modeling->nxx*modeling->nzz;
-        
-        modeling->S[indB] = model[index] + step*grad[index];
+        dm[index] = dumping * (max_slowness_variation / gmax) * gradient[index];
     }
-
-    for (int shot = 0; shot < modeling->total_shots; shot++)
-    {
-        modeling->shot_id = shot;
-
-        modeling->initial_setup();
-        modeling->forward_solver();
-        modeling->build_outputs();
-
-        extract_calculated_data();
-    }
-
-    float function = 0.0f;
-
-    for (int i = 0; i < n_data; i++)
-        function += powf(dobs[i] - dcal[i], 2.0f);
-
-    function = sqrtf(function);
-
-    return function;
 }
 
-__global__ void adjoint_state_kernel(float * adjoint, float * source, float * T, int level, int xOffset, int yOffset, 
-                                     int xSweepOffset, int ySweepOffset, int zSweepOffset, int nxx, int nyy, int nzz, 
-                                     float dx, float dy, float dz)
+__global__ void adjoint_state_kernel(float * adjoint, float * source, float * T, int level, int xOffset, int yOffset, int xSweepOffset, int ySweepOffset, 
+                                     int zSweepOffset, int nxx, int nyy, int nzz, float dx, float dy, float dz)
 {
 	int x = (blockIdx.x * blockDim.x + threadIdx.x) + xOffset;
 	int y = (blockIdx.y * blockDim.y + threadIdx.y) + yOffset;
@@ -292,7 +229,7 @@ __global__ void adjoint_state_kernel(float * adjoint, float * source, float * T,
 
                 float d = (ap2 - am1)/dx + (bp2 - bm1)/dy + (cp2 - cm1)/dz;
 
-                if (abs(d) < 1e-6f)
+                if (fabsf(d) < 1e-6f)
                 {
                     adjoint[i + j*nzz + k*nxx*nzz] = 0.0f;    
                 }
@@ -303,9 +240,9 @@ __global__ void adjoint_state_kernel(float * adjoint, float * source, float * T,
                               (cp1*adjoint[(i-1) + j*nzz + k*nxx*nzz] - cm2*adjoint[(i+1) + j*nzz + k*nxx*nzz]) / dz;
 
                     float f = (e + source[i + j*nzz + k*nxx*nzz]) / d;
-                    float g = adjoint[i + j*nzz + k*nxx*nzz];
 
-                    if (g > f) adjoint[i + j*nzz + k*nxx*nzz] = f;
+                    if (adjoint[i + j*nzz + k*nxx*nzz] > f) 
+                        adjoint[i + j*nzz + k*nxx*nzz] = f;
                 }
             }
         }
