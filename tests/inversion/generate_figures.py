@@ -227,8 +227,8 @@ subplots = np.array([1, 1], dtype = int)
 slices = np.array([nz/2, nx/2, ny/2], dtype = int) # [xy, zy, zx]
 dh = np.array([dx, dy, dz])
 
-# check_geometry(model, shots, nodes, dh, slices, subplots, 1.2)
-# plt.savefig(f"trueModel.png", dpi = 200)
+check_geometry(model, shots, nodes, dh, slices, subplots, 1.2)
+plt.savefig(f"trueModel.png", dpi = 200)
 
 # --------------------------------------------------
 
