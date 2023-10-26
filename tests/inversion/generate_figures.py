@@ -229,7 +229,6 @@ dh = np.array([dx, dy, dz])
 
 check_geometry(model, shots, nodes, dh, slices, subplots, 1.2)
 plt.savefig(f"trueModel.png", dpi = 200)
-plt.show()
 
 check_geometry(1500.0*np.ones_like(model), shots, nodes, dh, slices, subplots, 1.2)
 plt.savefig(f"initModel.png", dpi = 200)
@@ -238,7 +237,7 @@ plt.savefig(f"initModel.png", dpi = 200)
 convergence_ls = np.loadtxt("../outputs/convergence/ls_convergence_3_iterations.txt")
 convergence_adj = np.loadtxt("../outputs/convergence/adj_convergence_3_iterations.txt")
 
-plt.figure(2, figsize = (15,6))
+plt.figure(2, figsize = (10,4))
 plt.plot(convergence_ls, "o--", label = "Least squares approach")
 plt.plot(convergence_adj, "o--", label = "Adjoint state approach")
 
@@ -248,6 +247,7 @@ plt.ylabel("Objective function L2 norm", fontsize = 15)
 
 plt.legend(loc = "upper right", fontsize = 12)
 plt.tight_layout()
+plt.savefig(f"curve.png", dpi = 200)
 
 #-----------------------------------------------
 
