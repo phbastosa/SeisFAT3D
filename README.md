@@ -85,7 +85,7 @@ $ ./program -test_inversion
 
 ![curve](https://github.com/phbastosa/first_break_imaging_3D/assets/44127778/034a1006-f518-43ed-8fe8-1ca212adca59)
 
-#### Some statisttics of the procedures
+#### Some statistics of the procedures
 
 |  Type                    |  Elapsed time  | RAM usage  | GPU memory usage | 
 | ------------------------ | -------------- | ---------- | ---------------- |
