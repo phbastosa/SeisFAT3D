@@ -3,6 +3,14 @@ ___
 ## Seismic First Arrival Toolkit
 
 Modeling, inversion and migration using massive computational parallelism in object-oriented programming.
+
+### Publications:
+
+**Alves, P. H. B.**; Moreira, R. M.; Cetale, M.; Lopez, J. First arrival tomography application in low illumination time-lapse reservoir monitoring. In: Sociedade Brasileira de Geofísica. *18th
+International Congress of the Brazilian Geophysical Society*, 2023. [link](https://sbgf.org.br/mysbgf/eventos/expanded_abstracts/18th_CISBGf/a8c88a0055f636e4a163a5e3d16adab7CISBGf_2023_tomography.pdf)
+
+**Alves, P. H. B.**; Capuzzo, F.; Cetale, M.; Santos, L. 3D refraction travel times accuracy study in high contrasted media. In: Sociedade Brasileira de Geofísica. *IX Simpósio Brasileiro de Geofı́sica*, 2022. [link](https://sbgf.org.br/mysbgf/eventos/expanded_abstracts/IX_SimBGf/session/M%C3%A9todos%20Geof%C3%ADsicos%20e%20Geof%C3%ADsica%20Computacional/3D%20refraction%20travel%20times%20accuracy%20study%20in%20high%20contrasted%20media.pdf)
+
 ___
 
 ### Requirements:
