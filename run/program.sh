@@ -52,10 +52,10 @@ flags="--std=c++11 -lm -O3"
 
 USER_MESSAGE="
 Usage:\n
-    $ $0 -compile        # Create executables 
-    $ $0 -modeling       # Perform eikonal solver          
-    $ $0 -inversion      # Perform first arrival tomography
-    $ $0 -migration      # Perform kirchhoff depth migration   
+    $ $0 -compile             # Create executables 
+    $ $0 -modeling            # Perform eikonal solver          
+    $ $0 -inversion           # Perform first arrival tomography
+    $ $0 -migration           # Perform kirchhoff depth migration   
 
 Tests:\n
     $ $0 -test_modeling       # Perform a small modeling experiment          
