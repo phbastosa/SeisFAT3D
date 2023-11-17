@@ -7,19 +7,18 @@
 * RAM: 16 GB       
 ___
 
-### There is no implementation yet.
-
 First of all, you have to compile the code to generate the executables. Make sure you're inside the run folder.
 
 ```console
-first_arrival_toolkit_3D/run$ ./program -compile
+SeisFAT3D/run$ ./program -compile
 ```
 
 After that, you just need to perform the test.
 
 ```console
-first_arrival_toolkit_3D/run$ ./program -test_migration
+SeisFAT3D/run$ ./program -test_migration
 ```
 The results will appear in .png images, as follows
 
+### There is no implementation yet.
 

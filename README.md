@@ -23,8 +23,8 @@ ____
 ### Usage:
 
 ```console
-seismic_imaging_3D$ cd run/
-seismic_imaging_3D/run/$ ./program.sh -h
+SeisFAT3D$ cd run/
+SeisFAT3D/run/$ ./program.sh -h
 
 Usage:
 

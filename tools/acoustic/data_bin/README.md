@@ -1,1 +1,1 @@
-## Executables folder
+## Binary seismic data folder

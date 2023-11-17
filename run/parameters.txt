@@ -2,13 +2,13 @@
 # Model paramenters --------------------------------------------------------------------------------
 #---------------------------------------------------------------------------------------------------
 
-x_samples = 801                     # <int>  
-y_samples = 801                     # <int>  
-z_samples = 171                     # <int>  
+x_samples = 801                       # <int>  
+y_samples = 801                       # <int>  
+z_samples = 171                       # <int>  
 
-x_spacing = 25                      # [m] <float> 
-y_spacing = 25                      # [m] <float> 
-z_spacing = 25                      # [m] <float> 
+x_spacing = 25                        # [m] <float> 
+y_spacing = 25                        # [m] <float> 
+z_spacing = 25                        # [m] <float> 
 
 input_model_file = ../inputs/models/overthrust_171x801x801_25m.bin   
 
@@ -21,31 +21,31 @@ input_model_file = ../inputs/models/overthrust_171x801x801_25m.bin
 #   [1] - regular nodes and circular shots  
 #---------------------------------------------------------------------------------------------------
 
-geometry_type = 0                   # <int>
-reciprocity = true                  # <bool>     
-import_geometry = false             # <bool>
+geometry_type = 0                     # <int>
+reciprocity = true                    # <bool>     
+import_geometry = false               # <bool>
 
 shots_file = ../inputs/geometry/xyz_shot_positions.txt              
 nodes_file = ../inputs/geometry/xyz_node_positions.txt     
 
 # Regular geometry ---------------------------------------------------------------------------------               
 
-shots_nlines = [1, 41, 41]          # <int> (z, x, y)     
-nodes_nlines = [1,  6,  6]          # <int> (z, x, y)            
+shots_nlines = [1, 41, 41]            # <int> (z, x, y)     
+nodes_nlines = [1,  6,  6]            # <int> (z, x, y)            
 
-shots_SW = [0, 0, 0]          # [m] <float> (z, x, y) NW            
-shots_NW = [0, 0, 20000]         # [m] <float> (z, x, y)  |            
-shots_SE = [0, 20000, 0]         # [m] <float> (z, x, y) SW -- SE     
+shots_SW = [0, 0, 0]                  # [m] <float> (z, x, y) NW            
+shots_NW = [0, 0, 20000]              # [m] <float> (z, x, y)  |            
+shots_SE = [0, 20000, 0]              # [m] <float> (z, x, y) SW -- SE     
 
-nodes_SW = [0, 5000, 5000]          # [m] <float> (z, x, y) NW           
-nodes_NW = [0, 5000, 15000]         # [m] <float> (z, x, y)  |         
-nodes_SE = [0, 15000, 5000]         # [m] <float> (z, x, y) SW -- SE   
+nodes_SW = [0, 5000, 5000]            # [m] <float> (z, x, y) NW           
+nodes_NW = [0, 5000, 15000]           # [m] <float> (z, x, y)  |         
+nodes_SE = [0, 15000, 5000]           # [m] <float> (z, x, y) SW -- SE   
 
 # Circular geometry --------------------------------------------------------------------------------                                            
 
-spacing = 50                        # [m] <float>
-center  = [10, 10000, 10000]        # [m] <float> (z, x, y)        
-offsets = [5000, 7000, 9000]        # [m] <float>
+spacing = 50                          # [m] <float>
+center  = [10, 10000, 10000]          # [m] <float> (z, x, y)        
+offsets = [5000, 7000, 9000]          # [m] <float>
 
 #---------------------------------------------------------------------------------------------------
 # Modeling parameters ------------------------------------------------------------------------------
@@ -55,10 +55,10 @@ offsets = [5000, 7000, 9000]        # [m] <float>
 #   [2] - Accurate FSM (Detrixhe et al., 2013; Noble et al., 2014)   
 #---------------------------------------------------------------------------------------------------
 
-modeling_type = 2                   # <int>
+modeling_type = 2                     # <int>
 
-export_receiver_output = true       # <bool> 
-export_wavefield_output = false     # <bool>
+export_receiver_output = true         # <bool> 
+export_wavefield_output = false       # <bool>
 
 receiver_output_folder = ../outputs/first_arrivals/            
 wavefield_output_folder = ../outputs/travel_times/     

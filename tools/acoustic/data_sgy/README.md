@@ -1,1 +1,1 @@
-## Executables folder
+## Segy seismic data folder
