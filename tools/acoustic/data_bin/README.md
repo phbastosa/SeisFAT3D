@@ -1,1 +1,0 @@
-## Binary seismic data folder
