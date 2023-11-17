@@ -31,15 +31,15 @@ nodes_file = ../inputs/geometry/xyz_node_positions.txt
 # Regular geometry ---------------------------------------------------------------------------------               
 
 shots_nlines = [1, 41, 41]            # <int> (z, x, y)     
-nodes_nlines = [1,  6,  6]            # <int> (z, x, y)            
+nodes_nlines = [1,  2,  2]            # <int> (z, x, y)            
 
 shots_SW = [0, 0, 0]                  # [m] <float> (z, x, y) NW            
 shots_NW = [0, 0, 20000]              # [m] <float> (z, x, y)  |            
 shots_SE = [0, 20000, 0]              # [m] <float> (z, x, y) SW -- SE     
 
-nodes_SW = [0, 5000, 5000]            # [m] <float> (z, x, y) NW           
-nodes_NW = [0, 5000, 15000]           # [m] <float> (z, x, y)  |         
-nodes_SE = [0, 15000, 5000]           # [m] <float> (z, x, y) SW -- SE   
+nodes_SW = [0, 1000, 1000]            # [m] <float> (z, x, y) NW           
+nodes_NW = [0, 1000, 19000]           # [m] <float> (z, x, y)  |         
+nodes_SE = [0, 19000, 1000]           # [m] <float> (z, x, y) SW -- SE   
 
 # Circular geometry --------------------------------------------------------------------------------                                            
 

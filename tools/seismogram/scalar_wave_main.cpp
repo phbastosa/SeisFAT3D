@@ -1,4 +1,4 @@
-# include "class.cuh"
+# include "scalar_wave_class.cuh"
 
 int main(int argc, char **argv)
 {   

@@ -1,4 +1,4 @@
-# include "class.cuh"
+# include "scalar_wave_class.cuh"
 
 void Acoustic::set_patameters()
 {
@@ -270,13 +270,13 @@ void Acoustic::prepare_wavefield()
 
 void Acoustic::info_message()
 {
-    if (time_id % (nt / 10) == 0)
+    if ((time_id - 1) % (nt / 10) == 0)
     {
         auto clear = system("clear");
             
         std::cout << "Model dimensions (z = " << (nz - 1)*dz << ", x = " << (nx - 1)*dx << ", y = " << (ny - 1)*dy << ") m\n\n";
 
-        std::cout << "Shot "<< shot_id + 1 << " of " << total_shots << "\n";
+        std::cout << "Shot "<< shot_id + 1 << " of " << total_shots;
 
         std::cout << " at position (z = " << (sz[shot_id] - nb)*dz << ", x = " 
                                           << (sx[shot_id] - nb)*dx << ", y = " 
@@ -324,7 +324,7 @@ void Acoustic::export_outputs()
 {
     cudaMemcpy(output_data, seismogram, output_samples*sizeof(float), cudaMemcpyDeviceToHost);
 
-    std::string data_path = "data_bin/output_seismogram_" + std::to_string(nt) + "x" + std::to_string(total_nodes) + "_shot_" + std::to_string(shot_id+1) + ".bin";
+    std::string data_path = "segy_data/synthetic_seismogram_" + std::to_string(nt) + "x" + std::to_string(total_nodes) + "_shot_" + std::to_string(shot_id+1) + ".bin";
 
     export_binary_float(data_path, output_data, output_samples);
 }
