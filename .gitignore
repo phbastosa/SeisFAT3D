@@ -2,4 +2,5 @@
 *.bin
 *.txt
 *.json
+*.segy
 __*
