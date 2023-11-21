@@ -2,15 +2,15 @@
 # Model paramenters --------------------------------------------------------------------------------
 #---------------------------------------------------------------------------------------------------
 
-x_samples = 701                       # <int>  
-y_samples = 501                       # <int>  
-z_samples = 151                       # <int>  
+x_samples = 801                       # <int>  
+y_samples = 801                       # <int>  
+z_samples = 171                       # <int>  
 
-x_spacing = 10                        # [m] <float> 
-y_spacing = 10                        # [m] <float> 
-z_spacing = 10                        # [m] <float> 
+x_spacing = 25                        # [m] <float> 
+y_spacing = 25                        # [m] <float> 
+z_spacing = 25                        # [m] <float> 
 
-input_model_file = ../inputs/models/refractive_model_151x701x501_10m.bin   
+input_model_file = ../inputs/models/overthrust_171x801x801_25m.bin   
 
 #---------------------------------------------------------------------------------------------------
 # Geometry parameters ------------------------------------------------------------------------------
@@ -30,16 +30,16 @@ nodes_file = ../inputs/geometry/xyz_node_positions.txt
 
 # Regular geometry ---------------------------------------------------------------------------------               
 
-shots_nlines = [1, 50, 50]            # <int> (z, x, y)     
-nodes_nlines = [1,  2,  2]            # <int> (z, x, y)            
+shots_nlines = [1, 100, 100]          # <int> (z, x, y)     
+nodes_nlines = [1,   2,   2]          # <int> (z, x, y)            
 
 shots_SW = [0, 50, 50]                # [m] <float> (z, x, y) NW            
-shots_NW = [0, 50, 4950]              # [m] <float> (z, x, y)  |            
-shots_SE = [0, 6950, 50]              # [m] <float> (z, x, y) SW -- SE     
+shots_NW = [0, 50, 19950]             # [m] <float> (z, x, y)  |            
+shots_SE = [0, 19950, 50]             # [m] <float> (z, x, y) SW -- SE     
 
 nodes_SW = [0, 1000, 1000]            # [m] <float> (z, x, y) NW           
-nodes_NW = [0, 1000, 4000]            # [m] <float> (z, x, y)  |         
-nodes_SE = [0, 6000, 1000]            # [m] <float> (z, x, y) SW -- SE   
+nodes_NW = [0, 1000, 19000]           # [m] <float> (z, x, y)  |         
+nodes_SE = [0, 19000, 1000]           # [m] <float> (z, x, y) SW -- SE   
 
 # Circular geometry --------------------------------------------------------------------------------                                            
 

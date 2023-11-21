@@ -15,12 +15,11 @@ class Pick():
 
 class ManualPicking(Pick):
     
-    def __init__(self, input_path, traces, output_path, gain):
+    def __init__(self, input_path, traces, output_path, gain, style):
         
         self.gain = gain
-
+        self.style = style
         self.traces = traces.copy()
-
         self.picks_path = output_path
 
         self.data = sgy.open(input_path, ignore_geometry = True)
@@ -62,9 +61,9 @@ class ManualPicking(Pick):
 
     def plot_geometry(self):
         
-        fig, ax = plt.subplots(tight_layout = True)        
+        fig, ax = plt.subplots(dpi = 100, tight_layout = True)        
         manager = plt.get_current_fig_manager()
-        manager.window.setGeometry(0,10,600,600) 
+        manager.window.setGeometry(0,0,500,500) 
 
         ax.plot(self.gx, self.gy, "ob", markersize = 1, alpha = 0.6, label = "Nodes position")
 
@@ -84,13 +83,13 @@ class ManualPicking(Pick):
 
     def plot_seismic(self):
 
-        self.fig, self.ax = plt.subplots(tight_layout = True)
+        self.fig, self.ax = plt.subplots(dpi = 100, tight_layout = True)
 
         tloc = np.linspace(0, self.nt, 21)
         tlab = np.around(tloc*self.dt, decimals = 2)
 
         manager = plt.get_current_fig_manager()
-        manager.window.setGeometry(610,10,1300,1000) 
+        manager.window.setGeometry(600,0,1200,900) 
         
         self.cursor = Cursor(self.ax, horizOn = True, vertOn = True, color = "green", linewidth = 1)
 
@@ -163,7 +162,12 @@ class ManualPicking(Pick):
                 self.picks[i].t = t.copy()
 
     def save_picks(self):
-        with open(self.picks_path, "a") as file:
+        if style == "3D":
+            output_file = f"{self.picks_path}_shotGather_3D.txt"
+        else:
+            output_file = f"{self.picks_path}_shotGather_{self.current_plot+1}.txt"
+
+        with open(output_file, "a") as file:
             for i in range(len(self.traces)):
                 if self.current_plot == i:
                     for n in range(len(self.picks[i].x)):
@@ -174,14 +178,16 @@ class ManualPicking(Pick):
 if __name__ == "__main__":
     
     data_path = "../seismogram/segy_data/seismogram_shot_1.segy"
-    picks_path = "picks_"
+
+    style = "3D"
+    picks_folder = "picks"
+
+    yline = 50  # traces per shot
+    xline = 70  # total shots
 
     data_gain = 0.1
 
-    yline = 50
-    xline = 50
-
     traces = yline * np.ones(xline, dtype = int)
 
-    ManualPicking(data_path, traces, picks_path, data_gain)
+    ManualPicking(data_path, traces, picks_folder, data_gain, style)
 
