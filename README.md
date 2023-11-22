@@ -32,10 +32,16 @@ Usage:
     $ ./program.sh -modeling            # Perform eikonal solver          
     $ ./program.sh -inversion           # Perform adjoint-state tomography
     $ ./program.sh -migration           # Perform kirchhoff depth migration
+    $ ./program.sh -seismogram          # Perform acoustic wave propagation
 
 Tests:
 
     $ ./program.sh -test_modeling       # Perform a small modeling experiment          
     $ ./program.sh -test_inversion      # Perform a small inversion experiment
-    $ ./program.sh -test_migration      # Perform a small migration experiment         
+    $ ./program.sh -test_migration      # Perform a small migration experiment 
+
+Tools:
+
+    $ ./program.sh -configuration       # Check initial configuration plot          
+    $ ./program.sh -manual_picking      # Perform manual picking algorithm 
 ```

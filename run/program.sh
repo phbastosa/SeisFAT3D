@@ -71,8 +71,8 @@ Tests:\n
     $ $0 -test_migration      # Perform a small migration experiment          
 
 Tools:\n
-    $ $0 -configuration       # check initial configuration plot
-    $ $0 -manual_picking      # perform manual picking algorithm using .segy files 
+    $ $0 -configuration       # Check initial configuration plot
+    $ $0 -manual_picking      # Perform manual picking algorithm using .segy files 
 "
 
 [ -z "$1" ] && 
