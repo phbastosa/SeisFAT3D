@@ -11,6 +11,8 @@ geometry="../src/geometry/geometry.cpp"
 regular="../src/geometry/regular/regular.cpp"
 circular="../src/geometry/circular/circular.cpp"
 
+geometry_main="../src/main/geometry_main.cpp"
+
 geometry_all="$geometry $regular $circular"
 
 # Seismic modeling scripts ----------------------------------------------------------------------------
@@ -25,6 +27,9 @@ modeling_main="../src/main/modeling_main.cpp"
 
 modeling_all="$eikonal $pod $fim $fsm"
 
+acoustic_main="../src/main/acoustic_main.cpp"
+acoustic_class="../src/seismogram/acoustic.cu"
+
 # Seismic inversion scripts ---------------------------------------------------------------------------
 
 tomography="../src/inversion/tomography.cpp"
@@ -38,11 +43,13 @@ inversion_all="$tomography $least_squares $adjoint_state"
 
 # Seismic migration scripts ---------------------------------------------------------------------------
 
-kirchhoff="../src/migration/kirchhoff.cpp"
+migration="../src/migration/migration.cpp"
+
+kirchhoff="../src/migration/kirchhoff/kirchhoff.cu"
 
 migration_main="../src/main/migration_main.cpp"
 
-migration_all="$kirchhoff"
+migration_all="$kirchhoff $migration"
 
 # Compiler flags --------------------------------------------------------------------------------------
 
@@ -56,11 +63,16 @@ Usage:\n
     $ $0 -modeling            # Perform eikonal solver          
     $ $0 -inversion           # Perform first arrival tomography
     $ $0 -migration           # Perform kirchhoff depth migration   
+    $ $0 -seismogram          # Perform acoustic wave propagation
 
 Tests:\n
     $ $0 -test_modeling       # Perform a small modeling experiment          
     $ $0 -test_inversion      # Perform a small inversion experiment
     $ $0 -test_migration      # Perform a small migration experiment          
+
+Tools:\n
+    $ $0 -configuration       # check initial configuration plot
+    $ $0 -manual_picking      # perform manual picking algorithm using .segy files 
 "
 
 [ -z "$1" ] && 
@@ -80,7 +92,10 @@ case "$1" in
 
 -compile) 
 
-    echo -e "Compiling the stand-alone executables!\n"
+    echo -e "Compiling stand-alone executables!\n"
+
+    echo -e "../bin/\033[31mgeometry.exe\033[m" 
+    nvcc $io $geometry_all $geometry_main $flags -o ../bin/geometry.exe
 
     echo -e "../bin/\033[31mmodeling.exe\033[m" 
     nvcc $io $geometry_all $modeling_all $modeling_main $flags -o ../bin/modeling.exe
@@ -88,8 +103,11 @@ case "$1" in
     echo -e "../bin/\033[31minversion.exe\033[m" 
     nvcc $io $geometry_all $modeling_all $inversion_all $inversion_main $flags -o ../bin/inversion.exe
 
-    # echo -e "../bin/\033[31mmigration.exe\033[m"
-    # nvcc $io $geometry_all $modeling_all $migration_all $flags -o ../bin/migration.exe
+    echo -e "../bin/\033[31mmigration.exe\033[m"
+    nvcc $io $geometry_all $modeling_all $migration_all $migration_main $flags -o ../bin/migration.exe
+
+    echo -e "../bin/\033[31macoustic.exe\033[m"
+    nvcc $io $geometry_all $acoustic_class $acoustic_main $flags -o ../bin/acoustic.exe
 
 	exit 0
 ;;
@@ -97,22 +115,45 @@ case "$1" in
 -modeling) 
 
     ./../bin/modeling.exe parameters.txt
-
-	exit 0
+	
+    exit 0
 ;;
 
 -inversion) 
     
     ./../bin/inversion.exe parameters.txt
-
-	exit 0
+	
+    exit 0
 ;;
 
 -migration) 
     
     ./../bin/migration.exe parameters.txt
+	
+    exit 0
+;;
 
-	exit 0
+-seismogram) 
+    
+    ./../bin/acoustic.exe parameters.txt
+    python3 ../tools/picking/add_trace_header.py parameters.txt
+	
+    exit 0
+;;
+
+-configuration)
+
+    ./../bin/geometry.exe parameters.txt
+    python3 ../tools/visualization/check_configuration.py parameters.txt
+    
+    exit 0
+;;
+
+-manual_picking)
+
+    python3 ../tools/picking/manual_picking.py parameters.txt
+
+    exit 0
 ;;
 
 -test_modeling)

@@ -10,12 +10,11 @@ class Migration
 protected:
 
     std::string name;        
+    virtual void set_name() = 0;
 
 public:
     
     void get_name();
-
-    virtual void set_name() = 0;
 };
 
 # endif

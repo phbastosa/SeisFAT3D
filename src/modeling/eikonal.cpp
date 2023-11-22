@@ -77,8 +77,8 @@ void Eikonal::get_runtime()
 
     std::chrono::duration<double> elapsed_seconds = tf - ti;
 
-    std::ofstream runTimeFile("runTime.txt",std::ios::in | std::ios::app);
-    runTimeFile << "# " + eikonal_method + " - Spacing: " + std::to_string(dx) + " m\n";
+    std::ofstream runTimeFile("elapsedTime.txt",std::ios::in | std::ios::app);
+    runTimeFile << "# Eikonal " + eikonal_method + " - Spacing: " + std::to_string(dx) + " m\n";
     runTimeFile << "# Run Time [s]; RAM usage [MB]; GPU memory usage [MB]\n";
     runTimeFile << std::to_string(elapsed_seconds.count()) + ";" + std::to_string(RAM) + ";" + std::to_string(vRAM) + "\n";
     runTimeFile.close();

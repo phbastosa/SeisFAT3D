@@ -5,7 +5,8 @@
 # include <cuda_runtime.h>
 # include <sys/resource.h>
 
-# include "../../../src/io/io.hpp"
+# include "../geometry/regular/regular.hpp"
+# include "../geometry/circular/circular.hpp"
 
 class Acoustic
 {

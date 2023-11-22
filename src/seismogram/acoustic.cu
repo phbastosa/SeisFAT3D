@@ -1,4 +1,4 @@
-# include "scalar_wave_class.cuh"
+# include "acoustic.cuh"
 
 void Acoustic::set_patameters()
 {
@@ -105,20 +105,36 @@ void Acoustic::prepare_wavelet()
 
 void Acoustic::prepare_geometry()
 {
-    std::vector<std::string> shots;
-    std::vector<std::string> nodes;
-    std::vector<std::string> splitted;
+    std::vector<Geometry *> geometry = 
+    {
+        new Regular(), 
+        new Circular()
+    };
 
-    std::string shots_file = catch_parameter("shots_file", file);
-    std::string nodes_file = catch_parameter("nodes_file", file);
+    auto type = std::stoi(catch_parameter("geometry_type", file));
 
-    bool reciprocity = str2bool(catch_parameter("reciprocity", file));
+    geometry[type]->file = file;
 
-    import_text_file(shots_file, shots);
-    import_text_file(nodes_file, nodes);
+    geometry[type]->set_geometry();
 
-    total_shots = shots.size();
-    total_nodes = nodes.size();
+    total_shots = geometry[type]->shots.total;
+    total_nodes = geometry[type]->nodes.total;
+
+    for (int shot = 0; shot < total_shots; shot++)
+    {
+        if ((geometry[type]->shots.x[shot] < 0) || (geometry[type]->shots.x[shot] > (nx-1)*dx) || 
+            (geometry[type]->shots.y[shot] < 0) || (geometry[type]->shots.y[shot] > (ny-1)*dy) ||
+            (geometry[type]->shots.z[shot] < 0) || (geometry[type]->shots.z[shot] > (nz-1)*dz))       
+        throw std::invalid_argument("\033[31mError: shots geometry overflow!\033[0;0m");
+    }
+
+    for (int node = 0; node < total_nodes; node++)
+    {
+        if ((geometry[type]->nodes.x[node] < 0) || (geometry[type]->nodes.x[node] > (nx-1)*dx) || 
+            (geometry[type]->nodes.y[node] < 0) || (geometry[type]->nodes.y[node] > (ny-1)*dy) ||
+            (geometry[type]->nodes.z[node] < 0) || (geometry[type]->nodes.z[node] > (nz-1)*dz))       
+        throw std::invalid_argument("\033[31mError: nodes geometry overflow!\033[0;0m");
+    }
 
     sx = new int[total_shots]();
     sy = new int[total_shots]();
@@ -130,33 +146,17 @@ void Acoustic::prepare_geometry()
 
     for (int i = 0; i < total_shots; i++)
     {
-        splitted = split(shots[i], ',');
-
-        sx[i] = (int)(std::stof(splitted[0]) / dx) + nb;
-        sy[i] = (int)(std::stof(splitted[1]) / dy) + nb;
-        sz[i] = (int)(std::stof(splitted[2]) / dz) + nb;
+        sx[i] = (int)(geometry[type]->shots.x[i] / dx) + nb;
+        sy[i] = (int)(geometry[type]->shots.y[i] / dy) + nb;
+        sz[i] = (int)(geometry[type]->shots.z[i] / dz) + nb;
     }    
 
     for (int i = 0; i < total_nodes; i++)
     {
-        splitted = split(nodes[i], ',');
-
-        rx[i] = (int)(std::stof(splitted[0]) / dx) + nb;
-        ry[i] = (int)(std::stof(splitted[1]) / dy) + nb;
-        rz[i] = (int)(std::stof(splitted[2]) / dz) + nb;
+        rx[i] = (int)(geometry[type]->nodes.x[i] / dx) + nb;
+        ry[i] = (int)(geometry[type]->nodes.y[i] / dy) + nb;
+        rz[i] = (int)(geometry[type]->nodes.z[i] / dz) + nb;
     }    
-
-    std::vector<std::string>().swap(shots);
-    std::vector<std::string>().swap(nodes);
-
-    if (reciprocity)
-    {
-        std::swap(sx, rx);    
-        std::swap(sy, ry);    
-        std::swap(sz, rz);
-
-        std::swap(total_shots, total_nodes);
-    }
 
 	cudaMalloc((void**)&(gx), total_nodes*sizeof(int));
 	cudaMalloc((void**)&(gy), total_nodes*sizeof(int));
@@ -169,6 +169,8 @@ void Acoustic::prepare_geometry()
     delete[] rx;
     delete[] ry;
     delete[] rz;
+
+    std::vector<Geometry *>().swap(geometry); 
 }
 
 void Acoustic::prepare_velocity()
@@ -180,7 +182,7 @@ void Acoustic::prepare_velocity()
     model_size = nx*ny*nz;
     volume_size = nxx*nyy*nzz;
 
-    std::string model_path = catch_parameter("model_path", file);
+    std::string model_path = catch_parameter("input_model_file", file);
 
     vp = new float[model_size]();
 
@@ -270,7 +272,7 @@ void Acoustic::prepare_wavefield()
 
 void Acoustic::info_message()
 {
-    if ((time_id - 1) % (nt / 10) == 0)
+    if (time_id % (nt / 10) == 0)
     {
         auto clear = system("clear");
             
@@ -324,13 +326,14 @@ void Acoustic::export_outputs()
 {
     cudaMemcpy(output_data, seismogram, output_samples*sizeof(float), cudaMemcpyDeviceToHost);
 
-    std::string data_path = "segy_data/synthetic_seismogram_" + std::to_string(nt) + "x" + std::to_string(total_nodes) + "_shot_" + std::to_string(shot_id+1) + ".bin";
+    std::string data_path = "../inputs/data/synthetic_seismogram_" + std::to_string(nt) + "x" + std::to_string(total_nodes) + "_shot_" + std::to_string(shot_id+1) + ".bin";
 
     export_binary_float(data_path, output_data, output_samples);
 }
 
 void Acoustic::free_space()
 {
+
 
 
 }
@@ -347,6 +350,7 @@ void Acoustic::get_runtime()
     std::chrono::duration<double> elapsed_seconds = tf - ti;
 
     std::ofstream runTimeFile("elapsedTime.txt",std::ios::in | std::ios::app);
+    runTimeFile << "# Acoustic Seismogram - Spacing: " + std::to_string(dx) + " m\n";
     runTimeFile << "# Run Time [s]; RAM usage [MB]; GPU memory usage [MB]\n";
     runTimeFile << std::to_string(elapsed_seconds.count()) + "; " + std::to_string(RAM) + "; " + std::to_string(vRAM) + "\n";
     runTimeFile.close();

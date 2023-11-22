@@ -64,8 +64,8 @@ void Geometry::import_coordinates()
 void Geometry::export_coordinates()
 {
     auto folder = std::string("../inputs/geometry/");
-    auto shots_path = folder + std::string("xyz_shot_positions.txt");
-    auto nodes_path = folder + std::string("xyz_node_positions.txt");
+    auto shots_path = folder + std::string("xyz_shots_position.txt");
+    auto nodes_path = folder + std::string("xyz_nodes_position.txt");
 
     std::ofstream sfile(shots_path, std::ios::out);        
 

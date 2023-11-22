@@ -5,8 +5,18 @@ import matplotlib.pyplot as plt
 
 mpl.use("Qt5Agg")
 
+from sys import argv
 from matplotlib.widgets import Cursor
 from scipy.interpolate import interp1d
+
+def catch_parameter(filename, target):
+    file = open(filename,'r')
+    for line in file.readlines():
+        if line[0] != '#':
+            splitted = line.split()
+            if len(splitted) != 0:
+                if splitted[0] == target: 
+                    return splitted[2]
 
 class Pick():
     def __init__(self):
@@ -15,14 +25,13 @@ class Pick():
 
 class ManualPicking(Pick):
     
-    def __init__(self, input_path, traces, output_path, gain, style):
+    def __init__(self, data_path, gain):
         
         self.gain = gain
-        self.style = style
-        self.traces = traces.copy()
-        self.picks_path = output_path
 
-        self.data = sgy.open(input_path, ignore_geometry = True)
+        self.data = sgy.open(data_path, ignore_geometry = True)
+
+        self.traces = [self.data.attributes(13)[self.data.tracecount-1][0]]
 
         self.nt = self.data.attributes(115)[0][0]
         self.dt = self.data.attributes(117)[0][0] * 1e-6
@@ -44,7 +53,7 @@ class ManualPicking(Pick):
 
         self.current_plot = 0
 
-        for i in range(len(traces)):
+        for i in range(len(self.traces)):
             while True:
                 if self.current_plot == i:
                     print("Close plot windows to interpolate picks")
@@ -162,10 +171,10 @@ class ManualPicking(Pick):
                 self.picks[i].t = t.copy()
 
     def save_picks(self):
-        if style == "3D":
-            output_file = f"{self.picks_path}_shotGather_3D.txt"
-        else:
-            output_file = f"{self.picks_path}_shotGather_{self.current_plot+1}.txt"
+        # if style == "3D":
+        #     output_file = f"{self.picks_path}_shotGather_3D.txt"
+        # else:
+        output_file = f"{self.picks_path}_shotGather_{self.current_plot+1}.txt"
 
         with open(output_file, "a") as file:
             for i in range(len(self.traces)):
@@ -175,19 +184,14 @@ class ManualPicking(Pick):
         
         file.close()
 
-if __name__ == "__main__":
-    
-    data_path = "../seismogram/segy_data/seismogram_shot_1.segy"
+#---------------------------------------------------------------------
 
-    style = "3D"
-    picks_folder = "picks"
+file = argv[1]
 
-    yline = 50  # traces per shot
-    xline = 70  # total shots
+data_folder = catch_parameter(file, "obs_data_folder")
+data_prefix = catch_parameter(file, "obs_data_prefix")
 
-    data_gain = 0.1
+data_gain = 0.1
 
-    traces = yline * np.ones(xline, dtype = int)
-
-    ManualPicking(data_path, traces, picks_folder, data_gain, style)
+ManualPicking(data_folder + data_prefix + "1.segy", data_gain)
 

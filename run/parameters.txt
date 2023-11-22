@@ -21,12 +21,12 @@ input_model_file = ../inputs/models/overthrust_171x801x801_25m.bin
 #   [1] - regular nodes and circular shots  
 #---------------------------------------------------------------------------------------------------
 
-geometry_type = 0                     # <int>
+geometry_type = 1                     # <int>
 reciprocity = true                    # <bool>     
 import_geometry = false               # <bool>
 
-shots_file = ../inputs/geometry/xyz_shot_positions.txt              
-nodes_file = ../inputs/geometry/xyz_node_positions.txt     
+shots_file = ../inputs/geometry/xyz_shots_position.txt              
+nodes_file = ../inputs/geometry/xyz_nodes_position.txt     
 
 # Regular geometry ---------------------------------------------------------------------------------               
 
@@ -44,7 +44,7 @@ nodes_SE = [0, 19000, 1000]           # [m] <float> (z, x, y) SW -- SE
 # Circular geometry --------------------------------------------------------------------------------                                            
 
 spacing = 50                          # [m] <float>
-center  = [10, 10000, 10000]          # [m] <float> (z, x, y)        
+center  = [0, 10000, 10000]           # [m] <float> (z, x, y)        
 offsets = [5000, 7000, 9000]          # [m] <float>
 
 #---------------------------------------------------------------------------------------------------
@@ -62,6 +62,17 @@ export_wavefield_output = false       # <bool>
 
 receiver_output_folder = ../outputs/first_arrivals/            
 wavefield_output_folder = ../outputs/travel_times/     
+
+#---------------------------------------------------------------------------------------------------
+# Wave propagation in constant density acoustic media 
+#---------------------------------------------------------------------------------------------------
+
+max_frequency = 25                   # [Hz] <float>
+time_spacing = 1e-3                  # [s] <float>
+time_samples = 6001                  # <int>
+
+boundary_damper = 0.0015             # <float>
+boundary_samples = 50                # <int> 
 
 #---------------------------------------------------------------------------------------------------
 # Inversion parameters 
@@ -91,7 +102,7 @@ export_model_per_iteration = true     # <bool>
 export_gradient_per_iteration = true  # <bool>
 
 obs_data_folder = ../inputs/data/        
-obs_data_prefix = observed_data_   
+obs_data_prefix = seismogram_gather_    
 
 gradient_folder = ../outputs/gradients/                  
 convergence_folder = ../outputs/convergence/         

@@ -37,11 +37,10 @@ void Circular::set_geometry()
         set_circular();    
         set_regular(nodes);    
 
-        if (reciprocity) 
-            set_reciprocity();
-
         export_coordinates();
     }    
+
+    if (reciprocity) set_reciprocity();
 }
 
 void Circular::set_circular()

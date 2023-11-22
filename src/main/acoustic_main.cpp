@@ -1,4 +1,4 @@
-# include "scalar_wave_class.cuh"
+# include "../seismogram/acoustic.cuh"
 
 int main(int argc, char **argv)
 {   

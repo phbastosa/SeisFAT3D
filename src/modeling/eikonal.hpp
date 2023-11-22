@@ -5,7 +5,6 @@
 # include <cuda_runtime.h>
 # include <sys/resource.h>
 
-# include "../geometry/geometry.hpp"
 # include "../geometry/regular/regular.hpp"
 # include "../geometry/circular/circular.hpp"
 
