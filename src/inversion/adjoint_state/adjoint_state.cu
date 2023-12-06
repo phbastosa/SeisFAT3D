@@ -17,6 +17,8 @@ void Adjoint_State::set_specific_parameters()
     source = new float[modeling->volsize]();
     adjoint = new float[modeling->volsize]();
 
+    proposed_model = new float[modeling->nPoints]();
+
     cudaMalloc((void**)&(d_T), modeling->volsize*sizeof(float));
     cudaMalloc((void**)&(d_source), modeling->volsize*sizeof(float));
     cudaMalloc((void**)&(d_adjoint), modeling->volsize*sizeof(float));
@@ -165,40 +167,73 @@ void Adjoint_State::gradient_preconditioning()
         delete[] grad_aux;
         delete[] grad_smooth;
     }
-}
 
-void Adjoint_State::optimization() 
-{
     float gmax = 0.0f;
-    float gdot = 0.0f;
-
     for (int index = 0; index < modeling->nPoints; index++)
     {
         if (gmax < fabsf(gradient[index]))
             gmax = fabsf(gradient[index]);
-    
-        gdot += gradient[index] * gradient[index];
     }
 
-    float lambda = 0.5f * residuo.back() / gdot;
+    for (int index = 0; index < modeling->nPoints; index++)
+        gradient[index] = (max_slowness_variation / gmax) * gradient[index];
+}
 
-    float gamma = max_slowness_variation;
+void Adjoint_State::optimization()  
+{
+    float a1 = 0.0f;
+    float a2 = 0.5f;
+    float a3 = 0.9f;
 
-    if (iteration > 1)
-    {
-        float current_f = residuo[residuo.size()-1];
-        float previous_f = residuo[residuo.size()-2];
+    float f1 = residuo.back();
+    float f2 = objective_function(a2);
+    float f3 = objective_function(a3);
 
-        gamma = (current_f > previous_f) ? gamma / iteration : gamma;
-    }
+    float Dt = (a2*a3*a3 + a1*a2*a2 + a1*a1*a3) - (a2*a2*a3 + a1*a3*a3 + a1*a1*a2);
+    float Db = (f2*a3*a3 + f1*a2*a2 + f3*a1*a1) - (f1*a3*a3 + f3*a2*a2 + a1*a1*f2);
+    float Dc = (a2*f3 + a1*f2 + f1*a3) - (f2*a3 + a1*f3 + a2*f1);
 
-    float alpha = (lambda*gmax > gamma) ? gamma / (lambda*gmax) : 1.0f;
+    float b = Db/Dt;
+    float c = Dc/Dt;
+
+    float alpha = -0.5*b/c;
+
+    if (alpha > 1.0f) alpha = 1.0f;
+    if (alpha < 0.0f) alpha = 0.1f;
 
     for (int index = 0; index < modeling->nPoints; index++)
     {
-        dm[index] = alpha*lambda*gradient[index];
+        dm[index] = alpha*gradient[index];
     }
+
+    max_slowness_variation = max_slowness_variation / iteration;
 }
+
+float Adjoint_State::objective_function(float alpha)
+{
+    for (int index = 0; index < modeling->nPoints; index++)    
+        proposed_model[index] = model[index] + alpha*gradient[index];
+
+    modeling->expand_boundary(proposed_model, modeling->S);
+    
+    for (int shot = 0; shot < modeling->total_shots; shot++)
+    {
+        modeling->shot_id = shot;
+
+        modeling->initial_setup();
+        modeling->forward_solver();
+        modeling->build_outputs();
+
+        extract_calculated_data();
+    }
+
+    float square_difference = 0.0f;
+    for (int i = 0; i < n_data; i++)
+        square_difference += powf(dobs[i] - dcal[i], 2.0f);
+
+    return sqrtf(square_difference);
+}
+
 
 __global__ void adjoint_state_kernel(float * adjoint, float * source, float * T, int level, int xOffset, int yOffset, int xSweepOffset, int ySweepOffset, 
                                      int zSweepOffset, int nxx, int nyy, int nzz, float dx, float dy, float dz)
