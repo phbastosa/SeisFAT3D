@@ -2,15 +2,15 @@
 # Model paramenters --------------------------------------------------------------------------------
 #---------------------------------------------------------------------------------------------------
 
-x_samples = 101                     # <int>  
-y_samples = 101                     # <int>  
-z_samples = 41                      # <int>  
+x_samples = 201                     # <int>  
+y_samples = 201                     # <int>  
+z_samples = 121                     # <int>  
 
 x_spacing = 50                      # [m] <float> 
 y_spacing = 50                      # [m] <float> 
 z_spacing = 50                      # [m] <float> 
 
-input_model_file = ../inputs/models/trueModelTest_41x101x101_50m.bin   
+input_model_file = ../inputs/models/trueModelTest_121x201x201_50m.bin   
 
 #---------------------------------------------------------------------------------------------------
 # Geometry parameters ------------------------------------------------------------------------------
@@ -30,16 +30,16 @@ nodes_file = ../inputs/geometry/xyz_node_positions.txt
 
 # Regular geometry ---------------------------------------------------------------------------------               
 
-shots_nlines = [1, 9, 9]            # <int> (z, x, y)     
-nodes_nlines = [1, 9, 9]            # <int> (z, x, y)            
+shots_nlines = [1, 11, 11]            # <int> (z, x, y)     
+nodes_nlines = [1, 11, 11]            # <int> (z, x, y)            
 
-shots_SW = [50, 500, 500]           # [m] <float> (z, x, y) NW            
-shots_NW = [50, 500, 4500]          # [m] <float> (z, x, y)  |            
-shots_SE = [50, 4500, 500]          # [m] <float> (z, x, y) SW -- SE     
+shots_SW = [50, 1000, 1000]           # [m] <float> (z, x, y) NW            
+shots_NW = [50, 1000, 9000]           # [m] <float> (z, x, y)  |            
+shots_SE = [50, 9000, 1000]           # [m] <float> (z, x, y) SW -- SE     
 
-nodes_SW = [1950, 500, 500]         # [m] <float> (z, x, y) NW           
-nodes_NW = [1950, 500, 4500]        # [m] <float> (z, x, y)  |         
-nodes_SE = [1950, 4500, 500]        # [m] <float> (z, x, y) SW -- SE   
+nodes_SW = [5950, 1000, 1000]         # [m] <float> (z, x, y) NW           
+nodes_NW = [5950, 1000, 9000]         # [m] <float> (z, x, y)  |         
+nodes_SE = [5950, 9000, 1000]         # [m] <float> (z, x, y) SW -- SE   
 
 # Circular geometry --------------------------------------------------------------------------------                                            
 

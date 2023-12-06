@@ -8,7 +8,7 @@ def readBinaryVolume(n1,n2,n3,filename):
     data = np.fromfile(filename, dtype = np.float32, count = n1*n2*n3)    
     return np.reshape(data, [n1,n2,n3], order='F')
 
-def check_geometry(models, shots, nodes, dh, slices, subplots, scale = 2.0):
+def check_geometry(models, shots, nodes, dh, slices, subplots, scale):
     
     if np.sum(subplots) == 2:
         modelShape = np.array(np.shape(models))
@@ -25,6 +25,9 @@ def check_geometry(models, shots, nodes, dh, slices, subplots, scale = 2.0):
 
         vmin = np.min(models[0])
         vmax = np.max(models[0])
+
+    vmin = 1000
+    vmax = 2000
 
     nz, nx, ny = modelShape
     [z, x, y] = scale * (minModelDistance / maxModelDistance) * modelShape / maxModelDistance
@@ -47,7 +50,7 @@ def check_geometry(models, shots, nodes, dh, slices, subplots, scale = 2.0):
     axes = np.array([[0.75 - x, 0.98 - y      , x, y], 
                      [    0.75, 0.98 - y      , z, y],
                      [0.75 - x, 0.98 - y - z  , x, z],
-                     [0.75 - x, 0.98 - y - 1.8*z, x, z]])
+                     [0.75 - x, 0.98 - y - 1.5*z, x, z]])
 
     xTickDirection = ['out', 'out', 'out']
     yTickDirection = ['out', 'in', 'out']
@@ -185,7 +188,7 @@ def check_geometry(models, shots, nodes, dh, slices, subplots, scale = 2.0):
                     ax.plot(xSlices[k][0], xSlices[k][1], xSlices[k][2], linewidth = 0.5)
                     ax.plot(ySlices[k][0], ySlices[k][1], ySlices[k][2], linewidth = 0.5)
                     
-                    ax.scatter(xshot[k], yshot[k], s = 20.0, color = "brown")
+                    ax.scatter(xshot[k], yshot[k], s = 20.0, color = "black")
                     ax.scatter(xnode[k], ynode[k], s = 20.0, color = "gray")
 
                     ax.tick_params(direction = xTickDirection[k], axis='x') 
@@ -207,9 +210,9 @@ def check_geometry(models, shots, nodes, dh, slices, subplots, scale = 2.0):
 
 #---------------------------------------------------------------------
 
-nx = 101
-ny = 101
-nz = 41
+nx = 201
+ny = 201
+nz = 121
 
 dx = 50
 dy = 50
@@ -217,25 +220,41 @@ dz = 50
 
 model = readBinaryVolume(nz, nx, ny, f"../inputs/models/trueModelTest_{nz}x{nx}x{ny}_{dx}m.bin")
 
-shots_file = "../inputs/geometry/xyz_shot_positions.txt"
-nodes_file = "../inputs/geometry/xyz_node_positions.txt"
+shots_file = "../inputs/geometry/xyz_shots_position.txt"
+nodes_file = "../inputs/geometry/xyz_nodes_position.txt"
 
 shots = np.loadtxt(shots_file, delimiter = ',')
 nodes = np.loadtxt(nodes_file, delimiter = ',')
 
 subplots = np.array([1, 1], dtype = int)
-slices = np.array([nz/2, nx/2, ny/2], dtype = int) # [xy, zy, zx]
+slices = np.array([nz/2, 0.34*nx, 0.34*ny], dtype = int) # [xy, zy, zx]
 dh = np.array([dx, dy, dz])
 
-check_geometry(model, shots, nodes, dh, slices, subplots, 1.2)
+check_geometry(model, shots, nodes, dh, slices, subplots, 0.6)
 plt.savefig(f"trueModel.png", dpi = 200)
+plt.clf()
 
-check_geometry(1500.0*np.ones_like(model), shots, nodes, dh, slices, subplots, 1.2)
+check_geometry(1500.0*np.ones_like(model), shots, nodes, dh, slices, subplots, 0.6)
 plt.savefig(f"initModel.png", dpi = 200)
+plt.clf()
+
+#-----------------------------------------------
+
+final_model_ls = readBinaryVolume(nz, nx, ny, f"../outputs/recovered_models/ls_final_model_{nz}x{nx}x{ny}.bin")
+final_model_adj = readBinaryVolume(nz, nx, ny, f"../outputs/recovered_models/adj_final_model_{nz}x{nx}x{ny}.bin")
+
+check_geometry(final_model_ls, shots, nodes, dh, slices, subplots, 0.6)
+plt.savefig(f"final_model_ls.png", dpi = 200)
+plt.clf()
+
+check_geometry(final_model_adj, shots, nodes, dh, slices, subplots, 0.6)
+plt.savefig(f"final_model_adj.png", dpi = 200)
+plt.clf()
+
 # --------------------------------------------------
 
-convergence_ls = np.loadtxt("../outputs/convergence/ls_convergence_3_iterations.txt")
-convergence_adj = np.loadtxt("../outputs/convergence/adj_convergence_3_iterations.txt")
+convergence_ls = np.loadtxt("../outputs/convergence/ls_convergence_10_iterations.txt")
+convergence_adj = np.loadtxt("../outputs/convergence/adj_convergence_10_iterations.txt")
 
 plt.figure(2, figsize = (10,4))
 plt.plot(convergence_ls, "o--", label = "Least squares approach")
@@ -246,17 +265,7 @@ plt.xlabel("Iteration number", fontsize = 15)
 plt.ylabel("Objective function L2 norm", fontsize = 15)
 
 plt.legend(loc = "upper right", fontsize = 12)
+plt.grid(True)
 plt.tight_layout()
 plt.savefig(f"curve.png", dpi = 200)
-
-#-----------------------------------------------
-
-final_model_ls = readBinaryVolume(nz, nx, ny, f"../outputs/recovered_models/ls_final_model_{nz}x{nx}x{ny}.bin")
-final_model_adj = readBinaryVolume(nz, nx, ny, f"../outputs/recovered_models/adj_final_model_{nz}x{nx}x{ny}.bin")
-
-check_geometry(final_model_ls, shots, nodes, dh, slices, subplots, 1.2)
-plt.savefig(f"final_model_ls.png", dpi = 200)
-
-check_geometry(final_model_adj, shots, nodes, dh, slices, subplots, 1.2)
-plt.savefig(f"final_model_adj.png", dpi = 200)
-
+plt.clf()

@@ -170,18 +170,33 @@ void Adjoint_State::gradient_preconditioning()
 void Adjoint_State::optimization() 
 {
     float gmax = 0.0f;
+    float gdot = 0.0f;
 
     for (int index = 0; index < modeling->nPoints; index++)
     {
         if (gmax < fabsf(gradient[index]))
             gmax = fabsf(gradient[index]);
+    
+        gdot += gradient[index] * gradient[index];
     }
 
-    float dumping = 1.0f / static_cast<float>(iteration);
+    float lambda = 0.5f * residuo.back() / gdot;
+
+    float gamma = max_slowness_variation;
+
+    if (iteration > 1)
+    {
+        float current_f = residuo[residuo.size()-1];
+        float previous_f = residuo[residuo.size()-2];
+
+        gamma = (current_f > previous_f) ? gamma / iteration : gamma;
+    }
+
+    float alpha = (lambda*gmax > gamma) ? gamma / (lambda*gmax) : 1.0f;
 
     for (int index = 0; index < modeling->nPoints; index++)
     {
-        dm[index] = dumping * (max_slowness_variation / gmax) * gradient[index];
+        dm[index] = alpha*lambda*gradient[index];
     }
 }
 

@@ -171,7 +171,7 @@ case "$1" in
 
     python3 ../tests/modeling/generate_figures.py
 
-    rm runTime.txt
+    rm elapsedTime.txt
 
 	exit 0
 ;;
@@ -188,7 +188,7 @@ case "$1" in
 
     python3 ../tests/inversion/generate_figures.py
 
-    rm runTime.txt
+    rm elapsedTime.txt
 	
     exit 0
 ;;

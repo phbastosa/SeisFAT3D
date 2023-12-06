@@ -10,6 +10,7 @@ private:
     int totalLevels;
     int nSweeps, meshDim;
 
+    float gamma;
     float cell_volume;
 
     float * d_T = nullptr;
