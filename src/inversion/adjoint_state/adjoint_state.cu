@@ -74,7 +74,7 @@ void Adjoint_State::apply_inversion_technique()
 	cudaMemcpy(d_source, source, modeling->volsize*sizeof(float), cudaMemcpyHostToDevice);
 	cudaMemcpy(d_adjoint, adjoint, modeling->volsize*sizeof(float), cudaMemcpyHostToDevice);
 
-    for (int sweepCount = 0; sweepCount <= meshDim; sweepCount++)
+    for (int sweepCount = 0; sweepCount < meshDim; sweepCount++)
     {
         for (int sweep = 0; sweep < nSweeps; sweep++)
         { 
@@ -123,7 +123,7 @@ void Adjoint_State::apply_inversion_technique()
 
         int indp = (i + modeling->nbzu) + (j + modeling->nbxl)*modeling->nzz + (k + modeling->nbyl)*modeling->nxx*modeling->nzz;
 
-        gradient[index] += adjoint[indp]*modeling->S[indp]*modeling->S[indp]*cell_volume / modeling->total_shots;
+        gradient[index] += adjoint[indp]*modeling->T[indp]*modeling->S[indp]*modeling->S[indp]*cell_volume / modeling->total_shots;
     }
 }
 
@@ -182,8 +182,8 @@ void Adjoint_State::gradient_preconditioning()
 void Adjoint_State::optimization()  
 {
     float a1 = 0.0f;
-    float a2 = 0.5f;
-    float a3 = 0.9f;
+    float a2 = 0.2f;
+    float a3 = 0.6f;
 
     float f1 = residuo.back();
     float f2 = objective_function(a2);
@@ -199,14 +199,12 @@ void Adjoint_State::optimization()
     float alpha = -0.5*b/c;
 
     if (alpha > 1.0f) alpha = 1.0f;
-    if (alpha < 0.0f) alpha = 0.1f;
+    if (alpha < 0.0f) alpha = 0.1f; 
 
     for (int index = 0; index < modeling->nPoints; index++)
-    {
         dm[index] = alpha*gradient[index];
-    }
 
-    max_slowness_variation = max_slowness_variation / iteration;
+    max_slowness_variation *= powf(0.9f, static_cast<float>(iteration));    
 }
 
 float Adjoint_State::objective_function(float alpha)

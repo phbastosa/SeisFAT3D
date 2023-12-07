@@ -26,9 +26,6 @@ def check_geometry(models, shots, nodes, dh, slices, subplots, scale):
         vmin = np.min(models[0])
         vmax = np.max(models[0])
 
-    vmin = 1000
-    vmax = 2000
-
     nz, nx, ny = modelShape
     [z, x, y] = scale * (minModelDistance / maxModelDistance) * modelShape / maxModelDistance
 
@@ -212,13 +209,14 @@ def check_geometry(models, shots, nodes, dh, slices, subplots, scale):
 
 nx = 201
 ny = 201
-nz = 121
+nz = 51
 
-dx = 50
-dy = 50
-dz = 50
+dx = 100
+dy = 100
+dz = 100
 
-model = readBinaryVolume(nz, nx, ny, f"../inputs/models/trueModelTest_{nz}x{nx}x{ny}_{dx}m.bin")
+true_model = readBinaryVolume(nz, nx, ny, f"../inputs/models/trueModelTest_{nz}x{nx}x{ny}_{dx}m.bin")
+init_model = readBinaryVolume(nz, nx, ny, f"../inputs/models/initModelTest_{nz}x{nx}x{ny}_{dx}m.bin")
 
 shots_file = "../inputs/geometry/xyz_shots_position.txt"
 nodes_file = "../inputs/geometry/xyz_nodes_position.txt"
@@ -227,14 +225,14 @@ shots = np.loadtxt(shots_file, delimiter = ',')
 nodes = np.loadtxt(nodes_file, delimiter = ',')
 
 subplots = np.array([1, 1], dtype = int)
-slices = np.array([nz/2, 0.34*nx, 0.34*ny], dtype = int) # [xy, zy, zx]
+slices = np.array([20, 75, 75], dtype = int) # [xy, zy, zx]
 dh = np.array([dx, dy, dz])
 
-check_geometry(model, shots, nodes, dh, slices, subplots, 0.6)
+check_geometry(true_model, shots, nodes, dh, slices, subplots, 2.5)
 plt.savefig(f"trueModel.png", dpi = 200)
 plt.clf()
 
-check_geometry(1500.0*np.ones_like(model), shots, nodes, dh, slices, subplots, 0.6)
+check_geometry(init_model, shots, nodes, dh, slices, subplots, 2.5)
 plt.savefig(f"initModel.png", dpi = 200)
 plt.clf()
 
@@ -243,18 +241,26 @@ plt.clf()
 final_model_ls = readBinaryVolume(nz, nx, ny, f"../outputs/recovered_models/ls_final_model_{nz}x{nx}x{ny}.bin")
 final_model_adj = readBinaryVolume(nz, nx, ny, f"../outputs/recovered_models/adj_final_model_{nz}x{nx}x{ny}.bin")
 
-check_geometry(final_model_ls, shots, nodes, dh, slices, subplots, 0.6)
+check_geometry(final_model_ls, shots, nodes, dh, slices, subplots, 2.5)
 plt.savefig(f"final_model_ls.png", dpi = 200)
 plt.clf()
 
-check_geometry(final_model_adj, shots, nodes, dh, slices, subplots, 0.6)
+check_geometry(final_model_adj, shots, nodes, dh, slices, subplots, 2.5)
 plt.savefig(f"final_model_adj.png", dpi = 200)
+plt.clf()
+
+check_geometry(final_model_ls - init_model, shots, nodes, dh, slices, subplots, 2.5)
+plt.savefig(f"diff_model_ls.png", dpi = 200)
+plt.clf()
+
+check_geometry(final_model_adj - init_model, shots, nodes, dh, slices, subplots, 2.5)
+plt.savefig(f"diff_model_adj.png", dpi = 200)
 plt.clf()
 
 # --------------------------------------------------
 
-convergence_ls = np.loadtxt("../outputs/convergence/ls_convergence_10_iterations.txt")
-convergence_adj = np.loadtxt("../outputs/convergence/adj_convergence_10_iterations.txt")
+convergence_ls = np.loadtxt("../outputs/convergence/ls_convergence_5_iterations.txt")
+convergence_adj = np.loadtxt("../outputs/convergence/adj_convergence_5_iterations.txt")
 
 plt.figure(2, figsize = (10,4))
 plt.plot(convergence_ls, "o--", label = "Least squares approach")

@@ -176,19 +176,19 @@ case "$1" in
 	exit 0
 ;;
 
--test_inversion)
+-test_inversion) 
 
-    # python3 ../tests/inversion/generate_models.py
+    python3 ../tests/inversion/generate_models.py
 
-    # ./../bin/modeling.exe ../tests/inversion/parFiles/parameters_obsData.txt
+    ./../bin/modeling.exe ../tests/inversion/parFiles/parameters_obsData.txt
 
-    # ./../bin/inversion.exe ../tests/inversion/parFiles/parameters_leastSquares.txt
+    ./../bin/inversion.exe ../tests/inversion/parFiles/parameters_leastSquares.txt
 
     ./../bin/inversion.exe ../tests/inversion/parFiles/parameters_adjointState.txt
 
     python3 ../tests/inversion/generate_figures.py
 
-    # rm elapsedTime.txt
+    rm elapsedTime.txt
 	
     exit 0
 ;;

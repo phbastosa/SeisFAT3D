@@ -4,13 +4,13 @@
 
 x_samples = 201                     # <int>  
 y_samples = 201                     # <int>  
-z_samples = 121                     # <int>  
+z_samples = 51                      # <int>  
 
-x_spacing = 50                      # [m] <float> 
-y_spacing = 50                      # [m] <float> 
-z_spacing = 50                      # [m] <float> 
+x_spacing = 100                     # [m] <float> 
+y_spacing = 100                     # [m] <float> 
+z_spacing = 100                     # [m] <float> 
 
-input_model_file = ../inputs/models/initModelTest_121x201x201_50m.bin   
+input_model_file = ../inputs/models/initModelTest_51x201x201_100m.bin   
 
 #---------------------------------------------------------------------------------------------------
 # Geometry parameters ------------------------------------------------------------------------------
@@ -30,16 +30,16 @@ nodes_file = ../inputs/geometry/xyz_node_positions.txt
 
 # Regular geometry ---------------------------------------------------------------------------------               
 
-shots_nlines = [1, 11, 11]            # <int> (z, x, y)     
-nodes_nlines = [1, 11, 11]            # <int> (z, x, y)            
+shots_nlines = [1, 10, 10]          # <int> (z, x, y)     
+nodes_nlines = [1, 20, 20]          # <int> (z, x, y)            
 
-shots_SW = [50, 1000, 1000]           # [m] <float> (z, x, y) NW            
-shots_NW = [50, 1000, 9000]           # [m] <float> (z, x, y)  |            
-shots_SE = [50, 9000, 1000]           # [m] <float> (z, x, y) SW -- SE     
+shots_SW = [50, 1000, 1000]         # [m] <float> (z, x, y) NW            
+shots_NW = [50, 1000, 19000]        # [m] <float> (z, x, y)  |            
+shots_SE = [50, 19000, 1000]        # [m] <float> (z, x, y) SW -- SE     
 
-nodes_SW = [5950, 1000, 1000]         # [m] <float> (z, x, y) NW           
-nodes_NW = [5950, 1000, 9000]         # [m] <float> (z, x, y)  |         
-nodes_SE = [5950, 9000, 1000]         # [m] <float> (z, x, y) SW -- SE   
+nodes_SW = [50, 500, 500]           # [m] <float> (z, x, y) NW           
+nodes_NW = [50, 500, 19500]         # [m] <float> (z, x, y)  |         
+nodes_SE = [50, 19500, 500]         # [m] <float> (z, x, y) SW -- SE   
 
 # Circular geometry --------------------------------------------------------------------------------                                            
 
@@ -72,26 +72,26 @@ wavefield_output_folder = ../outputs/travel_times/
 
 inversion_type = 1                    # <int> 
 
-max_iteration = 10                    # <int>
+max_iteration = 5                     # <int>
 
-dx_tomo = 250                         # [m] <float> 
-dy_tomo = 250                         # [m] <float>
-dz_tomo = 250                         # [m] <float>
+dx_tomo = 100                         # [m] <float> 
+dy_tomo = 100                         # [m] <float>
+dz_tomo = 100                         # [m] <float>
 
 tk_order = 2                          # Tikhonov regularization order <int>
 tk_param = 1e4                        # Tikhonov regularization parameter <float>
 
-max_slowness = 1e-4                   # Max slowness variation <float>
+max_slowness = 5e-5                   # Max slowness variation <float>
 
 smooth_per_iteration = true           # <bool>
-gaussian_filter_samples = 11          # [odd number] <int> 
+gaussian_filter_samples = 21          # [odd number] <int> 
 gaussian_filter_stdv = 3.0            # <float>
 
 export_model_per_iteration = false    # <bool>
 export_gradient_per_iteration = false # <bool>
 
 obs_data_folder = ../inputs/data/        
-obs_data_prefix = obs_fsm_data_nRec121_shot_     
+obs_data_prefix = obs_fsm_data_nRec400_shot_     
 
 gradient_folder = ../outputs/gradients/ajd_                  
 convergence_folder = ../outputs/convergence/adj_         
