@@ -26,6 +26,9 @@ def check_geometry(models, shots, nodes, dh, slices, subplots, scale):
         vmin = np.min(models[0])
         vmax = np.max(models[0])
 
+    vmin = -400
+    vmax = 400
+
     nz, nx, ny = modelShape
     [z, x, y] = scale * (minModelDistance / maxModelDistance) * modelShape / maxModelDistance
 
@@ -228,50 +231,99 @@ subplots = np.array([1, 1], dtype = int)
 slices = np.array([20, 75, 75], dtype = int) # [xy, zy, zx]
 dh = np.array([dx, dy, dz])
 
-check_geometry(true_model, shots, nodes, dh, slices, subplots, 2.5)
-plt.savefig(f"trueModel.png", dpi = 200)
-plt.clf()
+# check_geometry(true_model, shots, nodes, dh, slices, subplots, 2.5)
+# plt.savefig(f"trueModel.png", dpi = 200)
+# plt.clf()
 
-check_geometry(init_model, shots, nodes, dh, slices, subplots, 2.5)
-plt.savefig(f"initModel.png", dpi = 200)
-plt.clf()
+# check_geometry(init_model, shots, nodes, dh, slices, subplots, 2.5)
+# plt.savefig(f"initModel.png", dpi = 200)
+# plt.clf()
+
+# check_geometry(true_model - init_model, shots, nodes, dh, slices, subplots, 2.5)
+# plt.savefig(f"diffModel.png", dpi = 200)
+# plt.clf()
 
 #-----------------------------------------------
 
 final_model_ls = readBinaryVolume(nz, nx, ny, f"../outputs/recovered_models/ls_final_model_{nz}x{nx}x{ny}.bin")
 final_model_adj = readBinaryVolume(nz, nx, ny, f"../outputs/recovered_models/adj_final_model_{nz}x{nx}x{ny}.bin")
 
-check_geometry(final_model_ls, shots, nodes, dh, slices, subplots, 2.5)
-plt.savefig(f"final_model_ls.png", dpi = 200)
-plt.clf()
+# check_geometry(final_model_ls, shots, nodes, dh, slices, subplots, 2.5)
+# plt.savefig(f"final_model_ls.png", dpi = 200)
+# plt.clf()
 
-check_geometry(final_model_adj, shots, nodes, dh, slices, subplots, 2.5)
-plt.savefig(f"final_model_adj.png", dpi = 200)
-plt.clf()
+# check_geometry(final_model_adj, shots, nodes, dh, slices, subplots, 2.5)
+# plt.savefig(f"final_model_adj.png", dpi = 200)
+# plt.clf()
 
-check_geometry(final_model_ls - init_model, shots, nodes, dh, slices, subplots, 2.5)
-plt.savefig(f"diff_model_ls.png", dpi = 200)
-plt.clf()
+# check_geometry(final_model_ls - init_model, shots, nodes, dh, slices, subplots, 2.5)
+# plt.savefig(f"diff_model_ls.png", dpi = 200)
+# plt.clf()
 
-check_geometry(final_model_adj - init_model, shots, nodes, dh, slices, subplots, 2.5)
-plt.savefig(f"diff_model_adj.png", dpi = 200)
-plt.clf()
+# check_geometry(final_model_adj - init_model, shots, nodes, dh, slices, subplots, 2.5)
+# plt.savefig(f"diff_model_adj.png", dpi = 200)
+# plt.clf()
 
+# --------------------------------------------------
+
+circles = np.array([[7500, 7500], [11500, 7500], [7500, 11500], [11500, 11500]]) / dx
+
+logs = np.zeros((len(circles), 3, nz))
+
+for i in range(len(circles)):
+    logs[i,0,:] = true_model[:, int(circles[i,0]), int(circles[0,1])] - init_model[:, int(circles[i,0]), int(circles[0,1])]
+    logs[i,1,:] = final_model_ls[:, int(circles[i,0]), int(circles[0,1])] - init_model[:, int(circles[i,0]), int(circles[0,1])]
+    logs[i,2,:] = final_model_adj[:, int(circles[i,0]), int(circles[0,1])] - init_model[:, int(circles[i,0]), int(circles[0,1])]
+
+depth = np.arange(nz)*dz
+
+for i in range(len(circles)):
+
+    plt.figure(i+1, figsize = (4,6))
+    plt.plot(logs[i,0,:], depth)
+    plt.plot(logs[i,1,:], depth)
+    plt.plot(logs[i,2,:], depth)
+
+    plt.title(f"(x,y) = ({circles[i,0]*dx:.0f}, {circles[i,1]*dy:.0f}) m", fontsize = 15)
+    plt.xlabel("Velocity anomaly [m/s]", fontsize = 15)
+    plt.ylabel("Depth [m]", fontsize = 15)
+
+    plt.xlim([-1000,1000])
+    plt.ylim([0,5000])
+    plt.gca().invert_yaxis()
+    plt.tight_layout()
+    plt.savefig(f"log{i+1}_test.png", dpi = 200)
+
+# fig, ax = plt.subplots(nrows = 1, ncols = len(circles), figsize = (10, 6))
+
+# for i in range(len(circles)):
+#     ax[i].plot(logs[i,0,:], depth)
+#     ax[i].plot(logs[i,1,:], depth)
+#     ax[i].plot(logs[i,2,:], depth)
+
+#     ax[i].set_xlim([-1000,1000])
+#     ax[i].set_ylim([0,5000])
+#     ax[i].invert_yaxis()
+
+
+# fig.tight_layout()
+# plt.show()
+plt.clf()
 # --------------------------------------------------
 
 convergence_ls = np.loadtxt("../outputs/convergence/ls_convergence_5_iterations.txt")
 convergence_adj = np.loadtxt("../outputs/convergence/adj_convergence_5_iterations.txt")
 
-plt.figure(2, figsize = (10,4))
-plt.plot(convergence_ls, "o--", label = "Least squares approach")
-plt.plot(convergence_adj, "o--", label = "Adjoint state approach")
+# plt.figure(2, figsize = (10,4))
+# plt.plot(convergence_ls, "o--", label = "Least squares approach")
+# plt.plot(convergence_adj, "o--", label = "Adjoint state approach")
 
-plt.title("Convergence curve", fontsize = 18)
-plt.xlabel("Iteration number", fontsize = 15)
-plt.ylabel("Objective function L2 norm", fontsize = 15)
+# plt.title("Convergence curve", fontsize = 18)
+# plt.xlabel("Iteration number", fontsize = 15)
+# plt.ylabel("Objective function L2 norm", fontsize = 15)
 
-plt.legend(loc = "upper right", fontsize = 12)
-plt.grid(True)
-plt.tight_layout()
-plt.savefig(f"curve.png", dpi = 200)
-plt.clf()
+# plt.legend(loc = "upper right", fontsize = 12)
+# plt.grid(True)
+# plt.tight_layout()
+# plt.savefig(f"curve.png", dpi = 200)
+

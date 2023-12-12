@@ -171,8 +171,6 @@ case "$1" in
 
     python3 ../tests/modeling/generate_figures.py
 
-    rm elapsedTime.txt
-
 	exit 0
 ;;
 
@@ -187,8 +185,6 @@ case "$1" in
     ./../bin/inversion.exe ../tests/inversion/parFiles/parameters_adjointState.txt
 
     python3 ../tests/inversion/generate_figures.py
-
-    rm elapsedTime.txt
 	
     exit 0
 ;;

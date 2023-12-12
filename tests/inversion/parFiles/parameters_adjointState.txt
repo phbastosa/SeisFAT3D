@@ -83,7 +83,7 @@ tk_param = 1e4                        # Tikhonov regularization parameter <float
 
 max_slowness = 5e-5                   # Max slowness variation <float>
 
-smooth_per_iteration = true           # <bool>
+smooth_per_iteration = true          # <bool>
 gaussian_filter_samples = 21          # [odd number] <int> 
 gaussian_filter_stdv = 3.0            # <float>
 
