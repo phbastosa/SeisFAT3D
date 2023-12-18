@@ -8,26 +8,17 @@ def readBinaryVolume(n1,n2,n3,filename):
     data = np.fromfile(filename, dtype = np.float32, count = n1*n2*n3)    
     return np.reshape(data, [n1,n2,n3], order='F')
 
-def check_geometry(models, shots, nodes, dh, slices, subplots, scale):
+def check_full_model(models, shots, nodes, dh, slices, subplots, vmin, vmax, scale):
     
     if np.sum(subplots) == 2:
         modelShape = np.array(np.shape(models))
         maxModelDistance = np.max(np.shape(models))
         minModelDistance = np.min(np.shape(models))
 
-        vmin = np.min(models)
-        vmax = np.max(models)
-
     else:
         modelShape = np.array(np.shape(models[0]))
         maxModelDistance = np.max(np.shape(models[0]))
         minModelDistance = np.min(np.shape(models[0]))
-
-        vmin = np.min(models[0])
-        vmax = np.max(models[0])
-
-    vmin = -400
-    vmax = 400
 
     nz, nx, ny = modelShape
     [z, x, y] = scale * (minModelDistance / maxModelDistance) * modelShape / maxModelDistance
@@ -223,7 +214,7 @@ init_model = readBinaryVolume(nz, nx, ny, f"../inputs/models/initModelTest_{nz}x
 
 shots_file = "../inputs/geometry/xyz_shots_position.txt"
 nodes_file = "../inputs/geometry/xyz_nodes_position.txt"
-
+ 
 shots = np.loadtxt(shots_file, delimiter = ',')
 nodes = np.loadtxt(nodes_file, delimiter = ',')
 
@@ -231,73 +222,80 @@ subplots = np.array([1, 1], dtype = int)
 slices = np.array([20, 75, 75], dtype = int) # [xy, zy, zx]
 dh = np.array([dx, dy, dz])
 
-# check_geometry(true_model, shots, nodes, dh, slices, subplots, 2.5)
-# plt.savefig(f"trueModel.png", dpi = 200)
-# plt.clf()
+vmin = 2000
+vmax = 4500
 
-# check_geometry(init_model, shots, nodes, dh, slices, subplots, 2.5)
-# plt.savefig(f"initModel.png", dpi = 200)
-# plt.clf()
+vdiff = 500
 
-# check_geometry(true_model - init_model, shots, nodes, dh, slices, subplots, 2.5)
-# plt.savefig(f"diffModel.png", dpi = 200)
-# plt.clf()
+check_full_model(true_model, shots, nodes, dh, slices, subplots, vmin, vmax, 2.5)
+plt.savefig(f"trueModel.png", dpi = 200)
+plt.clf()
+
+check_full_model(init_model, shots, nodes, dh, slices, subplots, vmin, vmax, 2.5)
+plt.savefig(f"initModel.png", dpi = 200)
+plt.clf()
+
+check_full_model(true_model - init_model, shots, nodes, dh, slices, subplots, vdiff, vdiff, 2.5)
+plt.savefig(f"diffModel.png", dpi = 200)
+plt.clf()
 
 #-----------------------------------------------
 
 final_model_ls = readBinaryVolume(nz, nx, ny, f"../outputs/recovered_models/ls_final_model_{nz}x{nx}x{ny}.bin")
 final_model_adj = readBinaryVolume(nz, nx, ny, f"../outputs/recovered_models/adj_final_model_{nz}x{nx}x{ny}.bin")
 
-# check_geometry(final_model_ls, shots, nodes, dh, slices, subplots, 2.5)
-# plt.savefig(f"final_model_ls.png", dpi = 200)
-# plt.clf()
+check_full_model(final_model_ls, shots, nodes, dh, slices, subplots, vmin, vmax, 2.5)
+plt.savefig(f"final_model_ls.png", dpi = 200)
+plt.clf()
 
-# check_geometry(final_model_adj, shots, nodes, dh, slices, subplots, 2.5)
-# plt.savefig(f"final_model_adj.png", dpi = 200)
-# plt.clf()
+check_full_model(final_model_adj, shots, nodes, dh, slices, subplots, vmin, vmax, 2.5)
+plt.savefig(f"final_model_adj.png", dpi = 200)
+plt.clf()
 
-# check_geometry(final_model_ls - init_model, shots, nodes, dh, slices, subplots, 2.5)
-# plt.savefig(f"diff_model_ls.png", dpi = 200)
-# plt.clf()
+check_full_model(final_model_ls - init_model, shots, nodes, dh, slices, subplots, vdiff, vdiff, 2.5)
+plt.savefig(f"diff_model_ls.png", dpi = 200)
+plt.clf()
 
-# check_geometry(final_model_adj - init_model, shots, nodes, dh, slices, subplots, 2.5)
-# plt.savefig(f"diff_model_adj.png", dpi = 200)
-# plt.clf()
+check_full_model(final_model_adj - init_model, shots, nodes, dh, slices, subplots, vdiff, vdiff, 2.5)
+plt.savefig(f"diff_model_adj.png", dpi = 200)
+plt.clf()
 
 # --------------------------------------------------
 
-# circles = np.array([[7500, 7500], [11500, 7500], [7500, 11500], [11500, 11500]]) / dx
+circles = np.array([[7500, 7500], [11500, 7500], [7500, 11500], [11500, 11500]]) / dx
 
-# logs = np.zeros((len(circles), 3, nz))
+logs = np.zeros((len(circles), 3, nz))
 
-# for i in range(len(circles)):
-#     logs[i,0,:] = true_model[:, int(circles[i,0]), int(circles[0,1])] - init_model[:, int(circles[i,0]), int(circles[0,1])]
-#     logs[i,1,:] = final_model_ls[:, int(circles[i,0]), int(circles[0,1])] - init_model[:, int(circles[i,0]), int(circles[0,1])]
-#     logs[i,2,:] = final_model_adj[:, int(circles[i,0]), int(circles[0,1])] - init_model[:, int(circles[i,0]), int(circles[0,1])]
+for i in range(len(circles)):
+    logs[i,0,:] = true_model[:, int(circles[i,0]), int(circles[0,1])] - init_model[:, int(circles[i,0]), int(circles[0,1])]
+    logs[i,1,:] = final_model_ls[:, int(circles[i,0]), int(circles[0,1])] - init_model[:, int(circles[i,0]), int(circles[0,1])]
+    logs[i,2,:] = final_model_adj[:, int(circles[i,0]), int(circles[0,1])] - init_model[:, int(circles[i,0]), int(circles[0,1])]
 
-# depth = np.arange(nz)*dz
+depth = np.arange(nz)*dz
 
-# for i in range(len(circles)):
+for i in range(len(circles)):
 
-#     plt.figure(i+1, figsize = (4,6))
-#     plt.plot(0.0*depth, depth, color = "black")
-#     plt.plot(logs[i,0,:], depth, color = "red")
-#     plt.plot(logs[i,1,:], depth, color = "orange")
-#     plt.plot(logs[i,2,:], depth, color = "green")
+    plt.figure(i+1, figsize = (4,6))
+    plt.plot(0.0*depth, depth, color = "black")
+    plt.plot(logs[i,0,:], depth, color = "red")
+    plt.plot(logs[i,1,:], depth, color = "orange")
+    plt.plot(logs[i,2,:], depth, color = "green")
 
-#     plt.title(f"(x,y) = ({circles[i,0]*dx:.0f}, {circles[i,1]*dy:.0f}) m", fontsize = 15)
-#     plt.xlabel("Velocity anomaly [m/s]", fontsize = 15)
-#     plt.ylabel("Depth [m]", fontsize = 15)
+    plt.title(f"(x,y) = ({circles[i,0]*dx:.0f}, {circles[i,1]*dy:.0f}) m", fontsize = 15)
+    plt.xlabel("Velocity anomaly [m/s]", fontsize = 15)
+    plt.ylabel("Depth [m]", fontsize = 15)
 
-#     plt.xlim([-1000,1000])
-#     plt.ylim([0,5000])
-#     plt.gca().invert_yaxis()
-#     plt.tight_layout()
-#     plt.savefig(f"log{i+1}_test.png", dpi = 200)
+    plt.xlim([-1000,1000])
+    plt.ylim([0,5000])
+    plt.gca().invert_yaxis()
+    plt.tight_layout()
+    plt.savefig(f"log{i+1}_test.png", dpi = 200)
 
-# plt.clf()
+plt.clf()
+
 # --------------------------------------------------
 # model correlation
+
 ls_diff = final_model_ls - true_model
 adj_diff = final_model_adj - true_model
 
@@ -310,9 +308,12 @@ max_error_adj = np.max(adj_diff)
 min_error_ls = np.min(ls_diff)
 min_error_adj = np.min(adj_diff)
 
-print(f"{rms_error_ls:.2f}", f"{rms_error_adj:.2f}")
-print(f"{max_error_ls:.2f}", f"{max_error_adj:.2f}")
-print(f"{min_error_ls:.2f}", f"{min_error_adj:.2f}")
+print(f"|{'-'*74}|")
+print(f"| {'Model difference analysis':^30s} | {'RMS ERROR':^11s} | {'MAX ERROR':^11s} | {'MIN ERROR':^11s} |")
+print(f"|{'-'*74}|")
+print(f"| {'Classical Tomography':^30s} | {f'{rms_error_ls:.4f}':^11s} | {f'{max_error_ls:.5f}':^11s} | {f'{min_error_ls:.4f}':^11s} |")
+print(f"| {'Adjoint State Tomography':^30s} | {f'{rms_error_adj:.4f}':^11s} | {f'{max_error_adj:.5f}':^11s} | {f'{min_error_adj:.4f}':^11s} |")
+print(f"|{'-'*74}|\n\n")
 
 ns = len(shots)
 nr = len(nodes)
@@ -333,23 +334,25 @@ max_error_adj = np.max(adj_data)
 min_error_ls = np.min(ls_data)
 min_error_adj = np.min(adj_data)
 
-print(f"{rms_error_ls:.5f}", f"{rms_error_adj:.5f}")
-print(f"{max_error_ls:.5f}", f"{max_error_adj:.5f}")
-print(f"{min_error_ls:.5f}", f"{min_error_adj:.5f}")
-
+print(f"|{'-'*74}|")
+print(f"| {'Data difference analysis':^30s} | {'RMS ERROR':^11s} | {'MAX ERROR':^11s} | {'MIN ERROR':^11s} |")
+print(f"|{'-'*74}|")
+print(f"| {'Classical Tomography':^30s} | {f'{rms_error_ls:.4f}':^11s} | {f'{max_error_ls:.5f}':^11s} | {f'{min_error_ls:.4f}':^11s} |")
+print(f"| {'Adjoint State Tomography':^30s} | {f'{rms_error_adj:.4f}':^11s} | {f'{max_error_adj:.5f}':^11s} | {f'{min_error_adj:.4f}':^11s} |")
+print(f"|{'-'*74}|")
 
 # --------------------------------------------------
 convergence_ls = np.loadtxt("../outputs/convergence/ls_convergence_5_iterations.txt")
 convergence_adj = np.loadtxt("../outputs/convergence/adj_convergence_5_iterations.txt")
 
-# plt.figure(21, figsize = (10,4))
-# plt.plot(convergence_ls, "o--", label = "Least squares approach", color = "orange")
-# plt.plot(convergence_adj, "o--", label = "Adjoint state approach", color = "green")
+plt.figure(21, figsize = (10,4))
+plt.plot(convergence_ls, "o--", label = "Least squares approach", color = "orange")
+plt.plot(convergence_adj, "o--", label = "Adjoint state approach", color = "green")
 
-# plt.title("Convergence curve", fontsize = 18)
-# plt.xlabel("Iteration number", fontsize = 15)
-# plt.ylabel("Objective function L2 norm", fontsize = 15)
+plt.title("Convergence curve", fontsize = 18)
+plt.xlabel("Iteration number", fontsize = 15)
+plt.ylabel("Objective function L2 norm", fontsize = 15)
  
-# plt.grid(True)
-# plt.tight_layout()
-# plt.savefig(f"curve.png", dpi = 200)
+plt.grid(True)
+plt.tight_layout()
+plt.savefig(f"curve.png", dpi = 200)
