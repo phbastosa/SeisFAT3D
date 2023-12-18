@@ -73,6 +73,10 @@ Tests:\n
 Tools:\n
     $ $0 -configuration       # Check initial configuration plot
     $ $0 -manual_picking      # Perform manual picking algorithm using .segy files 
+
+Projects:\n
+    $ $0 -project_EAGE_2024   # Perform and show experiments of expanded abstract
+    $ $0 -project_IMAGE_2024  # Perform and show experiments of expanded abstract 
 "
 
 [ -z "$1" ] && 
@@ -176,13 +180,12 @@ case "$1" in
 
 -test_inversion) 
 
-    # python3 ../tests/inversion/generate_models.py
+    python3 ../tests/inversion/generate_models.py
 
-    # ./../bin/modeling.exe ../tests/inversion/parFiles/parameters_obsData.txt
+    ./../bin/modeling.exe ../tests/inversion/parFiles/parameters_obsData.txt
 
-    # ./../bin/inversion.exe ../tests/inversion/parFiles/parameters_leastSquares.txt
-
-    # ./../bin/inversion.exe ../tests/inversion/parFiles/parameters_adjointState.txt
+    ./../bin/inversion.exe ../tests/inversion/parFiles/parameters_leastSquares.txt
+    ./../bin/inversion.exe ../tests/inversion/parFiles/parameters_adjointState.txt
 
     python3 ../tests/inversion/generate_figures.py
 	
@@ -192,6 +195,31 @@ case "$1" in
 -test_migration)
 
     echo "testing a small migration experiment"
+
+	exit 0
+;;
+
+-project_EAGE_2024)
+
+    # python3 ../projects/EAGE_2024/generate_models.py
+
+    # ./../bin/acoustic.exe ../projects/EAGE_2024/parFiles/modSeism_parameters.txt
+
+    # ./../bin/modeling.exe ../projects/EAGE_2024/parFiles/modPOD_parameters.txt
+    # ./../bin/modeling.exe ../projects/EAGE_2024/parFiles/modFIM_parameters.txt
+    # ./../bin/modeling.exe ../projects/EAGE_2024/parFiles/modFSM_parameters.txt
+
+
+
+
+    python3 ../projects/EAGE_2024/generate_figures.py
+
+	exit 0
+;;
+
+-project_IMAGE_2024)
+
+
 
 	exit 0
 ;;

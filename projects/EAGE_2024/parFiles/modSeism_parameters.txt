@@ -1,0 +1,120 @@
+#---------------------------------------------------------------------------------------------------
+# Model paramenters --------------------------------------------------------------------------------
+#---------------------------------------------------------------------------------------------------
+
+x_samples = 441                       # <int>  
+y_samples = 441                       # <int>  
+z_samples = 161                       # <int>  
+
+x_spacing = 25                        # [m] <float> 
+y_spacing = 25                        # [m] <float> 
+z_spacing = 25                        # [m] <float> 
+
+input_model_file = ../inputs/models/accuracyModelTest_161x441x441_25m.bin   
+
+#---------------------------------------------------------------------------------------------------
+# Geometry parameters ------------------------------------------------------------------------------
+#---------------------------------------------------------------------------------------------------
+# Available types:
+#   
+#   [0] - regular nodes and regular shots    
+#   [1] - regular nodes and circular shots  
+#---------------------------------------------------------------------------------------------------
+
+geometry_type = 0                     # <int>
+reciprocity = false                   # <bool>     
+import_geometry = false               # <bool>
+
+shots_file = ../inputs/geometry/xyz_shots_position.txt              
+nodes_file = ../inputs/geometry/xyz_nodes_position.txt     
+
+# Regular geometry ---------------------------------------------------------------------------------               
+
+shots_nlines = [1, 1, 1]              # <int> (z, x, y)     
+nodes_nlines = [1, 3, 91]             # <int> (z, x, y)            
+
+shots_SW = [0, 500, 5500]             # [m] <float> (z, x, y) NW            
+shots_NW = [0, 500, 5500]             # [m] <float> (z, x, y)  |            
+shots_SE = [0, 500, 5500]             # [m] <float> (z, x, y) SW -- SE     
+
+nodes_SW = [0, 6000, 500]             # [m] <float> (z, x, y) NW           
+nodes_NW = [0, 6000, 10500]           # [m] <float> (z, x, y)  |         
+nodes_SE = [0, 10500, 500]            # [m] <float> (z, x, y) SW -- SE   
+
+# Circular geometry --------------------------------------------------------------------------------                                            
+
+spacing = 50                          # [m] <float>
+center  = [0, 10000, 10000]           # [m] <float> (z, x, y)        
+offsets = [5000, 7000, 9000]          # [m] <float>
+
+#---------------------------------------------------------------------------------------------------
+# Modeling parameters ------------------------------------------------------------------------------
+#---------------------------------------------------------------------------------------------------
+#   [0] - Podvin & Lecomte (1991) 
+#   [1] - Block FIM (Jeong & Whitaker, 2008)
+#   [2] - Accurate FSM (Detrixhe et al., 2013; Noble et al., 2014)   
+#---------------------------------------------------------------------------------------------------
+
+modeling_type = 1                     # <int>
+
+export_receiver_output = true         # <bool> 
+export_wavefield_output = true        # <bool>
+
+receiver_output_folder = ../outputs/first_arrivals/            
+wavefield_output_folder = ../outputs/travel_times/     
+
+#---------------------------------------------------------------------------------------------------
+# Wave propagation in constant density acoustic media 
+#---------------------------------------------------------------------------------------------------
+
+max_frequency = 25                   # [Hz] <float>
+time_spacing = 1e-3                  # [s] <float>
+time_samples = 6001                  # <int>
+
+boundary_damper = 0.0055             # <float>
+boundary_samples = 50                # <int> 
+
+#---------------------------------------------------------------------------------------------------
+# Inversion parameters 
+#---------------------------------------------------------------------------------------------------
+#   [0] - Least squares first arrival tomography 
+#   [1] - Adjoint state first arrival tomography
+#---------------------------------------------------------------------------------------------------
+
+inversion_type = 0                    # <int> 
+
+max_iteration = 2                     # <int>
+
+dx_tomo = 50                          # [m] <float> 
+dy_tomo = 50                          # [m] <float>
+dz_tomo = 20                          # [m] <float>
+
+tk_order = 2                          # Tikhonov regularization order <int>
+tk_param = 1e3                        # Tikhonov regularization parameter <float>
+
+max_slowness = 1e-4                   # Max slowness variation <float>
+
+smooth_per_iteration = true           # <bool>
+gaussian_filter_samples = 5           # [odd number] <int> 
+gaussian_filter_stdv = 2.0            # <float>
+
+export_model_per_iteration = true     # <bool>
+export_gradient_per_iteration = true  # <bool>
+
+obs_data_folder = ../inputs/data/        
+obs_data_prefix = seismogram_gather_    
+
+gradient_folder = ../outputs/gradients/                  
+convergence_folder = ../outputs/convergence/         
+estimated_model_folder = ../outputs/recovered_models/    
+
+#---------------------------------------------------------------------------------------------------
+# Migration parameters 
+#--------------------------------------------------------------------------------------------------- 
+#   [0] - Kirchhoff pre-stack depth migration 
+#---------------------------------------------------------------------------------------------------
+
+migration_type = 0
+
+
+
