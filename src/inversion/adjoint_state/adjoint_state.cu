@@ -182,8 +182,8 @@ void Adjoint_State::gradient_preconditioning()
 void Adjoint_State::optimization()  
 {
     float a1 = 0.0f;
-    float a2 = 0.4f; // 0.2
-    float a3 = 0.9f; // 0.6
+    float a2 = 0.4f; 
+    float a3 = 0.9f; 
 
     float f1 = residuo.back();
     float f2 = objective_function(a2);
@@ -196,7 +196,7 @@ void Adjoint_State::optimization()
     float b = Db/Dt;
     float c = Dc/Dt;
 
-    float alpha = -0.5*b/c;
+    float alpha = -0.5f*b/c;
 
     if (alpha > 1.0f) alpha = 1.0f;
     if (alpha < 0.0f) alpha = 0.1f; 
@@ -204,7 +204,7 @@ void Adjoint_State::optimization()
     for (int index = 0; index < modeling->nPoints; index++)
         dm[index] = alpha*gradient[index];
 
-    max_slowness_variation *= powf(0.85f, static_cast<float>(iteration)); // 0.9    
+    max_slowness_variation *= powf(0.85f, static_cast<float>(iteration));     
 }
 
 float Adjoint_State::objective_function(float alpha)

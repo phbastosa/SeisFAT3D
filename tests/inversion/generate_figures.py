@@ -266,64 +266,90 @@ final_model_adj = readBinaryVolume(nz, nx, ny, f"../outputs/recovered_models/adj
 
 # --------------------------------------------------
 
-circles = np.array([[7500, 7500], [11500, 7500], [7500, 11500], [11500, 11500]]) / dx
+# circles = np.array([[7500, 7500], [11500, 7500], [7500, 11500], [11500, 11500]]) / dx
 
-logs = np.zeros((len(circles), 3, nz))
-
-for i in range(len(circles)):
-    logs[i,0,:] = true_model[:, int(circles[i,0]), int(circles[0,1])] - init_model[:, int(circles[i,0]), int(circles[0,1])]
-    logs[i,1,:] = final_model_ls[:, int(circles[i,0]), int(circles[0,1])] - init_model[:, int(circles[i,0]), int(circles[0,1])]
-    logs[i,2,:] = final_model_adj[:, int(circles[i,0]), int(circles[0,1])] - init_model[:, int(circles[i,0]), int(circles[0,1])]
-
-depth = np.arange(nz)*dz
-
-for i in range(len(circles)):
-
-    plt.figure(i+1, figsize = (4,6))
-    plt.plot(logs[i,0,:], depth)
-    plt.plot(logs[i,1,:], depth)
-    plt.plot(logs[i,2,:], depth)
-
-    plt.title(f"(x,y) = ({circles[i,0]*dx:.0f}, {circles[i,1]*dy:.0f}) m", fontsize = 15)
-    plt.xlabel("Velocity anomaly [m/s]", fontsize = 15)
-    plt.ylabel("Depth [m]", fontsize = 15)
-
-    plt.xlim([-1000,1000])
-    plt.ylim([0,5000])
-    plt.gca().invert_yaxis()
-    plt.tight_layout()
-    plt.savefig(f"log{i+1}_test.png", dpi = 200)
-
-# fig, ax = plt.subplots(nrows = 1, ncols = len(circles), figsize = (10, 6))
+# logs = np.zeros((len(circles), 3, nz))
 
 # for i in range(len(circles)):
-#     ax[i].plot(logs[i,0,:], depth)
-#     ax[i].plot(logs[i,1,:], depth)
-#     ax[i].plot(logs[i,2,:], depth)
+#     logs[i,0,:] = true_model[:, int(circles[i,0]), int(circles[0,1])] - init_model[:, int(circles[i,0]), int(circles[0,1])]
+#     logs[i,1,:] = final_model_ls[:, int(circles[i,0]), int(circles[0,1])] - init_model[:, int(circles[i,0]), int(circles[0,1])]
+#     logs[i,2,:] = final_model_adj[:, int(circles[i,0]), int(circles[0,1])] - init_model[:, int(circles[i,0]), int(circles[0,1])]
 
-#     ax[i].set_xlim([-1000,1000])
-#     ax[i].set_ylim([0,5000])
-#     ax[i].invert_yaxis()
+# depth = np.arange(nz)*dz
 
+# for i in range(len(circles)):
 
-# fig.tight_layout()
-# plt.show()
-plt.clf()
+#     plt.figure(i+1, figsize = (4,6))
+#     plt.plot(0.0*depth, depth, color = "black")
+#     plt.plot(logs[i,0,:], depth, color = "red")
+#     plt.plot(logs[i,1,:], depth, color = "orange")
+#     plt.plot(logs[i,2,:], depth, color = "green")
+
+#     plt.title(f"(x,y) = ({circles[i,0]*dx:.0f}, {circles[i,1]*dy:.0f}) m", fontsize = 15)
+#     plt.xlabel("Velocity anomaly [m/s]", fontsize = 15)
+#     plt.ylabel("Depth [m]", fontsize = 15)
+
+#     plt.xlim([-1000,1000])
+#     plt.ylim([0,5000])
+#     plt.gca().invert_yaxis()
+#     plt.tight_layout()
+#     plt.savefig(f"log{i+1}_test.png", dpi = 200)
+
+# plt.clf()
 # --------------------------------------------------
+# model correlation
+ls_diff = final_model_ls - true_model
+adj_diff = final_model_adj - true_model
 
+rms_error_ls = np.sqrt(np.sum(ls_diff**2)/(nx*ny*nz))
+rms_error_adj = np.sqrt(np.sum(adj_diff**2)/(nx*ny*nz))
+
+max_error_ls = np.max(ls_diff)
+max_error_adj = np.max(adj_diff)
+
+min_error_ls = np.min(ls_diff)
+min_error_adj = np.min(adj_diff)
+
+print(f"{rms_error_ls:.2f}", f"{rms_error_adj:.2f}")
+print(f"{max_error_ls:.2f}", f"{max_error_adj:.2f}")
+print(f"{min_error_ls:.2f}", f"{min_error_adj:.2f}")
+
+ns = len(shots)
+nr = len(nodes)
+
+ls_data = np.zeros(ns*nr)
+adj_data = np.zeros(ns*nr)
+
+for i in range(ns):
+    ls_data[i*nr:nr+i*nr] = np.fromfile(f"../outputs/first_arrivals/ls_fsm_data_nRec400_shot_{i+1}.bin", count = nr, dtype = np.float32)
+    adj_data[i*nr:nr+i*nr] = np.fromfile(f"../outputs/first_arrivals/adj_fsm_data_nRec400_shot_{i+1}.bin", count = nr, dtype = np.float32)
+    
+rms_error_ls = np.sqrt(np.sum(ls_data**2)/(ns*nr))
+rms_error_adj = np.sqrt(np.sum(adj_data**2)/(ns*nr))
+
+max_error_ls = np.max(ls_data)
+max_error_adj = np.max(adj_data)
+
+min_error_ls = np.min(ls_data)
+min_error_adj = np.min(adj_data)
+
+print(f"{rms_error_ls:.5f}", f"{rms_error_adj:.5f}")
+print(f"{max_error_ls:.5f}", f"{max_error_adj:.5f}")
+print(f"{min_error_ls:.5f}", f"{min_error_adj:.5f}")
+
+
+# --------------------------------------------------
 convergence_ls = np.loadtxt("../outputs/convergence/ls_convergence_5_iterations.txt")
 convergence_adj = np.loadtxt("../outputs/convergence/adj_convergence_5_iterations.txt")
 
-# plt.figure(2, figsize = (10,4))
-# plt.plot(convergence_ls, "o--", label = "Least squares approach")
-# plt.plot(convergence_adj, "o--", label = "Adjoint state approach")
+# plt.figure(21, figsize = (10,4))
+# plt.plot(convergence_ls, "o--", label = "Least squares approach", color = "orange")
+# plt.plot(convergence_adj, "o--", label = "Adjoint state approach", color = "green")
 
 # plt.title("Convergence curve", fontsize = 18)
 # plt.xlabel("Iteration number", fontsize = 15)
 # plt.ylabel("Objective function L2 norm", fontsize = 15)
-
-# plt.legend(loc = "upper right", fontsize = 12)
+ 
 # plt.grid(True)
 # plt.tight_layout()
 # plt.savefig(f"curve.png", dpi = 200)
-
