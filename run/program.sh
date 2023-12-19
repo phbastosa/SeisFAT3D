@@ -201,13 +201,12 @@ case "$1" in
 
 -project_EAGE_2024)
 
-    # python3 ../projects/EAGE_2024/generate_models.py
+    python3 ../projects/EAGE_2024/generate_models.py
 
-    # ./../bin/acoustic.exe ../projects/EAGE_2024/parFiles/modSeism_parameters.txt
+    ./../bin/acoustic.exe ../projects/EAGE_2024/parFiles/modSeism_parameters.txt
 
-    # ./../bin/modeling.exe ../projects/EAGE_2024/parFiles/modPOD_parameters.txt
-    # ./../bin/modeling.exe ../projects/EAGE_2024/parFiles/modFIM_parameters.txt
-    # ./../bin/modeling.exe ../projects/EAGE_2024/parFiles/modFSM_parameters.txt
+    ./../bin/modeling.exe ../projects/EAGE_2024/parFiles/modFIM_parameters.txt
+    ./../bin/modeling.exe ../projects/EAGE_2024/parFiles/modFSM_parameters.txt
 
 
 
