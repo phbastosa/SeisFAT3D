@@ -174,8 +174,8 @@ def plot_model_3D(model, shots, nodes, dh, slices, subplots, vmin, vmax, scale):
             ax.plot(xSlices[k][0], xSlices[k][1], xSlices[k][2], linewidth = 0.5)
             ax.plot(ySlices[k][0], ySlices[k][1], ySlices[k][2], linewidth = 0.5)
             
-            ax.scatter(xshot[k], yshot[k], s = 20.0, color = "black")
             ax.scatter(xnode[k], ynode[k], s = 20.0, color = "gray")
+            ax.scatter(xshot[k], yshot[k], s = 20.0, color = "black")
 
             ax.tick_params(direction = xTickDirection[k], axis='x') 
             ax.tick_params(direction = yTickDirection[k], axis='y') 

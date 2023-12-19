@@ -20,46 +20,40 @@ for i in range(len(thickness)):
 
 accuracy_model.flatten("F").astype(np.float32, order = "F").tofile(f"../inputs/models/accuracyModelTest_{nz}x{nx}x{ny}_{dh:.0f}m.bin")
 
+accuracy_model = 0
 #---------------------------------------------------------------------------------------------
 # Model to show inaccuracy effects in first arrival tomography
 #---------------------------------------------------------------------------------------------
 
-dh = 50
+tomography_model = np.zeros((nz, nx, ny))
 
-# nx = int((2e4 / dh) + 1)
-# ny = int((2e4 / dh) + 1)
-# nz = int((5e3 / dh) + 1)
+dv = 15
+vi = 2000
 
-# init_model = np.zeros((nz, nx, ny))
-# true_model = np.zeros((nz, nx, ny))
+v = vi + dv*np.arange(nz)
 
-# dv = 50
-# vi = 2000
+for i in range(nz):
+    tomography_model[i] = v[i]
 
-# v = vi + dv*np.arange(nz)
+tomography_model.flatten("F").astype(np.float32, order = "F").tofile(f"../inputs/models/initModelTest_{nz}x{nx}x{ny}_{dh:.0f}m.bin")
 
-# for i in range(nz):
-#     true_model[i] = v[i]
-#     init_model[i] = v[i]
+radius = 1000
 
-# radius = 1000
+velocity_variation = np.array([-500, 500, 500, -500])
 
-# velocity_variation = np.array([-500, 500, 500, -500])
+circle_centers = np.array([[1500, 4000, 4000],
+                           [1500, 4000, 7000],
+                           [1500, 7000, 4000],
+                           [1500, 7000, 7000]])
 
-# circle_centers = np.array([[2500, 7500, 7500],
-#                            [2500, 7500, 11500],
-#                            [2500, 11500, 7500],
-#                            [2500, 11500, 11500]])
+x, z, y = np.meshgrid(np.arange(nx)*dh, np.arange(nz)*dh, np.arange(ny)*dh)
 
-# x, z, y = np.meshgrid(np.arange(nx)*dh, np.arange(nz)*dh, np.arange(ny)*dh)
-
-# for k, dv in enumerate(velocity_variation):
+for k, dv in enumerate(velocity_variation):
     
-#     distance = np.sqrt((x - circle_centers[k,1])**2 + (y - circle_centers[k,2])**2 + (z - circle_centers[k,0])**2)
+    distance = np.sqrt((x - circle_centers[k,1])**2 + (y - circle_centers[k,2])**2 + (z - circle_centers[k,0])**2)
 
-#     true_model[distance <= radius] += dv
+    tomography_model[distance <= radius] += dv
 
-# true_model.flatten("F").astype(np.float32, order = "F").tofile(f"../inputs/models/trueModelTest_{nz}x{nx}x{ny}_{dh:.0f}m.bin")
-# init_model.flatten("F").astype(np.float32, order = "F").tofile(f"../inputs/models/initModelTest_{nz}x{nx}x{ny}_{dh:.0f}m.bin")
+tomography_model.flatten("F").astype(np.float32, order = "F").tofile(f"../inputs/models/trueModelTest_{nz}x{nx}x{ny}_{dh:.0f}m.bin")
 
 
