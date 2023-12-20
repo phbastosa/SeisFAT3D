@@ -201,18 +201,23 @@ case "$1" in
 
 -project_EAGE_2024)
 
-    # python3 ../projects/EAGE_2024/generate_models.py
+    python3 ../projects/EAGE_2024/generate_models.py
 
-    # ./../bin/acoustic.exe ../projects/EAGE_2024/parFiles/modSeism_parameters.txt
-    # ./../bin/modeling.exe ../projects/EAGE_2024/parFiles/modFIM_parameters.txt
-    # ./../bin/modeling.exe ../projects/EAGE_2024/parFiles/modFSM_parameters.txt
+    ./../bin/acoustic.exe ../projects/EAGE_2024/parFiles/modSeism_parameters.txt
+    ./../bin/modeling.exe ../projects/EAGE_2024/parFiles/modFIM_parameters.txt
+    ./../bin/modeling.exe ../projects/EAGE_2024/parFiles/modFSM_parameters.txt
 
-    # python3 ../projects/EAGE_2024/generate_modeling_figures.py
-
-
+    python3 ../projects/EAGE_2024/generate_modeling_figures.py
 
     ./../bin/acoustic.exe ../projects/EAGE_2024/parFiles/obsData_parameters.txt
-    
+
+    g++ $io ../projects/EAGE_2024/auto_picking.cpp -lm -o ../bin/auto_picking.exe
+    ./../bin/auto_picking.exe; rm ../bin/auto_picking.exe
+    python3 ../projects/EAGE_2024/auto_picking_QC.py
+
+    ./../bin/inversion.exe ../projects/EAGE_2024/parFiles/tomoFIM_parameters.txt
+    ./../bin/inversion.exe ../projects/EAGE_2024/parFiles/tomoFSM_parameters.txt
+
     python3 ../projects/EAGE_2024/generate_inversion_figures.py
 
 	exit 0

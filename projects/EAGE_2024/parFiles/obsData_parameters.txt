@@ -10,7 +10,7 @@ x_spacing = 25                        # [m] <float>
 y_spacing = 25                        # [m] <float> 
 z_spacing = 25                        # [m] <float> 
 
-input_model_file = ../inputs/models/initModelTest_161x441x441_25m.bin    
+input_model_file = ../inputs/models/trueModelTest_161x441x441_25m.bin   
 
 #---------------------------------------------------------------------------------------------------
 # Geometry parameters ------------------------------------------------------------------------------
@@ -39,7 +39,7 @@ shots_SE = [25, 10000, 1000]        # [m] <float> (z, x, y) SW -- SE
 
 nodes_SW = [50, 500, 500]           # [m] <float> (z, x, y) NW           
 nodes_NW = [50, 500, 10500]         # [m] <float> (z, x, y)  |         
-nodes_SE = [50, 10500, 500]         # [m] <float> (z, x, y) SW -- SE    
+nodes_SE = [50, 10500, 500]         # [m] <float> (z, x, y) SW -- SE   
 
 # Circular geometry --------------------------------------------------------------------------------                                            
 
@@ -57,8 +57,8 @@ offsets = [5000, 7000, 9000]          # [m] <float>
 
 modeling_type = 1                     # <int>
 
-export_receiver_output = false        # <bool> 
-export_wavefield_output = false       # <bool>
+export_receiver_output = true         # <bool> 
+export_wavefield_output = true        # <bool>
 
 receiver_output_folder = ../outputs/first_arrivals/            
 wavefield_output_folder = ../outputs/travel_times/     
@@ -71,7 +71,7 @@ max_frequency = 25                   # [Hz] <float>
 time_spacing = 1e-3                  # [s] <float>
 time_samples = 6001                  # <int>
 
-boundary_damper = 0.0015             # <float>
+boundary_damper = 0.0055             # <float>
 boundary_samples = 50                # <int> 
 
 #---------------------------------------------------------------------------------------------------
@@ -83,14 +83,14 @@ boundary_samples = 50                # <int>
 
 inversion_type = 0                    # <int> 
 
-max_iteration = 10                    # <int>
+max_iteration = 2                     # <int>
 
-dx_tomo = 500                         # [m] <float> 
-dy_tomo = 500                         # [m] <float>
-dz_tomo = 250                         # [m] <float>
+dx_tomo = 50                          # [m] <float> 
+dy_tomo = 50                          # [m] <float>
+dz_tomo = 20                          # [m] <float>
 
 tk_order = 2                          # Tikhonov regularization order <int>
-tk_param = 1e4                        # Tikhonov regularization parameter <float>
+tk_param = 1e3                        # Tikhonov regularization parameter <float>
 
 max_slowness = 1e-4                   # Max slowness variation <float>
 
@@ -98,15 +98,15 @@ smooth_per_iteration = true           # <bool>
 gaussian_filter_samples = 5           # [odd number] <int> 
 gaussian_filter_stdv = 2.0            # <float>
 
-export_model_per_iteration = false    # <bool>
-export_gradient_per_iteration = false # <bool>
+export_model_per_iteration = true     # <bool>
+export_gradient_per_iteration = true  # <bool>
 
 obs_data_folder = ../inputs/data/        
-obs_data_prefix = obsData_2601_samples_shot_    
+obs_data_prefix = seismogram_gather_    
 
 gradient_folder = ../outputs/gradients/                  
-convergence_folder = ../outputs/convergence/fim_         
-estimated_model_folder = ../outputs/recovered_models/fim_    
+convergence_folder = ../outputs/convergence/         
+estimated_model_folder = ../outputs/recovered_models/    
 
 #---------------------------------------------------------------------------------------------------
 # Migration parameters 

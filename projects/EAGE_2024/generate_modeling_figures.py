@@ -2,9 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 from sys import path
-
 path.append("../src/")
-
 import functions
 
 #---------------------------------------------------------------------
