@@ -1,72 +1,126 @@
-import tkinter as tk
-import tkinter.font as font
+import customtkinter as ctk
 
-root = tk.Tk()
+class Level():
+    def __init__(self, window, text, ypos):
+        
+        self.button = []
+        
+        self.frame = ctk.CTkFrame(window, height = 80, width = 800)
+        self.frame.place(x = 100, y = ypos)
 
-root.title("SeisFAT3D - Seismic First Arrival Toolkit 3D")
+        self.title_frame = ctk.CTkFrame(self.frame, height = 30, width = 300)
+        self.title_frame.place(x = 0, y = 0)
 
-window_width = 940
-window_height = 500
+        self.title_label = ctk.CTkLabel(self.title_frame, text = text, font = ("Helvetica", 20))
+        self.title_label.place(x = 10, y = 2)
 
-myFont = font.Font(family='Helvetica', size = 15)
+class Application():
+    def __init__(self):
+    
+        self.set_main_window()
+        self.set_main_frames()
+        self.set_main_buttons()
+        self.set_initial_levels()
 
-root.minsize(window_width, window_height)
+        self.root.mainloop()
 
-# get the screen dimension
-screen_width = root.winfo_screenwidth()
-screen_height = root.winfo_screenheight()
+    def set_main_window(self):
 
-# find the center point
-center_x = int(0.25*screen_width - 0.5*window_width)
-center_y = int(0.25*screen_height - 0.5*window_height)
+        self.root = ctk.CTk()
+        self.root.title("SeisFAT3D - Seismic First Arrival Toolkit 3D")
 
-# set the position of the window to the center of the screen
-root.geometry(f'{window_width}x{window_height}+{center_x}+{center_y}')
+        self.myFont = ("Helvetica", 20)
 
-upper_frame = tk.Frame(root, height = 45, width = window_width, highlightthickness = True)
-upper_frame.place(x = 0, y = 0, relwidth = 1.0)
+        self.window_width = 1000
+        self.window_height = self.root.winfo_screenheight()
 
-load_button = tk.Button(upper_frame, height = 1, width = 10, bg = "#A9A9A9", text = "Load", justify = "center")
-load_button.pack(side = "left", padx = 2, pady = 2)
-load_button['font'] = myFont
+        self.root.minsize(self.window_width, self.window_height)
+        self.root.maxsize(self.window_width, self.window_height)
 
-save_button = tk.Button(upper_frame, height = 1, width = 10, bg = "#A9A9A9", text = "Save", justify = "center")
-save_button.pack(side = "left", padx = 2, pady = 2)
-save_button['font'] = myFont
+        center_x = int(0.5*self.root.winfo_screenwidth() - 0.5*self.window_width)
 
-reset_button = tk.Button(upper_frame, height = 1, width = 10, bg = "#A9A9A9", text = "Reset", justify = "center")
-reset_button.pack(side = "right", padx = 2, pady = 2)
-reset_button['font'] = myFont
+        self.root.geometry(f'{self.window_width}x{self.window_height}+{center_x}+0')
 
-del_button = tk.Button(upper_frame, height = 1, width = 10, bg = "#A9A9A9", text = "Delete", justify = "center")
-del_button.pack(side = "right", padx = 2, pady = 2)
-del_button['font'] = myFont
+    def set_main_frames(self):
 
-add_button = tk.Button(upper_frame, height = 1, width = 10, bg = "#A9A9A9", text = "Add", justify = "center")
-add_button.pack(side = "right", padx = 2, pady = 2)
-add_button['font'] = myFont
+        self.upper_frame = ctk.CTkFrame(self.root, height = 40, width = self.window_width)
+        self.upper_frame.place(x = 0, y = 0)
+
+        self.lower_frame = ctk.CTkFrame(self.root, height = 100, width = self.window_width)
+        self.lower_frame.place(x = 0, y = self.window_height - 105)
+
+    def set_main_buttons(self):
+        
+        self.reset_button = ctk.CTkButton(self.upper_frame, height = 30, width = 120, text = "Reset", font = self.myFont)
+        self.reset_button.place(x = 5, y = 5)
+        
+        self.delete_button = ctk.CTkButton(self.upper_frame, height = 30, width = 120, text = "Delete", font = self.myFont)
+        self.delete_button.place(x = 135, y = 5)
+
+        self.add_button = ctk.CTkButton(self.upper_frame, height = 30, width = 120, text = "Add", font = self.myFont)
+        self.add_button.place(x = 265, y = 5)
+
+        self.load_button = ctk.CTkButton(self.lower_frame, height = 30, width = 120, text = "Load", font = self.myFont)
+        self.load_button.place(x = 5, y = 5)
+        
+        self.save_button = ctk.CTkButton(self.lower_frame, height = 30, width = 120, text = "Save", font = self.myFont)
+        self.save_button.place(x = 135, y = 5)
+
+        self.run_button = ctk.CTkButton(self.lower_frame, height = 30, width = 120, text = "Run", font = self.myFont)
+        self.run_button.place(x = self.window_width - 125, y = 5)
+
+    def set_initial_levels(self):
+
+        self.level_positions = [100, 200, 300, 400, 500, 600]
+        self.level_names = ["Compilation", "Model & Geometry", "Synthetic Seismogram",
+                            "First Arrival Modeling", "Tomography Inversion", "Kirchhoff Migration"]
+        
+        self.levels = []
+        for i in range(len(self.level_positions)):
+            self.levels.append(Level(self.root, f"Level {i+1}: {self.level_names[i]}", self.level_positions[i])) 
+
+        self.compile_button = ctk.CTkButton(self.levels[0].frame, height = 30, width = 120, text = "Compile", font = self.myFont)
+        self.compile_button.place(relx = 0.5, y = 55, anchor = "center")
+
+        self.model_button = ctk.CTkButton(self.levels[1].frame, height = 30, width = 120, text = "Model", font = self.myFont)
+        self.model_button.place(x = 400 - 65, y = 55, anchor = "center") 
+
+        self.geometry_button = ctk.CTkButton(self.levels[1].frame, height = 30, width = 120, text = "Geometry", font = self.myFont)
+        self.geometry_button.place(x = 400 + 65, y = 55, anchor = "center") 
+
+    # def set_multiple_buttons(self, index):
+
+    #     self.levels[index].frame.update_idletasks()
+
+    #     ws = 50
+    #     fw = 800
+    #     bw = 120
+    #     tw = sum(bw + ws for _ in range(len(self.levels[index].button)))
+
+    #     init_relx = 0.5*(1.0 - (tw - 0.3*ws) / fw)
+
+    #     for i in range(len(self.levels[1].button)):
+
+    #         rx = init_relx + i*(bw + ws) / fw 
+
+    #         self.levels[1].button[i].place(relx = rx, rely = 0.4, anchor = "w")
+
+    def add_process(self):
+        # new window     
+        pass        
+
+    def delete_process(self):
+        # new window
+        pass    
+
+    def reset_process(self):
+        # just a screen refresh
+        pass    
 
 
-level0_frame = tk.LabelFrame(root, height = 60, text = "Level 0: Compilation")
-level0_frame.place(relx = 0.2, y = 100, relwidth = 0.6)
 
-compile_button = tk.Button(level0_frame, height = 1, width = 10, bg = "#A9A9A9", text = "Compile", justify = "center")
-compile_button.place(anchor = "center", relx = 0.5, rely = 0.35)
-compile_button['font'] = myFont
 
-level1_frame = tk.LabelFrame(root, height = 30, text = "Level 1: Model & Geometry")
-level1_frame.place(relx = 0.2, y = 180, relwidth = 0.6)
 
-level2_frame = tk.LabelFrame(root, height = 30, text = "Level 2: Wavefield modeling")
-level2_frame.place(relx = 0.2, y = 230, relwidth = 0.6)
 
-level3_frame = tk.LabelFrame(root, height = 30, text = "Level 3: First Arrivals modeling")
-level3_frame.place(relx = 0.2, y = 280, relwidth = 0.6)
-
-level4_frame = tk.LabelFrame(root, height = 30, text = "Level 4: First Arrival tomography")
-level4_frame.place(relx = 0.2, y = 330, relwidth = 0.6)
-
-level5_frame = tk.LabelFrame(root, height = 30, text = "Level 5: Kirchhoff migration")
-level5_frame.place(relx = 0.2, y = 380, relwidth = 0.6)
-
-root.mainloop()
+if __name__ == "__main__":
+    Application()
