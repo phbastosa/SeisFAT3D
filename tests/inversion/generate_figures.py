@@ -235,7 +235,7 @@ check_full_model(init_model, shots, nodes, dh, slices, subplots, vmin, vmax, 2.5
 plt.savefig(f"initModel.png", dpi = 200)
 plt.clf()
 
-check_full_model(true_model - init_model, shots, nodes, dh, slices, subplots, vdiff, vdiff, 2.5)
+check_full_model(true_model - init_model, shots, nodes, dh, slices, subplots, -vdiff, vdiff, 2.5)
 plt.savefig(f"diffModel.png", dpi = 200)
 plt.clf()
 
@@ -252,11 +252,11 @@ check_full_model(final_model_adj, shots, nodes, dh, slices, subplots, vmin, vmax
 plt.savefig(f"final_model_adj.png", dpi = 200)
 plt.clf()
 
-check_full_model(final_model_ls - init_model, shots, nodes, dh, slices, subplots, vdiff, vdiff, 2.5)
+check_full_model(final_model_ls - init_model, shots, nodes, dh, slices, subplots, -vdiff, vdiff, 2.5)
 plt.savefig(f"diff_model_ls.png", dpi = 200)
 plt.clf()
 
-check_full_model(final_model_adj - init_model, shots, nodes, dh, slices, subplots, vdiff, vdiff, 2.5)
+check_full_model(final_model_adj - init_model, shots, nodes, dh, slices, subplots, -vdiff, vdiff, 2.5)
 plt.savefig(f"diff_model_adj.png", dpi = 200)
 plt.clf()
 
@@ -313,26 +313,28 @@ print(f"| {'Model difference analysis':^30s} | {'RMS ERROR':^11s} | {'MAX ERROR'
 print(f"|{'-'*74}|")
 print(f"| {'Classical Tomography':^30s} | {f'{rms_error_ls:.4f}':^11s} | {f'{max_error_ls:.5f}':^11s} | {f'{min_error_ls:.4f}':^11s} |")
 print(f"| {'Adjoint State Tomography':^30s} | {f'{rms_error_adj:.4f}':^11s} | {f'{max_error_adj:.5f}':^11s} | {f'{min_error_adj:.4f}':^11s} |")
-print(f"|{'-'*74}|\n\n")
+print(f"|{'-'*74}|\n")
 
 ns = len(shots)
 nr = len(nodes)
 
 ls_data = np.zeros(ns*nr)
 adj_data = np.zeros(ns*nr)
+obs_data = np.zeros(ns*nr)
 
 for i in range(ns):
     ls_data[i*nr:nr+i*nr] = np.fromfile(f"../outputs/first_arrivals/ls_fsm_data_nRec400_shot_{i+1}.bin", count = nr, dtype = np.float32)
     adj_data[i*nr:nr+i*nr] = np.fromfile(f"../outputs/first_arrivals/adj_fsm_data_nRec400_shot_{i+1}.bin", count = nr, dtype = np.float32)
-    
-rms_error_ls = np.sqrt(np.sum(ls_data**2)/(ns*nr))
-rms_error_adj = np.sqrt(np.sum(adj_data**2)/(ns*nr))
+    obs_data[i*nr:nr+i*nr] = np.fromfile(f"../inputs/data/obs_fsm_data_nRec400_shot_{i+1}.bin", count = nr, dtype = np.float32)
 
-max_error_ls = np.max(ls_data)
-max_error_adj = np.max(adj_data)
+rms_error_ls = np.sqrt(np.sum((obs_data - ls_data)**2)/(ns*nr))
+rms_error_adj = np.sqrt(np.sum((obs_data - adj_data)**2)/(ns*nr))
 
-min_error_ls = np.min(ls_data)
-min_error_adj = np.min(adj_data)
+max_error_ls = np.max(obs_data - ls_data)
+max_error_adj = np.max(obs_data - adj_data)
+
+min_error_ls = np.min(obs_data - ls_data)
+min_error_adj = np.min(obs_data - adj_data)
 
 print(f"|{'-'*74}|")
 print(f"| {'Data difference analysis':^30s} | {'RMS ERROR':^11s} | {'MAX ERROR':^11s} | {'MIN ERROR':^11s} |")
