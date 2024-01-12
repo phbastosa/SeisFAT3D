@@ -130,19 +130,25 @@ for i in range(len(slices)):
 fig.tight_layout()
 plt.savefig("diff_seismograms.png", dpi = 300)
 
-max_error_fim = np.max(analytical_times - fim_firstArrivals)
-min_error_fim = np.min(analytical_times - fim_firstArrivals)
-std_error_fim = np.std(analytical_times - fim_firstArrivals)
-mean_error_fim = np.mean(analytical_times - fim_firstArrivals)
-
 max_error_fsm = np.max(analytical_times - fsm_firstArrivals)
 min_error_fsm = np.min(analytical_times - fsm_firstArrivals)
 std_error_fsm = np.std(analytical_times - fsm_firstArrivals)
 mean_error_fsm = np.mean(analytical_times - fsm_firstArrivals)
 
+max_error_fim = np.max(analytical_times - fim_firstArrivals)
+min_error_fim = np.min(analytical_times - fim_firstArrivals)
+std_error_fim = np.std(analytical_times - fim_firstArrivals)
+mean_error_fim = np.mean(analytical_times - fim_firstArrivals)
+
+max_error_ifim = np.max(analytical_times - ifim_firstArrivals)
+min_error_ifim = np.min(analytical_times - ifim_firstArrivals)
+std_error_ifim = np.std(analytical_times - ifim_firstArrivals)
+mean_error_ifim = np.mean(analytical_times - ifim_firstArrivals)
+
 print(f"|{'-'*98}|")
 print(f"| {'Data difference (ta - tn)':^40s} | {'MAX ERROR':^11s} | {'MIN ERROR':^11s} | {'STD ERROR':^11s} | {'MEAN ERROR':^11s} |")
 print(f"|{'-'*98}|")
-print(f"| {'Jeong & Whitaker (2008)':^40s} | {f'{max_error_fim:.4f}':^11s} | {f'{min_error_fim:.5f}':^11s} | {f'{std_error_fim:.4f}':^11s} | {f'{mean_error_fim:.4f}':^11s} |")
 print(f"| {'Noble, Gesret & Belayouni (2014)':^40s} | {f'{max_error_fsm:.4f}':^11s} | {f'{min_error_fsm:.5f}':^11s} | {f'{std_error_fsm:.4f}':^11s} | {f'{mean_error_fsm:.4f}':^11s} |")
+print(f"| {'Jeong & Whitaker (2008)':^40s} | {f'{max_error_fim:.4f}':^11s} | {f'{min_error_fim:.5f}':^11s} | {f'{std_error_fim:.4f}':^11s} | {f'{mean_error_fim:.4f}':^11s} |")
+print(f"| {'Cai, Zhu & Li (2023)':^40s} | {f'{max_error_ifim:.4f}':^11s} | {f'{min_error_ifim:.5f}':^11s} | {f'{std_error_ifim:.4f}':^11s} | {f'{mean_error_ifim:.4f}':^11s} |")
 print(f"|{'-'*98}|\n\n")
