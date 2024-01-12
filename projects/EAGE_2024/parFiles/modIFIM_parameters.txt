@@ -53,9 +53,10 @@ offsets = [5000, 7000, 9000]          # [m] <float>
 #   [0] - Podvin & Lecomte (1991) 
 #   [1] - Block FIM (Jeong & Whitaker, 2008)
 #   [2] - Accurate FSM (Detrixhe et al., 2013; Noble et al., 2014)   
+#   [3] - Improved FIM (Cai, Zhu & Li, 2023)   
 #---------------------------------------------------------------------------------------------------
 
-modeling_type = 1                     # <int>
+modeling_type = 3                     # <int>
 
 export_receiver_output = true         # <bool> 
 export_wavefield_output = true        # <bool>
@@ -71,7 +72,7 @@ max_frequency = 25                   # [Hz] <float>
 time_spacing = 1e-3                  # [s] <float>
 time_samples = 6001                  # <int>
 
-boundary_damper = 0.0055             # <float>
+boundary_damper = 0.0015             # <float>
 boundary_samples = 50                # <int> 
 
 #---------------------------------------------------------------------------------------------------

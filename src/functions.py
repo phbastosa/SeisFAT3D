@@ -194,7 +194,7 @@ def plot_model_3D(model, shots, nodes, dh, slices, subplots, vmin, vmax, scale):
     
     return None
 
-def plot_model_eikonal_3D(model, eik1, eik2, shots, nodes, dh, slices, subplots, vmin, vmax, scale):
+def plot_model_eikonal_3D(model, eik1, eik2, eik3, shots, nodes, dh, slices, subplots, vmin, vmax, scale):
     
     modelShape = np.array(np.shape(model))
     maxModelDistance = np.max(np.shape(model))
@@ -303,6 +303,7 @@ def plot_model_eikonal_3D(model, eik1, eik2, shots, nodes, dh, slices, subplots,
 
     ct1 = [eik1[slices[0],:,:].T, eik1[:,slices[2],:].T, eik1[:,:,slices[1]]] 
     ct2 = [eik2[slices[0],:,:].T, eik2[:,slices[2],:].T, eik2[:,:,slices[1]]] 
+    ct3 = [eik3[slices[0],:,:].T, eik3[:,slices[2],:].T, eik3[:,:,slices[1]]]
 
     ims = [model[slices[0],:,:].T, model[:,slices[2],:].T, model[:,:,slices[1]]]
     
@@ -339,8 +340,9 @@ def plot_model_eikonal_3D(model, eik1, eik2, shots, nodes, dh, slices, subplots,
             
             ax.imshow(ims[k], aspect = 'auto', cmap = "jet", vmin = vmin, vmax = vmax)    
             
+            ax.contour(ct1[k], levels = [1.0, 2.0, 3.0], linestyles = "dashed", colors = "blue")
             ax.contour(ct2[k], levels = [1.0, 2.0, 3.0], linestyles = "dashed", colors = "green")
-            ax.contour(ct1[k], levels = [1.0, 2.0, 3.0], linestyles = "dashed", colors = "orange")
+            ax.contour(ct3[k], levels = [1.0, 2.0, 3.0], linestyles = "dashed", colors = "orange")
 
             ax.plot(xSlices[k][0], xSlices[k][1], xSlices[k][2], linewidth = 0.5)
             ax.plot(ySlices[k][0], ySlices[k][1], ySlices[k][2], linewidth = 0.5)

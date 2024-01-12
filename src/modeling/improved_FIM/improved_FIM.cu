@@ -39,33 +39,14 @@ void Improved_FIM::forward_solver()
 {
     Frame vel_grid;
 
-    vel_grid.set_nd(nxx, nyy, nzz, dx, dy, dz);
+    vel_grid.set_nd(nxx, nyy, nzz, 25, 25, 25);
 
     fcufld Vel(MemType::npin, vel_grid);
 
     for (int k = 0; k < nzz; k++)
-    {
-        if (k <= nzz/2)
-        {
-            for (int j = 0; j < nyy; j++)
-            {   
-                for (int i = 0; i < nxx; i++)
-                {
-                    Vel(i, j, k) = 2000.0f;
-                }    
-            }
-        }
-        else
-        {
-            for (int j = 0; j < nyy; j++)
-            {   
-                for (int i = 0; i < nxx; i++)
-                {
-                    Vel(i, j, k) = 3000.0f;
-                }    
-            }
-        }
-    }
+        for (int j = 0; j < nyy; j++)
+            for (int i = 0; i < nxx; i++)
+                Vel(i,j,k) = 1.0f / S[k + i*nzz + j*nxx*nzz];    
 
     Vel.cu_copy_h2d();
 

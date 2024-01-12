@@ -30,8 +30,9 @@ vmax = 5000
 
 volFIM = functions.read_binary_volume(nz, nx, ny, f"../outputs/travel_times/fim_time_volume_{nz}x{nx}x{ny}_shot_1.bin")
 volFSM = functions.read_binary_volume(nz, nx, ny, f"../outputs/travel_times/fsm_time_volume_{nz}x{nx}x{ny}_shot_1.bin")
+volIFIM = functions.read_binary_volume(nz, nx, ny, f"../outputs/travel_times/hd_fim_time_volume_{nz}x{nx}x{ny}_shot_1.bin")
 
-functions.plot_model_eikonal_3D(accuracy_model, volFIM, volFSM, shots, nodes, dh, slices, subplots, vmin, vmax, 1.5)
+functions.plot_model_eikonal_3D(accuracy_model, volFSM, volIFIM, volFIM, shots, nodes, dh, slices, subplots, vmin, vmax, 1.5)
 plt.savefig(f"accuracy_model.png", dpi = 200)
 plt.clf()
 
@@ -51,15 +52,12 @@ offset = np.sqrt((shots[0] - nodes[:,0])**2 + (shots[1] - nodes[:,1])**2 + (shot
 
 analytical_times = functions.analytical_first_arrivals(velocity, thickness, offset)
 
-fim_firstArrivals = np.fromfile(f"../outputs/first_arrivals/fim_data_nRec{nTraces}_shot_1.bin", dtype = np.float32, count = nTraces)
 fsm_firstArrivals = np.fromfile(f"../outputs/first_arrivals/fsm_data_nRec{nTraces}_shot_1.bin", dtype = np.float32, count = nTraces)
+fim_firstArrivals = np.fromfile(f"../outputs/first_arrivals/fim_data_nRec{nTraces}_shot_1.bin", dtype = np.float32, count = nTraces)
+ifim_firstArrivals = np.fromfile(f"../outputs/first_arrivals/hd_fim_data_nRec{nTraces}_shot_1.bin", dtype = np.float32, count = nTraces)
 
 t0 = int(np.pi / 25.0 / dt) 
 tmax = int(5.0 / dt) + 1
-
-seismic = functions.read_binary_matrix(nt, nTraces, f"../inputs/data/synthetic_seismogram_6001x273_shot_1.bin")
-
-seismic = seismic[t0:tmax+t0,:]
 
 sl1 = slice(0, int(nTraces/3))
 sl2 = slice(int(nTraces/3), int(2*nTraces/3))
@@ -67,22 +65,22 @@ sl3 = slice(int(2*nTraces/3), nTraces)
 
 slices = [sl1, sl2, sl3]
 
-scale = 0.1*np.std(seismic)
-
-tloc = np.linspace(0, tmax-1, 11)
-tlab = np.around(tloc * dt, decimals = 3)
+limits = [[2, 3.5], [2.5, 4.0], [3.0, 4.5]]
 
 xloc = np.linspace(0, nTraces/3-1, 7)
 xlab = np.linspace(0, nTraces/3, 7, dtype = int)
 
-fig, ax = plt.subplots(ncols = 3, nrows = 1, figsize = (10,6))
+fig, ax = plt.subplots(ncols = 3, nrows = 1, figsize = (10, 4))
 
 for i in range(len(slices)):
 
-    ax[i].imshow(seismic[:, slices[i]], aspect = "auto", cmap = "Greys", vmin = -scale, vmax = scale)
-    ax[i].plot(analytical_times[slices[i]]/dt, "o", color = "red", markersize = 1, label = "Analytical travel times")
-    ax[i].plot(fim_firstArrivals[slices[i]]/dt, "o", color = "orange", markersize = 1, label = "Jeong & Whitaker (2008)")
-    ax[i].plot(fsm_firstArrivals[slices[i]]/dt, "o", color = "green", markersize = 1, label = "Noble, Gesret & Belayouni (2014)")
+    tloc = np.linspace(limits[i][0], limits[i][1], 5)
+    tlab = np.around(tloc, decimals = 1)
+
+    ax[i].plot(analytical_times[slices[i]], "-", color = "red", markersize = 1, label = "Analytical travel times")
+    ax[i].plot(fsm_firstArrivals[slices[i]], "--", color = "blue", markersize = 1, label = "Noble, Gesret & Belayouni (2014)")
+    ax[i].plot(fim_firstArrivals[slices[i]], "--", color = "orange", markersize = 1, label = "Jeong & Whitaker (2008)")
+    ax[i].plot(ifim_firstArrivals[slices[i]], "--", color = "green", markersize = 1, label = "Cai, Zhu & Li (2023)")
 
     ax[i].set_yticks(tloc)
     ax[i].set_yticklabels(tlab)
@@ -90,13 +88,47 @@ for i in range(len(slices)):
     ax[i].set_xticks(xloc)
     ax[i].set_xticklabels(xlab)
 
+    ax[i].set_ylim(limits[i])
+
+    ax[i].invert_yaxis()
+
     ax[i].set_xlabel("Trace index", fontsize = 12)
     ax[i].set_ylabel("Time [s]", fontsize = 12)
 
     ax[i].legend(loc = "upper right", fontsize = 8)
 
 fig.tight_layout()
-plt.savefig("seismogram_comparison.png", dpi = 300)
+plt.savefig("seismograms.png", dpi = 300)
+
+
+limits = [[-0.15, 0.1], [-0.15, 0.1], [-0.15, 0.1]]
+
+fig, ax = plt.subplots(ncols = 3, nrows = 1, figsize = (10, 4))
+
+for i in range(len(slices)):
+
+    tloc = np.linspace(limits[i][0], limits[i][1], 11)
+    tlab = np.around(tloc, decimals = 2)
+
+    ax[i].plot(analytical_times[slices[i]] - fsm_firstArrivals[slices[i]], "--", color = "blue", markersize = 1, label = "Noble, Gesret & Belayouni (2014)")
+    ax[i].plot(analytical_times[slices[i]] - fim_firstArrivals[slices[i]], "--", color = "orange", markersize = 1, label = "Jeong & Whitaker (2008)")
+    ax[i].plot(analytical_times[slices[i]] - ifim_firstArrivals[slices[i]], "--", color = "green", markersize = 1, label = "Cai, Zhu & Li (2023)")
+
+    ax[i].set_yticks(tloc)
+    ax[i].set_yticklabels(tlab)
+
+    ax[i].set_xticks(xloc)
+    ax[i].set_xticklabels(xlab)
+
+    ax[i].set_ylim(limits[i])
+
+    ax[i].set_xlabel("Trace index", fontsize = 12)
+    ax[i].set_ylabel("Time difference [s]", fontsize = 12)
+
+    ax[i].legend(loc = "upper right", fontsize = 8)
+
+fig.tight_layout()
+plt.savefig("diff_seismograms.png", dpi = 300)
 
 max_error_fim = np.max(analytical_times - fim_firstArrivals)
 min_error_fim = np.min(analytical_times - fim_firstArrivals)
