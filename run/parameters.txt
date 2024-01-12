@@ -31,15 +31,15 @@ nodes_file = ../inputs/geometry/xyz_nodes_position.txt
 # Regular geometry ---------------------------------------------------------------------------------               
 
 shots_nlines = [1, 100, 100]          # <int> (z, x, y)     
-nodes_nlines = [1,   2,   2]          # <int> (z, x, y)            
+nodes_nlines = [1,   1,   1]          # <int> (z, x, y)            
 
 shots_SW = [0, 50, 50]                # [m] <float> (z, x, y) NW            
 shots_NW = [0, 50, 19950]             # [m] <float> (z, x, y)  |            
 shots_SE = [0, 19950, 50]             # [m] <float> (z, x, y) SW -- SE     
 
 nodes_SW = [0, 1000, 1000]            # [m] <float> (z, x, y) NW           
-nodes_NW = [0, 1000, 19000]           # [m] <float> (z, x, y)  |         
-nodes_SE = [0, 19000, 1000]           # [m] <float> (z, x, y) SW -- SE   
+nodes_NW = [0, 1000, 1000]           # [m] <float> (z, x, y)  |         
+nodes_SE = [0, 1000, 1000]           # [m] <float> (z, x, y) SW -- SE   
 
 # Circular geometry --------------------------------------------------------------------------------                                            
 
@@ -52,13 +52,14 @@ offsets = [5000, 7000, 9000]          # [m] <float>
 #---------------------------------------------------------------------------------------------------
 #   [0] - Podvin & Lecomte (1991) 
 #   [1] - Block FIM (Jeong & Whitaker, 2008)
-#   [2] - Accurate FSM (Detrixhe et al., 2013; Noble et al., 2014)   
+#   [2] - Accurate FSM (Detrixhe et al., 2013; Noble et al., 2014)
+#   [3] - Improved FIM (Cai, Zhu & Li, 2023)   
 #---------------------------------------------------------------------------------------------------
 
-modeling_type = 2                     # <int>
+modeling_type = 3                     # <int>
 
 export_receiver_output = true         # <bool> 
-export_wavefield_output = false       # <bool>
+export_wavefield_output = true        # <bool>
 
 receiver_output_folder = ../outputs/first_arrivals/            
 wavefield_output_folder = ../outputs/travel_times/     

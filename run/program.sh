@@ -22,10 +22,11 @@ eikonal="../src/modeling/eikonal.cpp"
 pod="../src/modeling/podvin_and_lecomte/podvin_and_lecomte.cu"
 fim="../src/modeling/fast_iterative_method/block_FIM.cu"
 fsm="../src/modeling/fast_sweeping_method/accurate_FSM.cu"
+ifim="../src/modeling/improved_FIM/improved_FIM.cu"
 
 modeling_main="../src/main/modeling_main.cpp"
 
-modeling_all="$eikonal $pod $fim $fsm"
+modeling_all="$eikonal $pod $fim $fsm $ifim"
 
 acoustic_main="../src/main/acoustic_main.cpp"
 acoustic_class="../src/seismogram/acoustic.cu"
@@ -53,7 +54,7 @@ migration_all="$kirchhoff $migration"
 
 # Compiler flags --------------------------------------------------------------------------------------
 
-flags="--std=c++11 -lm -O3"
+flags="--std=c++11 -lm -O3 -w -g"
 
 # Main dialogue ---------------------------------------------------------------------------------------
 

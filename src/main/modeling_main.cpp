@@ -1,6 +1,7 @@
 # include "../modeling/podvin_and_lecomte/podvin_and_lecomte.cuh"
 # include "../modeling/fast_sweeping_method/accurate_FSM.cuh"
 # include "../modeling/fast_iterative_method/block_FIM.cuh"
+# include "../modeling/improved_FIM/improved_FIM.cuh"
 
 int main(int argc, char **argv)
 {
@@ -8,7 +9,8 @@ int main(int argc, char **argv)
     {
         new Podvin_and_Lecomte(),
         new Block_FIM(),
-        new Accurate_FSM(),        
+        new Accurate_FSM(),
+        new Improved_FIM()        
     };
     
     auto file = std::string(argv[1]);
