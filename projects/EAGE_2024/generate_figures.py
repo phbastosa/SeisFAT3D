@@ -11,37 +11,39 @@ nx = 441
 ny = 441
 nz = 161
 
-dh = 25
+dh = np.array([25, 25, 25])
 
-accuracy_model = functions.read_binary_volume(nz, nx, ny, f"../inputs/models/accuracyModelTest_{nz}x{nx}x{ny}_{dh:.0f}m.bin")
+model = functions.read_binary_volume(nz, nx, ny, f"../inputs/models/accuracyModelTest_{nz}x{nx}x{ny}_{dh[0]:.0f}m.bin")
 
 shots_file = "../inputs/geometry/xyz_shots_position.txt"
 nodes_file = "../inputs/geometry/xyz_nodes_position.txt"
- 
-shots = np.loadtxt(shots_file, delimiter = ',')
-nodes = np.loadtxt(nodes_file, delimiter = ',')
 
-subplots = np.array([1, 1], dtype = int)
 slices = np.array([int(nz/2), int(nx/2), 240], dtype = int) # [xy, zy, zx]
-dh = np.array([dh, dh, dh])
 
-vmin = 2000
-vmax = 5000
+eikonal = np.zeros((3, nz, nx, ny))
 
-volFIM = functions.read_binary_volume(nz, nx, ny, f"../outputs/travel_times/fim_time_volume_{nz}x{nx}x{ny}_shot_1.bin")
-volFSM = functions.read_binary_volume(nz, nx, ny, f"../outputs/travel_times/fsm_time_volume_{nz}x{nx}x{ny}_shot_1.bin")
-volIFIM = functions.read_binary_volume(nz, nx, ny, f"../outputs/travel_times/hd_fim_time_volume_{nz}x{nx}x{ny}_shot_1.bin")
+eikonal[0] = functions.read_binary_volume(nz, nx, ny, f"../outputs/travel_times/fim_time_volume_{nz}x{nx}x{ny}_shot_1.bin")
+eikonal[1] = functions.read_binary_volume(nz, nx, ny, f"../outputs/travel_times/fsm_time_volume_{nz}x{nx}x{ny}_shot_1.bin")
+eikonal[2] = functions.read_binary_volume(nz, nx, ny, f"../outputs/travel_times/hd_fim_time_volume_{nz}x{nx}x{ny}_shot_1.bin")
 
-functions.plot_model_eikonal_3D(accuracy_model, volFSM, volIFIM, volFIM, shots, nodes, dh, slices, subplots, vmin, vmax, 1.5)
+eikonal_levels = [1.0, 2.0, 3.0]
+eikonal_colors = ["orange", "blue", "green"]
+
+functions.plot_model_3D(model, dh, slices,
+                        shots = shots_file, 
+                        nodes = nodes_file, 
+                        eikonal = eikonal,
+                        eikonal_colors = eikonal_colors,
+                        eikonal_levels = eikonal_levels,
+                        scale = 1.6)
+
 plt.savefig(f"accuracy_model.png", dpi = 200)
 plt.clf()
 
-accuracy_model = volFSM = volFIM = 0
-
 #---------------------------------------------------------------------
 
-nt = 6001
-dt = 1e-3
+shots = np.loadtxt(shots_file, delimiter = ',') 
+nodes = np.loadtxt(nodes_file, delimiter = ',') 
 
 nTraces = len(nodes)
 
@@ -55,9 +57,6 @@ analytical_times = functions.analytical_first_arrivals(velocity, thickness, offs
 fsm_firstArrivals = np.fromfile(f"../outputs/first_arrivals/fsm_data_nRec{nTraces}_shot_1.bin", dtype = np.float32, count = nTraces)
 fim_firstArrivals = np.fromfile(f"../outputs/first_arrivals/fim_data_nRec{nTraces}_shot_1.bin", dtype = np.float32, count = nTraces)
 ifim_firstArrivals = np.fromfile(f"../outputs/first_arrivals/hd_fim_data_nRec{nTraces}_shot_1.bin", dtype = np.float32, count = nTraces)
-
-t0 = int(np.pi / 25.0 / dt) 
-tmax = int(5.0 / dt) + 1
 
 sl1 = slice(0, int(nTraces/3))
 sl2 = slice(int(nTraces/3), int(2*nTraces/3))
@@ -99,7 +98,6 @@ for i in range(len(slices)):
 
 fig.tight_layout()
 plt.savefig("seismograms.png", dpi = 300)
-
 
 limits = [[-0.15, 0.1], [-0.15, 0.1], [-0.15, 0.1]]
 

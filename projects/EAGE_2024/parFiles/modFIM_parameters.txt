@@ -57,8 +57,8 @@ offsets = [5000, 7000, 9000]          # [m] <float>
 
 modeling_type = 1                     # <int>
 
-export_receiver_output = false         # <bool> 
-export_wavefield_output = false        # <bool>
+export_receiver_output = true         # <bool> 
+export_wavefield_output = true        # <bool>
 
 receiver_output_folder = ../outputs/first_arrivals/            
 wavefield_output_folder = ../outputs/travel_times/     
