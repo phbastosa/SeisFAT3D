@@ -183,13 +183,13 @@ case "$1" in
 
     python3 ../tests/inversion/generate_models.py
 
-    ./../bin/modeling.exe ../tests/inversion/parFiles/parameters_obsData.txt
+    # ./../bin/modeling.exe ../tests/inversion/parFiles/parameters_obsData.txt
 
-    ./../bin/inversion.exe ../tests/inversion/parFiles/parameters_leastSquares.txt
-    ./../bin/inversion.exe ../tests/inversion/parFiles/parameters_adjointState.txt
+    # ./../bin/inversion.exe ../tests/inversion/parFiles/parameters_leastSquares.txt
+    # ./../bin/inversion.exe ../tests/inversion/parFiles/parameters_adjointState.txt
 
-    ./../bin/modeling.exe ../tests/inversion/parFiles/parameters_leastSquares_finalModeling.txt
-    ./../bin/modeling.exe ../tests/inversion/parFiles/parameters_adjointState_finalModeling.txt
+    # ./../bin/modeling.exe ../tests/inversion/parFiles/parameters_leastSquares_finalModeling.txt
+    # ./../bin/modeling.exe ../tests/inversion/parFiles/parameters_adjointState_finalModeling.txt
 
     python3 ../tests/inversion/generate_figures.py
 	
