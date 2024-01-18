@@ -184,8 +184,8 @@ print(f"|{'-'*74}|")
 
 # --------------------------------------------------
 
-convergence_ls = np.loadtxt("../outputs/convergence/ls_convergence_5_iterations.txt")
-convergence_adj = np.loadtxt("../outputs/convergence/adj_convergence_5_iterations.txt")
+convergence_ls = np.loadtxt("../outputs/convergence/ls_convergence_10_iterations.txt")
+convergence_adj = np.loadtxt("../outputs/convergence/adj_convergence_10_iterations.txt")
 
 plt.figure(21, figsize = (10,4))
 plt.plot(convergence_ls, "o--", label = "Least squares approach", color = "orange")

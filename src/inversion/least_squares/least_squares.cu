@@ -198,6 +198,45 @@ void Least_Squares::gradient_preconditioning()
         }
     }    
 
+    if (smooth)
+    { 
+        int aux_nx = modeling->nx + 2*smoother_samples;
+        int aux_ny = modeling->ny + 2*smoother_samples;
+        int aux_nz = modeling->nz + 2*smoother_samples;
+
+        int aux_nPoints = aux_nx*aux_ny*aux_nz;
+
+        float * grad_aux = new float[aux_nPoints]();
+        float * grad_smooth = new float[aux_nPoints]();
+
+        for (int index = 0; index < modeling->nPoints; index++)
+        {
+            int k = (int) (index / (modeling->nx*modeling->nz));        
+            int j = (int) (index - k*modeling->nx*modeling->nz) / modeling->nz;    
+            int i = (int) (index - j*modeling->nz - k*modeling->nx*modeling->nz);          
+
+            int ind_filt = (i + smoother_samples) + (j + smoother_samples)*aux_nz + (k + smoother_samples)*aux_nx*aux_nz;
+
+            grad_aux[ind_filt] = gradient[i + j*modeling->nz + k*modeling->nx*modeling->nz];
+        }
+
+        smooth_volume(grad_aux, grad_smooth, aux_nx, aux_ny, aux_nz);
+
+        for (int index = 0; index < modeling->nPoints; index++)
+        {
+            int k = (int) (index / (modeling->nx*modeling->nz));        
+            int j = (int) (index - k*modeling->nx*modeling->nz) / modeling->nz;    
+            int i = (int) (index - j*modeling->nz - k*modeling->nx*modeling->nz);          
+
+            int ind_filt = (i + smoother_samples) + (j + smoother_samples)*aux_nz + (k + smoother_samples)*aux_nx*aux_nz;
+
+            gradient[i + j*modeling->nz + k*modeling->nx*modeling->nz] = grad_smooth[ind_filt];
+        }
+    
+        delete[] grad_aux;
+        delete[] grad_smooth;
+    }
+
     delete[] grad;
 }
 

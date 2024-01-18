@@ -72,7 +72,7 @@ wavefield_output_folder = ../outputs/travel_times/
 
 inversion_type = 0                    # <int> 
 
-max_iteration = 5                     # <int>
+max_iteration = 10                     # <int>
 
 dx_tomo = 100                         # [m] <float> 
 dy_tomo = 100                         # [m] <float>

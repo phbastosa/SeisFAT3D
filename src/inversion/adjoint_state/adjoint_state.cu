@@ -10,14 +10,14 @@ void Adjoint_State::set_specific_parameters()
     nSweeps = 8;
     meshDim = 3;
 
+    power_damping = std::stof(catch_parameter("power_damping", file));
+
 	totalLevels = (modeling->nxx - 1) + (modeling->nyy - 1) + (modeling->nzz - 1);
 
     inversion_method = "[1] - Adjoint State first arrival tomography";
 
     source = new float[modeling->volsize]();
     adjoint = new float[modeling->volsize]();
-
-    proposed_model = new float[modeling->nPoints]();
 
     cudaMalloc((void**)&(d_T), modeling->volsize*sizeof(float));
     cudaMalloc((void**)&(d_source), modeling->volsize*sizeof(float));
@@ -167,71 +167,32 @@ void Adjoint_State::gradient_preconditioning()
         delete[] grad_aux;
         delete[] grad_smooth;
     }
-
-    float gmax = 0.0f;
-    for (int index = 0; index < modeling->nPoints; index++)
-    {
-        if (gmax < fabsf(gradient[index]))
-            gmax = fabsf(gradient[index]);
-    }
-
-    for (int index = 0; index < modeling->nPoints; index++)
-        gradient[index] = (max_slowness_variation / gmax) * gradient[index];
 }
 
 void Adjoint_State::optimization()  
 {
-    float a1 = 0.0f;
-    float a2 = 0.4f; 
-    float a3 = 0.9f; 
-
-    float f1 = residuo.back();
-    float f2 = objective_function(a2);
-    float f3 = objective_function(a3);
-
-    float Dt = (a2*a3*a3 + a1*a2*a2 + a1*a1*a3) - (a2*a2*a3 + a1*a3*a3 + a1*a1*a2);
-    float Db = (f2*a3*a3 + f1*a2*a2 + f3*a1*a1) - (f1*a3*a3 + f3*a2*a2 + a1*a1*f2);
-    float Dc = (a2*f3 + a1*f2 + f1*a3) - (f2*a3 + a1*f3 + a2*f1);
-
-    float b = Db/Dt;
-    float c = Dc/Dt;
-
-    float alpha = -0.5f*b/c;
-
-    if (alpha > 1.0f) alpha = 1.0f;
-    if (alpha < 0.0f) alpha = 0.1f; 
+    float gmax = 0.0f;
+    float gdot = 0.0f;
 
     for (int index = 0; index < modeling->nPoints; index++)
-        dm[index] = alpha*gradient[index];
-
-    max_slowness_variation *= powf(0.85f, static_cast<float>(iteration));     
-}
-
-float Adjoint_State::objective_function(float alpha)
-{
-    for (int index = 0; index < modeling->nPoints; index++)    
-        proposed_model[index] = model[index] + alpha*gradient[index];
-
-    modeling->expand_boundary(proposed_model, modeling->S);
-    
-    for (int shot = 0; shot < modeling->total_shots; shot++)
     {
-        modeling->shot_id = shot;
-
-        modeling->initial_setup();
-        modeling->forward_solver();
-        modeling->build_outputs();
-
-        extract_calculated_data();
+        if (gmax < fabsf(gradient[index]))
+            gmax = fabsf(gradient[index]);
+    
+        gdot += gradient[index] * gradient[index];
     }
 
-    float square_difference = 0.0f;
-    for (int i = 0; i < n_data; i++)
-        square_difference += powf(dobs[i] - dcal[i], 2.0f);
+    float lambda = 0.5f * residuo.back() / gdot;
 
-    return sqrtf(square_difference);
+    float gamma = max_slowness_variation / powf(static_cast<float>(iteration), power_damping);
+
+    float alpha = gamma / (lambda*gmax);
+
+    for (int index = 0; index < modeling->nPoints; index++)
+    {
+        dm[index] = alpha*lambda*gradient[index];
+    }
 }
-
 
 __global__ void adjoint_state_kernel(float * adjoint, float * source, float * T, int level, int xOffset, int yOffset, int xSweepOffset, int ySweepOffset, 
                                      int zSweepOffset, int nxx, int nyy, int nzz, float dx, float dy, float dz)

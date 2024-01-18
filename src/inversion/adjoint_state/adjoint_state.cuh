@@ -9,6 +9,7 @@ private:
 
     int totalLevels;
     int nSweeps, meshDim;
+    float power_damping;
 
     float cell_volume;
 
@@ -19,16 +20,12 @@ private:
     
     float * d_source = nullptr;
     float * d_adjoint = nullptr;
-
-    float * proposed_model = nullptr;
     
     int iDivUp(int a, int b);
 
-    void apply_inversion_technique();
     void set_specific_parameters();
     void gradient_preconditioning();
-
-    float objective_function(float step);
+    void apply_inversion_technique();
 
 public:
 
