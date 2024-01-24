@@ -58,9 +58,10 @@ void Improved_FIM::forward_solver()
 
     source(0).time = S[source_id] * sqrtf(powf((sidx-nbxl)*dx - geometry->shots.x[shot_id], 2.0f) + powf((sidy-nbyl)*dy - geometry->shots.y[shot_id], 2.0f) + powf((sidz-nbzu)*dz - geometry->shots.z[shot_id], 2.0f));    
 
-    travel_time_3d_2rd_diag.module_init(&Vel, 22); //second-order difference with diagonal node
+    travel_time_3d_2rd_diag.module_init(&Vel, 22); // second-order difference with diagonal node
 
     travel_time_3d_2rd_diag.cal_travel_time(source, TravelType::normal);
+    // travel_time_3d_2rd_diag.cal_travel_time(source, TravelType::refine); It's not working!
 
     travel_time_3d_2rd_diag.get_device_time();
     
