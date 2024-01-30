@@ -10,11 +10,12 @@ void Adjoint_State::set_specific_parameters()
     nSweeps = 8;
     meshDim = 3;
 
-    power_damping = std::stof(catch_parameter("power_damping", file));
-
 	totalLevels = (modeling->nxx - 1) + (modeling->nyy - 1) + (modeling->nzz - 1);
 
     inversion_method = "[1] - Adjoint State first arrival tomography";
+
+    Eg = new float[modeling->nPoints]();
+    Em = new float[modeling->nPoints]();
 
     source = new float[modeling->volsize]();
     adjoint = new float[modeling->volsize]();
@@ -171,27 +172,29 @@ void Adjoint_State::gradient_preconditioning()
 
 void Adjoint_State::optimization()  
 {
-    float gmax = 0.0f;
-    float gdot = 0.0f;
+    float rho = 0.85f;
 
-    for (int index = 0; index < modeling->nPoints; index++)
+    if (iteration <= 1)
     {
-        if (gmax < fabsf(gradient[index]))
-            gmax = fabsf(gradient[index]);
+        for (int index = 0; index < modeling->nPoints; index++)
+        {
+            if (gmax < fabsf(gradient[index]))
+                gmax = fabsf(gradient[index]);
+        }              
+    }
     
-        gdot += gradient[index] * gradient[index];
-    }
-
-    float lambda = 0.5f * residuo.back() / gdot;
-
-    float gamma = max_slowness_variation / powf(static_cast<float>(iteration), power_damping);
-
-    float alpha = gamma / (lambda*gmax);
-
     for (int index = 0; index < modeling->nPoints; index++)
-    {
-        dm[index] = alpha*lambda*gradient[index];
+    { 
+        gradient[index] = max_slowness_variation * gradient[index] / gmax;
+
+        Eg[index] = rho * Eg[index] + (1.0f - rho)*powf(gradient[index], 2.0f);
+
+        dm[index] = (iteration <= 1) ? gradient[index] : sqrtf(Em[index]) / sqrt(Eg[index]) * gradient[index];
+
+        Em[index] = rho * Em[index] + (1.0f - rho)*powf(dm[index], 2.0f);
     }
+
+    max_slowness_variation *= rho;
 }
 
 __global__ void adjoint_state_kernel(float * adjoint, float * source, float * T, int level, int xOffset, int yOffset, int xSweepOffset, int ySweepOffset, 

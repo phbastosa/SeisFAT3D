@@ -9,9 +9,11 @@ private:
 
     int totalLevels;
     int nSweeps, meshDim;
-    float power_damping;
 
-    float cell_volume;
+    float * Eg = nullptr;
+    float * Em = nullptr;
+
+    float cell_volume, gmax;
 
     float * d_T = nullptr;
 

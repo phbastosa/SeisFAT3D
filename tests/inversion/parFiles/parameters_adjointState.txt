@@ -72,7 +72,7 @@ wavefield_output_folder = ../outputs/travel_times/
 
 inversion_type = 1                    # <int> 
 
-max_iteration = 10                     # <int>
+max_iteration = 5                     # <int>
 
 dx_tomo = 100                         # [m] <float> 
 dy_tomo = 100                         # [m] <float>
@@ -82,7 +82,6 @@ tk_order = 2                          # Tikhonov regularization order <int>
 tk_param = 1e4                        # Tikhonov regularization parameter <float>
 
 max_slowness = 1e-5                   # Max slowness variation <float>
-power_damping = 0.8                   # Steepest descent damping per iteration <float>
 
 smooth_per_iteration = true           # <bool>
 gaussian_filter_samples = 11          # [odd number] <int> 
