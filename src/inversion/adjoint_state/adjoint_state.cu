@@ -172,7 +172,7 @@ void Adjoint_State::gradient_preconditioning()
 
 void Adjoint_State::optimization()  
 {
-    float rho = 0.85f;
+    float rho = 0.95f;
 
     if (iteration <= 1)
     {
@@ -193,8 +193,6 @@ void Adjoint_State::optimization()
 
         Em[index] = rho * Em[index] + (1.0f - rho)*powf(dm[index], 2.0f);
     }
-
-    max_slowness_variation *= rho;
 }
 
 __global__ void adjoint_state_kernel(float * adjoint, float * source, float * T, int level, int xOffset, int yOffset, int xSweepOffset, int ySweepOffset, 
