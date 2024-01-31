@@ -124,7 +124,7 @@ void Adjoint_State::apply_inversion_technique()
 
         int indp = (i + modeling->nbzu) + (j + modeling->nbxl)*modeling->nzz + (k + modeling->nbyl)*modeling->nxx*modeling->nzz;
 
-        gradient[index] += adjoint[indp]*modeling->T[indp]*modeling->S[indp]*modeling->S[indp]*cell_volume / modeling->total_shots;
+        gradient[index] += adjoint[indp]*modeling->T[indp]*modeling->S[indp]*modeling->S[indp]*cell_volume / modeling->total_shots / modeling->total_nodes;
     }
 }
 
@@ -173,23 +173,13 @@ void Adjoint_State::gradient_preconditioning()
 void Adjoint_State::optimization()  
 {
     float rho = 0.95f;
-
-    if (iteration <= 1)
-    {
-        for (int index = 0; index < modeling->nPoints; index++)
-        {
-            if (gmax < fabsf(gradient[index]))
-                gmax = fabsf(gradient[index]);
-        }              
-    }
+    float epsilon = 1e-8f;    
     
     for (int index = 0; index < modeling->nPoints; index++)
     { 
-        gradient[index] = max_slowness_variation * gradient[index] / gmax;
-
         Eg[index] = rho * Eg[index] + (1.0f - rho)*powf(gradient[index], 2.0f);
 
-        dm[index] = (iteration <= 1) ? gradient[index] : sqrtf(Em[index]) / sqrt(Eg[index]) * gradient[index];
+        dm[index] = (iteration <= 1) ? gradient[index] : sqrtf(Em[index] + epsilon) / sqrt(Eg[index] + epsilon) * gradient[index];
 
         Em[index] = rho * Em[index] + (1.0f - rho)*powf(dm[index], 2.0f);
     }
