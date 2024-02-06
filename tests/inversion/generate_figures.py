@@ -77,20 +77,16 @@ plt.savefig(f"final_model_adj.png", dpi = 200)
 plt.clf()
 
 functions.plot_model_3D(final_model_ls - init_model, dh, slices,
-                        shots = shots_file,
-                        nodes = nodes_file,
-                        vmin = -500,
-                        vmax = +500,
+                        vmin = -200,
+                        vmax = +200,
                         scale = 2.5)
 
 plt.savefig(f"diff_model_ls.png", dpi = 200)
 plt.clf()
 
 functions.plot_model_3D(final_model_adj - init_model, dh, slices,
-                        shots = shots_file,
-                        nodes = nodes_file,
-                        vmin = -500,
-                        vmax = +500,
+                        vmin = -200,
+                        vmax = +200,
                         scale = 2.5)
 
 plt.savefig(f"diff_model_adj.png", dpi = 200)

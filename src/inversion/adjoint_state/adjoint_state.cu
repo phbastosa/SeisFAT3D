@@ -14,11 +14,10 @@ void Adjoint_State::set_specific_parameters()
 
     inversion_method = "[1] - Adjoint State first arrival tomography";
 
-    Eg = new float[modeling->nPoints]();
-    Em = new float[modeling->nPoints]();
-
     source = new float[modeling->volsize]();
     adjoint = new float[modeling->volsize]();
+
+    proposed_model = new float[modeling->nPoints]();
 
     cudaMalloc((void**)&(d_T), modeling->volsize*sizeof(float));
     cudaMalloc((void**)&(d_source), modeling->volsize*sizeof(float));
@@ -61,14 +60,43 @@ void Adjoint_State::apply_inversion_technique()
 
         int index = i + j*modeling->nzz + k*modeling->nxx*modeling->nzz;
 
-        source[index] += (dobs[current_node] - modeling->T[index]) / cell_volume; 
-        source[index + 1] += (dobs[current_node] - modeling->T[index + 1]) / cell_volume; 
-        source[index + modeling->nzz] += (dobs[current_node] - modeling->T[index + modeling->nzz]) / cell_volume;         
-        source[index + 1 + modeling->nzz] += (dobs[current_node] - modeling->T[index + 1 + modeling->nzz]) / cell_volume; 
-        source[index + modeling->nxx*modeling->nzz] += (dobs[current_node] - modeling->T[index + modeling->nxx*modeling->nzz]) / cell_volume; 
-        source[index + 1 + modeling->nxx*modeling->nzz] += (dobs[current_node] - modeling->T[index + 1 + modeling->nxx*modeling->nzz]) / cell_volume; 
-        source[index + modeling->nzz + modeling->nxx*modeling->nzz] += (dobs[current_node] - modeling->T[index + modeling->nzz + modeling->nxx*modeling->nzz]) / cell_volume; 
-        source[index + 1 + modeling->nzz + modeling->nxx*modeling->nzz] += (dobs[current_node] - modeling->T[index + 1 + modeling->nzz + modeling->nxx*modeling->nzz]) / cell_volume;     
+        if (fabsf(dobs[current_node] - dcal[current_node]) > 1e-3f)
+        {
+            source[index] += (dobs[current_node] - modeling->T[index]) / cell_volume; 
+            
+            source[index + 1] += (dobs[current_node] - modeling->T[index + 1]) / cell_volume; 
+            source[index - 1] += (dobs[current_node] - modeling->T[index - 1]) / cell_volume; 
+            
+            source[index + modeling->nzz] += (dobs[current_node] - modeling->T[index + modeling->nzz]) / cell_volume;         
+            source[index - modeling->nzz] += (dobs[current_node] - modeling->T[index - modeling->nzz]) / cell_volume;         
+            
+            source[index + modeling->nxx*modeling->nzz] += (dobs[current_node] - modeling->T[index + modeling->nxx*modeling->nzz]) / cell_volume; 
+            source[index - modeling->nxx*modeling->nzz] += (dobs[current_node] - modeling->T[index - modeling->nxx*modeling->nzz]) / cell_volume; 
+
+            source[index + 1 + modeling->nzz] += (dobs[current_node] - modeling->T[index + 1 + modeling->nzz]) / cell_volume; 
+            source[index + 1 - modeling->nzz] += (dobs[current_node] - modeling->T[index + 1 - modeling->nzz]) / cell_volume; 
+            source[index - 1 + modeling->nzz] += (dobs[current_node] - modeling->T[index - 1 + modeling->nzz]) / cell_volume; 
+            source[index - 1 - modeling->nzz] += (dobs[current_node] - modeling->T[index - 1 - modeling->nzz]) / cell_volume; 
+            
+            source[index + 1 + modeling->nxx*modeling->nzz] += (dobs[current_node] - modeling->T[index + 1 + modeling->nxx*modeling->nzz]) / cell_volume; 
+            source[index + 1 - modeling->nxx*modeling->nzz] += (dobs[current_node] - modeling->T[index + 1 - modeling->nxx*modeling->nzz]) / cell_volume; 
+            source[index - 1 + modeling->nxx*modeling->nzz] += (dobs[current_node] - modeling->T[index - 1 + modeling->nxx*modeling->nzz]) / cell_volume; 
+            source[index - 1 - modeling->nxx*modeling->nzz] += (dobs[current_node] - modeling->T[index - 1 - modeling->nxx*modeling->nzz]) / cell_volume; 
+            
+            source[index + modeling->nzz + modeling->nxx*modeling->nzz] += (dobs[current_node] - modeling->T[index + modeling->nzz + modeling->nxx*modeling->nzz]) / cell_volume; 
+            source[index + modeling->nzz - modeling->nxx*modeling->nzz] += (dobs[current_node] - modeling->T[index + modeling->nzz - modeling->nxx*modeling->nzz]) / cell_volume; 
+            source[index - modeling->nzz + modeling->nxx*modeling->nzz] += (dobs[current_node] - modeling->T[index - modeling->nzz + modeling->nxx*modeling->nzz]) / cell_volume; 
+            source[index - modeling->nzz - modeling->nxx*modeling->nzz] += (dobs[current_node] - modeling->T[index - modeling->nzz - modeling->nxx*modeling->nzz]) / cell_volume; 
+            
+            source[index + 1 + modeling->nzz + modeling->nxx*modeling->nzz] += (dobs[current_node] - modeling->T[index + 1 + modeling->nzz + modeling->nxx*modeling->nzz]) / cell_volume;     
+            source[index + 1 + modeling->nzz - modeling->nxx*modeling->nzz] += (dobs[current_node] - modeling->T[index + 1 + modeling->nzz - modeling->nxx*modeling->nzz]) / cell_volume;     
+            source[index + 1 - modeling->nzz + modeling->nxx*modeling->nzz] += (dobs[current_node] - modeling->T[index + 1 - modeling->nzz + modeling->nxx*modeling->nzz]) / cell_volume;     
+            source[index + 1 - modeling->nzz - modeling->nxx*modeling->nzz] += (dobs[current_node] - modeling->T[index + 1 - modeling->nzz - modeling->nxx*modeling->nzz]) / cell_volume;     
+            source[index - 1 + modeling->nzz + modeling->nxx*modeling->nzz] += (dobs[current_node] - modeling->T[index - 1 + modeling->nzz + modeling->nxx*modeling->nzz]) / cell_volume;     
+            source[index - 1 + modeling->nzz - modeling->nxx*modeling->nzz] += (dobs[current_node] - modeling->T[index - 1 + modeling->nzz - modeling->nxx*modeling->nzz]) / cell_volume;     
+            source[index - 1 - modeling->nzz + modeling->nxx*modeling->nzz] += (dobs[current_node] - modeling->T[index - 1 - modeling->nzz + modeling->nxx*modeling->nzz]) / cell_volume;     
+            source[index - 1 - modeling->nzz - modeling->nxx*modeling->nzz] += (dobs[current_node] - modeling->T[index - 1 - modeling->nzz - modeling->nxx*modeling->nzz]) / cell_volume;     
+        }
     }
 
 	cudaMemcpy(d_T, modeling->T, modeling->volsize*sizeof(float), cudaMemcpyHostToDevice);
@@ -168,21 +196,62 @@ void Adjoint_State::gradient_preconditioning()
         delete[] grad_aux;
         delete[] grad_smooth;
     }
+
+    float gmax = 0.0f;
+    for (int index = 0; index < modeling->nPoints; index++)
+    {
+        if (gmax < fabsf(gradient[index]))
+            gmax = fabsf(gradient[index]);
+    }
+
+    for (int index = 0; index < modeling->nPoints; index++)
+        gradient[index] = (max_slowness_variation / gmax) * gradient[index];
 }
 
 void Adjoint_State::optimization()  
 {
-    float rho = 0.95f;
-    float epsilon = 1e-8f;    
-    
+    float a1 = 0.0f;
+    float a2 = 0.2f; 
+    float a3 = 0.6f; 
+
+    float f1 = residuo.back();
+    float f2 = objective_function(a2);
+    float f3 = objective_function(a3);
+
+    float Db = (f2*a3*a3 + f1*a2*a2 + f3*a1*a1) - (f1*a3*a3 + f3*a2*a2 + a1*a1*f2);
+    float Da = (a2*f3 + a1*f2 + f1*a3) - (f2*a3 + a1*f3 + a2*f1);
+
+    float alpha = -0.5f*Db/Da;
+
     for (int index = 0; index < modeling->nPoints; index++)
-    { 
-        Eg[index] = rho * Eg[index] + (1.0f - rho)*powf(gradient[index], 2.0f);
+        dm[index] = alpha*gradient[index];
 
-        dm[index] = (iteration <= 1) ? gradient[index] : sqrtf(Em[index] + epsilon) / sqrt(Eg[index] + epsilon) * gradient[index];
+    max_slowness_variation *= 0.85f;     
+}
 
-        Em[index] = rho * Em[index] + (1.0f - rho)*powf(dm[index], 2.0f);
+float Adjoint_State::objective_function(float alpha)
+{
+    for (int index = 0; index < modeling->nPoints; index++)    
+        proposed_model[index] = model[index] + alpha*gradient[index];
+
+    modeling->expand_boundary(proposed_model, modeling->S);
+    
+    for (int shot = 0; shot < modeling->total_shots; shot++)
+    {
+        modeling->shot_id = shot;
+
+        modeling->initial_setup();
+        modeling->forward_solver();
+        modeling->build_outputs();
+
+        extract_calculated_data();
     }
+
+    float square_difference = 0.0f;
+    for (int i = 0; i < n_data; i++)
+        square_difference += powf(dobs[i] - dcal[i], 2.0f);
+
+    return sqrtf(square_difference);
 }
 
 __global__ void adjoint_state_kernel(float * adjoint, float * source, float * T, int level, int xOffset, int yOffset, int xSweepOffset, int ySweepOffset, 
