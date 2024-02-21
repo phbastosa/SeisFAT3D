@@ -19,16 +19,12 @@ private:
     
     float * d_source = nullptr;
     float * d_adjoint = nullptr;
-    
-    float * proposed_model = nullptr;
 
     int iDivUp(int a, int b);
 
     void set_specific_parameters();
     void gradient_preconditioning();
     void apply_inversion_technique();
-
-    float objective_function(float alpha);
 
 public:
 

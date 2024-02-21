@@ -216,13 +216,6 @@ case "$1" in
 	exit 0
 ;;
 
--project_IMAGE_2024)
-
-
-
-	exit 0
-;;
-
 * ) 
 
 	echo -e "\033[31mERRO: Option $1 unknown!\033[m"
