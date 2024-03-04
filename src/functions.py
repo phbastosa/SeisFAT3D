@@ -32,7 +32,7 @@ def analytical_first_arrivals(v, z, x):
 def plot_model_3D(model, dh, slices, **kwargs):
 
     m2km = 1e-3
-    dbar = kwargs.get("dbar") if "dbar" in kwargs else 1.5
+    dbar = kwargs.get("dbar") if "dbar" in kwargs else 1.7
     scale = kwargs.get("scale") if "scale" in kwargs else 2.8 
     cmap = kwargs.get("cmap") if "cmap" in kwargs else "jet" 
 
@@ -204,7 +204,7 @@ def plot_model_3D(model, dh, slices, **kwargs):
             cax = divider.append_axes("bottom", size="10%", pad=0)
             cbar = fig.colorbar(mpl.cm.ScalarMappable(norm = norm, cmap = cmap), cax = cax, ticks = np.linspace(vmin*m2km, vmax*m2km, 5), orientation = "horizontal")
             cbar.ax.set_xticklabels(np.around(np.linspace(vmin*m2km, vmax*m2km, 5), decimals = 1))
-            cbar.set_label("Velocity [km/s]")
+            cbar.set_label("Velocity [km/s]", fontsize = 15)
          
         else:
             
@@ -235,8 +235,8 @@ def plot_model_3D(model, dh, slices, **kwargs):
             ax.set_xticklabels(xTickLabel[k])
             ax.set_yticklabels(yTickLabel[k])
 
-            ax.set_xlabel(xLabel[k])
-            ax.set_ylabel(yLabel[k])
+            ax.set_xlabel(xLabel[k], fontsize = 15)
+            ax.set_ylabel(yLabel[k], fontsize = 15)
             
             if yInvert[k]:
                 ax.invert_yaxis()

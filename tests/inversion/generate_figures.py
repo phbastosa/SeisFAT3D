@@ -189,7 +189,7 @@ plt.plot(convergence_adj, "o--", label = "Adjoint state approach", color = "gree
 
 plt.title("Convergence curve", fontsize = 18)
 plt.xlabel("Iteration number", fontsize = 15)
-plt.ylabel("Objective function L2 norm", fontsize = 15)
+plt.ylabel(r"$||d^{obs} - d^{cal}||^2_2$", fontsize = 15)
 
 plt.legend(loc = "upper right", fontsize = 12) 
 plt.grid(True)
