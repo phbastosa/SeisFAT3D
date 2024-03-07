@@ -28,9 +28,6 @@ modeling_main="../src/main/modeling_main.cpp"
 
 modeling_all="$eikonal $pod $fim $fsm $ifim"
 
-acoustic_main="../src/main/acoustic_main.cpp"
-acoustic_class="../src/seismogram/acoustic.cu"
-
 # Seismic inversion scripts ---------------------------------------------------------------------------
 
 tomography="../src/inversion/tomography.cpp"
@@ -64,20 +61,14 @@ Usage:\n
     $ $0 -modeling            # Perform eikonal solver          
     $ $0 -inversion           # Perform first arrival tomography
     $ $0 -migration           # Perform kirchhoff depth migration   
-    $ $0 -seismogram          # Perform acoustic wave propagation
 
 Tests:\n
     $ $0 -test_modeling       # Perform a small modeling experiment          
     $ $0 -test_inversion      # Perform a small inversion experiment
     $ $0 -test_migration      # Perform a small migration experiment          
 
-Tools:\n
-    $ $0 -configuration       # Check initial configuration plot
-    $ $0 -manual_picking      # Perform manual picking algorithm using .segy files 
-
 Projects:\n
     $ $0 -project_EAGE_2024   # Perform and show experiments of expanded abstract
-    $ $0 -project_IMAGE_2024  # Perform and show experiments of expanded abstract 
 "
 
 [ -z "$1" ] && 
@@ -111,9 +102,6 @@ case "$1" in
     echo -e "../bin/\033[31mmigration.exe\033[m"
     nvcc $io $geometry_all $modeling_all $migration_all $migration_main $flags -o ../bin/migration.exe
 
-    echo -e "../bin/\033[31macoustic.exe\033[m"
-    nvcc $io $geometry_all $acoustic_class $acoustic_main $flags -o ../bin/acoustic.exe
-
 	exit 0
 ;;
 
@@ -135,29 +123,6 @@ case "$1" in
     
     ./../bin/migration.exe parameters.txt
 	
-    exit 0
-;;
-
--seismogram) 
-    
-    ./../bin/acoustic.exe parameters.txt
-    python3 ../tools/picking/add_trace_header.py parameters.txt
-	
-    exit 0
-;;
-
--configuration)
-
-    ./../bin/geometry.exe parameters.txt
-    python3 ../tools/visualization/check_configuration.py parameters.txt
-    
-    exit 0
-;;
-
--manual_picking)
-
-    python3 ../tools/picking/manual_picking.py parameters.txt
-
     exit 0
 ;;
 
