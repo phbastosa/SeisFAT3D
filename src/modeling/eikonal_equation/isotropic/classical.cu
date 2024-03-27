@@ -1,5 +1,10 @@
 # include "classical.cuh"
 
+void Classical::set_name()
+{
+    name = "Eikonal - classical"; 
+}
+
 // void Podvin_and_Lecomte::set_specific_boundary()
 // {
 //     nbxl = 1; nbxr = 1;

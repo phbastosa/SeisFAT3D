@@ -47,7 +47,9 @@ protected:
 
 public:
 
-    std::string name = "Modeling";
+    std::string name;
+
+    virtual void set_name() = 0;
 
     // int shot_id;
     // int total_shots;

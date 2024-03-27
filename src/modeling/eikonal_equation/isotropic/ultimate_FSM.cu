@@ -1,5 +1,10 @@
 # include "ultimate_FSM.cuh"
 
+void Ultimate_FSM::set_name()
+{
+    name = "Eikonal - Ultimate_FSM"; 
+}
+
 // void Accurate_FSM::set_specific_boundary()
 // {
 //     nbxl = 1; nbxr = 1;

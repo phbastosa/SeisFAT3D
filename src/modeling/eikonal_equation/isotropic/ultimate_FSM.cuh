@@ -27,7 +27,8 @@ private:
 
 public:
 
-    // void forward_solver();
+    void set_name();    // void forward_solver();
+
     // void free_space();
 };
 

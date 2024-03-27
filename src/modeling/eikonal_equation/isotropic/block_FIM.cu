@@ -1,5 +1,10 @@
 # include "block_FIM.cuh"
 
+void Block_FIM::set_name()
+{
+    name = "Eikonal - Block_FIM"; 
+}
+
 // void Block_FIM::set_specific_boundary()
 // {
 //     int pdx = (BLOCK_LENGTH - nx % BLOCK_LENGTH) % BLOCK_LENGTH;

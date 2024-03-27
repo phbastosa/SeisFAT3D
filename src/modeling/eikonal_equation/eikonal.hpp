@@ -13,6 +13,7 @@ protected:
 
 public: 
 
+    virtual void set_name() = 0;
 
 };
 

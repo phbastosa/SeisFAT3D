@@ -2,15 +2,17 @@
 # Model paramenters --------------------------------------------------------------------------------
 #---------------------------------------------------------------------------------------------------
 
-x_samples = 801                       # <int>  
-y_samples = 801                       # <int>  
-z_samples = 171                       # <int>  
+x_samples = 601                       # <int>  
+y_samples = 401                       # <int>  
+z_samples = 101                       # <int>  
 
-x_spacing = 25                        # [m] <float> 
-y_spacing = 25                        # [m] <float> 
-z_spacing = 25                        # [m] <float> 
+x_spacing = 12.5                      # [m] <float> 
+y_spacing = 12.5                      # [m] <float> 
+z_spacing = 12.5                      # [m] <float> 
 
-input_model_file = ../inputs/models/overthrust_171x801x801_25m.bin   
+vp_model_file = ../inputs/models/overthrust_vp_101x601x401_12.5m.bin   
+vs_model_file = ../inputs/models/overthrust_vs_101x601x401_12.5m.bin   
+rho_model_file = ../inputs/models/overthrust_rho_101x601x401_12.5m.bin   
 
 #---------------------------------------------------------------------------------------------------
 # Geometry parameters ------------------------------------------------------------------------------
@@ -21,8 +23,8 @@ input_model_file = ../inputs/models/overthrust_171x801x801_25m.bin
 #   [1] - regular nodes and circular shots  
 #---------------------------------------------------------------------------------------------------
 
-geometry_type = 1                     # <int>
-reciprocity = true                    # <bool>     
+geometry_type = 0                     # <int>
+reciprocity = false                   # <bool>     
 import_geometry = false               # <bool>
 
 shots_file = ../inputs/geometry/xyz_shots_position.txt              
@@ -30,16 +32,16 @@ nodes_file = ../inputs/geometry/xyz_nodes_position.txt
 
 # Regular geometry ---------------------------------------------------------------------------------               
 
-shots_nlines = [1, 100, 100]          # <int> (z, x, y)     
-nodes_nlines = [1,   1,   1]          # <int> (z, x, y)            
+shots_nlines = [1, 19, 13]            # <int> (z, x, y)     
+nodes_nlines = [1, 73, 49]            # <int> (z, x, y)            
 
-shots_SW = [0, 50, 50]                # [m] <float> (z, x, y) NW            
-shots_NW = [0, 50, 19950]             # [m] <float> (z, x, y)  |            
-shots_SE = [0, 19950, 50]             # [m] <float> (z, x, y) SW -- SE     
+shots_SW = [0, 150, 100]              # [m] <float> (z, x, y) NW            
+shots_NW = [0, 150, 4900]             # [m] <float> (z, x, y)  |            
+shots_SE = [0, 7350, 100]             # [m] <float> (z, x, y) SW -- SE     
 
-nodes_SW = [0, 1000, 1000]            # [m] <float> (z, x, y) NW           
-nodes_NW = [0, 1000, 1000]           # [m] <float> (z, x, y)  |         
-nodes_SE = [0, 1000, 1000]           # [m] <float> (z, x, y) SW -- SE   
+nodes_SW = [0, 150, 100]              # [m] <float> (z, x, y) NW           
+nodes_NW = [0, 150, 4900]             # [m] <float> (z, x, y)  |         
+nodes_SE = [0, 7350, 100]             # [m] <float> (z, x, y) SW -- SE   
 
 # Circular geometry --------------------------------------------------------------------------------                                            
 
@@ -52,21 +54,17 @@ offsets = [5000, 7000, 9000]          # [m] <float>
 #---------------------------------------------------------------------------------------------------
 #   [0] - Podvin & Lecomte (1991) 
 #   [1] - Block FIM (Jeong & Whitaker, 2008)
-#   [2] - Accurate FSM (Detrixhe et al., 2013; Noble et al., 2014)
-#   [3] - Improved FIM (Cai, Zhu & Li, 2023)   
+#   [2] - Ultimate FSM (Detrixhe et al., 2013; Noble et al., 2014)
+# 
+#   [3] - Scalar isotropic media 
+#   [4] - Acoustic isotropic media
+#   [5] - Elastic isotropic media     
 #---------------------------------------------------------------------------------------------------
 
-modeling_type = 3                     # <int>
+modeling_type = 0                     # <int>
 
 export_receiver_output = true         # <bool> 
 export_wavefield_output = true        # <bool>
-
-receiver_output_folder = ../outputs/first_arrivals/            
-wavefield_output_folder = ../outputs/travel_times/     
-
-#---------------------------------------------------------------------------------------------------
-# Wave propagation in constant density acoustic media 
-#---------------------------------------------------------------------------------------------------
 
 max_frequency = 25                   # [Hz] <float>
 time_spacing = 1e-3                  # [s] <float>
@@ -74,6 +72,9 @@ time_samples = 6001                  # <int>
 
 boundary_damper = 0.0015             # <float>
 boundary_samples = 50                # <int> 
+
+seismograms_folder = ../outputs/seismograms/            
+snapshots_folder = ../outputs/snapshots/     
 
 #---------------------------------------------------------------------------------------------------
 # Inversion parameters 
@@ -94,7 +95,6 @@ tk_order = 2                          # Tikhonov regularization order <int>
 tk_param = 1e3                        # Tikhonov regularization parameter <float>
 
 max_slowness = 1e-4                   # Max slowness variation <float>
-power_damping = 0.8                   # Steepest descent damping per iteration <float>
 
 smooth_per_iteration = true           # <bool>
 gaussian_filter_samples = 5           # [odd number] <int> 
@@ -103,20 +103,23 @@ gaussian_filter_stdv = 2.0            # <float>
 export_model_per_iteration = true     # <bool>
 export_gradient_per_iteration = true  # <bool>
 
-obs_data_folder = ../inputs/data/        
-obs_data_prefix = seismogram_gather_    
-
 gradient_folder = ../outputs/gradients/                  
 convergence_folder = ../outputs/convergence/         
 estimated_model_folder = ../outputs/recovered_models/    
 
+obs_data_folder = ../inputs/data/        
+obs_data_prefix = seismogram_gather_    
+
 #---------------------------------------------------------------------------------------------------
 # Migration parameters 
 #--------------------------------------------------------------------------------------------------- 
-#   [0] - Kirchhoff pre-stack depth migration 
+#   [0] - Kirchhoff pre-stack depth migration
+#   [1] - Scalar reverse time depth migration 
 #---------------------------------------------------------------------------------------------------
 
 migration_type = 0
 
+input_data_folder = ../inputs/data/        
+input_data_prefix = seismogram_gather_    
 
 
