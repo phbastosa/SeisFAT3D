@@ -17,16 +17,24 @@ geometry_all="$geometry $regular $circular"
 
 # Seismic modeling scripts ----------------------------------------------------------------------------
 
-eikonal="../src/modeling/eikonal.cpp"
+modeling="../src/modeling/modeling.cpp"
 
-pod="../src/modeling/podvin_and_lecomte/podvin_and_lecomte.cu"
-fim="../src/modeling/fast_iterative_method/block_FIM.cu"
-fsm="../src/modeling/fast_sweeping_method/accurate_FSM.cu"
-ifim="../src/modeling/improved_FIM/improved_FIM.cu"
+eikonal="../src/modeling/eikonal_equation/eikonal.cpp"
+
+classical="../src/modeling/eikonal_equation/isotropic/classical.cu"
+block_FIM="../src/modeling/eikonal_equation/isotropic/block_FIM.cu"
+ultimate_FSM="../src/modeling/eikonal_equation/isotropic/ultimate_FSM.cu"
+
+fullwave="../src/modeling/wave_equation/wave.cpp"
+
+scalar="../src/modeling/wave_equation/isotropic/scalar.cu"
+acoustic="../src/modeling/wave_equation/isotropic/acoustic.cu"
+elastic="../src/modeling/wave_equation/isotropic/elastic.cu"
 
 modeling_main="../src/main/modeling_main.cpp"
 
-modeling_all="$eikonal $pod $fim $fsm $ifim"
+modeling_all="$modeling $eikonal $classical $block_FIM 
+              $ultimate_FSM $fullwave $scalar $acoustic $elastic"
 
 # Seismic inversion scripts ---------------------------------------------------------------------------
 
@@ -96,11 +104,11 @@ case "$1" in
     echo -e "../bin/\033[31mmodeling.exe\033[m" 
     nvcc $io $geometry_all $modeling_all $modeling_main $flags -o ../bin/modeling.exe
 
-    echo -e "../bin/\033[31minversion.exe\033[m" 
-    nvcc $io $geometry_all $modeling_all $inversion_all $inversion_main $flags -o ../bin/inversion.exe
+    # echo -e "../bin/\033[31minversion.exe\033[m" 
+    # nvcc $io $geometry_all $modeling_all $inversion_all $inversion_main $flags -o ../bin/inversion.exe
 
-    echo -e "../bin/\033[31mmigration.exe\033[m"
-    nvcc $io $geometry_all $modeling_all $migration_all $migration_main $flags -o ../bin/migration.exe
+    # echo -e "../bin/\033[31mmigration.exe\033[m"
+    # nvcc $io $geometry_all $modeling_all $migration_all $migration_main $flags -o ../bin/migration.exe
 
 	exit 0
 ;;
