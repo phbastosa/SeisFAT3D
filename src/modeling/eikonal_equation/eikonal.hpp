@@ -7,13 +7,18 @@ class Eikonal : public Modeling
 {
 private:
 
+    void set_models();
 
 protected:
 
 
+    virtual void set_volumes() = 0;
+    virtual void set_specifics() = 0;
+    virtual void initialization() = 0;
+
 public: 
 
-    virtual void set_name() = 0;
+    virtual void set_forward_solver() = 0;
 
 };
 

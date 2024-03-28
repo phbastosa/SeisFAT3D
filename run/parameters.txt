@@ -61,7 +61,7 @@ offsets = [5000, 7000, 9000]          # [m] <float>
 #   [5] - Elastic isotropic media     
 #---------------------------------------------------------------------------------------------------
 
-modeling_type = 0                     # <int>
+modeling_type = 5                     # <int>
 
 export_receiver_output = true         # <bool> 
 export_wavefield_output = true        # <bool>
@@ -72,6 +72,8 @@ time_samples = 6001                  # <int>
 
 boundary_damper = 0.0015             # <float>
 boundary_samples = 50                # <int> 
+
+total_snapshots = 11                 # int
 
 seismograms_folder = ../outputs/seismograms/            
 snapshots_folder = ../outputs/snapshots/     

@@ -22,27 +22,24 @@ int main(int argc, char **argv)
     auto file = std::string(argv[1]);
     auto type = std::stoi(catch_parameter("modeling_type", file));
 
-    // modeling[type]->file = file;
+    modeling[type]->file = file;
 
-    modeling[type]->set_name();
+    modeling[type]->set_parameters();
 
-    std::cout << modeling[type]->name << std::endl;
+    modeling[type]->set_runtime();
 
-    // modeling[type]->set_parameters();
-    // modeling[type]->set_runtime();
+    for (int shot = 0; shot < modeling[type]->total_shots; shot++)
+    {
+        modeling[type]->shot_index = shot;
 
-    // for (int shot = 0; shot < modeling[type]->total_shots; shot++)
-    // {
-    //     modeling[type]->shot_id = shot;
+        modeling[type]->get_information();
+        modeling[type]->set_configuration();
+        modeling[type]->set_forward_solver();
+        // modeling[type]->build_outputs();
+        // modeling[type]->export_outputs();
+    }
 
-    //     modeling[type]->info_message();
-    //     modeling[type]->initial_setup();
-    //     modeling[type]->forward_solver();
-    //     modeling[type]->build_outputs();
-    //     modeling[type]->export_outputs();
-    // }
-
-    // modeling[type]->get_runtime();
+    modeling[type]->get_runtime();
     // modeling[type]->free_space();    
 
     return 0;

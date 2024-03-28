@@ -12,85 +12,99 @@ class Modeling
 {
 private:
 
-    // int sidx, sidy, sidz;
+    std::chrono::system_clock::time_point ti, tf;
 
-    // int receiver_output_samples;
-    // int wavefield_output_samples;
+    int RAM, vRAM, ivRAM;
 
-    // bool export_receiver_output;
-    // bool export_wavefield_output;
+    void get_RAM_usage();
+    void get_GPU_usage();
+    void get_GPU_initMem();
+
+    void set_generals();
+    void set_geometry();
+
+    void check_geometry_overflow();
     
-    // std::string message;
-    // std::string type_name;
-
-    // std::string receiver_output_file;
-    // std::string wavefield_output_file;
-    // std::string receiver_output_folder;
-    // std::string wavefield_output_folder;
-
-    // void set_outputs();
-    // void set_boundaries();
-    // void set_velocity_model();
-    // void set_slowness_model();
-    // void set_general_parameters();
-    // void set_acquisition_geometry();
-
-    // void get_travel_times();
-    // void get_first_arrivals();
-
-    // virtual void initialization() = 0;
-    // virtual void set_eikonal_volumes() = 0;
-    // virtual void set_specific_boundary() = 0;
-
 protected:
 
+    std::string type_name;
+    std::string type_message;
+
+    bool export_receiver_output;
+    bool export_wavefield_output;
+
+    int receiver_output_samples;
+    int wavefield_output_samples;
+
+    std::string receiver_output_file;
+    std::string wavefield_output_file;
+    std::string receiver_output_folder;
+    std::string wavefield_output_folder;
+
+    int nbxl, nbxr, nbyl; 
+    int nbyr, nbzu, nbzd;
+
+    int sidx, sidy, sidz;
+
+    void set_boundary();
+
+    virtual void set_models() = 0;
+    virtual void set_volumes() = 0;
+    virtual void set_specifics() = 0;
+
+    virtual void initialization() = 0;
+
+    // virtual void set_outputs() = 0;
 
 public:
 
-    std::string name;
+    std::string file;
 
-    virtual void set_name() = 0;
+    int shot_index;
+    int source_index;    
 
-    // int shot_id;
-    // int total_shots;
-    // int total_nodes;
+    int total_shots;
+    int total_nodes;
+
+    int blocksPerGrid;
+    int threadsPerBlock;
+
+    float dx, dy, dz;
+    int nx, ny, nz, nPoints;
+    int nxx, nyy, nzz, volsize;
     
-    // std::string file;
+    Geometry * geometry;
 
-    // Geometry * geometry;
+    float * S = nullptr;
+    float * V = nullptr;
+    float * K = nullptr;
+    float * B = nullptr;
+    float * M = nullptr;
+    float * L = nullptr;
 
-    // float dx, dy, dz;
-    // int nbxl, nbxr, nbyl; 
-    // int nbyr, nbzu, nbzd;
+    float * T = nullptr;
+    float * P = nullptr;
 
-    // int blocksPerGrid;
-    // int threadsPerBlock;
+    float * receiver_output = nullptr;
+    float * wavefield_output = nullptr;
 
-    // int source_id, time_id;
-    // int nx, ny, nz, nPoints;
-    // int nxx, nyy, nzz, volsize;
+    void expand_boundary(float * input, float * output);
+    void reduce_boundary(float * input, float * output);
 
-    // float * V = nullptr;
-    // float * S = nullptr;
-    // float * T = nullptr;
+    void set_runtime();
+    void get_runtime();
 
-    // float * receiver_output = nullptr;
-    // float * wavefield_output = nullptr;
+    void set_parameters(); 
+    void get_information();
+    void set_configuration();
+        
+    virtual void set_forward_solver() = 0;
 
-    // void expand_boundary(float * input, float * output);
-    // void reduce_boundary(float * input, float * output);
-
-    // virtual void forward_solver() = 0;
-    // virtual void free_space() = 0;
-
-    // void set_parameters(); 
-    // void info_message();
-    // void initial_setup();
     // void build_outputs();
     // void export_outputs();
 
-    // void set_runtime();
-    // void get_runtime();
+
+
 };
 
 # endif
