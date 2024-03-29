@@ -17,8 +17,7 @@ void Wave::set_specifics()
     nbzu = nabc; nbzd = nabc;    
 
     define_cerjan_dampers();
-    define_seismogram();
-    define_snapshots();
+    define_grid_nodes_position();    
 }
 
 void Wave::define_cerjan_dampers()
@@ -75,22 +74,46 @@ void Wave::define_cerjan_dampers()
     delete[] d3D;    
 }
 
-void Wave::define_seismogram()
+void Wave::define_grid_nodes_position()
 {
-    receiver_output_samples = nt*total_nodes;
+    int * rx = new int[total_nodes]();
+    int * ry = new int[total_nodes]();
+    int * rz = new int[total_nodes]();
 
-    float * receiver_output = new float[receiver_output_samples]();
+    for (int index = 0; index < total_nodes; index++)
+    {
+        rx[index] = (int)(geometry->nodes.x[index] / dx) + nbxl;
+        ry[index] = (int)(geometry->nodes.y[index] / dy) + nbyl;
+        rz[index] = (int)(geometry->nodes.z[index] / dz) + nbzu;
+    }
 
-    cudaMalloc((void**)&(seismogram), receiver_output_samples*sizeof(float));
+	cudaMalloc((void**)&(grid_node_x), total_nodes*sizeof(int));
+	cudaMalloc((void**)&(grid_node_y), total_nodes*sizeof(int));
+	cudaMalloc((void**)&(grid_node_z), total_nodes*sizeof(int));
+
+    cudaMemcpy(grid_node_x, rx, total_nodes*sizeof(int), cudaMemcpyHostToDevice);
+    cudaMemcpy(grid_node_y, ry, total_nodes*sizeof(int), cudaMemcpyHostToDevice);
+    cudaMemcpy(grid_node_z, rz, total_nodes*sizeof(int), cudaMemcpyHostToDevice);
+
+    delete[] rx;
+    delete[] ry;
+    delete[] rz;
 }
 
-void Wave::define_snapshots()
-{
+void Wave::set_outputs()
+{   
+    receiver_output_samples = nt*total_nodes;
     wavefield_output_samples = nPoints*total_snaps;
 
-    float * wavefield_output = new float[wavefield_output_samples]();
+    if (export_receiver_output)
+        receiver_output = new float[receiver_output_samples]();
+    
+    if (export_wavefield_output)
+        wavefield_output = new float[wavefield_output_samples]();
 
-    cudaMalloc((void**)&(snapshots), wavefield_output_samples*sizeof(float));
+    snapshot = new float[volsize]();
+
+    cudaMalloc((void**)&(seismogram), receiver_output_samples*sizeof(float));
 }
 
 void Wave::define_common_wavelet()
@@ -106,9 +129,9 @@ void Wave::define_common_wavelet()
     {
         float td = n*dt - t0;
 
-        float arg = pi*pi*fmax*fmax*td*td;
+        float arg = pi*pi*pi*fmax*fmax*td*td;
 
-        signal[n] = (1.0f - 2.0f*pi*arg)*expf(-pi*arg);
+        signal[n] = (1.0f - 2.0f*arg)*expf(-arg);
     }
     
     cudaMalloc((void**)&(wavelet), nt*sizeof(float));
@@ -133,9 +156,9 @@ void Wave::define_staggered_wavelet()
     {
         float td = n*dt - t0;
 
-        float arg = pi*pi*fmax*fmax*td*td;
+        float arg = pi*pi*pi*fmax*fmax*td*td;
 
-        summation += (1.0f - 2.0f*pi*arg)*expf(-pi*arg);
+        summation += (1.0f - 2.0f*arg)*expf(-arg);
 
         signal[n] = summation;
     }
@@ -146,3 +169,60 @@ void Wave::define_staggered_wavelet()
 
     delete[] signal;
 }
+
+void Wave::display_progress()
+{
+    if (time_index % (nt / 10) == 0)
+    {
+        get_information();
+
+        std::cout<<"Time progress: " << floorf(100.0f * (float)(time_index+1) / (float)(nt)) <<" %\n";
+    }
+}
+
+void Wave::get_wavefield_output()
+{
+    if (export_wavefield_output)
+    {
+        wavefield_output_file = wavefield_output_folder + type_name + "_snapshot_" + std::to_string(nz) + "x" + std::to_string(nx) + "x" + std::to_string(ny) + "_shot_" + std::to_string(shot_index+1) + "_Nsnaps" + std::to_string(total_snaps) + ".bin";
+        
+        if (snap_index < total_snaps)
+        {
+            if (time_index % (int)((float)(nt) / (float)(total_snaps)) == 0)
+            {
+                cudaMemcpy(snapshot, P, volsize*sizeof(float), cudaMemcpyDeviceToHost);
+
+                for (int index = 0; index < nPoints; index++)
+                {
+                    int y = (int) (index / (nx*nz));         
+                    int x = (int) (index - y*nx*nz) / nz;    
+                    int z = (int) (index - x*nz - y*nx*nz);  
+
+                    wavefield_output[z + x*nz + y*nx*nz + snap_index*nPoints] = snapshot[(z + nbzu) + (x + nbxl)*nzz + (y + nbyl)*nxx*nzz];
+                }
+
+                snap_index += 1;
+            }
+        }
+    }
+}
+
+void Wave::get_seismogram()
+{
+    if (export_receiver_output)
+    {
+        int seismBlocks = (int)(total_nodes / threadsPerBlock);
+
+    }    
+}
+
+void Wave::get_receiver_output()
+{
+    if (export_receiver_output)
+    {
+        cudaMemcpy(receiver_output, seismogram, nt*total_nodes*sizeof(float), cudaMemcpyDeviceToHost);
+
+        receiver_output_file = receiver_output_folder + type_name + "_seismogram_Nsamples" + std::to_string(nt) + "_nRec" + std::to_string(total_nodes) + "_shot_" + std::to_string(shot_index+1) + ".bin";
+    }
+}
+

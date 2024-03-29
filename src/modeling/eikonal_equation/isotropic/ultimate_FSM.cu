@@ -154,17 +154,19 @@ void Ultimate_FSM::set_forward_solver()
 	}
 
     cudaMemcpy(T, d_T, volsize*sizeof(float), cudaMemcpyDeviceToHost);
+
+    get_wavefield_output();
+    get_receiver_output();
 }
 
-// void Accurate_FSM::free_space()
-// {
-//     cudaFree(d_T);
-//     cudaFree(d_S);
+void Ultimate_FSM::free_space()
+{
+    cudaFree(d_T);
+    cudaFree(d_S);
 
-//     cudaFree(d_sgnt);
-//     cudaFree(d_sgnv);
-// }
-
+    cudaFree(d_sgnt);
+    cudaFree(d_sgnv);
+}
 
 __global__ void fast_sweeping_kernel(float * S, float * T, int * sgnt, int * sgnv, int sgni, int sgnj, int sgnk, 
                                      int level, int xOffset, int yOffset, int xSweepOffset, int ySweepOffset, int zSweepOffset, 

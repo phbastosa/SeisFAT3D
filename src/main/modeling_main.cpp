@@ -35,12 +35,12 @@ int main(int argc, char **argv)
         modeling[type]->get_information();
         modeling[type]->set_configuration();
         modeling[type]->set_forward_solver();
-        // modeling[type]->build_outputs();
-        // modeling[type]->export_outputs();
+        
+        modeling[type]->export_outputs();
     }
 
     modeling[type]->get_runtime();
-    // modeling[type]->free_space();    
+    modeling[type]->free_space();    
 
     return 0;
 }

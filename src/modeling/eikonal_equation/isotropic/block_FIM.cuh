@@ -46,7 +46,7 @@ private:
 public:
 
     void set_forward_solver();
-    // void free_space();
+    void free_space();
 };
 
 __global__ void run_solver(float* spd, bool* mask, const float *sol_in, float *sol_out, bool *con, uint* list, int xdim, int ydim, int zdim, float dh, int nIter, uint nActiveBlock);

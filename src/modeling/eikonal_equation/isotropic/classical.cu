@@ -95,8 +95,6 @@ void Classical::set_forward_solver()
     cudaMemcpy(d_T, T, volsize*sizeof(float), cudaMemcpyHostToDevice);
     cudaMemcpy(d_nT, T, volsize*sizeof(float), cudaMemcpyHostToDevice);
     cudaMemcpy(d_S, S, volsize*sizeof(float), cudaMemcpyHostToDevice);
-    
-    int blocksPerGrid = volsize / threadsPerBlock;
 
     float dh = dx;
 
@@ -115,18 +113,21 @@ void Classical::set_forward_solver()
     }
 
     cudaMemcpy(T, d_T, volsize*sizeof(float), cudaMemcpyDeviceToHost);
+
+    get_wavefield_output();
+    get_receiver_output();
 }
 
-// void Podvin_and_Lecomte::free_space()
-// {
-//     delete[] K;
+void Classical::free_space()
+{
+    delete[] K;
 
-//     cudaFree(d_K);
-//     cudaFree(d_S);
-//     cudaFree(d_T);
-//     cudaFree(d_nK);
-//     cudaFree(d_nT);
-// }
+    cudaFree(d_K);
+    cudaFree(d_S);
+    cudaFree(d_T);
+    cudaFree(d_nK);
+    cudaFree(d_nT);
+}
 
 __global__ void fdm_operators(float * S, float * T, float * K, float * nT, float h, int nxx, int nyy, int nzz)
 {

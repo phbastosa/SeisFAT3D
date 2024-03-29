@@ -168,15 +168,17 @@ void Modeling::set_parameters()
 {
     set_generals();
 
-    set_specifics();
-
     set_geometry();
+
+    set_specifics();
     
     set_boundary();     
     
     set_models();
 
     set_volumes();
+
+    set_outputs();
 
     get_RAM_usage();
     get_GPU_usage();
@@ -236,6 +238,8 @@ void Modeling::set_boundary()
     nzz = nz + nbzu + nbzd;
 
     volsize = nxx*nyy*nzz;
+
+    blocksPerGrid = (int)(volsize / threadsPerBlock);    
 }
 
 void Modeling::get_information()
@@ -250,11 +254,10 @@ void Modeling::get_information()
                                    <<geometry->shots.x[shot_index]<<", y = " 
                                    <<geometry->shots.y[shot_index]<<") m\n\n";
 
-    std::cout<<"Memory usage: \n";
-    std::cout<<"RAM = "<<RAM<<" Mb\n";
-    std::cout<<"GPU = "<<vRAM<<" Mb\n\n";
+    std::cout<<"RAM usage = "<<RAM<<" MB\n";
+    std::cout<<"GPU usage = "<<vRAM<<" MB\n\n";
 
-    std::cout<<"Modeling tyep: "<<type_message<<"\n\n";
+    std::cout<<"Modeling type: "<<type_message<<"\n\n";
 }
 
 void Modeling::set_configuration()
@@ -271,17 +274,11 @@ void Modeling::set_configuration()
     get_GPU_usage();
 }
 
-// void Eikonal::build_outputs()
-// {
-//     get_travel_times();
-//     get_first_arrivals();
-// }
+void Modeling::export_outputs()
+{
+    if (export_receiver_output) 
+        export_binary_float(receiver_output_file, receiver_output, receiver_output_samples);
 
-// void Eikonal::export_outputs()
-// {
-//     if (export_receiver_output) 
-//         export_binary_float(receiver_output_file, receiver_output, receiver_output_samples);
-    
-//     if (export_wavefield_output) 
-//         export_binary_float(wavefield_output_file, wavefield_output, wavefield_output_samples);
-// }
+    if (export_wavefield_output) 
+        export_binary_float(wavefield_output_file, wavefield_output, wavefield_output_samples);
+}

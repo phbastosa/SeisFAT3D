@@ -50,17 +50,20 @@ protected:
 
     virtual void set_models() = 0;
     virtual void set_volumes() = 0;
+    virtual void set_outputs() = 0;
     virtual void set_specifics() = 0;
 
     virtual void initialization() = 0;
 
-    // virtual void set_outputs() = 0;
+    virtual void get_receiver_output() = 0;
+    virtual void get_wavefield_output() = 0;
 
 public:
 
     std::string file;
 
     int shot_index;
+    int time_index;
     int source_index;    
 
     int total_shots;
@@ -97,14 +100,11 @@ public:
     void set_parameters(); 
     void get_information();
     void set_configuration();
-        
+    
+    void export_outputs();
+
     virtual void set_forward_solver() = 0;
-
-    // void build_outputs();
-    // void export_outputs();
-
-
-
+    virtual void free_space() = 0;    
 };
 
 # endif

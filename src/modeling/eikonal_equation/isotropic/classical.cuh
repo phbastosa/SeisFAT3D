@@ -24,7 +24,7 @@ private:
 public:
 
     void set_forward_solver();
-    // void free_space();
+    void free_space();
 };
 
 __global__ void fdm_operators(float * S, float * T, float * K, float * nT, float h, int nxx, int nyy, int nzz);

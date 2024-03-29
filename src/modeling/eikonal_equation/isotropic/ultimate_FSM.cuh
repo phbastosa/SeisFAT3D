@@ -28,7 +28,7 @@ private:
 public:
 
     void set_forward_solver();
-    // void free_space();
+    void free_space();
 };
 
 __global__ void fast_sweeping_kernel(float * S, float * T, int * sgnt, int * sgnv, int sgni, int sgnj, int sgnk, 
