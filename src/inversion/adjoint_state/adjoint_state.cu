@@ -186,7 +186,7 @@ void Adjoint_State::gradient_preconditioning()
             int j = (int) (index - k*modeling->nx*modeling->nz) / modeling->nz;    
             int i = (int) (index - j*modeling->nz - k*modeling->nx*modeling->nz);          
 
-            int ind_filt = (i + smoother_samples) + (j + smoother_samples)*aux_nz + (k + smoother_samples)*aux_nx*aux_nz;
+            int ind_filt = (i + smoother_samples) + (j + smoother_samples)*aux_nz + (k + smoother_samples)*aux_nx*aux_nz; 
 
             gradient[i + j*modeling->nz + k*modeling->nx*modeling->nz] = grad_smooth[ind_filt];
         }
