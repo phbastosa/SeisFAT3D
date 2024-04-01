@@ -51,9 +51,9 @@ fsm = np.zeros((len(dh), n))
 
 for i in range(len(dh)):
     
-    pod[i] = np.fromfile(f"../outputs/first_arrivals/{dh[i]}m_pod_data_nRec1256_shot_1.bin", dtype = np.float32, count = n)
-    fim[i] = np.fromfile(f"../outputs/first_arrivals/{dh[i]}m_fim_data_nRec1256_shot_1.bin", dtype = np.float32, count = n)
-    fsm[i] = np.fromfile(f"../outputs/first_arrivals/{dh[i]}m_fsm_data_nRec1256_shot_1.bin", dtype = np.float32, count = n)
+    pod[i] = np.fromfile(f"../outputs/seismograms/{dh[i]}m_pod_data_nRec1256_shot_1.bin", dtype = np.float32, count = n)
+    fim[i] = np.fromfile(f"../outputs/seismograms/{dh[i]}m_fim_data_nRec1256_shot_1.bin", dtype = np.float32, count = n)
+    fsm[i] = np.fromfile(f"../outputs/seismograms/{dh[i]}m_fsm_data_nRec1256_shot_1.bin", dtype = np.float32, count = n)
 
 offset = np.arange(n)
 

@@ -10,7 +10,7 @@ x_spacing = 100                     # [m] <float>
 y_spacing = 100                     # [m] <float> 
 z_spacing = 100                     # [m] <float> 
 
-input_model_file = ../inputs/models/testModel_51x221x221_100m.bin   
+vp_model_file = ../inputs/models/testModel_51x221x221_100m.bin   
 
 #---------------------------------------------------------------------------------------------------
 # Geometry parameters ------------------------------------------------------------------------------
@@ -60,48 +60,7 @@ modeling_type = 1                   # <int>
 export_receiver_output = true       # <bool> 
 export_wavefield_output = false     # <bool>
 
-receiver_output_folder = ../outputs/first_arrivals/100m_          
-wavefield_output_folder = ../outputs/travel_times/     
-
-#---------------------------------------------------------------------------------------------------
-# Inversion parameters 
-#---------------------------------------------------------------------------------------------------
-#   [0] - Least squares first arrival tomography 
-#   [1] - Adjoint state first arrival tomography
-#---------------------------------------------------------------------------------------------------
-
-inversion_type = 0                    # <int> 
-
-max_iteration = 1                     # <int>
-
-dx_tomo = 50                          # [m] <float> 
-dy_tomo = 50                          # [m] <float>
-dz_tomo = 20                          # [m] <float>
-
-tk_order = 2                          # Tikhonov regularization order <int>
-tk_param = 1e3                        # Tikhonov regularization parameter <float>
-
-smooth_per_iteration = true           # <bool>
-gaussian_filter_samples = 5           # [odd number] <int> 
-gaussian_filter_stdv = 2.0            # <float>
-
-export_model_per_iteration = true     # <bool>
-export_gradient_per_iteration = true  # <bool>
-
-obs_data_folder = ../inputs/data/        
-obs_data_prefix = fsm_data_400_shot_     
-
-gradient_folder = ../outputs/gradients/                  
-convergence_folder = ../outputs/convergence/         
-estimated_model_folder = ../outputs/recovered_models/    
-
-#---------------------------------------------------------------------------------------------------
-# Migration parameters 
-#--------------------------------------------------------------------------------------------------- 
-#   [0] - Kirchhoff pre-stack depth migration 
-#---------------------------------------------------------------------------------------------------
-
-migration_type = 0
-
+receiver_output_folder = ../outputs/seismograms/100m_          
+wavefield_output_folder = ../output/snapshots/      
 
 

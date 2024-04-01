@@ -10,7 +10,7 @@ x_spacing = 100                     # [m] <float>
 y_spacing = 100                     # [m] <float> 
 z_spacing = 100                     # [m] <float> 
 
-input_model_file = ../inputs/models/trueModelTest_51x201x201_100m.bin   
+vp_model_file = ../inputs/models/trueModelTest_51x201x201_100m.bin   
 
 #---------------------------------------------------------------------------------------------------
 # Geometry parameters ------------------------------------------------------------------------------
@@ -61,4 +61,4 @@ export_receiver_output = true       # <bool>
 export_wavefield_output = false     # <bool>
 
 receiver_output_folder = ../inputs/data/obs_            
-wavefield_output_folder = ../outputs/travel_times/     
+wavefield_output_folder = ../outputs/snapshots/     

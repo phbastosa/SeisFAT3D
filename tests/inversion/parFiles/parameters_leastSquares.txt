@@ -10,7 +10,7 @@ x_spacing = 100                     # [m] <float>
 y_spacing = 100                     # [m] <float> 
 z_spacing = 100                     # [m] <float> 
 
-input_model_file = ../inputs/models/initModelTest_51x201x201_100m.bin   
+vp_model_file = ../inputs/models/initModelTest_51x201x201_100m.bin   
 
 #---------------------------------------------------------------------------------------------------
 # Geometry parameters ------------------------------------------------------------------------------
@@ -95,7 +95,7 @@ obs_data_prefix = obs_fsm_data_nRec400_shot_
 
 gradient_folder = ../outputs/gradients/ls_                  
 convergence_folder = ../outputs/convergence/ls_         
-estimated_model_folder = ../outputs/recovered_models/ls_    
+estimated_model_folder = ../outputs/models/ls_    
 
 #---------------------------------------------------------------------------------------------------
 # Migration parameters 
