@@ -99,119 +99,7 @@ __global__ void compute_pressure(float * P, float * Pold, float * Pnew, float * 
         Pnew[index] = dt*dt*V[index]*V[index] * (d2P_dx2 + d2P_dy2 + d2P_dz2) + 2.0f*P[index] - Pold[index]; 
     }
 
-    float damper = 1.0f;
-
-    // 1D damping
-    if((i < nabc) && (j >= nabc) && (j < nxx-nabc) && (k >= nabc) && (k < nyy-nabc)) 
-    {
-        damper = damp1D[i];
-    }         
-    else if((i >= nzz-nabc) && (i < nzz) && (j >= nabc) && (j < nxx-nabc) && (k >= nabc) && (k < nyy-nabc)) 
-    {
-        damper = damp1D[nabc-(i-(nzz-nabc))-1];
-    }         
-    else if((i >= nabc) && (i < nzz-nabc) && (j >= 0) && (j < nabc) && (k >= nabc) && (k < nyy-nabc)) 
-    {
-        damper = damp1D[j];
-    }
-    else if((i >= nabc) && (i < nzz-nabc) && (j >= nxx-nabc) && (j < nxx) && (k >= nabc) && (k < nyy-nabc)) 
-    {
-        damper = damp1D[nabc-(j-(nxx-nabc))-1];
-    }
-    else if((i >= nabc) && (i < nzz-nabc) && (j >= nabc) && (j < nxx-nabc) && (k >= 0) && (k < nabc)) 
-    {
-        damper = damp1D[k];
-    }
-    else if((i >= nabc) && (i < nzz-nabc) && (j >= nabc) && (j < nxx-nabc) && (k >= nyy-nabc) && (k < nyy)) 
-    {
-        damper = damp1D[nabc-(k-(nyy-nabc))-1];
-    }
-
-    // 2D damping 
-    else if((i >= nabc) && (i < nzz-nabc) && (j >= 0) && (j < nabc) && (k >= 0) && (k < nabc))
-    {
-        damper = damp2D[j + k*nabc];
-    }
-    else if((i >= nabc) && (i < nzz-nabc) && (j >= nxx-nabc) && (j < nxx) && (k >= 0) && (k < nabc))
-    {
-        damper = damp2D[nabc-(j-(nxx-nabc))-1 + k*nabc];
-    }
-    else if((i >= nabc) && (i < nzz-nabc) && (j >= 0) && (j < nabc) && (k >= nyy-nabc) && (k < nyy))
-    {
-        damper = damp2D[j + (nabc-(k-(nyy-nabc))-1)*nabc];
-    }
-    else if((i >= nabc) && (i < nzz-nabc) && (j >= nxx-nabc) && (j < nxx) && (k >= nyy-nabc) && (k < nyy))
-    {
-        damper = damp2D[nabc-(j-(nxx-nabc))-1 + (nabc-(k-(nyy-nabc))-1)*nabc];
-    }
-
-    else if((i >= 0) && (i < nabc) && (j >= nabc) && (j < nxx-nabc) && (k >= 0) && (k < nabc))
-    {
-        damper = damp2D[i + k*nabc];
-    }
-    else if((i >= nzz-nabc) && (i < nzz) && (j >= nabc) && (j < nxx-nabc) && (k >= 0) && (k < nabc))
-    {
-        damper = damp2D[nabc-(i-(nzz-nabc))-1 + k*nabc];
-    }
-    else if((i >= 0) && (i < nabc) && (j >= nabc) && (j < nxx-nabc) && (k >= nyy-nabc) && (k < nyy))
-    {
-        damper = damp2D[i + (nabc-(k-(nyy-nabc))-1)*nabc];
-    }
-    else if((i >= nzz-nabc) && (i < nzz) && (j >= nabc) && (j < nxx-nabc) && (k >= nyy-nabc) && (k < nyy))
-    {
-        damper = damp2D[nabc-(i-(nzz-nabc))-1 + (nabc-(k-(nyy-nabc))-1)*nabc];
-    }
-
-    else if((i >= 0) && (i < nabc) && (j >= 0) && (j < nabc) && (k >= nabc) && (k < nyy-nabc))
-    {
-        damper = damp2D[i + j*nabc];
-    }
-    else if((i >= nzz-nabc) && (i < nzz) && (j >= 0) && (j < nabc) && (k >= nabc) && (k < nyy-nabc))
-    {
-        damper = damp2D[nabc-(i-(nzz-nabc))-1 + j*nabc];
-    }
-    else if((i >= 0) && (i < nabc) && (j >= nxx-nabc) && (j < nxx) && (k >= nabc) && (k < nyy-nabc))
-    {
-        damper = damp2D[i + (nabc-(j-(nxx-nabc))-1)*nabc];
-    }
-    else if((i >= nzz-nabc) && (i < nzz) && (j >= nxx-nabc) && (j < nxx) && (k >= nabc) && (k < nyy-nabc))
-    {
-        damper = damp2D[nabc-(i-(nzz-nabc))-1 + (nabc-(j-(nxx-nabc))-1)*nabc];
-    }
-
-    // 3D damping
-    else if((i >= 0) && (i < nabc) && (j >= 0) && (j < nabc) && (k >= 0) && (k < nabc))
-    {
-        damper = damp3D[i + j*nabc + k*nabc*nabc];
-    }
-    else if((i >= nzz-nabc) && (i < nzz) && (j >= 0) && (j < nabc) && (k >= 0) && (k < nabc))
-    {
-        damper = damp3D[nabc-(i-(nzz-nabc))-1 + j*nabc + k*nabc*nabc];
-    }
-    else if((i >= 0) && (i < nabc) && (j >= nxx-nabc) && (j < nxx) && (k >= 0) && (k < nabc))
-    {
-        damper = damp3D[i + (nabc-(j-(nxx-nabc))-1)*nabc + k*nabc*nabc];
-    }
-    else if((i >= 0) && (i < nabc) && (j >= 0) && (j < nabc) && (k >= nyy-nabc) && (k < nyy))
-    {
-        damper = damp3D[i + j*nabc + (nabc-(k-(nyy-nabc))-1)*nabc*nabc];
-    }
-    else if((i >= nzz-nabc) && (i < nzz) && (j >= nxx-nabc) && (j < nxx) && (k >= 0) && (k < nabc))
-    {
-        damper = damp3D[nabc-(i-(nzz-nabc))-1 + (nabc-(j-(nxx-nabc))-1)*nabc + k*nabc*nabc];
-    }
-    else if((i >= nzz-nabc) && (i < nzz) && (j >= 0) && (j < nabc) && (k >= nyy-nabc) && (k < nyy))
-    {
-        damper = damp3D[nabc-(i-(nzz-nabc))-1 + j*nabc + (nabc-(k-(nyy-nabc))-1)*nabc*nabc];
-    }
-    else if((i >= 0) && (i < nabc) && (j >= nxx-nabc) && (j < nxx) && (k >= nyy-nabc) && (k < nyy))
-    {
-        damper = damp3D[i + (nabc-(j-(nxx-nabc))-1)*nabc + (nabc-(k-(nyy-nabc))-1)*nabc*nabc];
-    }
-    else if((i >= nzz-nabc) && (i < nzz) && (j >= nxx-nabc) && (j < nxx) && (k >= nyy-nabc) && (k < nyy))
-    {
-        damper = damp3D[nabc-(i-(nzz-nabc))-1 + (nabc-(j-(nxx-nabc))-1)*nabc + (nabc-(k-(nyy-nabc))-1)*nabc*nabc];
-    }
+    float damper = get_boundary_damper(damp1D,damp2D,damp3D,i,j,k,nxx,nyy,nzz,nabc);
     
     if (index < nxx*nyy*nzz)
     {
@@ -231,3 +119,4 @@ __global__ void update_pressure(float * P, float * Pold, float * Pnew, int volsi
         P[index] = Pnew[index];
     }
 }
+

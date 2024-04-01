@@ -25,7 +25,7 @@ classical="../src/modeling/eikonal_equation/isotropic/classical.cu"
 block_FIM="../src/modeling/eikonal_equation/isotropic/block_FIM.cu"
 ultimate_FSM="../src/modeling/eikonal_equation/isotropic/ultimate_FSM.cu"
 
-fullwave="../src/modeling/wave_equation/wave.cpp"
+fullwave="../src/modeling/wave_equation/wave.cu"
 
 scalar="../src/modeling/wave_equation/isotropic/scalar.cu"
 acoustic="../src/modeling/wave_equation/isotropic/acoustic.cu"
@@ -59,7 +59,7 @@ migration_all="$kirchhoff $migration"
 
 # Compiler flags --------------------------------------------------------------------------------------
 
-flags="--std=c++11 -lm -O3 -w -g"
+flags="--std=c++11 -lm -O3 -w -g --relocatable-device-code=true"
 
 # Main dialogue ---------------------------------------------------------------------------------------
 

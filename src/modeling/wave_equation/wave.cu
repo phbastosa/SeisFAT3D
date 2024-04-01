@@ -1,4 +1,4 @@
-# include "wave.hpp"
+# include "wave.cuh"
 
 void Wave::set_specifics()
 {
@@ -176,7 +176,7 @@ void Wave::display_progress()
     {
         get_information();
 
-        std::cout<<"Time progress: " << floorf(100.0f * (float)(time_index+1) / (float)(nt)) <<" %\n";
+        std::cout<<"Time progress: " << floorf(100.0f * (float)(time_index+1) / (float)(nt)) <<" %\n\n";
     }
 }
 
@@ -207,15 +207,6 @@ void Wave::get_wavefield_output()
     }
 }
 
-void Wave::get_seismogram()
-{
-    if (export_receiver_output)
-    {
-        int seismBlocks = (int)(total_nodes / threadsPerBlock);
-
-    }    
-}
-
 void Wave::get_receiver_output()
 {
     if (export_receiver_output)
@@ -226,3 +217,139 @@ void Wave::get_receiver_output()
     }
 }
 
+void Wave::get_seismogram()
+{
+    if (export_receiver_output)
+    {
+        int seismBlocks = (int)(total_nodes / threadsPerBlock) + 1;
+
+        compute_seismogram<<<seismBlocks,threadsPerBlock>>>(seismogram,P,grid_node_x,grid_node_y,grid_node_z,total_nodes,nxx,nzz,nt,time_index);
+    }
+}
+
+__global__ void compute_seismogram(float * seismogram, float * P, int * rx, int * ry, int * rz, int total_nodes, int nxx, int nzz, int nt, int time_id)
+{
+    int index = blockIdx.x * blockDim.x + threadIdx.x; 
+
+    if (index < total_nodes) 
+        seismogram[time_id + index*nt] = P[rz[index] + rx[index]*nzz + ry[index]*nxx*nzz];
+}
+
+__device__ float get_boundary_damper(float * damp1D, float * damp2D, float * damp3D, int i, int j, int k, int nxx, int nyy, int nzz, int nabc)
+{
+    float damper = 1.0f;
+
+    // 1D damping
+    if((i < nabc) && (j >= nabc) && (j < nxx-nabc) && (k >= nabc) && (k < nyy-nabc)) 
+    {
+        damper = damp1D[i];
+    }         
+    else if((i >= nzz-nabc) && (i < nzz) && (j >= nabc) && (j < nxx-nabc) && (k >= nabc) && (k < nyy-nabc)) 
+    {
+        damper = damp1D[nabc-(i-(nzz-nabc))-1];
+    }         
+    else if((i >= nabc) && (i < nzz-nabc) && (j >= 0) && (j < nabc) && (k >= nabc) && (k < nyy-nabc)) 
+    {
+        damper = damp1D[j];
+    }
+    else if((i >= nabc) && (i < nzz-nabc) && (j >= nxx-nabc) && (j < nxx) && (k >= nabc) && (k < nyy-nabc)) 
+    {
+        damper = damp1D[nabc-(j-(nxx-nabc))-1];
+    }
+    else if((i >= nabc) && (i < nzz-nabc) && (j >= nabc) && (j < nxx-nabc) && (k >= 0) && (k < nabc)) 
+    {
+        damper = damp1D[k];
+    }
+    else if((i >= nabc) && (i < nzz-nabc) && (j >= nabc) && (j < nxx-nabc) && (k >= nyy-nabc) && (k < nyy)) 
+    {
+        damper = damp1D[nabc-(k-(nyy-nabc))-1];
+    }
+
+    // 2D damping 
+    else if((i >= nabc) && (i < nzz-nabc) && (j >= 0) && (j < nabc) && (k >= 0) && (k < nabc))
+    {
+        damper = damp2D[j + k*nabc];
+    }
+    else if((i >= nabc) && (i < nzz-nabc) && (j >= nxx-nabc) && (j < nxx) && (k >= 0) && (k < nabc))
+    {
+        damper = damp2D[nabc-(j-(nxx-nabc))-1 + k*nabc];
+    }
+    else if((i >= nabc) && (i < nzz-nabc) && (j >= 0) && (j < nabc) && (k >= nyy-nabc) && (k < nyy))
+    {
+        damper = damp2D[j + (nabc-(k-(nyy-nabc))-1)*nabc];
+    }
+    else if((i >= nabc) && (i < nzz-nabc) && (j >= nxx-nabc) && (j < nxx) && (k >= nyy-nabc) && (k < nyy))
+    {
+        damper = damp2D[nabc-(j-(nxx-nabc))-1 + (nabc-(k-(nyy-nabc))-1)*nabc];
+    }
+
+    else if((i >= 0) && (i < nabc) && (j >= nabc) && (j < nxx-nabc) && (k >= 0) && (k < nabc))
+    {
+        damper = damp2D[i + k*nabc];
+    }
+    else if((i >= nzz-nabc) && (i < nzz) && (j >= nabc) && (j < nxx-nabc) && (k >= 0) && (k < nabc))
+    {
+        damper = damp2D[nabc-(i-(nzz-nabc))-1 + k*nabc];
+    }
+    else if((i >= 0) && (i < nabc) && (j >= nabc) && (j < nxx-nabc) && (k >= nyy-nabc) && (k < nyy))
+    {
+        damper = damp2D[i + (nabc-(k-(nyy-nabc))-1)*nabc];
+    }
+    else if((i >= nzz-nabc) && (i < nzz) && (j >= nabc) && (j < nxx-nabc) && (k >= nyy-nabc) && (k < nyy))
+    {
+        damper = damp2D[nabc-(i-(nzz-nabc))-1 + (nabc-(k-(nyy-nabc))-1)*nabc];
+    }
+
+    else if((i >= 0) && (i < nabc) && (j >= 0) && (j < nabc) && (k >= nabc) && (k < nyy-nabc))
+    {
+        damper = damp2D[i + j*nabc];
+    }
+    else if((i >= nzz-nabc) && (i < nzz) && (j >= 0) && (j < nabc) && (k >= nabc) && (k < nyy-nabc))
+    {
+        damper = damp2D[nabc-(i-(nzz-nabc))-1 + j*nabc];
+    }
+    else if((i >= 0) && (i < nabc) && (j >= nxx-nabc) && (j < nxx) && (k >= nabc) && (k < nyy-nabc))
+    {
+        damper = damp2D[i + (nabc-(j-(nxx-nabc))-1)*nabc];
+    }
+    else if((i >= nzz-nabc) && (i < nzz) && (j >= nxx-nabc) && (j < nxx) && (k >= nabc) && (k < nyy-nabc))
+    {
+        damper = damp2D[nabc-(i-(nzz-nabc))-1 + (nabc-(j-(nxx-nabc))-1)*nabc];
+    }
+
+    // 3D damping
+    else if((i >= 0) && (i < nabc) && (j >= 0) && (j < nabc) && (k >= 0) && (k < nabc))
+    {
+        damper = damp3D[i + j*nabc + k*nabc*nabc];
+    }
+    else if((i >= nzz-nabc) && (i < nzz) && (j >= 0) && (j < nabc) && (k >= 0) && (k < nabc))
+    {
+        damper = damp3D[nabc-(i-(nzz-nabc))-1 + j*nabc + k*nabc*nabc];
+    }
+    else if((i >= 0) && (i < nabc) && (j >= nxx-nabc) && (j < nxx) && (k >= 0) && (k < nabc))
+    {
+        damper = damp3D[i + (nabc-(j-(nxx-nabc))-1)*nabc + k*nabc*nabc];
+    }
+    else if((i >= 0) && (i < nabc) && (j >= 0) && (j < nabc) && (k >= nyy-nabc) && (k < nyy))
+    {
+        damper = damp3D[i + j*nabc + (nabc-(k-(nyy-nabc))-1)*nabc*nabc];
+    }
+    else if((i >= nzz-nabc) && (i < nzz) && (j >= nxx-nabc) && (j < nxx) && (k >= 0) && (k < nabc))
+    {
+        damper = damp3D[nabc-(i-(nzz-nabc))-1 + (nabc-(j-(nxx-nabc))-1)*nabc + k*nabc*nabc];
+    }
+    else if((i >= nzz-nabc) && (i < nzz) && (j >= 0) && (j < nabc) && (k >= nyy-nabc) && (k < nyy))
+    {
+        damper = damp3D[nabc-(i-(nzz-nabc))-1 + j*nabc + (nabc-(k-(nyy-nabc))-1)*nabc*nabc];
+    }
+    else if((i >= 0) && (i < nabc) && (j >= nxx-nabc) && (j < nxx) && (k >= nyy-nabc) && (k < nyy))
+    {
+        damper = damp3D[i + (nabc-(j-(nxx-nabc))-1)*nabc + (nabc-(k-(nyy-nabc))-1)*nabc*nabc];
+    }
+    else if((i >= nzz-nabc) && (i < nzz) && (j >= nxx-nabc) && (j < nxx) && (k >= nyy-nabc) && (k < nyy))
+    {
+        damper = damp3D[nabc-(i-(nzz-nabc))-1 + (nabc-(j-(nxx-nabc))-1)*nabc + (nabc-(k-(nyy-nabc))-1)*nabc*nabc];
+    }
+
+    return damper;
+}

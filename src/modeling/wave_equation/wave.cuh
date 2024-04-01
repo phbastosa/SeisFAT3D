@@ -1,5 +1,5 @@
-# ifndef WAVE_HPP
-# define WAVE_HPP
+# ifndef WAVE_CUH
+# define WAVE_CUH
 
 # include "../modeling.hpp"
 
@@ -52,6 +52,7 @@ public:
     virtual void free_space() = 0;
 };
 
-
+__global__ void compute_seismogram(float * seismogram, float * P, int * rx, int * ry, int * rz, int total_nodes, int nxx, int nzz, int nt, int time_id);
+__device__ float get_boundary_damper(float * damp1D, float * damp2D, float * damp3D, int i, int j, int k, int nxx, int nyy, int nzz, int nb);
 
 # endif

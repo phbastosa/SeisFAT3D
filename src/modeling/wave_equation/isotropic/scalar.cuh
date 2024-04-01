@@ -1,7 +1,7 @@
 # ifndef SCALAR_CUH
 # define SCALAR_CUH
 
-# include "../wave.hpp"
+# include "../wave.cuh"
 
 class Scalar : public Wave
 {
