@@ -291,14 +291,14 @@ void Least_Squares::apply_regularization()
     float * vL = new float[nnz]();
 
     if (tk_order <= 0)
+    {
+	for (int index = 0; index < nnz; index++)
 	{
-		for (int index = 0; index < nnz; index++)
-		{
-			iL[index] = index;
-			jL[index] = index;
-			vL[index] = 1.0f;
-		}
-	} 
+            iL[index] = index;
+	    jL[index] = index;
+	    vL[index] = 1.0f;
+	}
+    } 
     else
     {
         int * df = new int[elements]();	
