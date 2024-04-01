@@ -10,7 +10,7 @@ void Adjoint_State::set_specific_parameters()
     nSweeps = 8;
     meshDim = 3;
 
-	totalLevels = (modeling->nxx - 1) + (modeling->nyy - 1) + (modeling->nzz - 1);
+    totalLevels = (modeling->nxx - 1) + (modeling->nyy - 1) + (modeling->nzz - 1);
 
     inversion_method = "[1] - Adjoint State first arrival tomography";
 
@@ -97,9 +97,9 @@ void Adjoint_State::apply_inversion_technique()
         }
     }
 
-	cudaMemcpy(d_T, modeling->T, modeling->volsize*sizeof(float), cudaMemcpyHostToDevice);
-	cudaMemcpy(d_source, source, modeling->volsize*sizeof(float), cudaMemcpyHostToDevice);
-	cudaMemcpy(d_adjoint, adjoint, modeling->volsize*sizeof(float), cudaMemcpyHostToDevice);
+    cudaMemcpy(d_T, modeling->T, modeling->volsize*sizeof(float), cudaMemcpyHostToDevice);
+    cudaMemcpy(d_source, source, modeling->volsize*sizeof(float), cudaMemcpyHostToDevice);
+    cudaMemcpy(d_adjoint, adjoint, modeling->volsize*sizeof(float), cudaMemcpyHostToDevice);
 
     for (int sweepCount = 0; sweepCount < meshDim; sweepCount++)
     {
@@ -221,18 +221,18 @@ void Adjoint_State::optimization()
 __global__ void adjoint_state_kernel(float * adjoint, float * source, float * T, int level, int xOffset, int yOffset, int xSweepOffset, int ySweepOffset, 
                                      int zSweepOffset, int nxx, int nyy, int nzz, float dx, float dy, float dz)
 {
-	int x = (blockIdx.x * blockDim.x + threadIdx.x) + xOffset;
-	int y = (blockIdx.y * blockDim.y + threadIdx.y) + yOffset;
+    int x = (blockIdx.x * blockDim.x + threadIdx.x) + xOffset;
+    int y = (blockIdx.y * blockDim.y + threadIdx.y) + yOffset;
 
-	if ((x < nxx) && (y < nyy)) 
-	{
-		int z = level - (x + y);
+    if ((x < nxx) && (y < nyy)) 
+    {
+        int z = level - (x + y);
 		
-		if ((z >= 0) && (z < nzz))	
-		{
-			int i = (int)abs(z - zSweepOffset);
-			int j = (int)abs(x - xSweepOffset);
-			int k = (int)abs(y - ySweepOffset);
+	if ((z >= 0) && (z < nzz))	
+	{
+	    int i = (int)abs(z - zSweepOffset);
+	    int j = (int)abs(x - xSweepOffset);
+	    int k = (int)abs(y - ySweepOffset);
 
             if ((i > 0) && (i < nzz - 1) && (j > 0) && (j < nxx - 1) && (k > 0) && (k < nyy - 1))
             {
