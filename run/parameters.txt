@@ -61,16 +61,16 @@ offsets = [5000, 7000, 9000]          # [m] <float>
 #   [5] - Elastic isotropic media     
 #---------------------------------------------------------------------------------------------------
 
-modeling_type = 4                     # <int>
+modeling_type = 0                     # <int>
 
 export_receiver_output = true         # <bool> 
 export_wavefield_output = false       # <bool>
 
-max_frequency = 10                    # [Hz] <float>
+max_frequency = 15                    # [Hz] <float>
 time_spacing = 1e-3                   # [s] <float>
 time_samples = 3001                   # <int>
 
-boundary_damper = 0.006               # <float>
+boundary_damper = 0.005               # <float>
 boundary_samples = 50                 # <int> 
 
 total_snapshots = 10                  # int
