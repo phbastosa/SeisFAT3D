@@ -37,4 +37,7 @@ Tests:
     $ ./program.sh -test_modeling       # Perform a small modeling experiment          
     $ ./program.sh -test_inversion      # Perform a small inversion experiment
     $ ./program.sh -test_migration      # Perform a small migration experiment  
+
+Visualization:
+    $ ./program.sh -check_geometry      # Save an image of current model and geometry         
 ```

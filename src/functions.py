@@ -256,10 +256,10 @@ def plot_model_3D(model, dh, slices, **kwargs):
                     ax.contour(eiks[k], levels = 5, linestyles = "dashed")
 
             if nodes_defined:
-                ax.scatter(xnode[k], ynode[k], s = 20.0, color = "gray")
+                ax.plot(xnode[k], ynode[k], "v", markersize = 2, color = "gray")
             
             if shots_defined:
-                ax.scatter(xshot[k], yshot[k], s = 20.0, color = "black")
+                ax.plot(xshot[k], yshot[k], "*", markersize = 5, color = "black")
 
             ax.tick_params(direction = xTickDirection[k], axis='x') 
             ax.tick_params(direction = yTickDirection[k], axis='y') 

@@ -75,8 +75,8 @@ Tests:\n
     $ $0 -test_inversion      # Perform a small inversion experiment
     $ $0 -test_migration      # Perform a small migration experiment          
 
-Projects:\n
-    $ $0 -project_EAGE_2024   # Perform and show experiments of expanded abstract
+Visualiation:\n
+    $ $0 -check_geometry      # Perform and show experiments of expanded abstract
 "
 
 [ -z "$1" ] && 
@@ -154,15 +154,15 @@ case "$1" in
 
 -test_inversion) 
 
-    # python3 ../tests/inversion/generate_models.py
+    python3 ../tests/inversion/generate_models.py
 
-    # ./../bin/modeling.exe ../tests/inversion/parFiles/parameters_obsData.txt
+    ./../bin/modeling.exe ../tests/inversion/parFiles/parameters_obsData.txt
 
-    # ./../bin/inversion.exe ../tests/inversion/parFiles/parameters_leastSquares.txt
-    # ./../bin/inversion.exe ../tests/inversion/parFiles/parameters_adjointState.txt
+    ./../bin/inversion.exe ../tests/inversion/parFiles/parameters_leastSquares.txt
+    ./../bin/inversion.exe ../tests/inversion/parFiles/parameters_adjointState.txt
 
-    # ./../bin/modeling.exe ../tests/inversion/parFiles/parameters_lsFinalModeling.txt
-    # ./../bin/modeling.exe ../tests/inversion/parFiles/parameters_adjFinalModeling.txt
+    ./../bin/modeling.exe ../tests/inversion/parFiles/parameters_lsFinalModeling.txt
+    ./../bin/modeling.exe ../tests/inversion/parFiles/parameters_adjFinalModeling.txt
 
     python3 ../tests/inversion/generate_figures.py
 	
@@ -176,15 +176,11 @@ case "$1" in
 	exit 0
 ;;
 
--project_EAGE_2024)
+-check_geometry)
 
-    python3 ../projects/EAGE_2024/generate_models.py
+    ./../bin/geometry.exe parameters.txt
 
-    ./../bin/modeling.exe ../projects/EAGE_2024/parFiles/modFIM_parameters.txt
-    ./../bin/modeling.exe ../projects/EAGE_2024/parFiles/modFSM_parameters.txt
-    ./../bin/modeling.exe ../projects/EAGE_2024/parFiles/modIFIM_parameters.txt
-
-    python3 ../projects/EAGE_2024/generate_figures.py
+    python3 ../src/visualization/check_geometry.py parameters.txt
 
 	exit 0
 ;;
