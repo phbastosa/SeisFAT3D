@@ -35,13 +35,13 @@ nodes_file = ../inputs/geometry/xyz_nodes_position.txt
 shots_nlines = [1, 1, 1]            # <int> (z, x, y)     
 nodes_nlines = [1, 73, 49]            # <int> (z, x, y)            
 
-shots_SW = [50, 150, 100]              # [m] <float> (z, x, y) NW            
-shots_NW = [50, 150, 100]             # [m] <float> (z, x, y)  |            
-shots_SE = [50, 150, 100]             # [m] <float> (z, x, y) SW -- SE     
+shots_SW = [0, 150, 100]              # [m] <float> (z, x, y) NW            
+shots_NW = [0, 150, 100]             # [m] <float> (z, x, y)  |            
+shots_SE = [0, 150, 100]             # [m] <float> (z, x, y) SW -- SE     
 
-nodes_SW = [50, 150, 100]              # [m] <float> (z, x, y) NW           
-nodes_NW = [50, 150, 4900]             # [m] <float> (z, x, y)  |         
-nodes_SE = [50, 7350, 100]             # [m] <float> (z, x, y) SW -- SE   
+nodes_SW = [0, 150, 100]              # [m] <float> (z, x, y) NW           
+nodes_NW = [0, 150, 4900]             # [m] <float> (z, x, y)  |         
+nodes_SE = [0, 7350, 100]             # [m] <float> (z, x, y) SW -- SE   
 
 # Circular geometry --------------------------------------------------------------------------------                                            
 
@@ -61,19 +61,19 @@ offsets = [5000, 7000, 9000]          # [m] <float>
 #   [5] - Elastic isotropic media     
 #---------------------------------------------------------------------------------------------------
 
-modeling_type = 5                     # <int>
+modeling_type = 4                     # <int>
 
 export_receiver_output = true         # <bool> 
 export_wavefield_output = false       # <bool>
 
-max_frequency = 15                    # [Hz] <float>
+max_frequency = 10                    # [Hz] <float>
 time_spacing = 1e-3                   # [s] <float>
-time_samples = 5001                   # <int>
+time_samples = 3001                   # <int>
 
-boundary_damper = 0.0035              # <float>
+boundary_damper = 0.006               # <float>
 boundary_samples = 50                 # <int> 
 
-total_snapshots = 5                   # int
+total_snapshots = 10                  # int
 
 receiver_output_folder = ../outputs/seismograms/            
 wavefield_output_folder = ../outputs/snapshots/     
