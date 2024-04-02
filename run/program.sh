@@ -104,8 +104,8 @@ case "$1" in
     echo -e "../bin/\033[31mmodeling.exe\033[m" 
     nvcc $io $geometry_all $modeling_all $modeling_main $flags -o ../bin/modeling.exe
 
-    # echo -e "../bin/\033[31minversion.exe\033[m" 
-    # nvcc $io $geometry_all $modeling_all $inversion_all $inversion_main $flags -o ../bin/inversion.exe
+    echo -e "../bin/\033[31minversion.exe\033[m" 
+    nvcc $io $geometry_all $modeling_all $inversion_all $inversion_main $flags -o ../bin/inversion.exe
 
     # echo -e "../bin/\033[31mmigration.exe\033[m"
     # nvcc $io $geometry_all $modeling_all $migration_all $migration_main $flags -o ../bin/migration.exe
@@ -154,15 +154,15 @@ case "$1" in
 
 -test_inversion) 
 
-    python3 ../tests/inversion/generate_models.py
+    # python3 ../tests/inversion/generate_models.py
 
-    ./../bin/modeling.exe ../tests/inversion/parFiles/parameters_obsData.txt
+    # ./../bin/modeling.exe ../tests/inversion/parFiles/parameters_obsData.txt
 
-    ./../bin/inversion.exe ../tests/inversion/parFiles/parameters_leastSquares.txt
-    ./../bin/inversion.exe ../tests/inversion/parFiles/parameters_adjointState.txt
+    # ./../bin/inversion.exe ../tests/inversion/parFiles/parameters_leastSquares.txt
+    # ./../bin/inversion.exe ../tests/inversion/parFiles/parameters_adjointState.txt
 
-    ./../bin/modeling.exe ../tests/inversion/parFiles/parameters_lsFinalModeling.txt
-    ./../bin/modeling.exe ../tests/inversion/parFiles/parameters_adjFinalModeling.txt
+    # ./../bin/modeling.exe ../tests/inversion/parFiles/parameters_lsFinalModeling.txt
+    # ./../bin/modeling.exe ../tests/inversion/parFiles/parameters_adjFinalModeling.txt
 
     python3 ../tests/inversion/generate_figures.py
 	

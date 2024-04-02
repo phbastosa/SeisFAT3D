@@ -31,9 +31,9 @@ void Tomography::set_forward_modeling()
 {
     std::vector<Eikonal *> possibilities = 
     {
-        new Podvin_and_Lecomte(),
+        new Classical(),
         new Block_FIM(),
-        new Accurate_FSM()
+        new Ultimate_FSM()
     };
     
     auto type = std::stoi(catch_parameter("modeling_type", file));
@@ -90,15 +90,14 @@ void Tomography::forward_modeling()
 
     for (int shot = 0; shot < modeling->total_shots; shot++)
     {
-        modeling->shot_id = shot;
+        modeling->shot_index = shot;
     
-        modeling->info_message();
+        modeling->get_information();
 
         set_tomography_message();
 
-        modeling->initial_setup();
-        modeling->forward_solver();
-        modeling->build_outputs();
+        modeling->set_configuration();
+        modeling->set_forward_solver();
 
         extract_calculated_data();
         
@@ -130,7 +129,7 @@ void Tomography::set_tomography_message()
 
 void Tomography::extract_calculated_data()
 {
-    int skipped = modeling->shot_id * modeling->total_nodes;
+    int skipped = modeling->shot_index * modeling->total_nodes;
 
     for (int i = 0; i < modeling->total_nodes; i++) 
         dcal[i + skipped] = modeling->receiver_output[i];

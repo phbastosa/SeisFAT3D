@@ -28,8 +28,8 @@ void Adjoint_State::apply_inversion_technique()
 
     modeling->expand_boundary(modeling->wavefield_output, modeling->T);
 
-    int sidx = (int)(modeling->geometry->shots.x[modeling->shot_id] / modeling->dx) + modeling->nbxl;
-    int sidy = (int)(modeling->geometry->shots.y[modeling->shot_id] / modeling->dy) + modeling->nbyl;
+    int sidx = (int)(modeling->geometry->shots.x[modeling->shot_index] / modeling->dx) + modeling->nbxl;
+    int sidy = (int)(modeling->geometry->shots.y[modeling->shot_index] / modeling->dy) + modeling->nbyl;
 
     for (int index = 0; index < modeling->volsize; index++) 
     {
@@ -50,7 +50,7 @@ void Adjoint_State::apply_inversion_technique()
 
     for (int node = 0; node < modeling->total_nodes; node++)
     {
-        int current_node = node + modeling->shot_id*modeling->total_nodes;
+        int current_node = node + modeling->shot_index*modeling->total_nodes;
 
         int i = (int)(modeling->geometry->nodes.z[node] / modeling->dz) + modeling->nbzu;
         int j = (int)(modeling->geometry->nodes.x[node] / modeling->dx) + modeling->nbxl;

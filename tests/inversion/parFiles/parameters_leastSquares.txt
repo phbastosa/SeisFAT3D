@@ -60,8 +60,8 @@ modeling_type = 2                   # <int>
 export_receiver_output = false      # <bool> 
 export_wavefield_output = false     # <bool>
 
-receiver_output_folder = ../outputs/first_arrivals/            
-wavefield_output_folder = ../outputs/travel_times/     
+receiver_output_folder = ../outputs/seismograms/            
+wavefield_output_folder = ../outputs/snapshots/     
 
 #---------------------------------------------------------------------------------------------------
 # Inversion parameters 

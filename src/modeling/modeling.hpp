@@ -41,9 +41,6 @@ protected:
     std::string receiver_output_folder;
     std::string wavefield_output_folder;
 
-    int nbxl, nbxr, nbyl; 
-    int nbyr, nbzu, nbzd;
-
     int sidx, sidy, sidz;
 
     void set_boundary();
@@ -75,7 +72,10 @@ public:
     float dx, dy, dz;
     int nx, ny, nz, nPoints;
     int nxx, nyy, nzz, volsize;
-    
+
+    int nbxl, nbxr, nbyl; 
+    int nbyr, nbzu, nbzd;
+
     Geometry * geometry;
 
     float * S = nullptr;

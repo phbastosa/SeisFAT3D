@@ -53,8 +53,8 @@ plt.clf()
 
 #-----------------------------------------------
 
-final_model_ls = functions.read_binary_volume(nz, nx, ny, f"../outputs/recovered_models/ls_final_model_{nz}x{nx}x{ny}.bin")
-final_model_adj = functions.read_binary_volume(nz, nx, ny, f"../outputs/recovered_models/adj_final_model_{nz}x{nx}x{ny}.bin")
+final_model_ls = functions.read_binary_volume(nz, nx, ny, f"../outputs/models/ls_final_model_{nz}x{nx}x{ny}.bin")
+final_model_adj = functions.read_binary_volume(nz, nx, ny, f"../outputs/models/adj_final_model_{nz}x{nx}x{ny}.bin")
 
 functions.plot_model_3D(final_model_ls, dh, slices,
                         shots = shots_file,
@@ -93,39 +93,6 @@ plt.savefig(f"diff_model_adj.png", dpi = 200)
 plt.clf()
 
 # --------------------------------------------------
-
-circles = np.array([[7500, 7500], [11500, 7500], [7500, 11500], [11500, 11500]]) / dh[0]
-
-logs = np.zeros((len(circles), 3, nz))
-
-for i in range(len(circles)):
-    logs[i,0,:] = true_model[:, int(circles[i,0]), int(circles[0,1])] - init_model[:, int(circles[i,0]), int(circles[0,1])]
-    logs[i,1,:] = final_model_ls[:, int(circles[i,0]), int(circles[0,1])] - init_model[:, int(circles[i,0]), int(circles[0,1])]
-    logs[i,2,:] = final_model_adj[:, int(circles[i,0]), int(circles[0,1])] - init_model[:, int(circles[i,0]), int(circles[0,1])]
-
-depth = np.arange(nz)*dh[2]
-
-for i in range(len(circles)):
-
-    plt.figure(i+1, figsize = (4,6))
-    plt.plot(0.0*depth, depth, color = "black")
-    plt.plot(logs[i,0,:], depth, color = "red")
-    plt.plot(logs[i,1,:], depth, color = "orange")
-    plt.plot(logs[i,2,:], depth, color = "green")
-
-    plt.title(f"(x,y) = ({circles[i,0]*dh[0]:.0f}, {circles[i,1]*dh[1]:.0f}) m", fontsize = 15)
-    plt.xlabel("Velocity anomaly [m/s]", fontsize = 15)
-    plt.ylabel("Depth [m]", fontsize = 15)
-
-    plt.xlim([-1000,1000])
-    plt.ylim([0,5000])
-    plt.gca().invert_yaxis()
-    plt.tight_layout()
-    plt.savefig(f"log{i+1}_test.png", dpi = 200)
-
-plt.clf()
-
-# --------------------------------------------------
 # model correlation
 
 ls_diff = final_model_ls - true_model
@@ -158,8 +125,8 @@ adj_data = np.zeros(ns*nr)
 obs_data = np.zeros(ns*nr)
 
 for i in range(ns):
-    ls_data[i*nr:nr+i*nr] = np.fromfile(f"../outputs/first_arrivals/ls_fsm_data_nRec400_shot_{i+1}.bin", count = nr, dtype = np.float32)
-    adj_data[i*nr:nr+i*nr] = np.fromfile(f"../outputs/first_arrivals/adj_fsm_data_nRec400_shot_{i+1}.bin", count = nr, dtype = np.float32)
+    ls_data[i*nr:nr+i*nr] = np.fromfile(f"../outputs/seismograms/ls_fsm_data_nRec400_shot_{i+1}.bin", count = nr, dtype = np.float32)
+    adj_data[i*nr:nr+i*nr] = np.fromfile(f"../outputs/seismograms/adj_fsm_data_nRec400_shot_{i+1}.bin", count = nr, dtype = np.float32)
     obs_data[i*nr:nr+i*nr] = np.fromfile(f"../inputs/data/obs_fsm_data_nRec400_shot_{i+1}.bin", count = nr, dtype = np.float32)
 
 rms_error_ls = np.sqrt(np.sum((obs_data - ls_data)**2)/(ns*nr))

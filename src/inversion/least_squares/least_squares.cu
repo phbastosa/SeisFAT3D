@@ -41,9 +41,9 @@ void Least_Squares::apply_inversion_technique()
     int nxx = modeling->nxx;
     int nzz = modeling->nzz;
 
-    int sIdz = (int)(modeling->geometry->shots.z[modeling->shot_id] / dz_tomo);
-    int sIdx = (int)(modeling->geometry->shots.x[modeling->shot_id] / dx_tomo);
-    int sIdy = (int)(modeling->geometry->shots.y[modeling->shot_id] / dy_tomo);
+    int sIdz = (int)(modeling->geometry->shots.z[modeling->shot_index] / dz_tomo);
+    int sIdx = (int)(modeling->geometry->shots.x[modeling->shot_index] / dx_tomo);
+    int sIdy = (int)(modeling->geometry->shots.y[modeling->shot_index] / dy_tomo);
 
     int sId = sIdz + sIdx*nz_tomo + sIdy*nx_tomo*nz_tomo;   
 
@@ -57,9 +57,9 @@ void Least_Squares::apply_inversion_technique()
         float xi = modeling->geometry->nodes.x[ray_id];
         float yi = modeling->geometry->nodes.y[ray_id];
 
-        if ((modeling->geometry->shots.z[modeling->shot_id] == zi) && 
-            (modeling->geometry->shots.x[modeling->shot_id] == xi) && 
-            (modeling->geometry->shots.y[modeling->shot_id] == yi))
+        if ((modeling->geometry->shots.z[modeling->shot_index] == zi) && 
+            (modeling->geometry->shots.x[modeling->shot_index] == xi) && 
+            (modeling->geometry->shots.y[modeling->shot_index] == yi))
             continue;
 
         while (true)
@@ -89,9 +89,9 @@ void Least_Squares::apply_inversion_technique()
             if (ray_index.back() == sId) break;
         }
    
-        float final_distance = sqrtf(powf(zi - modeling->geometry->shots.z[modeling->shot_id],2.0f) + 
-                                     powf(xi - modeling->geometry->shots.x[modeling->shot_id],2.0f) + 
-                                     powf(yi - modeling->geometry->shots.y[modeling->shot_id],2.0f));
+        float final_distance = sqrtf(powf(zi - modeling->geometry->shots.z[modeling->shot_index],2.0f) + 
+                                     powf(xi - modeling->geometry->shots.x[modeling->shot_index],2.0f) + 
+                                     powf(yi - modeling->geometry->shots.y[modeling->shot_index],2.0f));
 
         std::sort(ray_index.begin(), ray_index.end());
 
@@ -108,7 +108,7 @@ void Least_Squares::apply_inversion_technique()
             {
                 vG.emplace_back(distance_per_voxel);
                 jG.emplace_back(current_voxel_index);
-                iG.emplace_back(ray_id + modeling->shot_id * modeling->total_nodes);
+                iG.emplace_back(ray_id + modeling->shot_index * modeling->total_nodes);
 
                 if (current_voxel_index == sId) vG.back() = final_distance;
 
@@ -121,13 +121,13 @@ void Least_Squares::apply_inversion_technique()
         {
             vG.emplace_back(final_distance);
             jG.emplace_back(current_voxel_index);
-            iG.emplace_back(ray_id + modeling->shot_id * modeling->total_nodes);
+            iG.emplace_back(ray_id + modeling->shot_index * modeling->total_nodes);
         }
         else 
         {
             vG.emplace_back(distance_per_voxel);
             jG.emplace_back(current_voxel_index);
-            iG.emplace_back(ray_id + modeling->shot_id * modeling->total_nodes);
+            iG.emplace_back(ray_id + modeling->shot_index * modeling->total_nodes);
         }
 
         std::vector < int >().swap(ray_index);

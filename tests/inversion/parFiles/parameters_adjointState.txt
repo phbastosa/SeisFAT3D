@@ -10,7 +10,7 @@ x_spacing = 100                     # [m] <float>
 y_spacing = 100                     # [m] <float> 
 z_spacing = 100                     # [m] <float> 
 
-input_model_file = ../inputs/models/initModelTest_51x201x201_100m.bin   
+vp_model_file = ../inputs/models/initModelTest_51x201x201_100m.bin   
 
 #---------------------------------------------------------------------------------------------------
 # Geometry parameters ------------------------------------------------------------------------------
@@ -60,8 +60,8 @@ modeling_type = 2                   # <int>
 export_receiver_output = false      # <bool> 
 export_wavefield_output = false     # <bool>
 
-receiver_output_folder = ../outputs/first_arrivals/            
-wavefield_output_folder = ../outputs/travel_times/     
+receiver_output_folder = ../outputs/seismograms/            
+wavefield_output_folder = ../outputs/snapshots/     
 
 #---------------------------------------------------------------------------------------------------
 # Inversion parameters 
@@ -95,7 +95,7 @@ obs_data_prefix = obs_fsm_data_nRec400_shot_
 
 gradient_folder = ../outputs/gradients/adj_                  
 convergence_folder = ../outputs/convergence/adj_         
-estimated_model_folder = ../outputs/recovered_models/adj_    
+estimated_model_folder = ../outputs/models/adj_    
 
 #---------------------------------------------------------------------------------------------------
 # Migration parameters 

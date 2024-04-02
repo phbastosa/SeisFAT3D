@@ -1,9 +1,9 @@
 # ifndef TOMOGRAPHY_HPP
 # define TOMOGRAPHY_HPP
 
-# include "../modeling/podvin_and_lecomte/podvin_and_lecomte.cuh"
-# include "../modeling/fast_iterative_method/block_FIM.cuh"
-# include "../modeling/fast_sweeping_method/accurate_FSM.cuh"
+# include "../modeling/eikonal_equation/isotropic/classical.cuh"
+# include "../modeling/eikonal_equation/isotropic/block_FIM.cuh"
+# include "../modeling/eikonal_equation/isotropic/ultimate_FSM.cuh"
 
 class Tomography
 {
