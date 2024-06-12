@@ -1,5 +1,28 @@
 # include "geometry.hpp"
 
+std::vector<float> Geometry::linspace(float xi, float xf, int n)
+{
+    std::vector<float> linspaced;
+    
+    if (n == 0) return linspaced;
+    if (n == 1)
+    {
+        linspaced.push_back(xi);
+        return linspaced;
+    } 
+
+    linspaced.reserve(n);
+
+    float delta = (xf - xi) / (n - 1);
+
+    for (int i = 0; i < n; i++)
+    {
+        linspaced.emplace_back(xi + (float)(delta*i));
+    }
+
+    return linspaced;
+}
+
 void Geometry::set_general_parameters()
 {
     reciprocity = str2bool(catch_parameter("reciprocity", file));
@@ -368,25 +391,41 @@ void Geometry::set_regular(Coord &obj)
     std::vector<float>().swap(SE);
 }
 
-std::vector<float> Geometry::linspace(float xi, float xf, int n)
+void Geometry::set_geometry()
 {
-    std::vector<float> linspaced;
+    set_general_parameters();
     
-    if (n == 0) return linspaced;
-    if (n == 1)
+    if (import_geometry) 
     {
-        linspaced.push_back(xi);
-        return linspaced;
-    } 
-
-    linspaced.reserve(n);
-
-    float delta = (xf - xi) / (n - 1);
-
-    for (int i = 0; i < n; i++)
-    {
-        linspaced.emplace_back(xi + (float)(delta*i));
+        import_coordinates();
     }
+    else
+    {
+        std::vector<std::string> names = {"shots", "nodes"};
+    
+        for (auto name : names)
+        {
+            splitted = split(catch_parameter(name + "_nlines", file), ',');
+            for (auto key : splitted) nlines.push_back(std::stoi(key));
 
-    return linspaced;
+            splitted = split(catch_parameter(name + "_SW", file), ',');
+            for (auto key : splitted) SW.push_back(std::stof(key));
+
+            splitted = split(catch_parameter(name + "_NW", file), ',');
+            for (auto key : splitted) NW.push_back(std::stof(key));
+
+            splitted = split(catch_parameter(name + "_SE", file), ',');
+            for (auto key : splitted) SE.push_back(std::stof(key));
+
+            if (name == std::string("shots")) set_regular(shots);
+            if (name == std::string("nodes")) set_regular(nodes);
+        }
+        
+        export_coordinates();
+    }   
+
+    if (reciprocity) set_reciprocity();
 }
+
+
+

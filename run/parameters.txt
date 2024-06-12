@@ -11,19 +11,11 @@ y_spacing = 12.5                      # [m] <float>
 z_spacing = 12.5                      # [m] <float> 
 
 vp_model_file = ../inputs/models/overthrust_vp_101x601x401_12.5m.bin   
-vs_model_file = ../inputs/models/overthrust_vs_101x601x401_12.5m.bin   
-rho_model_file = ../inputs/models/overthrust_rho_101x601x401_12.5m.bin   
 
 #---------------------------------------------------------------------------------------------------
 # Geometry parameters ------------------------------------------------------------------------------
 #---------------------------------------------------------------------------------------------------
-# Available types:
-#   
-#   [0] - regular nodes and regular shots    
-#   [1] - regular nodes and circular shots  
-#---------------------------------------------------------------------------------------------------
 
-geometry_type = 0                     # <int>
 reciprocity = false                   # <bool>     
 import_geometry = false               # <bool>
 
@@ -33,32 +25,21 @@ nodes_file = ../inputs/geometry/xyz_nodes_position.txt
 # Regular geometry ---------------------------------------------------------------------------------               
 
 shots_nlines = [1, 1, 1]            # <int> (z, x, y)     
-nodes_nlines = [1, 73, 49]            # <int> (z, x, y)            
+nodes_nlines = [1, 1, 1]            # <int> (z, x, y)            
 
-shots_SW = [0, 150, 100]              # [m] <float> (z, x, y) NW            
-shots_NW = [0, 150, 100]             # [m] <float> (z, x, y)  |            
-shots_SE = [0, 150, 100]             # [m] <float> (z, x, y) SW -- SE     
+shots_SW = [0, 150, 100]            # [m] <float> (z, x, y) NW            
+shots_NW = [0, 150, 100]            # [m] <float> (z, x, y)  |            
+shots_SE = [0, 150, 100]            # [m] <float> (z, x, y) SW -- SE     
 
-nodes_SW = [0, 150, 100]              # [m] <float> (z, x, y) NW           
-nodes_NW = [0, 150, 4900]             # [m] <float> (z, x, y)  |         
-nodes_SE = [0, 7350, 100]             # [m] <float> (z, x, y) SW -- SE   
-
-# Circular geometry --------------------------------------------------------------------------------                                            
-
-spacing = 50                          # [m] <float>
-center  = [0, 10000, 10000]           # [m] <float> (z, x, y)        
-offsets = [5000, 7000, 9000]          # [m] <float>
+nodes_SW = [0, 150, 100]            # [m] <float> (z, x, y) NW           
+nodes_NW = [0, 150, 100]            # [m] <float> (z, x, y)  |         
+nodes_SE = [0, 150, 100]            # [m] <float> (z, x, y) SW -- SE   
 
 #---------------------------------------------------------------------------------------------------
 # Modeling parameters ------------------------------------------------------------------------------
 #---------------------------------------------------------------------------------------------------
-#   [0] - Podvin & Lecomte (1991) 
-#   [1] - Block FIM (Jeong & Whitaker, 2008)
-#   [2] - Ultimate FSM (Detrixhe et al., 2013; Noble et al., 2014)
-# 
-#   [3] - Scalar isotropic media 
-#   [4] - Acoustic isotropic media
-#   [5] - Elastic isotropic media     
+#   [0] - Eikonal: Accurate FSM 
+#   [1] - Wavefield: Acoustic media 
 #---------------------------------------------------------------------------------------------------
 
 modeling_type = 0                     # <int>
@@ -81,20 +62,13 @@ wavefield_output_folder = ../outputs/snapshots/
 #---------------------------------------------------------------------------------------------------
 # Inversion parameters 
 #---------------------------------------------------------------------------------------------------
-#   [0] - Least squares first arrival tomography 
-#   [1] - Adjoint state first arrival tomography
+#   [0] - Adjoint-state first-arrival tomography 
+#   [1] - Acoustic media waveform inversion
 #---------------------------------------------------------------------------------------------------
 
 inversion_type = 0                    # <int> 
 
 max_iteration = 2                     # <int>
-
-dx_tomo = 50                          # [m] <float> 
-dy_tomo = 50                          # [m] <float>
-dz_tomo = 20                          # [m] <float>
-
-tk_order = 2                          # Tikhonov regularization order <int>
-tk_param = 1e3                        # Tikhonov regularization parameter <float>
 
 max_slowness = 1e-4                   # Max slowness variation <float>
 
@@ -115,8 +89,8 @@ obs_data_prefix = seismogram_gather_
 #---------------------------------------------------------------------------------------------------
 # Migration parameters 
 #--------------------------------------------------------------------------------------------------- 
-#   [0] - Kirchhoff pre-stack depth migration
-#   [1] - Scalar reverse time depth migration 
+#   [0] - Kirchhoff migration
+#   [1] - Acoustic media RTM 
 #---------------------------------------------------------------------------------------------------
 
 migration_type = 0

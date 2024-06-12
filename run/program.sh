@@ -6,14 +6,8 @@ io="../src/io/io.cpp"
 
 # Acquisition geometry scripts ------------------------------------------------------------------------
 
-geometry="../src/geometry/geometry.cpp"
-
-regular="../src/geometry/regular/regular.cpp"
-circular="../src/geometry/circular/circular.cpp"
-
+geometry_all="../src/geometry/geometry.cpp"
 geometry_main="../src/main/geometry_main.cpp"
-
-geometry_all="$geometry $regular $circular"
 
 # Seismic modeling scripts ----------------------------------------------------------------------------
 
@@ -101,14 +95,14 @@ case "$1" in
     echo -e "../bin/\033[31mgeometry.exe\033[m" 
     nvcc $io $geometry_all $geometry_main $flags -o ../bin/geometry.exe
 
-    echo -e "../bin/\033[31mmodeling.exe\033[m" 
-    nvcc $io $geometry_all $modeling_all $modeling_main $flags -o ../bin/modeling.exe
+    # echo -e "../bin/\033[31mmodeling.exe\033[m" 
+    # nvcc $io $geometry_all $modeling_all $modeling_main $flags -o ../bin/modeling.exe
 
-    echo -e "../bin/\033[31minversion.exe\033[m" 
-    nvcc $io $geometry_all $modeling_all $inversion_all $inversion_main $flags -o ../bin/inversion.exe
+    # echo -e "../bin/\033[31minversion.exe\033[m" 
+    # nvcc $io $geometry_all $modeling_all $inversion_all $inversion_main $flags -o ../bin/inversion.exe
 
-    echo -e "../bin/\033[31mmigration.exe\033[m"
-    nvcc $io $geometry_all $modeling_all $migration_all $migration_main $flags -o ../bin/migration.exe
+    # echo -e "../bin/\033[31mmigration.exe\033[m"
+    # nvcc $io $geometry_all $modeling_all $migration_all $migration_main $flags -o ../bin/migration.exe
 
 	exit 0
 ;;
