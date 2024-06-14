@@ -1,26 +1,18 @@
-# include "wave.cuh"
+# include "lfreq_modeling.cuh"
 
-void Wave::set_specifics()
+void lfreq_Modeling::display_progress()
 {
-    nt = std::stoi(catch_parameter("time_samples", file));
-    dt = std::stof(catch_parameter("time_spacing", file));
+    if (time_index % (nt / 10) == 0)
+    {
+        print_information();
 
-    fmax = std::stof(catch_parameter("max_frequency", file));
+        // stability and dispersion for 8E2T FDM operators
 
-    nabc = std::stoi(catch_parameter("boundary_samples", file));
-    pabc = std::stof(catch_parameter("boundary_damper", file));
-
-    total_snaps = std::stoi(catch_parameter("total_snapshots", file));
-
-    nbxl = nabc; nbxr = nabc;
-    nbyl = nabc; nbyr = nabc;
-    nbzu = nabc; nbzd = nabc;    
-
-    define_cerjan_dampers();
-    define_grid_nodes_position();    
+        std::cout<<"Time progress: " << floorf(100.0f * (float)(time_index+1) / (float)(nt)) <<" %\n\n";
+    }
 }
 
-void Wave::define_cerjan_dampers()
+void lfreq_Modeling::define_cerjan_dampers()
 {
     float * d1D = new float[nabc]();
     float * d2D = new float[nabc*nabc]();
@@ -74,7 +66,32 @@ void Wave::define_cerjan_dampers()
     delete[] d3D;    
 }
 
-void Wave::define_grid_nodes_position()
+void lfreq_Modeling::define_wavelet_signature()
+{
+    float * signal = new float[nt]();
+
+    float pi = 4.0f*atanf(1.0f);
+
+    float t0 = 2.0f*sqrtf(pi)/fmax;
+    float fc = fmax/(3.0f * sqrtf(pi));
+
+    for (int n = 0; n < nt; n++)
+    {
+        float td = n*dt - t0;
+
+        float arg = pi*pi*pi*fmax*fmax*td*td;
+
+        signal[n] = (1.0f - 2.0f*arg)*expf(-arg);
+    }
+    
+    cudaMalloc((void**)&(wavelet), nt*sizeof(float));
+
+    cudaMemcpy(wavelet, signal, nt*sizeof(float), cudaMemcpyHostToDevice);
+
+    delete[] signal;
+}
+
+void lfreq_Modeling::define_grid_nodes_position()
 {
     int * rx = new int[total_nodes]();
     int * ry = new int[total_nodes]();
@@ -100,7 +117,7 @@ void Wave::define_grid_nodes_position()
     delete[] rz;
 }
 
-void Wave::set_outputs()
+void lfreq_Modeling::set_outputs()
 {   
     receiver_output_samples = nt*total_nodes;
     wavefield_output_samples = nPoints*total_snaps;
@@ -111,103 +128,58 @@ void Wave::set_outputs()
     if (export_wavefield_output)
         wavefield_output = new float[wavefield_output_samples]();
 
-    snapshot = new float[volsize]();
-
     cudaMalloc((void**)&(seismogram), receiver_output_samples*sizeof(float));
 }
 
-void Wave::define_common_wavelet()
+void lfreq_Modeling::set_volumes()
 {
-    float * signal = new float[nt]();
+    type_name = std::string("scalar");
+    type_message = std::string("Constant density acoustic isotropic media");
 
-    float pi = 4.0f*atanf(1.0f);
+    P = new float[volsize]();
 
-    float t0 = 2.0f*sqrtf(pi)/fmax;
-    float fc = fmax/(3.0f * sqrtf(pi));
-
-    for (int n = 0; n < nt; n++)
-    {
-        float td = n*dt - t0;
-
-        float arg = pi*pi*pi*fmax*fmax*td*td;
-
-        signal[n] = (1.0f - 2.0f*arg)*expf(-arg);
-    }
+    define_wavelet_signature();
     
-    cudaMalloc((void**)&(wavelet), nt*sizeof(float));
+    cudaMalloc((void**)&(d_Vp), volsize*sizeof(float));
 
-    cudaMemcpy(wavelet, signal, nt*sizeof(float), cudaMemcpyHostToDevice);
+    cudaMemcpy(d_Vp, V, volsize*sizeof(float), cudaMemcpyHostToDevice);
 
-    delete[] signal;
+    cudaMalloc((void**)&(d_Upas), volsize*sizeof(float));
+    cudaMalloc((void**)&(d_Upre), volsize*sizeof(float));
+    cudaMalloc((void**)&(d_Ufut), volsize*sizeof(float));
 }
 
-void Wave::define_staggered_wavelet()
+void lfreq_Modeling::set_specifics()
 {
-    float * signal = new float[nt]();
+    nt = std::stoi(catch_parameter("time_samples", file));
+    dt = std::stof(catch_parameter("time_spacing", file));
 
-    float pi = 4.0f*atanf(1.0f);
+    fmax = std::stof(catch_parameter("max_frequency", file));
 
-    float t0 = 2.0f*sqrtf(pi)/fmax;
-    float fc = fmax/(3.0f * sqrtf(pi));
+    nabc = std::stoi(catch_parameter("boundary_samples", file));
 
-    float summation = 0;
+    total_snaps = std::stoi(catch_parameter("total_snapshots", file));
 
-    for (int n = 0; n < nt; n++)
-    {
-        float td = n*dt - t0;
+    // free surface implementation
 
-        float arg = pi*pi*pi*fmax*fmax*td*td;
+    nbxl = nabc; nbxr = nabc;
+    nbyl = nabc; nbyr = nabc;
+    nbzu = nabc; nbzd = nabc;    
 
-        summation += (1.0f - 2.0f*arg)*expf(-arg);
-
-        signal[n] = summation;
-    }
-    
-    cudaMalloc((void**)&(wavelet), nt*sizeof(float));
-
-    cudaMemcpy(wavelet, signal, nt*sizeof(float), cudaMemcpyHostToDevice);
-
-    delete[] signal;
+    define_cerjan_dampers();
+    define_grid_nodes_position();    
 }
 
-void Wave::display_progress()
+void lfreq_Modeling::initialization()
 {
-    if (time_index % (nt / 10) == 0)
-    {
-        get_information();
+    cudaMemset(d_Upas, 0.0f, volsize*sizeof(float));
+    cudaMemset(d_Upre, 0.0f, volsize*sizeof(float));
+    cudaMemset(d_Ufut, 0.0f, volsize*sizeof(float));
 
-        std::cout<<"Time progress: " << floorf(100.0f * (float)(time_index+1) / (float)(nt)) <<" %\n\n";
-    }
+    snap_index = 0;
 }
 
-void Wave::get_wavefield_output()
-{
-    if (export_wavefield_output)
-    {
-        wavefield_output_file = wavefield_output_folder + type_name + "_snapshot_" + std::to_string(nz) + "x" + std::to_string(nx) + "x" + std::to_string(ny) + "_shot_" + std::to_string(shot_index+1) + "_Nsnaps" + std::to_string(total_snaps) + ".bin";
-        
-        if (snap_index < total_snaps)
-        {
-            if (time_index % (int)((float)(nt) / (float)(total_snaps)) == 0)
-            {
-                cudaMemcpy(snapshot, P, volsize*sizeof(float), cudaMemcpyDeviceToHost);
-
-                for (int index = 0; index < nPoints; index++)
-                {
-                    int y = (int) (index / (nx*nz));         
-                    int x = (int) (index - y*nx*nz) / nz;    
-                    int z = (int) (index - x*nz - y*nx*nz);  
-
-                    wavefield_output[z + x*nz + y*nx*nz + snap_index*nPoints] = snapshot[(z + nbzu) + (x + nbxl)*nzz + (y + nbyl)*nxx*nzz];
-                }
-
-                snap_index += 1;
-            }
-        }
-    }
-}
-
-void Wave::get_receiver_output()
+void lfreq_Modeling::get_receiver_output()
 {
     if (export_receiver_output)
     {
@@ -217,13 +189,122 @@ void Wave::get_receiver_output()
     }
 }
 
-void Wave::get_seismogram()
+void lfreq_Modeling::get_wavefield_output()
+{
+    if (export_wavefield_output)
+    {
+        wavefield_output_file = wavefield_output_folder + type_name + "_snapshot_" + std::to_string(nz) + "x" + std::to_string(nx) + "x" + std::to_string(ny) + "_shot_" + std::to_string(shot_index+1) + "_Nsnaps" + std::to_string(total_snaps) + ".bin";
+        
+        if (snap_index < total_snaps)
+        {
+            if (time_index % (int)((float)(nt) / (float)(total_snaps)) == 0)
+            {
+                cudaMemcpy(P, d_Upre, volsize*sizeof(float), cudaMemcpyDeviceToHost);
+
+                for (int index = 0; index < nPoints; index++)
+                {
+                    int y = (int) (index / (nx*nz));         
+                    int x = (int) (index - y*nx*nz) / nz;    
+                    int z = (int) (index - x*nz - y*nx*nz);  
+
+                    wavefield_output[z + x*nz + y*nx*nz + snap_index*nPoints] = P[(z + nbzu) + (x + nbxl)*nzz + (y + nbyl)*nxx*nzz];
+                }
+
+                snap_index++;
+            }
+        }
+    }
+}
+
+void lfreq_Modeling::get_seismogram()
 {
     if (export_receiver_output)
     {
         int seismBlocks = (int)(total_nodes / threadsPerBlock) + 1;
 
-        compute_seismogram<<<seismBlocks,threadsPerBlock>>>(seismogram,P,grid_node_x,grid_node_y,grid_node_z,total_nodes,nxx,nzz,nt,time_index);
+        compute_seismogram<<<seismBlocks, threadsPerBlock>>>(seismogram, d_Upre, grid_node_x, grid_node_y, grid_node_z, total_nodes, nxx, nzz, nt, time_index);
+    }
+}
+
+void lfreq_Modeling::forward_propagation()
+{
+    for (time_index = 0; time_index < nt; time_index++)
+    {
+        display_progress();
+
+        compute_pressure<<<blocksPerGrid, threadsPerBlock>>>(d_Upre, d_Upas, d_Ufut, d_Vp, damp1D, damp2D, damp3D, wavelet, source_index, time_index, dx, dy, dz, dt, nxx, nyy, nzz, nabc);
+        cudaDeviceSynchronize();
+
+        update_pressure<<<blocksPerGrid, threadsPerBlock>>>(d_Upre, d_Upas, d_Ufut, volsize);
+        cudaDeviceSynchronize();
+
+        get_wavefield_output();
+        get_seismogram();
+    }   
+
+    get_receiver_output();
+}
+
+void lfreq_Modeling::free_space()
+{
+    cudaFree(d_Vp);
+
+    cudaFree(d_Upre);
+    cudaFree(d_Upas);
+    cudaFree(d_Ufut);
+}
+
+__global__ void compute_pressure(float * P, float * Pold, float * Pnew, float * V, float * damp1D, float * damp2D, float * damp3D, float * wavelet, int sId, int tId, float dx, float dy, float dz, float dt, int nxx, int nyy, int nzz, int nabc)
+{
+    int index = blockIdx.x * blockDim.x + threadIdx.x;
+
+    int k = (int) (index / (nxx*nzz));         // y direction
+    int j = (int) (index - k*nxx*nzz) / nzz;   // x direction
+    int i = (int) (index - j*nzz - k*nxx*nzz); // z direction
+    
+    if (index == 0) P[sId] += wavelet[tId] / (dx*dy*dz);
+
+    if((i >= 4) && (i < nzz-4) && (j >= 4) && (j < nxx-4) && (k >= 4) && (k < nyy-4)) 
+    {
+        float d2P_dx2 = (- 9.0f*(P[i + (j-4)*nzz + k*nxx*nzz] + P[i + (j+4)*nzz + k*nxx*nzz])
+                     +   128.0f*(P[i + (j-3)*nzz + k*nxx*nzz] + P[i + (j+3)*nzz + k*nxx*nzz])
+                     -  1008.0f*(P[i + (j-2)*nzz + k*nxx*nzz] + P[i + (j+2)*nzz + k*nxx*nzz])
+                     +  8064.0f*(P[i + (j-1)*nzz + k*nxx*nzz] + P[i + (j+1)*nzz + k*nxx*nzz])
+                     - 14350.0f*(P[i + j*nzz + k*nxx*nzz]))/(5040.0f*powf(dx, 2.0f));
+
+        float d2P_dy2 = (- 9.0f*(P[i + j*nzz + (k-4)*nxx*nzz] + P[i + j*nzz + (k+4)*nxx*nzz])
+                     +   128.0f*(P[i + j*nzz + (k-3)*nxx*nzz] + P[i + j*nzz + (k+3)*nxx*nzz])
+                     -  1008.0f*(P[i + j*nzz + (k-2)*nxx*nzz] + P[i + j*nzz + (k+2)*nxx*nzz])
+                     +  8064.0f*(P[i + j*nzz + (k-1)*nxx*nzz] + P[i + j*nzz + (k+1)*nxx*nzz])
+                     - 14350.0f*(P[i + j*nzz + k*nxx*nzz]))/(5040.0f*powf(dy,2.0f));
+
+        float d2P_dz2 = (- 9.0f*(P[(i-4) + j*nzz + k*nxx*nzz] + P[(i+4) + j*nzz + k*nxx*nzz])
+                     +   128.0f*(P[(i-3) + j*nzz + k*nxx*nzz] + P[(i+3) + j*nzz + k*nxx*nzz])
+                     -  1008.0f*(P[(i-2) + j*nzz + k*nxx*nzz] + P[(i+2) + j*nzz + k*nxx*nzz])
+                     +  8064.0f*(P[(i-1) + j*nzz + k*nxx*nzz] + P[(i+1) + j*nzz + k*nxx*nzz])
+                     - 14350.0f*(P[i + j*nzz + k*nxx*nzz]))/(5040.0f*powf(dz,2.0f));
+    
+        Pnew[index] = dt*dt*V[index]*V[index] * (d2P_dx2 + d2P_dy2 + d2P_dz2) + 2.0f*P[index] - Pold[index]; 
+    }
+
+    float damper = get_boundary_damper(damp1D, damp2D, damp3D, i, j, k, nxx, nyy, nzz, nabc);
+    
+    if (index < nxx*nyy*nzz)
+    {
+        P[index] *= damper;
+        Pold[index] *= damper;    
+        Pnew[index] *= damper;
+    }
+}
+
+__global__ void update_pressure(float * P, float * Pold, float * Pnew, int volsize)
+{
+    int index = blockIdx.x * blockDim.x + threadIdx.x;
+    
+    if (index < volsize)
+    {
+        Pold[index] = P[index];        
+        P[index] = Pnew[index];
     }
 }
 

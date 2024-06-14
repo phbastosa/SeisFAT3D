@@ -11,35 +11,7 @@ void Modeling::get_runtime()
 
     std::chrono::duration<double> elapsed_seconds = tf - ti;
 
-    std::ofstream runTimeFile("elapsedTime.txt", std::ios::in | std::ios::app);
-    runTimeFile << "#------------------------------------------------------------------\n";
-    runTimeFile << "# Run Time [s]; RAM usage [MB]; GPU memory usage [MB]\n";
-    runTimeFile << std::to_string(elapsed_seconds.count()) + ";" + std::to_string(RAM) + ";" + std::to_string(vRAM) + "\n";
-    runTimeFile << "#------------------------------------------------------------------\n";
-    runTimeFile.close();
-
     std::cout<<"\nRun time: "<<elapsed_seconds.count()<<" s."<<std::endl;
-}
-
-void Modeling::get_RAM_usage()
-{
-    struct rusage usage;
-    getrusage(RUSAGE_SELF, &usage);
-    RAM = (int) (usage.ru_maxrss / 1024);
-}
-
-void Modeling::get_GPU_usage()
-{
-	size_t freeMem, totalMem;
-	cudaMemGetInfo(&freeMem, &totalMem);
-    vRAM = (int) ((totalMem - freeMem) / (1024 * 1024)) - ivRAM;
-}
-
-void Modeling::get_GPU_initMem()
-{
-	size_t freeMem, totalMem;
-	cudaMemGetInfo(&freeMem, &totalMem);
-    ivRAM = (int) ((totalMem - freeMem) / (1024 * 1024));
 }
 
 void Modeling::expand_boundary(float * input, float * output)
@@ -174,20 +146,15 @@ void Modeling::set_parameters()
     
     set_boundary();     
     
-    set_models();
+    set_vp_model();
 
     set_volumes();
 
     set_outputs();
-
-    get_RAM_usage();
-    get_GPU_usage();
 }
 
 void Modeling::set_generals()
 {
-    get_GPU_initMem();
-
     threadsPerBlock = 256;
 
     nx = std::stoi(catch_parameter("x_samples", file));
@@ -209,15 +176,7 @@ void Modeling::set_generals()
 
 void Modeling::set_geometry()
 {
-    std::vector<Geometry *> possibilities = 
-    {
-        new Regular(), 
-        new Circular()
-    };
-
-    auto type = std::stoi(catch_parameter("geometry_type", file));
-
-    geometry = possibilities[type];
+    geometry = new Geometry(); 
 
     geometry->file = file;
 
@@ -227,8 +186,6 @@ void Modeling::set_geometry()
     total_nodes = geometry->nodes.total;
 
     check_geometry_overflow();
-
-    std::vector<Geometry *>().swap(possibilities); 
 }
 
 void Modeling::set_boundary()
@@ -242,7 +199,20 @@ void Modeling::set_boundary()
     blocksPerGrid = (int)(volsize / threadsPerBlock);    
 }
 
-void Modeling::get_information()
+void Modeling::set_vp_model()
+{
+    std::string vp_file = catch_parameter("vp_model_file", file);
+
+    model = new float[nPoints](); 
+
+    import_binary_float(vp_file, model, nPoints);
+
+    V = new float[volsize]();
+
+    expand_boundary(model, V);    
+}
+
+void Modeling::print_information()
 {
     auto clear = system("clear");
         
@@ -254,13 +224,10 @@ void Modeling::get_information()
                                    <<geometry->shots.x[shot_index]<<", y = " 
                                    <<geometry->shots.y[shot_index]<<") m\n\n";
 
-    std::cout<<"RAM usage = "<<RAM<<" MB\n";
-    std::cout<<"GPU usage = "<<vRAM<<" MB\n\n";
-
     std::cout<<"Modeling type: "<<type_message<<"\n\n";
 }
 
-void Modeling::set_configuration()
+void Modeling::set_initial_conditions()
 {
     sidx = (int)(geometry->shots.x[shot_index] / dx) + nbxl;
     sidy = (int)(geometry->shots.y[shot_index] / dy) + nbyl;
@@ -269,9 +236,6 @@ void Modeling::set_configuration()
     source_index = sidz + sidx*nzz + sidy*nxx*nzz;
 
     initialization();
-
-    get_RAM_usage();
-    get_GPU_usage();
 }
 
 void Modeling::export_outputs()

@@ -1,21 +1,23 @@
-# include "ultimate_FSM.cuh"
+# include "hfreq_modeling.cuh"
 
-int Ultimate_FSM::iDivUp(int a, int b) 
+int hfreq_Modeling::iDivUp(int a, int b) 
 { 
     return ( (a % b) != 0 ) ? (a / b + 1) : (a / b); 
 }
 
-void Ultimate_FSM::set_specifics()
+void hfreq_Modeling::set_outputs()
 {
-    nbxl = 1; nbxr = 1;
-    nbyl = 1; nbyr = 1;
-    nbzu = 1; nbzd = 1;
+    wavefield_output_samples = nPoints;
+    receiver_output_samples = total_nodes;
+
+    receiver_output = new float[receiver_output_samples]();
+    wavefield_output = new float[wavefield_output_samples]();
 }
 
-void Ultimate_FSM::set_volumes()
+void hfreq_Modeling::set_volumes()
 {
     type_name = std::string("fsm");
-    type_message = std::string("[2] - Accurate FSM (Detrixhe et al., 2013; Noble et al., 2014)");
+    type_message = std::string("Accurate Fast Sweeping Method eikonal solver");
 
     nSweeps = 8;
     meshDim = 3;
@@ -41,13 +43,17 @@ void Ultimate_FSM::set_volumes()
     for (int index = 0; index < nSweeps * meshDim; index++)
     {
         int j = index / nSweeps;
-	int i = index % nSweeps;				
+	    int i = index % nSweeps;				
 
-	h_sgnv[i + j * nSweeps] = sgnv[i][j];
-	h_sgnt[i + j * nSweeps] = sgnt[i][j];
+	    h_sgnv[i + j * nSweeps] = sgnv[i][j];
+	    h_sgnt[i + j * nSweeps] = sgnt[i][j];
     }
 
+    S = new float[volsize]();
     T = new float[volsize](); 
+
+    for (int index = 0; index < volsize; index++)
+        S[index] = 1.0f / V[index];
 
     cudaMalloc((void**)&(d_T), volsize*sizeof(float));
     cudaMalloc((void**)&(d_S), volsize*sizeof(float));
@@ -65,7 +71,14 @@ void Ultimate_FSM::set_volumes()
     std::vector<std::vector<int>>().swap(sgnt);
 }
 
-void Ultimate_FSM::initialization()
+void hfreq_Modeling::set_specifics()
+{
+    nbxl = 1; nbxr = 1;
+    nbyl = 1; nbyr = 1;
+    nbzu = 1; nbzd = 1;
+}
+
+void hfreq_Modeling::initialization()
 {
     for (int index = 0; index < volsize; index++) 
         T[index] = 1e6f;
@@ -104,53 +117,105 @@ void Ultimate_FSM::initialization()
     T[source_index - 1 + nzz + nxx*nzz] = S[source_index] * sqrtf(powf(((sidx-nbxl)+1)*dx - geometry->shots.x[shot_index], 2.0f) + powf(((sidy-nbyl)+1)*dy - geometry->shots.y[shot_index], 2.0f) + powf(((sidz-nbzu)-1)*dz - geometry->shots.z[shot_index], 2.0f));
     T[source_index - 1 - nzz + nxx*nzz] = S[source_index] * sqrtf(powf(((sidx-nbxl)-1)*dx - geometry->shots.x[shot_index], 2.0f) + powf(((sidy-nbyl)+1)*dy - geometry->shots.y[shot_index], 2.0f) + powf(((sidz-nbzu)-1)*dz - geometry->shots.z[shot_index], 2.0f));
     T[source_index - 1 + nzz - nxx*nzz] = S[source_index] * sqrtf(powf(((sidx-nbxl)+1)*dx - geometry->shots.x[shot_index], 2.0f) + powf(((sidy-nbyl)-1)*dy - geometry->shots.y[shot_index], 2.0f) + powf(((sidz-nbzu)-1)*dz - geometry->shots.z[shot_index], 2.0f));
-    T[source_index - 1 - nzz - nxx*nzz] = S[source_index] * sqrtf(powf(((sidx-nbxl)-1)*dx - geometry->shots.x[shot_index], 2.0f) + powf(((sidy-nbyl)-1)*dy - geometry->shots.y[shot_index], 2.0f) + powf(((sidz-nbzu)-1)*dz - geometry->shots.z[shot_index], 2.0f));
+    T[source_index - 1 - nzz - nxx*nzz] = S[source_index] * sqrtf(powf(((sidx-nbxl)-1)*dx - geometry->shots.x[shot_index], 2.0f) + powf(((sidy-nbyl)-1)*dy - geometry->shots.y[shot_index], 2.0f) + powf(((sidz-nbzu)-1)*dz - geometry->shots.z[shot_index], 2.0f));    
 }
 
-void Ultimate_FSM::set_forward_solver()
+void hfreq_Modeling::get_receiver_output()
+{
+    for (int r = 0; r < total_nodes; r++)
+    {
+        float x = geometry->nodes.x[r];
+        float y = geometry->nodes.y[r];
+        float z = geometry->nodes.z[r];
+
+        float x0 = floorf(x / dx) * dx;
+        float y0 = floorf(y / dy) * dy;
+        float z0 = floorf(z / dz) * dz;
+
+        float x1 = floorf(x / dx) * dx + dx;
+        float y1 = floorf(y / dy) * dy + dy;
+        float z1 = floorf(z / dz) * dz + dz;
+
+        int id = ((int)(z / dz)) + ((int)(x / dx))*nz + ((int)(y / dy))*nx*nz;
+
+        float c000 = wavefield_output[id];
+        float c001 = wavefield_output[id + 1];
+        float c100 = wavefield_output[id + nz]; 
+        float c101 = wavefield_output[id + 1 + nz]; 
+        float c010 = wavefield_output[id + nx*nz]; 
+        float c011 = wavefield_output[id + 1 + nx*nz]; 
+        float c110 = wavefield_output[id + nz + nx*nz]; 
+        float c111 = wavefield_output[id + 1 + nz + nx*nz];
+
+        float xd = (x - x0) / (x1 - x0);
+        float yd = (y - y0) / (y1 - y0);
+        float zd = (z - z0) / (z1 - z0);
+
+        float c00 = c000*(1 - xd) + c100*xd;    
+        float c01 = c001*(1 - xd) + c101*xd;    
+        float c10 = c010*(1 - xd) + c110*xd;    
+        float c11 = c011*(1 - xd) + c111*xd;    
+
+        float c0 = c00*(1 - yd) + c10*yd;
+        float c1 = c01*(1 - yd) + c11*yd;
+
+        receiver_output[r] = c0*(1 - zd) + c1*zd;
+    }
+
+    receiver_output_file = receiver_output_folder + type_name + "_data_nRec" + std::to_string(total_nodes) + "_shot_" + std::to_string(shot_index+1) + ".bin";
+}
+
+void hfreq_Modeling::get_wavefield_output()
+{   
+    reduce_boundary(T, wavefield_output);
+
+    wavefield_output_file = wavefield_output_folder + type_name + "_time_volume_" + std::to_string(nz) + "x" + std::to_string(nx) + "x" + std::to_string(ny) + "_shot_" + std::to_string(shot_index+1) + ".bin";
+}
+
+void hfreq_Modeling::forward_propagation()
 {
     cudaMemcpy(d_T, T, volsize*sizeof(float), cudaMemcpyHostToDevice);
     cudaMemcpy(d_S, S, volsize*sizeof(float), cudaMemcpyHostToDevice);
 
     for (int sweep = 0; sweep < nSweeps; sweep++)
     { 
-	int start = (sweep == 3 || sweep == 5 || sweep == 6 || sweep == 7) ? totalLevels : meshDim;
-	int end = (start == meshDim) ? totalLevels + 1 : meshDim - 1;
-	int incr = (start == meshDim) ? true : false;
+	    int start = (sweep == 3 || sweep == 5 || sweep == 6 || sweep == 7) ? totalLevels : meshDim;
+	    int end = (start == meshDim) ? totalLevels + 1 : meshDim - 1;
+	    int incr = (start == meshDim) ? true : false;
 
-	int xSweepOff = (sweep == 3 || sweep == 4) ? nxx : 0;
-	int ySweepOff = (sweep == 2 || sweep == 5) ? nyy : 0;
-	int zSweepOff = (sweep == 1 || sweep == 6) ? nzz : 0;
+	    int xSweepOff = (sweep == 3 || sweep == 4) ? nxx : 0;
+	    int ySweepOff = (sweep == 2 || sweep == 5) ? nyy : 0;
+	    int zSweepOff = (sweep == 1 || sweep == 6) ? nzz : 0;
 		
-	for (int level = start; level != end; level = (incr) ? level + 1 : level - 1)
-	{			
-	    int xs = max(1, level - (nyy + nzz));	
-	    int ys = max(1, level - (nxx + nzz));
+	    for (int level = start; level != end; level = (incr) ? level + 1 : level - 1)
+	    {			
+	        int xs = max(1, level - (nyy + nzz));	
+	        int ys = max(1, level - (nxx + nzz));
 		
-	    int xe = min(nxx, level - (meshDim - 1));
-	    int ye = min(nyy, level - (meshDim - 1));	
+	        int xe = min(nxx, level - (meshDim - 1));
+	        int ye = min(nyy, level - (meshDim - 1));	
 		
-	    int xr = xe - xs + 1;
-	    int yr = ye - ys + 1;
+	        int xr = xe - xs + 1;
+	        int yr = ye - ys + 1;
 
-	    int nThreads = xr * yr;
+	        int nThreads = xr * yr;
 			
-	    dim3 bs(16, 16, 1);
+	        dim3 bs(16, 16, 1);
 
-	    if (nThreads < threadsPerBlock) { bs.x = xr; bs.y = yr; } 
+	        if (nThreads < threadsPerBlock) { bs.x = xr; bs.y = yr; } 
 
-	    dim3 gs(iDivUp(xr, bs.x), iDivUp(yr , bs.y), 1);
+	        dim3 gs(iDivUp(xr, bs.x), iDivUp(yr , bs.y), 1);
 			
             int sgni = sweep + 0*nSweeps;
             int sgnj = sweep + 1*nSweeps;
             int sgnk = sweep + 2*nSweeps;
 
-	    fast_sweeping_kernel<<<gs,bs>>>(d_S, d_T, d_sgnt, d_sgnv, sgni, sgnj, sgnk, level, xs, ys, 
+	        fast_sweeping_kernel<<<gs,bs>>>(d_S, d_T, d_sgnt, d_sgnv, sgni, sgnj, sgnk, level, xs, ys, 
                                             xSweepOff, ySweepOff, zSweepOff, nxx, nyy, nzz, dx, dy, dz, 
                                             dx2i, dy2i, dz2i, dz2dx2, dz2dy2, dx2dy2, dsum);
 		
             cudaDeviceSynchronize();
-	}
+	    }
     }
 
     cudaMemcpy(T, d_T, volsize*sizeof(float), cudaMemcpyDeviceToHost);
@@ -159,7 +224,7 @@ void Ultimate_FSM::set_forward_solver()
     get_receiver_output();
 }
 
-void Ultimate_FSM::free_space()
+void hfreq_Modeling::free_space()
 {
     cudaFree(d_T);
     cudaFree(d_S);
@@ -181,48 +246,48 @@ __global__ void fast_sweeping_kernel(float * S, float * T, int * sgnt, int * sgn
 
     if ((x < nxx) && (y < nyy)) 
     {
-	int z = level - (x + y);
+    	int z = level - (x + y);
 		
-	if ((z >= 0) && (z < nzz))	
-	{
-	    int i = abs(z - zSweepOffset);
-	    int j = abs(x - xSweepOffset);
-	    int k = abs(y - ySweepOffset);
+        if ((z >= 0) && (z < nzz))	
+        {
+            int i = abs(z - zSweepOffset);
+            int j = abs(x - xSweepOffset);
+            int k = abs(y - ySweepOffset);
 
-	    if ((i > 0) && (i < nzz-1) && (j > 0) && (j < nxx-1) && (k > 0) && (k < nyy-1))
-	    {		
-	        int i1 = i - sgnv[sgni];
-		int j1 = j - sgnv[sgnj];
-		int k1 = k - sgnv[sgnk];
+            if ((i > 0) && (i < nzz-1) && (j > 0) && (j < nxx-1) && (k > 0) && (k < nyy-1))
+            {		
+    	        int i1 = i - sgnv[sgni];
+                int j1 = j - sgnv[sgnj];
+                int k1 = k - sgnv[sgnk];
 
-		int ijk = i + j*nzz + k*nxx*nzz;
-				
-		float tv = T[(i - sgnt[sgni]) + j*nzz + k*nxx*nzz];
-		float te = T[i + (j - sgnt[sgnj])*nzz + k*nxx*nzz];
-		float tn = T[i + j*nzz + (k - sgnt[sgnk])*nxx*nzz];
+                int ijk = i + j*nzz + k*nxx*nzz;
+                        
+                float tv = T[(i - sgnt[sgni]) + j*nzz + k*nxx*nzz];
+                float te = T[i + (j - sgnt[sgnj])*nzz + k*nxx*nzz];
+                float tn = T[i + j*nzz + (k - sgnt[sgnk])*nxx*nzz];
 
-		float tev = T[(i - sgnt[sgni]) + (j - sgnt[sgnj])*nzz + k*nxx*nzz];
-		float ten = T[i + (j - sgnt[sgnj])*nzz + (k - sgnt[sgnk])*nxx*nzz];
-		float tnv = T[(i - sgnt[sgni]) + j*nzz + (k - sgnt[sgnk])*nxx*nzz];
-				
-		float tnve = T[(i - sgnt[sgni]) + (j - sgnt[sgnj])*nzz + (k - sgnt[sgnk])*nxx*nzz];
+                float tev = T[(i - sgnt[sgni]) + (j - sgnt[sgnj])*nzz + k*nxx*nzz];
+                float ten = T[i + (j - sgnt[sgnj])*nzz + (k - sgnt[sgnk])*nxx*nzz];
+                float tnv = T[(i - sgnt[sgni]) + j*nzz + (k - sgnt[sgnk])*nxx*nzz];
+                        
+                float tnve = T[(i - sgnt[sgni]) + (j - sgnt[sgnj])*nzz + (k - sgnt[sgnk])*nxx*nzz];
 
-		t1D1 = tv + dz * min(S[i1 + max(j-1,1)*nzz   + max(k-1,1)*nxx*nzz], 
-				 min(S[i1 + max(j-1,1)*nzz   + min(k,nyy-1)*nxx*nzz], 
-				 min(S[i1 + min(j,nxx-1)*nzz + max(k-1,1)*nxx*nzz],
-				     S[i1 + min(j,nxx-1)*nzz + min(k,nyy-1)*nxx*nzz])));                                     
+                t1D1 = tv + dz * min(S[i1 + max(j-1,1)*nzz   + max(k-1,1)*nxx*nzz], 
+                				 min(S[i1 + max(j-1,1)*nzz   + min(k,nyy-1)*nxx*nzz], 
+				                 min(S[i1 + min(j,nxx-1)*nzz + max(k-1,1)*nxx*nzz],
+				                     S[i1 + min(j,nxx-1)*nzz + min(k,nyy-1)*nxx*nzz])));                                     
 
-		t1D2 = te + dx * min(S[max(i-1,1)   + j1*nzz + max(k-1,1)*nxx*nzz], 
-				 min(S[min(i,nzz-1) + j1*nzz + max(k-1,1)*nxx*nzz],
-				 min(S[max(i-1,1)   + j1*nzz + min(k,nyy-1)*nxx*nzz], 
-				     S[min(i,nzz-1) + j1*nzz + min(k,nyy-1)*nxx*nzz])));                    
+                t1D2 = te + dx * min(S[max(i-1,1)   + j1*nzz + max(k-1,1)*nxx*nzz], 
+                                 min(S[min(i,nzz-1) + j1*nzz + max(k-1,1)*nxx*nzz],
+                                 min(S[max(i-1,1)   + j1*nzz + min(k,nyy-1)*nxx*nzz], 
+                                     S[min(i,nzz-1) + j1*nzz + min(k,nyy-1)*nxx*nzz])));                    
 
-		t1D3 = tn + dy * min(S[max(i-1,1)   + max(j-1,1)*nzz   + k1*nxx*nzz], 
-				 min(S[max(i-1,1)   + min(j,nxx-1)*nzz + k1*nxx*nzz],
-				 min(S[min(i,nzz-1) + max(j-1,1)*nzz   + k1*nxx*nzz], 
-				     S[min(i,nzz-1) + min(j,nxx-1)*nzz + k1*nxx*nzz])));
+                t1D3 = tn + dy * min(S[max(i-1,1)   + max(j-1,1)*nzz   + k1*nxx*nzz], 
+                                 min(S[max(i-1,1)   + min(j,nxx-1)*nzz + k1*nxx*nzz],
+                                 min(S[min(i,nzz-1) + max(j-1,1)*nzz   + k1*nxx*nzz], 
+                                     S[min(i,nzz-1) + min(j,nxx-1)*nzz + k1*nxx*nzz])));
 
-		t1D = min(t1D1, min(t1D2, t1D3));
+		        t1D = min(t1D1, min(t1D2, t1D3));
 
                 //------------------- 2D operators - 4 points operator ---------------------------------------------------------------------------------------------------
                 t2D1 = 1e6; t2D2 = 1e6; t2D3 = 1e6;
@@ -285,7 +350,7 @@ __global__ void fast_sweeping_kernel(float * S, float * T, int * sgnt, int * sgn
                     }
                 }
 
-		T[ijk] = min(T[ijk], min(t1D, min(t2D, t3D)));
+		        T[ijk] = min(T[ijk], min(t1D, min(t2D, t3D)));
             }
         }
     }

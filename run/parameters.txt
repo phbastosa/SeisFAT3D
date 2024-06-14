@@ -2,15 +2,15 @@
 # Model paramenters --------------------------------------------------------------------------------
 #---------------------------------------------------------------------------------------------------
 
-x_samples = 601                       # <int>  
-y_samples = 401                       # <int>  
-z_samples = 101                       # <int>  
+x_samples = 801                       # <int>  
+y_samples = 801                       # <int>  
+z_samples = 171                       # <int>  
 
-x_spacing = 12.5                      # [m] <float> 
-y_spacing = 12.5                      # [m] <float> 
-z_spacing = 12.5                      # [m] <float> 
+x_spacing = 25                      # [m] <float> 
+y_spacing = 25                      # [m] <float> 
+z_spacing = 25                      # [m] <float> 
 
-vp_model_file = ../inputs/models/overthrust_vp_101x601x401_12.5m.bin   
+vp_model_file = ../inputs/models/overthrust_171x801x801_25m.bin   
 
 #---------------------------------------------------------------------------------------------------
 # Geometry parameters ------------------------------------------------------------------------------
@@ -25,27 +25,27 @@ nodes_file = ../inputs/geometry/xyz_nodes_position.txt
 # Regular geometry ---------------------------------------------------------------------------------               
 
 shots_nlines = [1, 1, 1]            # <int> (z, x, y)     
-nodes_nlines = [1, 1, 1]            # <int> (z, x, y)            
+nodes_nlines = [1, 381, 381]            # <int> (z, x, y)            
 
-shots_SW = [0, 150, 100]            # [m] <float> (z, x, y) NW            
-shots_NW = [0, 150, 100]            # [m] <float> (z, x, y)  |            
-shots_SE = [0, 150, 100]            # [m] <float> (z, x, y) SW -- SE     
+shots_SW = [0, 10000, 10000]            # [m] <float> (z, x, y) NW            
+shots_NW = [0, 10000, 10000]            # [m] <float> (z, x, y)  |            
+shots_SE = [0, 10000, 10000]            # [m] <float> (z, x, y) SW -- SE     
 
-nodes_SW = [0, 150, 100]            # [m] <float> (z, x, y) NW           
-nodes_NW = [0, 150, 100]            # [m] <float> (z, x, y)  |         
-nodes_SE = [0, 150, 100]            # [m] <float> (z, x, y) SW -- SE   
+nodes_SW = [0, 500, 500]            # [m] <float> (z, x, y) NW           
+nodes_NW = [0, 500, 19500]            # [m] <float> (z, x, y)  |         
+nodes_SE = [0, 19500, 500]            # [m] <float> (z, x, y) SW -- SE   
 
 #---------------------------------------------------------------------------------------------------
 # Modeling parameters ------------------------------------------------------------------------------
 #---------------------------------------------------------------------------------------------------
 #   [0] - Eikonal: Accurate FSM 
-#   [1] - Wavefield: Acoustic media 
+#   [1] - Wavefield: Scalar media 
 #---------------------------------------------------------------------------------------------------
 
-modeling_type = 0                     # <int>
+modeling_type = 1                     # <int>
 
 export_receiver_output = true         # <bool> 
-export_wavefield_output = false       # <bool>
+export_wavefield_output = true        # <bool>
 
 max_frequency = 15                    # [Hz] <float>
 time_spacing = 1e-3                   # [s] <float>

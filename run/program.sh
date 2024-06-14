@@ -7,53 +7,45 @@ io="../src/io/io.cpp"
 # Acquisition geometry scripts ------------------------------------------------------------------------
 
 geometry_all="../src/geometry/geometry.cpp"
+
 geometry_main="../src/main/geometry_main.cpp"
 
 # Seismic modeling scripts ----------------------------------------------------------------------------
 
 modeling="../src/modeling/modeling.cpp"
 
-eikonal="../src/modeling/eikonal_equation/eikonal.cpp"
+hfreq_modeling="../src/modeling/hfreq_modeling.cu"
+lfreq_modeling="../src/modeling/lfreq_modeling.cu"
 
-classical="../src/modeling/eikonal_equation/isotropic/classical.cu"
-block_FIM="../src/modeling/eikonal_equation/isotropic/block_FIM.cu"
-ultimate_FSM="../src/modeling/eikonal_equation/isotropic/ultimate_FSM.cu"
-
-fullwave="../src/modeling/wave_equation/wave.cu"
-
-scalar="../src/modeling/wave_equation/isotropic/scalar.cu"
-acoustic="../src/modeling/wave_equation/isotropic/acoustic.cu"
-elastic="../src/modeling/wave_equation/isotropic/elastic.cu"
+modeling_all="$modeling $hfreq_modeling $lfreq_modeling"
 
 modeling_main="../src/main/modeling_main.cpp"
 
-modeling_all="$modeling $eikonal $classical $block_FIM 
-              $ultimate_FSM $fullwave $scalar $acoustic $elastic"
-
 # Seismic inversion scripts ---------------------------------------------------------------------------
 
-tomography="../src/inversion/tomography.cpp"
+inversion="../src/inversion/inversion.cpp"
 
-least_squares="../src/inversion/least_squares/least_squares.cu"
-adjoint_state="../src/inversion/adjoint_state/adjoint_state.cu"
+hfreq_inversion="../src/inversion/hfreq_inversion.cpp"
+lfreq_inversion="../src/inversion/lfreq_inversion.cpp"
 
 inversion_main="../src/main/inversion_main.cpp"
 
-inversion_all="$tomography $least_squares $adjoint_state"
+inversion_all="$inversion $hfreq_inversion $lfreq_inversion"
 
 # Seismic migration scripts ---------------------------------------------------------------------------
 
 migration="../src/migration/migration.cpp"
 
-kirchhoff="../src/migration/kirchhoff/kirchhoff.cu"
+hfreq_migration="../src/migration/hfreq_migration.cu"
+lfreq_migration="../src/migration/lfreq_migration.cu"
 
 migration_main="../src/main/migration_main.cpp"
 
-migration_all="$kirchhoff $migration"
+migration_all="$migration $hfreq_migration $lfreq_migration"
 
 # Compiler flags --------------------------------------------------------------------------------------
 
-flags="--std=c++11 -lm -O3 -w -g --relocatable-device-code=true"
+flags="--std=c++11 -lm -use_fast_math -w -g -O4"
 
 # Main dialogue ---------------------------------------------------------------------------------------
 
@@ -95,8 +87,8 @@ case "$1" in
     echo -e "../bin/\033[31mgeometry.exe\033[m" 
     nvcc $io $geometry_all $geometry_main $flags -o ../bin/geometry.exe
 
-    # echo -e "../bin/\033[31mmodeling.exe\033[m" 
-    # nvcc $io $geometry_all $modeling_all $modeling_main $flags -o ../bin/modeling.exe
+    echo -e "../bin/\033[31mmodeling.exe\033[m" 
+    nvcc $io $geometry_all $modeling_all $modeling_main $flags -o ../bin/modeling.exe
 
     # echo -e "../bin/\033[31minversion.exe\033[m" 
     # nvcc $io $geometry_all $modeling_all $inversion_all $inversion_main $flags -o ../bin/inversion.exe

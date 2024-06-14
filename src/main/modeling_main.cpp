@@ -1,22 +1,12 @@
-# include "../modeling/eikonal_equation/isotropic/classical.cuh"
-# include "../modeling/eikonal_equation/isotropic/block_FIM.cuh"
-# include "../modeling/eikonal_equation/isotropic/ultimate_FSM.cuh"
-
-# include "../modeling/wave_equation/isotropic/scalar.cuh"
-# include "../modeling/wave_equation/isotropic/acoustic.cuh"
-# include "../modeling/wave_equation/isotropic/elastic.cuh"
+# include "../modeling/hfreq_modeling.cuh"
+# include "../modeling/lfreq_modeling.cuh"
 
 int main(int argc, char **argv)
 {
     std::vector<Modeling *> modeling = 
     {
-        new Classical(),
-        new Block_FIM(),
-        new Ultimate_FSM(),
-
-        new Scalar(),
-        new Acoustic(),
-        new Elastic()
+        new hfreq_Modeling(), 
+        new lfreq_Modeling()
     };
     
     auto file = std::string(argv[1]);
@@ -32,14 +22,17 @@ int main(int argc, char **argv)
     {
         modeling[type]->shot_index = shot;
 
-        modeling[type]->get_information();
-        modeling[type]->set_configuration();
-        modeling[type]->set_forward_solver();
+        modeling[type]->print_information();
+        
+        modeling[type]->set_initial_conditions();
+
+        modeling[type]->forward_propagation();
         
         modeling[type]->export_outputs();
     }
 
     modeling[type]->get_runtime();
+
     modeling[type]->free_space();    
 
     return 0;

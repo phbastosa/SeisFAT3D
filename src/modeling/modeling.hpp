@@ -2,23 +2,15 @@
 # define MODELING_HPP
 
 # include <chrono>
-# include <cuda_runtime.h>
-# include <sys/resource.h>
+# include <string>
 
-# include "../geometry/regular/regular.hpp"
-# include "../geometry/circular/circular.hpp"
+# include "../geometry/geometry.hpp"
 
 class Modeling
 {
 private:
 
     std::chrono::system_clock::time_point ti, tf;
-
-    int RAM, vRAM, ivRAM;
-
-    void get_RAM_usage();
-    void get_GPU_usage();
-    void get_GPU_initMem();
 
     void set_generals();
     void set_geometry();
@@ -43,9 +35,9 @@ protected:
 
     int sidx, sidy, sidz;
 
+    void set_vp_model();
     void set_boundary();
 
-    virtual void set_models() = 0;
     virtual void set_volumes() = 0;
     virtual void set_outputs() = 0;
     virtual void set_specifics() = 0;
@@ -80,13 +72,11 @@ public:
 
     float * S = nullptr;
     float * V = nullptr;
-    float * K = nullptr;
-    float * B = nullptr;
-    float * M = nullptr;
-    float * L = nullptr;
 
     float * T = nullptr;
     float * P = nullptr;
+
+    float * model = nullptr;
 
     float * receiver_output = nullptr;
     float * wavefield_output = nullptr;
@@ -97,13 +87,15 @@ public:
     void set_runtime();
     void get_runtime();
 
+    void print_information();
+
     void set_parameters(); 
-    void get_information();
-    void set_configuration();
+    
+    void set_initial_conditions();
     
     void export_outputs();
 
-    virtual void set_forward_solver() = 0;
+    virtual void forward_propagation() = 0;
     virtual void free_space() = 0;    
 };
 
