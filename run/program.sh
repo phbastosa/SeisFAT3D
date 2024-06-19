@@ -45,7 +45,7 @@ migration_all="$migration $hfreq_migration $lfreq_migration"
 
 # Compiler flags --------------------------------------------------------------------------------------
 
-flags="--std=c++11 -lm -w -g -O3"
+flags="--std=c++11 -lm -w -g -O4 --use_fast_math"
 
 # Main dialogue ---------------------------------------------------------------------------------------
 
