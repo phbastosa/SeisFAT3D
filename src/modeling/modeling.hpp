@@ -23,15 +23,10 @@ protected:
     std::string type_message;
 
     bool export_receiver_output;
-    bool export_wavefield_output;
-
     int receiver_output_samples;
-    int wavefield_output_samples;
 
     std::string receiver_output_file;
-    std::string wavefield_output_file;
     std::string receiver_output_folder;
-    std::string wavefield_output_folder;
 
     int sidx, sidy, sidz;
 
@@ -45,7 +40,6 @@ protected:
     virtual void initialization() = 0;
 
     virtual void get_receiver_output() = 0;
-    virtual void get_wavefield_output() = 0;
 
 public:
 
@@ -79,7 +73,6 @@ public:
     float * model = nullptr;
 
     float * receiver_output = nullptr;
-    float * wavefield_output = nullptr;
 
     void expand_boundary(float * input, float * output);
     void reduce_boundary(float * input, float * output);

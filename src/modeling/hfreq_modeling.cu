@@ -7,11 +7,9 @@ int hfreq_Modeling::iDivUp(int a, int b)
 
 void hfreq_Modeling::set_outputs()
 {
-    wavefield_output_samples = nPoints;
     receiver_output_samples = total_nodes;
 
     receiver_output = new float[receiver_output_samples]();
-    wavefield_output = new float[wavefield_output_samples]();
 }
 
 void hfreq_Modeling::set_volumes()
@@ -136,16 +134,16 @@ void hfreq_Modeling::get_receiver_output()
         float y1 = floorf(y / dy) * dy + dy;
         float z1 = floorf(z / dz) * dz + dz;
 
-        int id = ((int)(z / dz)) + ((int)(x / dx))*nz + ((int)(y / dy))*nx*nz;
+        int id = ((int)(z / dz) + nbzu) + ((int)(x / dx) + nbxl)*nzz + ((int)(y / dy) + nbyl)*nxx*nzz;
 
-        float c000 = wavefield_output[id];
-        float c001 = wavefield_output[id + 1];
-        float c100 = wavefield_output[id + nz]; 
-        float c101 = wavefield_output[id + 1 + nz]; 
-        float c010 = wavefield_output[id + nx*nz]; 
-        float c011 = wavefield_output[id + 1 + nx*nz]; 
-        float c110 = wavefield_output[id + nz + nx*nz]; 
-        float c111 = wavefield_output[id + 1 + nz + nx*nz];
+        float c000 = T[id];
+        float c001 = T[id + 1];
+        float c100 = T[id + nzz]; 
+        float c101 = T[id + 1 + nzz]; 
+        float c010 = T[id + nxx*nzz]; 
+        float c011 = T[id + 1 + nxx*nzz]; 
+        float c110 = T[id + nzz + nxx*nzz]; 
+        float c111 = T[id + 1 + nzz + nxx*nzz];
 
         float xd = (x - x0) / (x1 - x0);
         float yd = (y - y0) / (y1 - y0);
@@ -163,13 +161,6 @@ void hfreq_Modeling::get_receiver_output()
     }
 
     receiver_output_file = receiver_output_folder + type_name + "_data_nRec" + std::to_string(total_nodes) + "_shot_" + std::to_string(shot_index+1) + ".bin";
-}
-
-void hfreq_Modeling::get_wavefield_output()
-{   
-    reduce_boundary(T, wavefield_output);
-
-    wavefield_output_file = wavefield_output_folder + type_name + "_time_volume_" + std::to_string(nz) + "x" + std::to_string(nx) + "x" + std::to_string(ny) + "_shot_" + std::to_string(shot_index+1) + ".bin";
 }
 
 void hfreq_Modeling::forward_propagation()
@@ -220,7 +211,6 @@ void hfreq_Modeling::forward_propagation()
 
     cudaMemcpy(T, d_T, volsize*sizeof(float), cudaMemcpyDeviceToHost);
 
-    get_wavefield_output();
     get_receiver_output();
 }
 

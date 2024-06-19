@@ -2,15 +2,15 @@
 # Model paramenters --------------------------------------------------------------------------------
 #---------------------------------------------------------------------------------------------------
 
-x_samples = 801                       # <int>  
-y_samples = 801                       # <int>  
-z_samples = 171                       # <int>  
+x_samples = 101                       # <int>  
+y_samples = 101                       # <int>  
+z_samples = 101                       # <int>  
 
-x_spacing = 25                      # [m] <float> 
-y_spacing = 25                      # [m] <float> 
-z_spacing = 25                      # [m] <float> 
+x_spacing = 10                      # [m] <float> 
+y_spacing = 10                      # [m] <float> 
+z_spacing = 10                      # [m] <float> 
 
-vp_model_file = ../inputs/models/overthrust_171x801x801_25m.bin   
+vp_model_file = ../inputs/models/test_model_101x101x101.bin   
 
 #---------------------------------------------------------------------------------------------------
 # Geometry parameters ------------------------------------------------------------------------------
@@ -25,39 +25,35 @@ nodes_file = ../inputs/geometry/xyz_nodes_position.txt
 # Regular geometry ---------------------------------------------------------------------------------               
 
 shots_nlines = [1, 1, 1]            # <int> (z, x, y)     
-nodes_nlines = [1, 381, 381]            # <int> (z, x, y)            
+nodes_nlines = [1, 51, 51]            # <int> (z, x, y)            
 
-shots_SW = [0, 10000, 10000]            # [m] <float> (z, x, y) NW            
-shots_NW = [0, 10000, 10000]            # [m] <float> (z, x, y)  |            
-shots_SE = [0, 10000, 10000]            # [m] <float> (z, x, y) SW -- SE     
+shots_SW = [100, 500, 500]            # [m] <float> (z, x, y) NW            
+shots_NW = [100, 500, 500]            # [m] <float> (z, x, y)  |            
+shots_SE = [100, 500, 500]            # [m] <float> (z, x, y) SW -- SE     
 
-nodes_SW = [0, 500, 500]            # [m] <float> (z, x, y) NW           
-nodes_NW = [0, 500, 19500]            # [m] <float> (z, x, y)  |         
-nodes_SE = [0, 19500, 500]            # [m] <float> (z, x, y) SW -- SE   
+nodes_SW = [100, 10, 10]            # [m] <float> (z, x, y) NW           
+nodes_NW = [100, 10, 990]            # [m] <float> (z, x, y)  |         
+nodes_SE = [100, 990, 10]            # [m] <float> (z, x, y) SW -- SE   
 
 #---------------------------------------------------------------------------------------------------
 # Modeling parameters ------------------------------------------------------------------------------
 #---------------------------------------------------------------------------------------------------
-#   [0] - Eikonal: Accurate FSM 
-#   [1] - Wavefield: Scalar media 
+#   [0] - Accurate FSM eikonal solver 
+#   [1] - Constant density acoustic solver 
 #---------------------------------------------------------------------------------------------------
 
 modeling_type = 1                     # <int>
 
-export_receiver_output = true         # <bool> 
-export_wavefield_output = true        # <bool>
-
 max_frequency = 15                    # [Hz] <float>
 time_spacing = 1e-3                   # [s] <float>
-time_samples = 3001                   # <int>
+time_samples = 1001                   # <int>
 
 boundary_damper = 0.005               # <float>
 boundary_samples = 50                 # <int> 
 
-total_snapshots = 10                  # int
+export_receiver_output = true         # <bool> 
 
 receiver_output_folder = ../outputs/seismograms/            
-wavefield_output_folder = ../outputs/snapshots/     
 
 #---------------------------------------------------------------------------------------------------
 # Inversion parameters 

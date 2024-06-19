@@ -168,10 +168,7 @@ void Modeling::set_generals()
     nPoints = nx*ny*nz;
 
     export_receiver_output = str2bool(catch_parameter("export_receiver_output", file));
-    export_wavefield_output = str2bool(catch_parameter("export_wavefield_output", file));
-
     receiver_output_folder = catch_parameter("receiver_output_folder", file); 
-    wavefield_output_folder = catch_parameter("wavefield_output_folder", file);
 }
 
 void Modeling::set_geometry()
@@ -209,7 +206,7 @@ void Modeling::set_vp_model()
 
     V = new float[volsize]();
 
-    expand_boundary(model, V);    
+    expand_boundary(model, V);
 }
 
 void Modeling::print_information()
@@ -242,7 +239,4 @@ void Modeling::export_outputs()
 {
     if (export_receiver_output) 
         export_binary_float(receiver_output_file, receiver_output, receiver_output_samples);
-
-    if (export_wavefield_output) 
-        export_binary_float(wavefield_output_file, wavefield_output, wavefield_output_samples);
 }

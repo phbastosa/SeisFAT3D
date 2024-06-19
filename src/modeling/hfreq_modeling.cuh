@@ -30,7 +30,6 @@ private:
     void initialization();
 
     void get_receiver_output();
-    void get_wavefield_output();
 
 public: 
 
