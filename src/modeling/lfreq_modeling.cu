@@ -77,14 +77,14 @@ void lfreq_Modeling::define_wavelet_signature()
 
     float pi = 4.0f*atanf(1.0f);
 
-    float t0 = sqrtf(pi)/fmax;
+    float t0 = 2*sqrtf(pi)/fmax;
     float fc = fmax/(3.0f * sqrtf(pi));
 
     for (int n = 0; n < nt; n++)
     {
         float td = n*dt - t0;
 
-        float arg = pi*pi*pi*fmax*fmax*td*td;
+        float arg = pi*(pi*pi*fc*fc*td*td);
 
         signal[n] = (1.0f - 2.0f*arg)*expf(-arg);
     }
