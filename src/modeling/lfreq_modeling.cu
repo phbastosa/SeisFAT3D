@@ -209,7 +209,7 @@ void lfreq_Modeling::forward_propagation()
     {
         display_progress();
 
-        compute_pressure<<<blocksPerGrid, threadsPerBlock>>>(Unow, Uold, Vp, damp1D, damp2D, damp3D, wavelet, source_index, time_index, dx, dy, dz, dt, nxx, nyy, nzz, nabc);
+        FDM_8E2T_kernel<<<blocksPerGrid, threadsPerBlock>>>(Unow, Uold, Vp, damp1D, damp2D, damp3D, wavelet, source_index, time_index, dx, dy, dz, dt, nxx, nyy, nzz, nabc);
         cudaDeviceSynchronize();
 
         std::swap(Uold, Unow);
@@ -228,7 +228,7 @@ void lfreq_Modeling::free_space()
     cudaFree(Uold);
 }
 
-__global__ void compute_pressure(float * Unow, float * Uold, float * V, float * damp1D, float * damp2D, float * damp3D, float * wavelet, int sId, int tId, float dx, float dy, float dz, float dt, int nxx, int nyy, int nzz, int nabc)
+__global__ void FDM_8E2T_kernel(float * Unow, float * Uold, float * V, float * damp1D, float * damp2D, float * damp3D, float * wavelet, int sId, int tId, float dx, float dy, float dz, float dt, int nxx, int nyy, int nzz, int nabc)
 {
     int index = blockIdx.x * blockDim.x + threadIdx.x;
 
