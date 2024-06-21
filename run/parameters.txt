@@ -66,7 +66,7 @@ inversion_type = 0                    # <int>
 
 max_iteration = 2                     # <int>
 
-max_slowness = 1e-4                   # Max slowness variation <float>
+max_slowness_variation = 1e-4         # <float>
 
 smooth_per_iteration = true           # <bool>
 gaussian_filter_samples = 5           # [odd number] <int> 
