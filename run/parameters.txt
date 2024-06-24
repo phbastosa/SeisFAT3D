@@ -94,4 +94,6 @@ migration_type = 0
 input_data_folder = ../inputs/data/        
 input_data_prefix = seismogram_gather_    
 
+image_path = ../outputs/images/
+
 
