@@ -15,13 +15,9 @@ int main(int argc, char **argv)
 
     migration[type]->set_parameters();
 
-    for (int shot = 0; shot < migration[type]->total_shots; shot++)
-    {
-        migration[type]->shot_index;
+    migration[type]->import_gathers();
 
-        migration[type]->source_to_receiver_propagation();
-        migration[type]->receiver_to_source_propagation();
-    }
+    migration[type]->cross_correlation();
 
     migration[type]->image_compensation();
 

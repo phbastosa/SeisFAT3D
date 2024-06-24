@@ -69,7 +69,7 @@ void lfreq_Modeling::define_wavelet_signature()
 
         float arg = pi*(pi*pi*fc*fc*td*td);
 
-        signal[n] = (1.0f - 2.0f*arg)*expf(-arg);
+        signal[n] = 1e4f*(1.0f - 2.0f*arg)*expf(-arg);
     }
     
     cudaMalloc((void**)&(wavelet), nt*sizeof(float));

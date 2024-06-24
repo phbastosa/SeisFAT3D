@@ -7,11 +7,11 @@
 
 class lfreq_Migration : public Migration
 {
-    private:
+private:
 
     void set_modeling_type();
 
-    public:
+public:
 
 
 };
