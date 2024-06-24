@@ -14,9 +14,6 @@ void hfreq_Modeling::set_outputs()
 
 void hfreq_Modeling::set_volumes()
 {
-    type_name = std::string("fsm");
-    type_message = std::string("Accurate Fast Sweeping Method eikonal solver");
-
     nSweeps = 8;
     meshDim = 3;
 
@@ -71,6 +68,9 @@ void hfreq_Modeling::set_volumes()
 
 void hfreq_Modeling::set_specifics()
 {
+    type_name = std::string("eikonal");
+    type_message = std::string("[0] Accurate Fast Sweeping Method eikonal equation solver");
+
     nbxl = 1; nbxr = 1;
     nbyl = 1; nbyr = 1;
     nbzu = 1; nbzd = 1;

@@ -52,7 +52,7 @@ void export_binary_float(std::string path, float * array, int n)
         throw std::invalid_argument("\033[31mError: " + path + " could not be opened!\033[0;0m");
     }
 
-    std::cout<<"Binary file " + path + " was successfully written."<<std::endl;
+    std::cout<<"Binary file \033[31m" + path + "\033[0;0m was successfully written."<<std::endl;
 
     file.close();
 }

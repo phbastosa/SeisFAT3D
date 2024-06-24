@@ -32,7 +32,6 @@ private:
 
     float * seismogram = nullptr;
 
-    void display_progress();
     void define_cerjan_dampers();
     void define_wavelet_signature();
     void define_grid_nodes_position();

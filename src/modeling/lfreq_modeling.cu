@@ -1,22 +1,5 @@
 # include "lfreq_modeling.cuh"
 
-void lfreq_Modeling::display_progress()
-{
-    if (time_index % (nt / 10) == 0)
-    {
-        print_information();
-
-        float beta = 4.0f;
-        float alpha = 3.3f;
-
-        std::cout << "Highest frequency without dispersion: " << vmin / (alpha*dx) << " Hz\n";
-
-        std::cout << "Highest time step without instability: " << dx / (beta*vmax) << " s\n\n";
-
-        std::cout<<"Time progress: " << floorf(100.0f * (float)(time_index+1) / (float)(nt)) <<" %\n\n";
-    }
-}
-
 void lfreq_Modeling::define_cerjan_dampers()
 {
     float * d1D = new float[nabc]();
@@ -134,9 +117,6 @@ void lfreq_Modeling::set_outputs()
 
 void lfreq_Modeling::set_volumes()
 {
-    type_name = std::string("scalar");
-    type_message = std::string("Constant density acoustic isotropic solver");
-
     P = new float[volsize]();
 
     vmin = 99999.0f;
@@ -160,6 +140,9 @@ void lfreq_Modeling::set_volumes()
 
 void lfreq_Modeling::set_specifics()
 {
+    type_name = std::string("scalar");
+    type_message = std::string("[1] Constant density acoustic wave equation solver");
+
     nt = std::stoi(catch_parameter("time_samples", file));
     dt = std::stof(catch_parameter("time_spacing", file));
 
@@ -207,8 +190,6 @@ void lfreq_Modeling::forward_propagation()
 {
     for (time_index = 0; time_index < nt; time_index++)
     {
-        display_progress();
-
         FDM_8E2T_kernel<<<blocksPerGrid, threadsPerBlock>>>(Unow, Uold, Vp, damp1D, damp2D, damp3D, wavelet, source_index, time_index, dx, dy, dz, dt, nxx, nyy, nzz, nabc);
         cudaDeviceSynchronize();
 

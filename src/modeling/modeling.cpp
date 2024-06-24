@@ -212,16 +212,20 @@ void Modeling::set_vp_model()
 void Modeling::print_information()
 {
     auto clear = system("clear");
-        
-    std::cout<<"Model dimensions (z = "<<(nz-1)*dz<<", x = "<<(nx-1)*dx<<", y = "<<(ny-1)*dy<<") m\n\n";
 
-    std::cout<<"Shot "<<shot_index+1<<" of "<<total_shots;
+    std::cout << "\033[1mSeisFAT3D\033[m - Modeling program\n\n";
 
-    std::cout<<" at position (z = "<<geometry->shots.z[shot_index]<<", x = " 
-                                   <<geometry->shots.x[shot_index]<<", y = " 
-                                   <<geometry->shots.y[shot_index]<<") m\n\n";
+    std::cout << "Model dimensions: (z = " << (nz-1)*dz << 
+                                  ", x = " << (nx-1)*dx << 
+                                  ", y = " << (ny-1)*dy << ") m\n\n";
 
-    std::cout<<"Modeling type: "<<type_message<<"\n\n";
+    std::cout << "Modeling type: \033[1m" << type_message << "\033[m\n\n";
+
+    std::cout << "Running shot " << shot_index+1 << " of " << total_shots;
+
+    std::cout << " at position (z = " << geometry->shots.z[shot_index] << 
+                             ", x = " << geometry->shots.x[shot_index] << 
+                             ", y = " << geometry->shots.y[shot_index] << ") m\n\n";
 }
 
 void Modeling::set_initial_conditions()
