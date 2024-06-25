@@ -122,18 +122,10 @@ case "$1" in
 
 -test_modeling)
 
-    python3 ../tests/modeling/generate_models.py
+    ./../bin/modeling.exe ../tests/modeling/parameters_hfreq.txt 
+    ./../bin/modeling.exe ../tests/modeling/parameters_lfreq.txt 
 
-    spacings=(100 50 25)
-    methods=("pod" "fim" "fsm")
-
-    for method in ${methods[@]}; do 
-        for spacing in ${spacings[@]}; do 
-            ./../bin/modeling.exe ../tests/modeling/parFiles/parameters_"$method"_"$spacing"m.txt; 
-        done    
-    done 
-
-    python3 ../tests/modeling/generate_figures.py
+    python3 ../tests/modeling/generate_figures.py ../tests/modeling/parameters_hfreq.txt
 
 	exit 0
 ;;

@@ -27,13 +27,13 @@ nodes_file = ../inputs/geometry/xyz_nodes_position.txt
 shots_nlines = [1, 1, 1]              # <int> (z, x, y)     
 nodes_nlines = [1, 75, 50]            # <int> (z, x, y)            
 
-shots_SW = [0, 50, 50]                # [m] <float> (z, x, y) NW            
-shots_NW = [0, 50, 50]                # [m] <float> (z, x, y)  |            
-shots_SE = [0, 50, 50]                # [m] <float> (z, x, y) SW -- SE     
+shots_SW = [50, 3750, 2500]           # [m] <float> (z, x, y) NW            
+shots_NW = [50, 3750, 2500]           # [m] <float> (z, x, y)  |            
+shots_SE = [50, 3750, 2500]           # [m] <float> (z, x, y) SW -- SE     
 
-nodes_SW = [0, 50, 50]                # [m] <float> (z, x, y) NW           
-nodes_NW = [0, 50, 4950]              # [m] <float> (z, x, y)  |         
-nodes_SE = [0, 7450, 50]              # [m] <float> (z, x, y) SW -- SE   
+nodes_SW = [50, 50, 50]               # [m] <float> (z, x, y) NW           
+nodes_NW = [50, 50, 4950]             # [m] <float> (z, x, y)  |         
+nodes_SE = [50, 7450, 50]             # [m] <float> (z, x, y) SW -- SE   
 
 #---------------------------------------------------------------------------------------------------
 # Modeling parameters ------------------------------------------------------------------------------
@@ -42,13 +42,13 @@ nodes_SE = [0, 7450, 50]              # [m] <float> (z, x, y) SW -- SE
 #   [1] - Constant density acoustic wave equation solver 
 #---------------------------------------------------------------------------------------------------
 
-modeling_type = 1                     # <int>
+modeling_type = 0                     # <int>
 
 max_frequency = 30                    # [Hz] <float>
 time_spacing = 1e-3                   # [s] <float>
 time_samples = 5001                   # <int>
 
-boundary_damper = 0.0015              # <float>
+boundary_damper = 0.001               # <float>
 boundary_samples = 100                # <int> 
 
 export_receiver_output = true         # <bool> 

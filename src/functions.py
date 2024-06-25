@@ -96,7 +96,7 @@ def plot_model_3D(model, dh, slices, **kwargs):
     [z, x, y] = scale * (min_model_distance / max_model_distance) * model_shape / max_model_distance
 
     px = 1.0 / plt.rcParams['figure.dpi']  
-    ticks = np.array([3, 7, 7], dtype = int)
+    ticks = np.array([5, 16, 11], dtype = int)
 
     fig = plt.figure(figsize = (910*px, 780*px))
 

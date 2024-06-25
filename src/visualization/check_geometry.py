@@ -20,7 +20,7 @@ model = functions.read_binary_volume(nz, nx, ny, model_file)
 shots_file = functions.catch_parameter(argv[1], "shots_file")
 nodes_file = functions.catch_parameter(argv[1], "nodes_file")
 
-slices = np.array([0.5*nz, 0.5*nx, 0.5*ny], dtype = int)
+slices = np.array([0.5*nz, 0.5*ny, 0.5*nx], dtype = int)
 
 dh = np.array([dx, dy, dz])
 
