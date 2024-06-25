@@ -119,15 +119,6 @@ void lfreq_Modeling::set_volumes()
 {
     P = new float[volsize]();
 
-    vmin = 99999.0f;
-    vmax =-99999.0f;
-
-    for (int index = 0; index < volsize; index++)
-    {
-        if (V[index] < vmin) vmin = V[index];
-        if (V[index] > vmax) vmax = V[index];
-    }
-
     define_wavelet_signature();
     
     cudaMalloc((void**)&(Vp), volsize*sizeof(float));
@@ -261,10 +252,16 @@ __global__ void compute_seismogram(float * seismogram, float * P, int * rx, int 
 
 __device__ float get_boundary_damper(float * damp1D, float * damp2D, float * damp3D, int i, int j, int k, int nxx, int nyy, int nzz, int nabc)
 {
-    float damper = 1.0f;
+    float damper;
+
+    // global case
+    if ((i >= nabc) && (i < nzz-nabc) && (j >= nabc) && (j < nxx-nabc) && (k >= nabc) && (k < nyy-nabc))
+    {
+        damper = 1.0f;
+    }
 
     // 1D damping
-    if((i < nabc) && (j >= nabc) && (j < nxx-nabc) && (k >= nabc) && (k < nyy-nabc)) 
+    else if((i < nabc) && (j >= nabc) && (j < nxx-nabc) && (k >= nabc) && (k < nyy-nabc)) 
     {
         damper = damp1D[i];
     }         

@@ -12,8 +12,7 @@ private:
     int nt, nabc;
     int snap_index; 
 
-    float dt, fmax;
-    float vmin, vmax;   
+    float dt, fmax;   
 
     float * Vp = nullptr;
     

@@ -27,8 +27,8 @@ dh = np.array([dx, dy, dz])
 functions.plot_model_3D(model, dh, slices, 
                         shots = shots_file, 
                         nodes = nodes_file,
-                        scale = 4.0, 
-                        dbar = 1.8)
+                        scale = 2.5, 
+                        dbar = 1.6)
 
 plt.savefig(f"current_vp_model.png", dpi = 200)
 print("\nFile current_vp_model.png was succesfully written.")
