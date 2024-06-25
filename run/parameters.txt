@@ -42,11 +42,11 @@ nodes_SE = [50, 7450, 50]             # [m] <float> (z, x, y) SW -- SE
 #   [1] - Constant density acoustic wave equation solver 
 #---------------------------------------------------------------------------------------------------
 
-modeling_type = 0                     # <int>
+modeling_type = 1                     # <int>
 
 max_frequency = 30                    # [Hz] <float>
 time_spacing = 1e-3                   # [s] <float>
-time_samples = 5001                   # <int>
+time_samples = 3001                   # <int>
 
 boundary_damper = 0.001               # <float>
 boundary_samples = 100                # <int> 
