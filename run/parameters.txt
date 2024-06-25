@@ -6,9 +6,9 @@ x_samples = 601                       # <int>
 y_samples = 401                       # <int>  
 z_samples = 161                       # <int>  
 
-x_spacing = 12.5                        # [m] <float> 
-y_spacing = 12.5                        # [m] <float> 
-z_spacing = 12.5                        # [m] <float> 
+x_spacing = 12.5                      # [m] <float> 
+y_spacing = 12.5                      # [m] <float> 
+z_spacing = 12.5                      # [m] <float> 
 
 vp_model_file = ../inputs/models/overthrust_vp_161x601x401_12.5m.bin   
 
