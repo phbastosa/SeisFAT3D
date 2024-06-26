@@ -48,7 +48,7 @@ max_frequency = 30                    # [Hz] <float>
 time_spacing = 1e-3                   # [s] <float>
 time_samples = 3001                   # <int>
 
-boundary_damper = 0.001               # <float>
+boundary_damper = 0.002               # <float>
 boundary_samples = 100                # <int> 
 
 export_receiver_output = true         # <bool> 
