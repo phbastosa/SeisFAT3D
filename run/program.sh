@@ -122,6 +122,8 @@ case "$1" in
 
 -test_modeling)
 
+    ./../bin/geometry.exe ../tests/modeling/parameters_hfreq.txt
+
     ./../bin/modeling.exe ../tests/modeling/parameters_hfreq.txt 
     ./../bin/modeling.exe ../tests/modeling/parameters_lfreq.txt 
 
@@ -132,17 +134,19 @@ case "$1" in
 
 -test_inversion) 
 
-    python3 ../tests/inversion/generate_models.py
+    ./../bin/geometry.exe ../tests/inversion/parameters_hfreq_mod.txt
+    
+    python3 ../tests/inversion/generate_models.py ../tests/inversion/parameters_hfreq_mod.txt
 
-    ./../bin/modeling.exe ../tests/inversion/parFiles/parameters_obsData.txt
+    ./../bin/modeling.exe ../tests/inversion/parameters_hfreq_mod.txt
 
-    ./../bin/inversion.exe ../tests/inversion/parFiles/parameters_leastSquares.txt
-    ./../bin/inversion.exe ../tests/inversion/parFiles/parameters_adjointState.txt
+    # ./../bin/inversion.exe ../tests/inversion/parFiles/parameters_leastSquares.txt
+    # ./../bin/inversion.exe ../tests/inversion/parFiles/parameters_adjointState.txt
 
-    ./../bin/modeling.exe ../tests/inversion/parFiles/parameters_lsFinalModeling.txt
-    ./../bin/modeling.exe ../tests/inversion/parFiles/parameters_adjFinalModeling.txt
+    # ./../bin/modeling.exe ../tests/inversion/parFiles/parameters_lsFinalModeling.txt
+    # ./../bin/modeling.exe ../tests/inversion/parFiles/parameters_adjFinalModeling.txt
 
-    python3 ../tests/inversion/generate_figures.py
+    # python3 ../tests/inversion/generate_figures.py
 	
     exit 0
 ;;

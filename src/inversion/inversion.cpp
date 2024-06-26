@@ -152,7 +152,6 @@ void Inversion::update_smoothing()
     }
 }
 
-
 void Inversion::model_update()
 {
     update_smoothing();

@@ -1,44 +1,44 @@
 import numpy as np
+import matplotlib.pyplot as plt
 
-x_max = 2e4
-y_max = 2e4
-z_max = 5e3
+from sys import path, argv
+path.append("../src/")
+import functions
 
-dh = 100.0
+nx = int(functions.catch_parameter(argv[1], "x_samples"))
+ny = int(functions.catch_parameter(argv[1], "y_samples"))
+nz = int(functions.catch_parameter(argv[1], "z_samples"))
 
-nx = int((x_max / dh) + 1)
-ny = int((y_max / dh) + 1)
-nz = int((z_max / dh) + 1)
+dx = float(functions.catch_parameter(argv[1], "x_spacing"))
+dy = float(functions.catch_parameter(argv[1], "y_spacing"))
+dz = float(functions.catch_parameter(argv[1], "z_spacing"))
 
-init_model = 1500.0 * np.ones((nz, nx, ny))
-true_model = 1500.0 * np.ones((nz, nx, ny))
+model = functions.read_binary_volume(nz, nx, ny, functions.catch_parameter(argv[1], "vp_model_file"))
 
-z = np.arange(nz)*dh
-dv = 50
-vi = 2000
+shots_file = functions.catch_parameter(argv[1], "shots_file")
+nodes_file = functions.catch_parameter(argv[1], "nodes_file")
 
-v = vi + z*dv/dh
+slices = np.array([nz/2, ny/2, nx/2], dtype = int)
+dh = np.array([dx, dy, dz])
 
-for i in range(nz):
-    true_model[i] = v[i]
-    init_model[i] = v[i]
+functions.plot_model_3D(model, dh, slices, 
+                        shots = shots_file, 
+                        nodes = nodes_file,
+                        scale = 2.5, 
+                        dbar = 1.6)
 
-radius = 1000
+plt.savefig(f"reference_model.png", dpi = 200)
+plt.clf()
 
-velocity_variation = np.array([-500, 500, 500, -500])
+model[60:121] = 2300
 
-circle_centers = np.array([[2500, 7500, 7500],
-                           [2500, 7500, 11500],
-                           [2500, 11500, 7500],
-                           [2500, 11500, 11500]])
+functions.plot_model_3D(model, dh, slices, 
+                        shots = shots_file, 
+                        nodes = nodes_file,
+                        scale = 2.5, 
+                        dbar = 1.6)
 
-x, z, y = np.meshgrid(np.arange(nx)*dh, np.arange(nz)*dh, np.arange(ny)*dh)
+plt.savefig(f"initial_hfreq_model.png", dpi = 200)
+plt.clf()
 
-for k, dv in enumerate(velocity_variation):
-    
-    distance = np.sqrt((x - circle_centers[k,1])**2 + (y - circle_centers[k,2])**2 + (z - circle_centers[k,0])**2)
-
-    true_model[distance <= radius] += dv
-
-true_model.flatten("F").astype(np.float32, order = "F").tofile(f"../inputs/models/trueModelTest_{nz}x{nx}x{ny}_{dh:.0f}m.bin")
-init_model.flatten("F").astype(np.float32, order = "F").tofile(f"../inputs/models/initModelTest_{nz}x{nx}x{ny}_{dh:.0f}m.bin")
+model.flatten("F").astype(np.float32, order = "F").tofile(f"../inputs/models/init_hfreq_model_{nz}x{nx}x{ny}_{dx:.0f}m.bin")
