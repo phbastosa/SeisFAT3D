@@ -1,1 +1,0 @@
-## Recovered model output folder

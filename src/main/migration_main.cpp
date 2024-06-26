@@ -3,7 +3,8 @@
 
 int main(int argc, char **argv)
 {
-    std::vector<Migration *> migration = {
+    std::vector<Migration *> migration = 
+    {
         new hfreq_Migration(),
         new lfreq_Migration()
     };

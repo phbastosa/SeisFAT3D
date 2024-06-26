@@ -25,8 +25,8 @@ modeling_main="../src/main/modeling_main.cpp"
 
 inversion="../src/inversion/inversion.cpp"
 
-hfreq_inversion="../src/inversion/hfreq_inversion.cpp"
-lfreq_inversion="../src/inversion/lfreq_inversion.cpp"
+hfreq_inversion="../src/inversion/hfreq_inversion.cu"
+lfreq_inversion="../src/inversion/lfreq_inversion.cu"
 
 inversion_main="../src/main/inversion_main.cpp"
 
@@ -90,8 +90,8 @@ case "$1" in
     echo -e "../bin/\033[31mmodeling.exe\033[m" 
     nvcc $io $geometry_all $modeling_all $modeling_main $flags -o ../bin/modeling.exe
 
-    # echo -e "../bin/\033[31minversion.exe\033[m" 
-    # nvcc $io $geometry_all $modeling_all $inversion_all $inversion_main $flags -o ../bin/inversion.exe
+    echo -e "../bin/\033[31minversion.exe\033[m" 
+    nvcc $io $geometry_all $modeling_all $inversion_all $inversion_main $flags -o ../bin/inversion.exe
 
     echo -e "../bin/\033[31mmigration.exe\033[m"
     nvcc $io $geometry_all $modeling_all $migration_all $migration_main $flags -o ../bin/migration.exe

@@ -1,9 +1,6 @@
 # ifndef MODELING_HPP
 # define MODELING_HPP
 
-# include <chrono>
-# include <string>
-
 # include "../geometry/geometry.hpp"
 
 class Modeling
