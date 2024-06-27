@@ -24,8 +24,8 @@ nodes_file = ../inputs/geometry/xyz_nodes_position.txt
 
 # Regular geometry ---------------------------------------------------------------------------------               
 
-shots_nlines = [1, 14, 9]              # <int> (z, x, y)     
-nodes_nlines = [1, 149, 99]            # <int> (z, x, y)            
+shots_nlines = [1, 67, 41]            # <int> (z, x, y)     
+nodes_nlines = [1, 297, 197]          # <int> (z, x, y)            
 
 shots_SW = [50, 500, 500]             # [m] <float> (z, x, y) NW            
 shots_NW = [50, 500, 4500]            # [m] <float> (z, x, y)  |            

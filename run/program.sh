@@ -134,13 +134,13 @@ case "$1" in
 
 -test_inversion) 
 
-    # ./../bin/geometry.exe ../tests/inversion/parameters_hfreq_mod.txt
+    ./../bin/geometry.exe ../tests/inversion/parameters_hfreq_mod.txt
     
-    # python3 ../tests/inversion/generate_models.py ../tests/inversion/parameters_hfreq_mod.txt
+    python3 ../tests/inversion/generate_models.py ../tests/inversion/parameters_hfreq_mod.txt
 
     # ./../bin/modeling.exe ../tests/inversion/parameters_hfreq_mod.txt
 
-    ./../bin/inversion.exe ../tests/inversion/parameters_hfreq_inv.txt
+    # ./../bin/inversion.exe ../tests/inversion/parameters_hfreq_inv.txt
 
     # python3 ../tests/inversion/generate_figures.py
 	
