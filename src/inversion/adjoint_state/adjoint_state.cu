@@ -1,80 +1,32 @@
-# include "hfreq_inversion.cuh"
+# include "adjoint_state.cuh"
 
-int hfreq_Inversion::iDivUp(int a, int b) 
+int Adjoint_State::iDivUp(int a, int b) 
 { 
     return ( (a % b) != 0 ) ? (a / b + 1) : (a / b); 
 }
 
-
-void hfreq_Inversion::set_forward_modeling()
+void Adjoint_State::set_specific_parameters()
 {
-    modeling = new hfreq_Modeling();
-}
-
-void hfreq_Inversion::set_inversion_volumes()
-{
-    n_data = modeling->total_shots * modeling->total_nodes;
-
     nSweeps = 8;
     meshDim = 3;
 
     totalLevels = (modeling->nxx - 1) + (modeling->nyy - 1) + (modeling->nzz - 1);
 
+    inversion_method = "[1] - Adjoint State first arrival tomography";
+
     source = new float[modeling->volsize]();
     adjoint = new float[modeling->volsize]();
-
-    dcal = new float[n_data]();
-    dobs = new float[n_data]();
-
-    gradient = new float[modeling->nPoints]();
-    slowness = new float[modeling->nPoints]();
-    variation = new float[modeling->nPoints]();
 
     cudaMalloc((void**)&(d_T), modeling->volsize*sizeof(float));
     cudaMalloc((void**)&(d_source), modeling->volsize*sizeof(float));
     cudaMalloc((void**)&(d_adjoint), modeling->volsize*sizeof(float));
 }
 
-void hfreq_Inversion::import_obs_data()
-{
-    int ptr = 0; 
-    
-    float * data = new float[modeling->total_nodes]();
-
-    for (int shot = 0; shot < modeling->total_shots; shot++)
-    {
-        import_binary_float(obs_data_folder + obs_data_prefix + std::to_string(shot+1) + ".bin", data, modeling->total_nodes);
-
-        for (int d = ptr; d < ptr + modeling->total_nodes; d++) 
-            dobs[d] = data[d - ptr];
-
-        ptr += modeling->total_nodes;        
-    }
-
-    delete[] data;        
-}
-
-void hfreq_Inversion::get_objective_function()
-{
-    float square_difference = 0.0f;
-
-    for (int i = 0; i < n_data; i++)
-        square_difference += powf(dobs[i] - dcal[i], 2.0f);
-
-    residuo.push_back(sqrtf(square_difference));
-}
-
-void hfreq_Inversion::extract_calculated_data()
-{
-    int skipped = modeling->shot_index * modeling->total_nodes;
-
-    for (int i = 0; i < modeling->total_nodes; i++) 
-        dcal[i + skipped] = modeling->receiver_output[i];
-}
-
-void hfreq_Inversion::adjoint_propagation()
+void Adjoint_State::apply_inversion_technique()
 {
     cell_volume = modeling->dx * modeling->dy * modeling->dz;
+
+    modeling->expand_boundary(modeling->wavefield_output, modeling->T);
 
     int sidx = (int)(modeling->geometry->shots.x[modeling->shot_index] / modeling->dx) + modeling->nbxl;
     int sidy = (int)(modeling->geometry->shots.y[modeling->shot_index] / modeling->dy) + modeling->nbyl;
@@ -149,8 +101,8 @@ void hfreq_Inversion::adjoint_propagation()
     cudaMemcpy(d_source, source, modeling->volsize*sizeof(float), cudaMemcpyHostToDevice);
     cudaMemcpy(d_adjoint, adjoint, modeling->volsize*sizeof(float), cudaMemcpyHostToDevice);
 
-    // for (int sweepCount = 0; sweepCount < meshDim; sweepCount++)
-    // {
+    for (int sweepCount = 0; sweepCount < meshDim; sweepCount++)
+    {
         for (int sweep = 0; sweep < nSweeps; sweep++)
         { 
             int start = (sweep == 3 || sweep == 5 || sweep == 6 || sweep == 7) ? totalLevels : meshDim;
@@ -186,7 +138,7 @@ void hfreq_Inversion::adjoint_propagation()
                 cudaDeviceSynchronize();
             }
         }
-    // }
+    }
     
     cudaMemcpy(adjoint, d_adjoint, modeling->volsize*sizeof(float), cudaMemcpyDeviceToHost);
 
@@ -199,19 +151,71 @@ void hfreq_Inversion::adjoint_propagation()
         int indp = (i + modeling->nbzu) + (j + modeling->nbxl)*modeling->nzz + (k + modeling->nbyl)*modeling->nxx*modeling->nzz;
 
         gradient[index] += adjoint[indp]*modeling->T[indp]*modeling->S[indp]*modeling->S[indp]*cell_volume / modeling->total_shots / modeling->total_nodes;
-    }    
+    }
 }
 
-void hfreq_Inversion::update_specifications()
+void Adjoint_State::gradient_preconditioning()
+{       
+    if (smooth)
+    { 
+        int aux_nx = modeling->nx + 2*smoother_samples;
+        int aux_ny = modeling->ny + 2*smoother_samples;
+        int aux_nz = modeling->nz + 2*smoother_samples;
+
+        int aux_nPoints = aux_nx*aux_ny*aux_nz;
+
+        float * grad_aux = new float[aux_nPoints]();
+        float * grad_smooth = new float[aux_nPoints]();
+
+        for (int index = 0; index < modeling->nPoints; index++)
+        {
+            int k = (int) (index / (modeling->nx*modeling->nz));        
+            int j = (int) (index - k*modeling->nx*modeling->nz) / modeling->nz;    
+            int i = (int) (index - j*modeling->nz - k*modeling->nx*modeling->nz);          
+
+            int ind_filt = (i + smoother_samples) + (j + smoother_samples)*aux_nz + (k + smoother_samples)*aux_nx*aux_nz;
+
+            grad_aux[ind_filt] = gradient[i + j*modeling->nz + k*modeling->nx*modeling->nz];
+        }
+
+        smooth_volume(grad_aux, grad_smooth, aux_nx, aux_ny, aux_nz);
+
+        for (int index = 0; index < modeling->nPoints; index++)
+        {
+            int k = (int) (index / (modeling->nx*modeling->nz));        
+            int j = (int) (index - k*modeling->nx*modeling->nz) / modeling->nz;    
+            int i = (int) (index - j*modeling->nz - k*modeling->nx*modeling->nz);          
+
+            int ind_filt = (i + smoother_samples) + (j + smoother_samples)*aux_nz + (k + smoother_samples)*aux_nx*aux_nz; 
+
+            gradient[i + j*modeling->nz + k*modeling->nx*modeling->nz] = grad_smooth[ind_filt];
+        }
+    
+        delete[] grad_aux;
+        delete[] grad_smooth;
+    }
+}
+
+void Adjoint_State::optimization()  
 {
+    float gmax = 0.0f;
+    float gdot = 0.0f;
     for (int index = 0; index < modeling->nPoints; index++)
     {
-        slowness[index] += variation[index];
+        if (gmax < fabsf(gradient[index]))
+            gmax = fabsf(gradient[index]);
 
-        modeling->model[index] = 1.0f / slowness[index];
+        gdot += gradient[index]*gradient[index];
     }
 
-    modeling->expand_boundary(slowness, modeling->S);
+    float gamma = max_slowness_variation;
+
+    float lambda = 0.5f * residuo.back() / gdot;     
+    
+    float alpha = (lambda*gmax > gamma) ? (gamma / (lambda*gmax)) : 1.0f; 
+
+    for (int index = 0; index < modeling->nPoints; index++)
+        dm[index] = alpha*lambda*gradient[index];        
 }
 
 __global__ void adjoint_state_kernel(float * adjoint, float * source, float * T, int level, int xOffset, int yOffset, int xSweepOffset, int ySweepOffset, 

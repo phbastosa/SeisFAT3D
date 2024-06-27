@@ -6,46 +6,60 @@ io="../src/io/io.cpp"
 
 # Acquisition geometry scripts ------------------------------------------------------------------------
 
-geometry_all="../src/geometry/geometry.cpp"
+geometry="../src/geometry/geometry.cpp"
+
+regular="../src/geometry/regular/regular.cpp"
+circular="../src/geometry/circular/circular.cpp"
 
 geometry_main="../src/main/geometry_main.cpp"
+
+geometry_all="$geometry $regular $circular"
 
 # Seismic modeling scripts ----------------------------------------------------------------------------
 
 modeling="../src/modeling/modeling.cpp"
 
-hfreq_modeling="../src/modeling/hfreq_modeling.cu"
-lfreq_modeling="../src/modeling/lfreq_modeling.cu"
+eikonal="../src/modeling/eikonal_equation/eikonal.cpp"
 
-modeling_all="$modeling $hfreq_modeling $lfreq_modeling"
+classical="../src/modeling/eikonal_equation/isotropic/classical.cu"
+block_FIM="../src/modeling/eikonal_equation/isotropic/block_FIM.cu"
+ultimate_FSM="../src/modeling/eikonal_equation/isotropic/ultimate_FSM.cu"
+
+fullwave="../src/modeling/wave_equation/wave.cu"
+
+scalar="../src/modeling/wave_equation/isotropic/scalar.cu"
+acoustic="../src/modeling/wave_equation/isotropic/acoustic.cu"
+elastic="../src/modeling/wave_equation/isotropic/elastic.cu"
 
 modeling_main="../src/main/modeling_main.cpp"
 
+modeling_all="$modeling $eikonal $classical $block_FIM 
+              $ultimate_FSM $fullwave $scalar $acoustic $elastic"
+
 # Seismic inversion scripts ---------------------------------------------------------------------------
 
-inversion="../src/inversion/inversion.cpp"
+tomography="../src/inversion/tomography.cpp"
 
-hfreq_inversion="../src/inversion/hfreq_inversion.cu"
-lfreq_inversion="../src/inversion/lfreq_inversion.cu"
+least_squares="../src/inversion/least_squares/least_squares.cu"
+adjoint_state="../src/inversion/adjoint_state/adjoint_state.cu"
 
 inversion_main="../src/main/inversion_main.cpp"
 
-inversion_all="$inversion $hfreq_inversion $lfreq_inversion"
+inversion_all="$tomography $least_squares $adjoint_state"
 
 # Seismic migration scripts ---------------------------------------------------------------------------
 
 migration="../src/migration/migration.cpp"
 
-hfreq_migration="../src/migration/hfreq_migration.cu"
-lfreq_migration="../src/migration/lfreq_migration.cu"
+kirchhoff="../src/migration/kirchhoff/kirchhoff.cu"
 
 migration_main="../src/main/migration_main.cpp"
 
-migration_all="$migration $hfreq_migration $lfreq_migration"
+migration_all="$kirchhoff $migration"
 
 # Compiler flags --------------------------------------------------------------------------------------
 
-flags="--std=c++11 -lm -w -g -O4 --use_fast_math"
+flags="--std=c++11 -lm -O3 -w -g --relocatable-device-code=true"
 
 # Main dialogue ---------------------------------------------------------------------------------------
 
@@ -122,27 +136,35 @@ case "$1" in
 
 -test_modeling)
 
-    ./../bin/geometry.exe ../tests/modeling/parameters_hfreq.txt
+    python3 ../tests/modeling/generate_models.py
 
-    ./../bin/modeling.exe ../tests/modeling/parameters_hfreq.txt 
-    ./../bin/modeling.exe ../tests/modeling/parameters_lfreq.txt 
+    spacings=(100 50 25)
+    methods=("pod" "fim" "fsm")
 
-    python3 ../tests/modeling/generate_figures.py ../tests/modeling/parameters_hfreq.txt
+    for method in ${methods[@]}; do 
+        for spacing in ${spacings[@]}; do 
+            ./../bin/modeling.exe ../tests/modeling/parFiles/parameters_"$method"_"$spacing"m.txt; 
+        done    
+    done 
+
+    python3 ../tests/modeling/generate_figures.py
 
 	exit 0
 ;;
 
 -test_inversion) 
 
-    ./../bin/geometry.exe ../tests/inversion/parameters_hfreq_mod.txt
-    
-    python3 ../tests/inversion/generate_models.py ../tests/inversion/parameters_hfreq_mod.txt
+    python3 ../tests/inversion/generate_models.py
 
-    # ./../bin/modeling.exe ../tests/inversion/parameters_hfreq_mod.txt
+    ./../bin/modeling.exe ../tests/inversion/parFiles/parameters_obsData.txt
 
-    # ./../bin/inversion.exe ../tests/inversion/parameters_hfreq_inv.txt
+    ./../bin/inversion.exe ../tests/inversion/parFiles/parameters_leastSquares.txt
+    ./../bin/inversion.exe ../tests/inversion/parFiles/parameters_adjointState.txt
 
-    # python3 ../tests/inversion/generate_figures.py
+    ./../bin/modeling.exe ../tests/inversion/parFiles/parameters_lsFinalModeling.txt
+    ./../bin/modeling.exe ../tests/inversion/parFiles/parameters_adjFinalModeling.txt
+
+    python3 ../tests/inversion/generate_figures.py
 	
     exit 0
 ;;

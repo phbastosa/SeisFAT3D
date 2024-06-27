@@ -1,11 +1,9 @@
-# ifndef HFREQ_MODELING_CUH
-# define HFREQ_MODELING_CUH
+# ifndef ULTIMATE_FSM_CUH
+# define ULTIMATE_FSM_CUH
 
-# include <cuda_runtime.h>
+# include "../eikonal.hpp"
 
-# include "modeling.hpp"
-
-class hfreq_Modeling : public Modeling
+class Ultimate_FSM : public Eikonal
 {
 private:
 
@@ -23,17 +21,13 @@ private:
 
     int iDivUp(int a, int b);
 
-    void set_outputs();
-
     void set_volumes();
     void set_specifics();
     void initialization();
 
-    void get_receiver_output();
+public:
 
-public: 
-
-    void forward_propagation();
+    void set_forward_solver();
     void free_space();
 };
 

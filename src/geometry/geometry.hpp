@@ -46,7 +46,7 @@ public:
 
     std::string file;
 
-    void set_geometry();     
+    virtual void set_geometry() = 0;     
 };
 
 # endif

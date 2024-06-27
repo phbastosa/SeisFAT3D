@@ -1,11 +1,9 @@
-# ifndef HFREQ_INVERSION_CUH
-# define HFREQ_INVERSION_CUH
+# ifndef ADJOINT_STATE_CUH
+# define ADJOINT_STATE_CUH
 
-# include "inversion.hpp"
+# include "../tomography.hpp"
 
-# include "../modeling/hfreq_modeling.cuh"
-
-class hfreq_Inversion : public Inversion
+class Adjoint_State : public Tomography
 {
 private:
 
@@ -24,23 +22,18 @@ private:
 
     int iDivUp(int a, int b);
 
-    void get_objective_function();
-
-    void set_forward_modeling();
-    void set_inversion_volumes();
-
-    void extract_calculated_data();
-    void adjoint_propagation();
-
-    void update_specifications();
+    void set_specific_parameters();
+    void gradient_preconditioning();
+    void apply_inversion_technique();
 
 public:
 
-    void import_obs_data();
-
+    void optimization();
 };
 
 # endif
 
 __global__ void adjoint_state_kernel(float * adjoint, float * source, float * T, int level, int xOffset, int yOffset, int xSweepOffset, int ySweepOffset, 
                                      int zSweepOffset, int nxx, int nyy, int nzz, float dx, float dy, float dz);
+
+

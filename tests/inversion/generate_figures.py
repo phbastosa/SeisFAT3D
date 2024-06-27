@@ -19,7 +19,7 @@ init_model = functions.read_binary_volume(nz, nx, ny, f"../inputs/models/initMod
 shots_file = "../inputs/geometry/xyz_shots_position.txt"
 nodes_file = "../inputs/geometry/xyz_nodes_position.txt"
  
-slices = np.array([25, 75, 75], dtype = int) # [xy, zy, zx]
+slices = np.array([20, 75, 75], dtype = int) # [xy, zy, zx]
 
 functions.plot_model_3D(true_model, dh, slices,
                         shots = shots_file,
@@ -42,10 +42,11 @@ plt.savefig(f"initModel.png", dpi = 200)
 plt.clf()
 
 functions.plot_model_3D(true_model - init_model, dh, slices,
+                        shots = shots_file,
+                        nodes = nodes_file,
                         vmin = -500,
                         vmax = +500,
-                        scale = 2.5,
-                        cmap = "bwr")
+                        scale = 2.5)
 
 plt.savefig(f"diffModel.png", dpi = 200)
 plt.clf()
@@ -78,8 +79,7 @@ plt.clf()
 functions.plot_model_3D(final_model_ls - init_model, dh, slices,
                         vmin = -200,
                         vmax = +200,
-                        scale = 2.5,
-                        cmap = "bwr")
+                        scale = 2.5)
 
 plt.savefig(f"diff_model_ls.png", dpi = 200)
 plt.clf()
@@ -87,8 +87,7 @@ plt.clf()
 functions.plot_model_3D(final_model_adj - init_model, dh, slices,
                         vmin = -200,
                         vmax = +200,
-                        scale = 2.5,
-                        cmap = "bwr")
+                        scale = 2.5)
 
 plt.savefig(f"diff_model_adj.png", dpi = 200)
 plt.clf()
@@ -159,6 +158,7 @@ plt.title("Convergence curve", fontsize = 18)
 plt.xlabel("Iteration number", fontsize = 15)
 plt.ylabel(r"$||d^{obs} - d^{cal}||^2_2$", fontsize = 15)
 
+plt.legend(loc = "upper right", fontsize = 12) 
 plt.grid(True)
 plt.tight_layout()
 plt.savefig(f"curve.png", dpi = 200)
