@@ -10,7 +10,7 @@ void Inversion::set_parameters()
 
     update_smooth = str2bool(catch_parameter("smooth_per_iteration", file));
     smoother_samples = std::stoi(catch_parameter("gaussian_filter_samples", file));
-    smoother_stdv = std::stoi(catch_parameter("gaussian_filter_stdv", file));
+    smoother_stdv = std::stof(catch_parameter("gaussian_filter_stdv", file));
     
     convergence_map_folder = catch_parameter("convergence_folder", file);
     estimated_model_folder = catch_parameter("estimated_model_folder", file);
@@ -61,6 +61,8 @@ void Inversion::forward_modeling()
     {
         modeling->shot_index = shot;
 
+        print_information();
+
         modeling->set_initial_conditions();
 
         modeling->forward_propagation();
@@ -70,6 +72,8 @@ void Inversion::forward_modeling()
         if (iteration != max_iteration)
             adjoint_propagation();
     }
+
+    export_binary_float("gradient.bin", gradient, modeling->nPoints);
 }
 
 void Inversion::check_convergence()

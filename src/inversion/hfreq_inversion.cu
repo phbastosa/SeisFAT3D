@@ -149,8 +149,8 @@ void hfreq_Inversion::adjoint_propagation()
     cudaMemcpy(d_source, source, modeling->volsize*sizeof(float), cudaMemcpyHostToDevice);
     cudaMemcpy(d_adjoint, adjoint, modeling->volsize*sizeof(float), cudaMemcpyHostToDevice);
 
-    for (int sweepCount = 0; sweepCount < meshDim; sweepCount++)
-    {
+    // for (int sweepCount = 0; sweepCount < meshDim; sweepCount++)
+    // {
         for (int sweep = 0; sweep < nSweeps; sweep++)
         { 
             int start = (sweep == 3 || sweep == 5 || sweep == 6 || sweep == 7) ? totalLevels : meshDim;
@@ -186,7 +186,7 @@ void hfreq_Inversion::adjoint_propagation()
                 cudaDeviceSynchronize();
             }
         }
-    }
+    // }
     
     cudaMemcpy(adjoint, d_adjoint, modeling->volsize*sizeof(float), cudaMemcpyDeviceToHost);
 

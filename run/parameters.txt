@@ -73,11 +73,9 @@ gaussian_filter_samples = 5           # [odd number] <int>
 gaussian_filter_stdv = 2.0            # <float>
 
 export_model_per_iteration = true     # <bool>
-export_gradient_per_iteration = true  # <bool>
 
-gradient_folder = ../outputs/gradients/                  
 convergence_folder = ../outputs/convergence/         
-estimated_model_folder = ../outputs/recovered_models/    
+estimated_model_folder = ../outputs/models/    
 
 obs_data_folder = ../inputs/data/        
 obs_data_prefix = seismogram_gather_    

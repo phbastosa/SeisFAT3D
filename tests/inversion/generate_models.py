@@ -41,4 +41,4 @@ functions.plot_model_3D(model, dh, slices,
 plt.savefig(f"initial_hfreq_model.png", dpi = 200)
 plt.clf()
 
-model.flatten("F").astype(np.float32, order = "F").tofile(f"../inputs/models/init_hfreq_model_{nz}x{nx}x{ny}_{dx:.0f}m.bin")
+model.flatten("F").astype(np.float32, order = "F").tofile(f"../inputs/models/init_hfreq_model_{nz}x{nx}x{ny}_{dx:.1f}m.bin")
