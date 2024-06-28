@@ -2,9 +2,8 @@
 # include "../modeling/eikonal_equation/isotropic/block_FIM.cuh"
 # include "../modeling/eikonal_equation/isotropic/ultimate_FSM.cuh"
 
-# include "../modeling/wave_equation/isotropic/scalar.cuh"
-# include "../modeling/wave_equation/isotropic/acoustic.cuh"
 # include "../modeling/wave_equation/isotropic/elastic.cuh"
+# include "../modeling/wave_equation/isotropic/acoustic.cuh"
 
 int main(int argc, char **argv)
 {
@@ -14,7 +13,6 @@ int main(int argc, char **argv)
         new Block_FIM(),
         new Ultimate_FSM(),
 
-        new Scalar(),
         new Acoustic(),
         new Elastic()
     };

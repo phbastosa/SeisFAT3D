@@ -27,14 +27,13 @@ ultimate_FSM="../src/modeling/eikonal_equation/isotropic/ultimate_FSM.cu"
 
 fullwave="../src/modeling/wave_equation/wave.cu"
 
-scalar="../src/modeling/wave_equation/isotropic/scalar.cu"
-acoustic="../src/modeling/wave_equation/isotropic/acoustic.cu"
 elastic="../src/modeling/wave_equation/isotropic/elastic.cu"
+acoustic="../src/modeling/wave_equation/isotropic/acoustic.cu"
 
 modeling_main="../src/main/modeling_main.cpp"
 
 modeling_all="$modeling $eikonal $classical $block_FIM 
-              $ultimate_FSM $fullwave $scalar $acoustic $elastic"
+              $ultimate_FSM $fullwave $acoustic $elastic"
 
 # Seismic inversion scripts ---------------------------------------------------------------------------
 
