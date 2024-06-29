@@ -27,13 +27,18 @@ SeisFAT3D/run/$ ./program.sh -h
 
 Usage:
 
-    $ ./program.sh -compile             
-    $ ./program.sh -modeling                      
-    $ ./program.sh -inversion           
-    $ ./program.sh -migration           
+    $ ./program.sh -compile             # Create executables 
+    $ ./program.sh -modeling            # Perform eikonal solver          
+    $ ./program.sh -inversion           # Perform adjoint-state tomography
+    $ ./program.sh -migration           # Perform kirchhoff depth migration
+
+Tests:
+
+    $ ./program.sh -test_modeling       # Perform a small modeling experiment          
+    $ ./program.sh -test_inversion      # Perform a small inversion experiment
+    $ ./program.sh -test_migration      # Perform a small migration experiment  
 
 Visualization:
 
-    $ ./program.sh -check_geometry               
-
+    $ ./program.sh -check_geometry      # Save an image of current model and geometry         
 ```
