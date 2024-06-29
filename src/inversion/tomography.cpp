@@ -114,7 +114,7 @@ void Tomography::forward_modeling()
 
 void Tomography::set_tomography_message()
 {
-    std::cout<<"Tomography:"<<"\n";
+    std::cout<<"Tomography type: ";
     std::cout<<inversion_method<<"\n\n";
 
     if (iteration == max_iteration)
