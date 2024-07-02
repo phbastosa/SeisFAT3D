@@ -20,5 +20,5 @@ for i in range(len(z)):
     
 model_vp.flatten("F").astype(np.float32, order = "F").tofile(f"../inputs/models/layercake_vp_{nz}x{nx}x{ny}_{dh:.0f}m.bin")
 model_vs.flatten("F").astype(np.float32, order = "F").tofile(f"../inputs/models/layercake_vs_{nz}x{nx}x{ny}_{dh:.0f}m.bin")
-model_pb.flatten("F").astype(np.float32, order = "F").tofile(f"../inputs/models/layercake_pb_{nz}x{nx}x{ny}_{dh:.0f}m.bin")
+model_pb.flatten("F").astype(np.float32, order = "F").tofile(f"../inputs/models/layercake_rho_{nz}x{nx}x{ny}_{dh:.0f}m.bin")
 
