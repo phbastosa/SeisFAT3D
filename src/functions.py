@@ -29,28 +29,23 @@ def read_binary_volume(n1,n2,n3,filename):
     data = np.fromfile(filename, dtype = np.float32, count = n1*n2*n3)    
     return np.reshape(data, [n1,n2,n3], order='F')
 
-def show_binary_header(data):
-    binHeader = sgy.binfield.keys
-    print("\n Checking binary header \n")
-    print(f"{'key': >25s} {'byte': ^6s} {'value': ^7s} \n")
-    for k, v in binHeader.items():
-        if v in data.bin:
-            print(f"{k: >25s} {str(v): ^6s} {str(data.bin[v]): ^7s} \n")
+def build_layer_cake_model(z, v, nx, ny, nz, dz):    
+    
+    model_vp = np.ones((nz,nx,ny)) * 1500.0 
+    model_vs = np.ones((nz,nx,ny)) * 0.0000
+    model_pb = np.ones((nz,nx,ny)) * 1000.0
 
-def show_trace_header(data):
-    traceHeader = sgy.tracefield.keys
-    print("\n Checking trace header \n")
-    print(f"{'Trace header': >40s} {'byte': ^6s} {'first': ^11s} {'last': ^11s} \n")
-    for k, v in traceHeader.items():
-        if v in data.bin:
-            first = data.attributes(v)[0][0]
-            last = data.attributes(v)[data.tracecount-1][0]
-            print(f"{k: >40s} {str(v): ^6s} {str(first): ^11s} {str(last): ^11s}\n")
+    for i in range(len(z)):
+        model_vp[int(np.sum(z[:i+1])/dz):] = v[i+1]
+        model_vs[int(np.sum(z[:i+1])/dz):] = v[i+1] / 1.7
+        model_pb[int(np.sum(z[:i+1])/dz):] = 310.0*v[i+1]**0.23  
+        
+    model_vp.flatten("F").astype(np.float32, order = "F").tofile(f"../inputs/models/layercake_vp_{nz}x{nx}x{ny}_{dz:.0f}m.bin")
+    model_vs.flatten("F").astype(np.float32, order = "F").tofile(f"../inputs/models/layercake_vs_{nz}x{nx}x{ny}_{dz:.0f}m.bin")
+    model_pb.flatten("F").astype(np.float32, order = "F").tofile(f"../inputs/models/layercake_rho_{nz}x{nx}x{ny}_{dz:.0f}m.bin")
+    
+def get_analytical_refractions(v, z, x):
 
-def analytical_first_arrivals(v, z, x):
-    direct_wave = x / v[0]
-
-    first_arrivals = np.zeros(len(x))
     refracted_waves = np.zeros((len(z), len(x)))
 
     for n in range(len(z)):
@@ -59,10 +54,7 @@ def analytical_first_arrivals(v, z, x):
             angle = np.arcsin(v[i] / v[n+1])
             refracted_waves[n,:] += 2.0*z[i]*np.cos(angle) / v[i]
     
-    for offset in range(len(x)):
-        first_arrivals[offset] = np.min(np.append(refracted_waves[:, offset], direct_wave[offset]))
-
-    return first_arrivals
+    return refracted_waves
 
 def plot_model_3D(model, dh, slices, **kwargs):
 
@@ -237,8 +229,8 @@ def plot_model_3D(model, dh, slices, **kwargs):
             norm = mpl.colors.Normalize(vmin*m2km, vmax*m2km)
             divider = make_axes_locatable(ax)
             cax = divider.append_axes("bottom", size="10%", pad=0)
-            cbar = fig.colorbar(mpl.cm.ScalarMappable(norm = norm, cmap = cmap), cax = cax, ticks = np.linspace(vmin*m2km, vmax*m2km, 5), orientation = "horizontal")
-            cbar.ax.set_xticklabels(np.around(np.linspace(vmin*m2km, vmax*m2km, 5), decimals = 1))
+            cbar = fig.colorbar(mpl.cm.ScalarMappable(norm = norm, cmap = cmap), cax = cax, ticks = np.linspace(vmin*m2km, vmax*m2km, 16), orientation = "horizontal")
+            cbar.ax.set_xticklabels(np.around(np.linspace(vmin*m2km, vmax*m2km, 16), decimals = 1))
             cbar.set_label("Velocity [km/s]", fontsize = 15)
          
         else:

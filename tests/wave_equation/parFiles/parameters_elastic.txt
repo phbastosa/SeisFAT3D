@@ -33,15 +33,15 @@ nodes_file = ../inputs/geometry/xyz_nodes_position.txt
 # Regular geometry ---------------------------------------------------------------------------------               
 
 shots_nlines = [1, 1, 1]                # <int> (z, x, y)     
-nodes_nlines = [1, 150, 100]            # <int> (z, x, y)            
+nodes_nlines = [1, 1, 100]              # <int> (z, x, y)            
 
-shots_SW = [10, 1500, 1000]             # [m] <float> (z, x, y) NW            
-shots_NW = [10, 1500, 1000]             # [m] <float> (z, x, y)  |            
-shots_SE = [10, 1500, 1000]             # [m] <float> (z, x, y) SW -- SE     
+shots_SW = [0, 10, 1000]                # [m] <float> (z, x, y) NW            
+shots_NW = [0, 10, 1000]                # [m] <float> (z, x, y)  |            
+shots_SE = [0, 10, 1000]                # [m] <float> (z, x, y) SW -- SE     
 
-nodes_SW = [10, 10, 10]                 # [m] <float> (z, x, y) NW           
-nodes_NW = [10, 10, 1990]               # [m] <float> (z, x, y)  |         
-nodes_SE = [10, 2990, 10]               # [m] <float> (z, x, y) SW -- SE   
+nodes_SW = [0, 2990, 10]                # [m] <float> (z, x, y) NW           
+nodes_NW = [0, 2990, 1990]              # [m] <float> (z, x, y)  |         
+nodes_SE = [0, 2990, 10]                # [m] <float> (z, x, y) SW -- SE   
 
 # Circular geometry --------------------------------------------------------------------------------                                            
 
@@ -61,14 +61,14 @@ offsets = [5000, 7000, 9000]          # [m] <float>
 #   [5] - Elastic isotropic media     
 #---------------------------------------------------------------------------------------------------
 
-modeling_type = 4                     # <int>
+modeling_type = 5                     # <int>
 
 export_receiver_output = true         # <bool> 
 export_wavefield_output = true        # <bool>
 
 max_frequency = 30                    # [Hz] <float>
 time_spacing = 1e-3                   # [s] <float>
-time_samples = 2001                   # <int>
+time_samples = 5001                   # <int>
 
 boundary_damper = 0.005               # <float>
 boundary_samples = 50                 # <int> 

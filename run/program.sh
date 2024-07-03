@@ -27,13 +27,14 @@ ultimate_FSM="../src/modeling/eikonal_equation/isotropic/ultimate_FSM.cu"
 
 fullwave="../src/modeling/wave_equation/wave.cu"
 
+scalar="../src/modeling/wave_equation/isotropic/scalar.cu"
 elastic="../src/modeling/wave_equation/isotropic/elastic.cu"
 acoustic="../src/modeling/wave_equation/isotropic/acoustic.cu"
 
 modeling_main="../src/main/modeling_main.cpp"
 
-modeling_all="$modeling $eikonal $classical $block_FIM 
-              $ultimate_FSM $fullwave $acoustic $elastic"
+modeling_all="$modeling $eikonal $classical $block_FIM $ultimate_FSM 
+              $fullwave $scalar $acoustic $elastic"
 
 # Seismic inversion scripts ---------------------------------------------------------------------------
 
@@ -173,6 +174,18 @@ case "$1" in
     echo "testing a small migration experiment"
 
 	exit 0
+;;
+
+-test_wave)
+
+    python3 ../tests/wave_equation/generate_models.py ../tests/wave_equation/parFiles/parameters_scalar.txt
+
+    ./../bin/modeling.exe ../tests/wave_equation/parFiles/parameters_scalar.txt
+    ./../bin/modeling.exe ../tests/wave_equation/parFiles/parameters_acoustic.txt
+    ./../bin/modeling.exe ../tests/wave_equation/parFiles/parameters_elastic.txt
+
+    python3 ../tests/wave_equation/generate_figures.py ../tests/wave_equation/parFiles/parameters_scalar.txt
+
 ;;
 
 -check_geometry)

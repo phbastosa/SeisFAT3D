@@ -1,6 +1,7 @@
 *.exe
 *.bin
 *.txt
+*.png
 *.json
 *.segy
 __*
