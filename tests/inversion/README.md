@@ -59,7 +59,6 @@ The results will appear in .png images, as follows
 | Modeling                 |     11.3 s     |   129 MB   |      22 MB       | 
 | Least Squares tomograhy  |     91.5 s     |   548 MB   |      22 MB       | 
 | Adjoint State tomography |    302.9 s     |   195 MB   |      52 MB       |  
-|
 
 ### Statistical analysis of final models 
 
@@ -67,7 +66,6 @@ The results will appear in .png images, as follows
 |--------------------------------|-------------|-------------|-------------|
 |      Classical Tomography      |   36.9088   |  539.06104  |  -406.5767  |
 |    Adjoint State Tomography    |   38.5817   |  501.87939  |  -400.5510  |
-|
 
 ### Statistical analysis of final data 
 
@@ -75,4 +73,3 @@ The results will appear in .png images, as follows
 |--------------------------------|-------------|-------------|-------------|
 |      Classical Tomography      |   0.0054    |   0.04850   |   -0.0306   |
 |    Adjoint State Tomography    |   0.0087    |   0.06274   |   -0.0446   |
-|
