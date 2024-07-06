@@ -2,17 +2,17 @@
 # Model paramenters --------------------------------------------------------------------------------
 #---------------------------------------------------------------------------------------------------
 
-x_samples = 301                       # <int>  
+x_samples = 201                       # <int>  
 y_samples = 201                       # <int>  
-z_samples = 101                       # <int>  
+z_samples = 201                       # <int>  
 
 x_spacing = 10.0                      # [m] <float> 
 y_spacing = 10.0                      # [m] <float> 
 z_spacing = 10.0                      # [m] <float> 
 
-vp_model_file = ../inputs/models/layercake_vp_101x301x201_10m.bin   
-vs_model_file = ../inputs/models/layercake_vs_101x301x201_10m.bin   
-rho_model_file = ../inputs/models/layercake_rho_101x301x201_10m.bin   
+vp_model_file = ../inputs/models/homogeneous_vp_201x201x201_10m.bin   
+vs_model_file = ../inputs/models/homogeneous_vs_201x201x201_10m.bin   
+rho_model_file = ../inputs/models/homogeneous_rho_201x201x201_10m.bin   
 
 #---------------------------------------------------------------------------------------------------
 # Geometry parameters ------------------------------------------------------------------------------
@@ -32,16 +32,16 @@ nodes_file = ../inputs/geometry/xyz_nodes_position.txt
 
 # Regular geometry ---------------------------------------------------------------------------------               
 
-shots_nlines = [1, 1, 1]                # <int> (z, x, y)     
-nodes_nlines = [1, 1, 100]              # <int> (z, x, y)            
+shots_nlines = [1, 1, 1]              # <int> (z, x, y)     
+nodes_nlines = [1, 1, 181]            # <int> (z, x, y)            
 
-shots_SW = [0, 10, 1000]                # [m] <float> (z, x, y) NW            
-shots_NW = [0, 10, 1000]                # [m] <float> (z, x, y)  |            
-shots_SE = [0, 10, 1000]                # [m] <float> (z, x, y) SW -- SE     
+shots_SW = [100, 1000, 1000]          # [m] <float> (z, x, y) NW            
+shots_NW = [100, 1000, 1000]          # [m] <float> (z, x, y)  |            
+shots_SE = [100, 1000, 1000]          # [m] <float> (z, x, y) SW -- SE     
 
-nodes_SW = [0, 2990, 10]                # [m] <float> (z, x, y) NW           
-nodes_NW = [0, 2990, 1990]              # [m] <float> (z, x, y)  |         
-nodes_SE = [0, 2990, 10]                # [m] <float> (z, x, y) SW -- SE   
+nodes_SW = [1900, 1000, 100]          # [m] <float> (z, x, y) NW           
+nodes_NW = [1900, 1000, 1900]         # [m] <float> (z, x, y)  |         
+nodes_SE = [1900, 1000, 100]          # [m] <float> (z, x, y) SW -- SE   
 
 # Circular geometry --------------------------------------------------------------------------------                                            
 
@@ -68,7 +68,7 @@ export_wavefield_output = true        # <bool>
 
 max_frequency = 30                    # [Hz] <float>
 time_spacing = 1e-3                   # [s] <float>
-time_samples = 5001                   # <int>
+time_samples = 3001                   # <int>
 
 boundary_damper = 0.005               # <float>
 boundary_samples = 50                 # <int> 

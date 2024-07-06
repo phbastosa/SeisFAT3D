@@ -28,21 +28,6 @@ def read_binary_matrix(n1,n2,filename):
 def read_binary_volume(n1,n2,n3,filename):
     data = np.fromfile(filename, dtype = np.float32, count = n1*n2*n3)    
     return np.reshape(data, [n1,n2,n3], order='F')
-
-def build_layer_cake_model(z, v, nx, ny, nz, dz):    
-    
-    model_vp = np.ones((nz,nx,ny)) * 1500.0 
-    model_vs = np.ones((nz,nx,ny)) * 0.0000
-    model_pb = np.ones((nz,nx,ny)) * 1000.0
-
-    for i in range(len(z)):
-        model_vp[int(np.sum(z[:i+1])/dz):] = v[i+1]
-        model_vs[int(np.sum(z[:i+1])/dz):] = v[i+1] / 1.7
-        model_pb[int(np.sum(z[:i+1])/dz):] = 310.0*v[i+1]**0.23  
-        
-    model_vp.flatten("F").astype(np.float32, order = "F").tofile(f"../inputs/models/layercake_vp_{nz}x{nx}x{ny}_{dz:.0f}m.bin")
-    model_vs.flatten("F").astype(np.float32, order = "F").tofile(f"../inputs/models/layercake_vs_{nz}x{nx}x{ny}_{dz:.0f}m.bin")
-    model_pb.flatten("F").astype(np.float32, order = "F").tofile(f"../inputs/models/layercake_rho_{nz}x{nx}x{ny}_{dz:.0f}m.bin")
     
 def get_analytical_refractions(v, z, x):
 
@@ -85,7 +70,7 @@ def plot_model_3D(model, dh, slices, **kwargs):
     
     nz, nx, ny = model_shape
 
-    [z, x, y] = scale * (min_model_distance / max_model_distance) * model_shape / max_model_distance
+    [z, x, y] = scale*(min_model_distance / max_model_distance) * model_shape / max_model_distance
 
     px = 1.0 / plt.rcParams['figure.dpi']  
     ticks = np.array([3, 7, 7], dtype = int)
@@ -100,10 +85,10 @@ def plot_model_3D(model, dh, slices, **kwargs):
     ylab = np.around(yloc * dh[1] * m2km, decimals = 1)
     zlab = np.around(zloc * dh[2] * m2km, decimals = 1)
 
-    axes = np.array([[0.75 - x, 0.98 - y      , x, y], 
-                     [    0.75, 0.98 - y      , z, y],
-                     [0.75 - x, 0.98 - y - z  , x, z],
-                     [0.75 - x, 0.98 - y - dbar*z, x, z]])
+    axes = np.array([[0.5 - x, 0.98 - y      , x, y], 
+                     [    0.5, 0.98 - y      , z, y],
+                     [0.5 - x, 0.98 - y - z  , x, z],
+                     [0.5 - x, 0.98 - y - dbar*z, x, z]])
 
     xTickDirection = ['out', 'out', 'out']
     yTickDirection = ['out', 'in', 'out']
@@ -228,9 +213,9 @@ def plot_model_3D(model, dh, slices, **kwargs):
             cmap = mpl.colormaps[cmap]
             norm = mpl.colors.Normalize(vmin*m2km, vmax*m2km)
             divider = make_axes_locatable(ax)
-            cax = divider.append_axes("bottom", size="10%", pad=0)
-            cbar = fig.colorbar(mpl.cm.ScalarMappable(norm = norm, cmap = cmap), cax = cax, ticks = np.linspace(vmin*m2km, vmax*m2km, 16), orientation = "horizontal")
-            cbar.ax.set_xticklabels(np.around(np.linspace(vmin*m2km, vmax*m2km, 16), decimals = 1))
+            cax = divider.append_axes("bottom", size="5%", pad=0)
+            cbar = fig.colorbar(mpl.cm.ScalarMappable(norm = norm, cmap = cmap), cax = cax, ticks = np.linspace(vmin*m2km, vmax*m2km, 5), orientation = "horizontal")
+            cbar.ax.set_xticklabels(np.around(np.linspace(vmin*m2km, vmax*m2km, 5), decimals = 1))
             cbar.set_label("Velocity [km/s]", fontsize = 15)
          
         else:
@@ -248,7 +233,7 @@ def plot_model_3D(model, dh, slices, **kwargs):
                     ax.contour(eiks[k], levels = 5, linestyles = "dashed")
 
             if nodes_defined:
-                ax.plot(xnode[k], ynode[k], "v", markersize = 2, color = "gray")
+                ax.plot(xnode[k], ynode[k], "v", markersize = 5, color = "gray")
             
             if shots_defined:
                 ax.plot(xshot[k], yshot[k], "*", markersize = 5, color = "black")

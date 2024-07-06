@@ -118,6 +118,7 @@ void Wave::set_outputs()
 
 void Wave::define_staggered_wavelet()
 {
+    float * aux_s = new float[nt]();
     float * signal = new float[nt]();
 
     float pi = 4.0f*atanf(1.0f);
@@ -125,19 +126,24 @@ void Wave::define_staggered_wavelet()
     float t0 = 2.0f*sqrtf(pi)/fmax;
     float fc = fmax/(3.0f * sqrtf(pi));
 
-    float summation = 0;
-
     for (int n = 0; n < nt; n++)
     {
         float td = n*dt - t0;
 
         float arg = pi*pi*pi*fc*fc*td*td;
 
-        summation += (1.0f - 2.0f*arg)*expf(-arg);
-
-        signal[n] = 1e5f*summation;
+        aux_s[n] = 1e5f*(1.0f - 2.0f*arg)*expf(-arg);
     }
-    
+
+    for (int n = 0; n < nt; n++)
+    {
+        float summation = 0;
+        for (int i = 0; i < n; i++)
+            summation += aux_s[i];    
+        
+        signal[n] = summation;
+    }
+
     cudaMalloc((void**)&(wavelet), nt*sizeof(float));
 
     cudaMemcpy(wavelet, signal, nt*sizeof(float), cudaMemcpyHostToDevice);

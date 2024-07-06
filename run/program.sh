@@ -176,15 +176,15 @@ case "$1" in
 	exit 0
 ;;
 
--test_wave)
+-test_wave_equation)
 
-    python3 ../tests/wave_equation/generate_models.py ../tests/wave_equation/parFiles/parameters_scalar.txt
+    python3 ../tests/wave_equation/generate_models.py ../tests/wave_equation/parFiles/parameters_scalar_homogeneous.txt
 
-    ./../bin/modeling.exe ../tests/wave_equation/parFiles/parameters_scalar.txt
-    ./../bin/modeling.exe ../tests/wave_equation/parFiles/parameters_acoustic.txt
-    ./../bin/modeling.exe ../tests/wave_equation/parFiles/parameters_elastic.txt
+    ./../bin/modeling.exe ../tests/wave_equation/parFiles/parameters_scalar_homogeneous.txt
+    ./../bin/modeling.exe ../tests/wave_equation/parFiles/parameters_acoustic_homogeneous.txt
+    ./../bin/modeling.exe ../tests/wave_equation/parFiles/parameters_elastic_homogeneous.txt
 
-    python3 ../tests/wave_equation/generate_figures.py ../tests/wave_equation/parFiles/parameters_scalar.txt
+    python3 ../tests/wave_equation/generate_figures.py ../tests/wave_equation/parFiles/parameters_scalar_homogeneous.txt
 
 ;;
 

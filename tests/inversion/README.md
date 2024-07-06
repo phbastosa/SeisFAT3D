@@ -48,7 +48,7 @@ The results will appear in .png images, as follows
   <img alt="Dark" src=https://github.com/phbastosa/SeisFAT3D/assets/44127778/74443a03-1409-4985-b1dd-660ccfe5133b width="45%">
 </p>
 
-### Statistical analysis of performance:
+### Performance analysis:
 
 |  Type                    |  Elapsed time  | RAM usage  | GPU memory usage | 
 | ------------------------ | -------------- | ---------- | ---------------- |
