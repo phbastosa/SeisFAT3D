@@ -33,8 +33,7 @@ The results will appear in .png images, as follows
 
 Results are shown in seismograms for each isotropic media implemented
 
-
-
+![seismograms](https://github.com/phbastosa/SeisFAT3D/assets/44127778/9c0f682c-885e-48a0-9aa2-08f91cc9b025)
 
 ### Performance analysis:
 
