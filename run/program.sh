@@ -136,18 +136,26 @@ case "$1" in
 
 -test_modeling)
 
-    python3 ../tests/modeling/generate_models.py
+    python3 ../tests/modeling/eikonal_equation/generate_models.py
 
     spacings=(100 50 25)
     methods=("pod" "fim" "fsm")
 
     for method in ${methods[@]}; do 
         for spacing in ${spacings[@]}; do 
-            ./../bin/modeling.exe ../tests/modeling/parFiles/parameters_"$method"_"$spacing"m.txt; 
+            ./../bin/modeling.exe ../tests/modeling/eikonal_equation/parFiles/parameters_"$method"_"$spacing"m.txt; 
         done    
     done 
 
-    python3 ../tests/modeling/generate_figures.py
+    python3 ../tests/modeling/eikonal_equation/generate_figures.py
+
+    python3 ../tests/modeling/wave_equation/generate_models.py 
+
+    ./../bin/modeling.exe ../tests/modeling/wave_equation/parFiles/parameters_scalar_homogeneous.txt
+    ./../bin/modeling.exe ../tests/modeling/wave_equation/parFiles/parameters_acoustic_homogeneous.txt
+    ./../bin/modeling.exe ../tests/modeling/wave_equation/parFiles/parameters_elastic_homogeneous.txt
+
+    python3 ../tests/modeling/wave_equation/generate_figures.py 
 
 	exit 0
 ;;
@@ -174,18 +182,6 @@ case "$1" in
     echo "testing a small migration experiment"
 
 	exit 0
-;;
-
--test_wave_equation)
-
-    python3 ../tests/wave_equation/generate_models.py ../tests/wave_equation/parFiles/parameters_scalar_homogeneous.txt
-
-    ./../bin/modeling.exe ../tests/wave_equation/parFiles/parameters_scalar_homogeneous.txt
-    ./../bin/modeling.exe ../tests/wave_equation/parFiles/parameters_acoustic_homogeneous.txt
-    ./../bin/modeling.exe ../tests/wave_equation/parFiles/parameters_elastic_homogeneous.txt
-
-    python3 ../tests/wave_equation/generate_figures.py ../tests/wave_equation/parFiles/parameters_scalar_homogeneous.txt
-
 ;;
 
 -check_geometry)

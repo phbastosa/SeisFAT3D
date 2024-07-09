@@ -25,9 +25,11 @@ dh = np.array([dx, dy, dz])
 
 functions.plot_model_3D(model, dh, slices, 
                         shots = shots_file, 
-                        nodes = nodes_file)
+                        nodes = nodes_file,
+                        scale = 1.8,
+                        dbar = 1.8)
 
-plt.savefig(f"modelTest.png", dpi = 200)
+plt.savefig(f"vp_model_eikonal_equation_test.png", dpi = 200)
 
 #-------------------------------------------------------------------------
 
@@ -39,7 +41,13 @@ z = np.array([1000, 1500, 2000])
 
 x = np.sqrt((nodes[:,0] - shots[0])**2 + (nodes[:,1] - shots[1])**2)
 
-fba = functions.analytical_first_arrivals(v, z, x)
+refractions = functions.get_analytical_refractions(v, z, x)
+direct_wave = x / v[0]
+
+fba = np.zeros(len(x))
+
+for i in range(len(x)):
+    fba[i] = np.min([direct_wave[i], refractions[0,i], refractions[1,i], refractions[2,i]])
 
 n = len(nodes)
 
@@ -95,7 +103,7 @@ for k in range(len(dh)):
     ax[k,0].invert_yaxis()
 
 plt.tight_layout()
-plt.savefig(f"accuracyTest.png", dpi = 200)
+plt.savefig(f"eikonal_equation_accuracy_test.png", dpi = 200)
 
 #-------------------------------------------------------------------------
 
@@ -125,4 +133,4 @@ for i in range(len(dh)):
     ax[i].set_xlabel("Total samples in model [x 10⁶]", fontsize = 15)
 
 plt.tight_layout()
-plt.savefig(f"benchmarkTest.png", dpi = 200)
+plt.savefig(f"eikonal_equation_benchmark_test.png", dpi = 200)

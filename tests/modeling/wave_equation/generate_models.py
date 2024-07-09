@@ -1,14 +1,10 @@
 import numpy as np
 
-from sys import path, argv
-path.append("../src/")
-import functions
+nx = 201
+ny = 201
+nz = 201
 
-nx = int(functions.catch_parameter(argv[1], "x_samples"))
-ny = int(functions.catch_parameter(argv[1], "y_samples"))
-nz = int(functions.catch_parameter(argv[1], "z_samples"))
-
-dz = float(functions.catch_parameter(argv[1], "z_spacing"))
+dz = 10.0
 
 model_vp = np.zeros((nz,nx,ny)) + 1500
 model_vs = np.zeros((nz,nx,ny))

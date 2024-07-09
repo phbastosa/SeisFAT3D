@@ -3,24 +3,24 @@ import matplotlib.pyplot as plt
 
 from os import system
 
-from sys import path, argv
+from sys import path
 path.append("../src/")
 import functions
 
-nx = int(functions.catch_parameter(argv[1], "x_samples"))
-ny = int(functions.catch_parameter(argv[1], "y_samples"))
-nz = int(functions.catch_parameter(argv[1], "z_samples"))
+nx = 201
+ny = 201
+nz = 201
 
-dx = float(functions.catch_parameter(argv[1], "x_spacing"))
-dy = float(functions.catch_parameter(argv[1], "y_spacing"))
-dz = float(functions.catch_parameter(argv[1], "z_spacing"))
+dx = 10.0
+dy = 10.0
+dz = 10.0
 
-vp_model_file = functions.catch_parameter(argv[1], "vp_model_file")
-vs_model_file = functions.catch_parameter(argv[1], "vs_model_file")
-rho_model_file = functions.catch_parameter(argv[1], "rho_model_file")
+vp_model_file = "../inputs/models/homogeneous_vp_201x201x201_10m.bin"   
+vs_model_file = "../inputs/models/homogeneous_vs_201x201x201_10m.bin"   
+rho_model_file = "../inputs/models/homogeneous_rho_201x201x201_10m.bin"   
 
-shots_file = functions.catch_parameter(argv[1], "shots_file")
-nodes_file = functions.catch_parameter(argv[1], "nodes_file")
+shots_file = "../inputs/geometry/xyz_shots_position.txt"              
+nodes_file = "../inputs/geometry/xyz_nodes_position.txt"  
 
 shots = np.loadtxt(shots_file, dtype = np.float32, delimiter = ',')
 nodes = np.loadtxt(nodes_file, dtype = np.float32, delimiter = ',')
@@ -38,34 +38,73 @@ functions.plot_model_3D(model_vp, dh, slices,
                         nodes = nodes_file,
                         vmin = 0,
                         vmax = 3000,
-                        scale = 0.35, dbar = 1.3)
+                        scale = 0.4, dbar = 1.25)
 
-plt.savefig(f"vp_model_test.png", dpi = 200)
+plt.savefig(f"vp_model_wave_equation_test.png", dpi = 200)
 
 functions.plot_model_3D(model_vs, dh, slices,
                         shots = shots_file,
                         nodes = nodes_file,
                         vmin = 0,
                         vmax = 3000,
-                        scale = 0.35, dbar = 1.3)
+                        scale = 0.4, dbar = 1.25)
 
-plt.savefig(f"vs_model_test.png", dpi = 200)
+plt.savefig(f"vs_model_wave_equation_test.png", dpi = 200)
 
 functions.plot_model_3D(model_rho, dh, slices,
                         shots = shots_file,
                         nodes = nodes_file,
                         vmin = 0,
                         vmax = 3000,
-                        scale = 0.35, dbar = 1.3)
+                        scale = 0.4, dbar = 1.25)
 
-plt.savefig(f"rho_model_test.png", dpi = 200)
+plt.savefig(f"rho_model_wave_equation_test.png", dpi = 200)
+
+# Snapshots ------------------------------------------------------------------------------------
+
+scalar_snapshots_path = "../outputs/snapshots/scalar_snapshot_201x201x201_shot_1_Nsnaps10.bin"
+acoustic_snapshots_path = "../outputs/snapshots/acoustic_snapshot_201x201x201_shot_1_Nsnaps10.bin"
+elastic_snapshots_path = "../outputs/snapshots/elastic_snapshot_201x201x201_shot_1_Nsnaps10.bin"
+
+scalar_snaps = functions.read_binary_volume(nz, nx, 10*ny, scalar_snapshots_path)
+acoustic_snaps = functions.read_binary_volume(nz, nx, 10*ny, acoustic_snapshots_path)
+elastic_snaps = functions.read_binary_volume(nz, nx, 10*ny, elastic_snapshots_path)
+
+functions.plot_model_3D(scalar_snaps[:,:,3*ny:3*ny+ny], dh, slices,
+                        shots = shots_file,
+                        nodes = nodes_file,
+                        cmap = "Greys",
+                        scale = 0.4, 
+                        dbar = 1.25)
+
+plt.savefig(f"scalar_snapshot_wave_equation_test.png", dpi = 200)
+
+functions.plot_model_3D(acoustic_snaps[:,:,3*ny:3*ny+ny], dh, slices,
+                        shots = shots_file,
+                        nodes = nodes_file,
+                        cmap = "Greys",
+                        scale = 0.4, 
+                        dbar = 1.25)
+
+plt.savefig(f"acoustic_snapshot_wave_equation_test.png", dpi = 200)
+
+functions.plot_model_3D(elastic_snaps[:,:,3*ny:3*ny+ny], dh, slices,
+                        shots = shots_file,
+                        nodes = nodes_file,
+                        cmap = "Greys",
+                        scale = 0.4, 
+                        dbar = 1.25)
+
+plt.savefig(f"elastic_snapshot_wave_equation_test.png", dpi = 200)
+
+# Seismograms ----------------------------------------------------------------------------------
 
 nTraces = len(nodes)
 
-nt = int(functions.catch_parameter(argv[1], "time_samples"))
-dt = float(functions.catch_parameter(argv[1], "time_spacing"))
+nt = 3001
+dt = 1e-3
 
-fmax = float(functions.catch_parameter(argv[1], "max_frequency"))
+fmax = 30.0
 
 tlag = 2.0*np.sqrt(np.pi) / fmax
 
@@ -79,9 +118,9 @@ acoustic_seism = functions.read_binary_matrix(nt, nTraces, acoustic_seismogram_p
 
 trace_index = int(0.5*nTraces)
 
-scalar_time = dt*np.where(scalar_seism[:,trace_index] == np.max(scalar_seism[:,trace_index]))[0][0]
-acoustic_time = dt*np.where(acoustic_seism[:,trace_index] == np.max(acoustic_seism[:,trace_index]))[0][0]
-elastic_time = dt*np.where(elastic_seism[:,trace_index] == np.max(elastic_seism[:,trace_index]))[0][0]
+scalar_time = dt*(np.where(scalar_seism[:,trace_index] == np.max(scalar_seism[:,trace_index]))[0][0]+1)
+acoustic_time = dt*(np.where(acoustic_seism[:,trace_index] == np.max(acoustic_seism[:,trace_index]))[0][0]+1)
+elastic_time = dt*(np.where(elastic_seism[:,trace_index] == np.max(elastic_seism[:,trace_index]))[0][0]+1)
 
 system("clear")
 print(f"Analytical travel time = {1800/1500 + tlag} s")
@@ -147,7 +186,7 @@ mask = np.logical_and(time > tmin, time < tmax)
 ax[3].plot(scalar_seism[mask,int(0.5*nTraces)], time[mask], label = "Scalar media")
 ax[3].plot(acoustic_seism[mask,int(0.5*nTraces)], time[mask], label = "Acoustic media")
 ax[3].plot(elastic_seism[mask,int(0.5*nTraces)], time[mask], label = "Elastic media")
-ax[3].set_title("Refractions", fontsize = 15)
+ax[3].set_title("Central trace", fontsize = 15)
 ax[3].set_xlabel("Amplitude", fontsize = 15)
 ax[3].set_ylabel("Time [s]", fontsize = 15)
 ax[3].set_ylim([tmin, tmax])
@@ -155,4 +194,4 @@ ax[3].legend(loc = "upper right")
 ax[3].invert_yaxis()
 
 fig.tight_layout()
-plt.savefig("seismograms.png", dpi = 200)
+plt.savefig("seismograms_from_wave_equation_test.png", dpi = 200)
