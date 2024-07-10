@@ -36,8 +36,7 @@ Tests:
 
     $ ./program.sh -test_modeling                 
     $ ./program.sh -test_inversion      
-    $ ./program.sh -test_migration        
-    $ ./program.sh -test_wave_equation  
+    $ ./program.sh -test_migration      
 
 Visualization:
 

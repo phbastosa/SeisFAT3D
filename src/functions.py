@@ -47,6 +47,7 @@ def plot_model_3D(model, dh, slices, **kwargs):
     dbar = kwargs.get("dbar") if "dbar" in kwargs else 1.7
     scale = kwargs.get("scale") if "scale" in kwargs else 2.8 
     cmap = kwargs.get("cmap") if "cmap" in kwargs else "jet" 
+    adjx = kwargs.get("adjx") if "adjx" in kwargs else 0.5
 
     shots_defined = True if "shots" in kwargs else False
     nodes_defined = True if "nodes" in kwargs else False
@@ -85,10 +86,10 @@ def plot_model_3D(model, dh, slices, **kwargs):
     ylab = np.around(yloc * dh[1] * m2km, decimals = 1)
     zlab = np.around(zloc * dh[2] * m2km, decimals = 1)
 
-    axes = np.array([[0.5 - x, 0.98 - y      , x, y], 
-                     [    0.5, 0.98 - y      , z, y],
-                     [0.5 - x, 0.98 - y - z  , x, z],
-                     [0.5 - x, 0.98 - y - dbar*z, x, z]])
+    axes = np.array([[adjx - x, 0.98 - y      , x, y], 
+                     [    adjx, 0.98 - y      , z, y],
+                     [adjx - x, 0.98 - y - z  , x, z],
+                     [adjx - x, 0.98 - y - dbar*z, x, z]])
 
     xTickDirection = ['out', 'out', 'out']
     yTickDirection = ['out', 'in', 'out']

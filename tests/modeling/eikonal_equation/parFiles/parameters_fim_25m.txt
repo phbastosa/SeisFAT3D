@@ -58,7 +58,7 @@ offsets = [10000]                   # [m] <float>
 modeling_type = 1                   # <int>
 
 export_receiver_output = true       # <bool> 
-export_wavefield_output = false     # <bool>
+export_wavefield_output = true      # <bool>
 
 receiver_output_folder = ../outputs/seismograms/25m_          
-wavefield_output_folder = ../output/snapshots/     
+wavefield_output_folder = ../outputs/snapshots/     

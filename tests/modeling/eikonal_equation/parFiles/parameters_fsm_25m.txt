@@ -61,4 +61,4 @@ export_receiver_output = true       # <bool>
 export_wavefield_output = false     # <bool>
 
 receiver_output_folder = ../outputs/seismograms/25m_         
-wavefield_output_folder = ../output/snapshots/      
+wavefield_output_folder = ../outputs/snapshots/      

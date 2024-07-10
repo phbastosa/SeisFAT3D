@@ -1,4 +1,4 @@
-## Modeling Benchmark:
+## Eikonal modeling benchmark:
 
 ### The following test was performed using a laptop with the configuration below:
 
@@ -22,7 +22,7 @@ The results will appear in .png images, as follows
 
 ### Objective: Verify accuracy, performance and memory usage of the eikonal modeling methods 
 
-![modelTest](https://github.com/phbastosa/SeisFAT3D/assets/44127778/d68bdfee-36de-4502-a343-d14106599539)
+![modelTest](https://github.com/phbastosa/SeisFAT3D/assets/44127778/27e385e3-909e-47ad-b9b7-6f959968381b)
 
 ![accuracyTest](https://github.com/phbastosa/SeisFAT3D/assets/44127778/88ead2cd-8b9f-4d53-9260-c5d5ece89017)
 

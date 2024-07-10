@@ -23,11 +23,15 @@ nodes_file = "../inputs/geometry/xyz_nodes_position.txt"
 slices = np.array([nz/2, nx/2, ny/2], dtype = int)
 dh = np.array([dx, dy, dz])
 
-functions.plot_model_3D(model, dh, slices, 
+travel_time_volume = functions.read_binary_volume(nz, nx, ny, "../outputs/snapshots/fim_time_volume_201x881x881_shot_1.bin")
+
+functions.plot_model_3D(model, dh, slices,
+                        eikonal = travel_time_volume,
                         shots = shots_file, 
                         nodes = nodes_file,
-                        scale = 1.8,
-                        dbar = 1.8)
+                        scale = 2.8,
+                        adjx = 0.75,
+                        dbar = 1.60)
 
 plt.savefig(f"vp_model_eikonal_equation_test.png", dpi = 200)
 
