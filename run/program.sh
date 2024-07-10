@@ -149,13 +149,13 @@ case "$1" in
 
     python3 ../tests/modeling/eikonal_equation/generate_figures.py
 
-    # python3 ../tests/modeling/wave_equation/generate_models.py 
+    python3 ../tests/modeling/wave_equation/generate_models.py 
 
-    # ./../bin/modeling.exe ../tests/modeling/wave_equation/parFiles/parameters_scalar_homogeneous.txt
-    # ./../bin/modeling.exe ../tests/modeling/wave_equation/parFiles/parameters_acoustic_homogeneous.txt
-    # ./../bin/modeling.exe ../tests/modeling/wave_equation/parFiles/parameters_elastic_homogeneous.txt
+    ./../bin/modeling.exe ../tests/modeling/wave_equation/parFiles/parameters_scalar_homogeneous.txt
+    ./../bin/modeling.exe ../tests/modeling/wave_equation/parFiles/parameters_acoustic_homogeneous.txt
+    ./../bin/modeling.exe ../tests/modeling/wave_equation/parFiles/parameters_elastic_homogeneous.txt
 
-    # python3 ../tests/modeling/wave_equation/generate_figures.py 
+    python3 ../tests/modeling/wave_equation/generate_figures.py 
 
 	exit 0
 ;;

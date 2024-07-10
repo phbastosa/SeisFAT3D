@@ -24,6 +24,8 @@ The results will appear in .png images, as follows
 
 ![modelTest](https://github.com/phbastosa/SeisFAT3D/assets/44127778/27e385e3-909e-47ad-b9b7-6f959968381b)
 
+Differece between analytical formulaion and each eikonal solutions
+
 ![accuracyTest](https://github.com/phbastosa/SeisFAT3D/assets/44127778/88ead2cd-8b9f-4d53-9260-c5d5ece89017)
 
 ![benchmarkTest](https://github.com/phbastosa/SeisFAT3D/assets/44127778/6ebe7fd0-51cb-481a-84e4-88ddeda92811)
