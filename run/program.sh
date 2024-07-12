@@ -59,7 +59,7 @@ migration_all="$kirchhoff $migration"
 
 # Compiler flags --------------------------------------------------------------------------------------
 
-flags="--std=c++11 -lm -O3 -w -g --relocatable-device-code=true"
+flags="-Xcompiler -fopenmp --std=c++11 -lm -O3 -w -g --relocatable-device-code=true"
 
 # Main dialogue ---------------------------------------------------------------------------------------
 
@@ -186,10 +186,9 @@ case "$1" in
 
     # python3 ../tests/migration/prepare_data.py
 
-    ./../bin/migration.exe ../tests/migration/parFiles/parameters_migration.txt
+    # ./../bin/migration.exe ../tests/migration/parFiles/parameters_migration.txt
 
-
-    # python3 ../tests/migration/generate_figures.py
+    python3 ../tests/migration/generate_figures.py
 
 	exit 0
 ;;

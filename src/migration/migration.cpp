@@ -23,10 +23,6 @@ void Migration::set_parameters()
     Ts = new float[modeling->nPoints]();
     Im = new float[modeling->nPoints]();
 
-    dTx = new float[modeling->nPoints]();
-    dTy = new float[modeling->nPoints]();
-    dTz = new float[modeling->nPoints]();
-
     image = new float[modeling->nPoints]();
 }
 

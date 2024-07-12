@@ -1,0 +1,1 @@
+## Migrated images folder

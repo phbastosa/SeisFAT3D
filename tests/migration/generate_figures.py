@@ -61,8 +61,8 @@ plt.savefig(f"rho_model_migration_test.png", dpi = 200)
 # input data -------------------------------------------------------------------------------------
 
 nt = 2001
-nr = 81
-ns = 4
+nr = len(nodes)
+ns = len(shots)
 
 dt = 1e-3
 
@@ -94,4 +94,19 @@ for i in range(ns):
 
 fig.tight_layout()
 plt.savefig("input_seismograms_migration_test.png", dpi = 200)
+
+# migrated data --------------------------------------------------------------------------------
+
+image_file = "../outputs/images/image_kirchhoff_migration_test.bin"   
+
+image = functions.read_binary_volume(nz, nx, ny, image_file)
+
+functions.plot_model_3D(image, dh, slices,
+                        shots = shots_file,
+                        nodes = nodes_file,
+                        cmap = "seismic",
+                        scale = 0.4, dbar = 1.25)
+
+plt.savefig(f"image_migration_test.png", dpi = 200)
+
 
