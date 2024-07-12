@@ -37,7 +37,7 @@ public:
     void read_input_data();
 
     virtual void image_building() = 0;
-    
+
 };
 
 # endif
