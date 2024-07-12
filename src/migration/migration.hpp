@@ -1,20 +1,43 @@
 # ifndef MIGRATION_HPP
 # define MIGRATION_HPP
 
-# include <string>
-# include <vector> 
-# include <iostream>
+# include "../modeling/modeling.hpp"
 
 class Migration
 {
+private:
+
+    std::string input_data_folder;
+    std::string input_data_prefix;
+
 protected:
 
-    std::string name;        
-    virtual void set_name() = 0;
+    int nt;
+    int nr;
+    int ns;
+
+    float dt;
+
+    float * Tr = nullptr;
+    float * Ts = nullptr;
+
+    float * data = nullptr;
+
+    float * image = nullptr;
+
+    Modeling * modeling = nullptr;
+
+    virtual void set_modeling_type() = 0;
 
 public:
     
-    void get_name();
+    std::string file;
+
+    void set_parameters();
+    void read_input_data();
+
+    virtual void image_building() = 0;
+    
 };
 
 # endif

@@ -61,7 +61,7 @@ offsets = [5000, 7000, 9000]          # [m] <float>
 #   [5] - Elastic isotropic media     
 #---------------------------------------------------------------------------------------------------
 
-modeling_type = 4                     # <int>
+modeling_type = 3                     # <int>
 
 export_receiver_output = true         # <bool> 
 export_wavefield_output = false       # <bool>
@@ -75,5 +75,17 @@ boundary_samples = 50                 # <int>
 
 total_snapshots = 10                  # int
 
-receiver_output_folder = ../outputs/seismograms/d_            
+receiver_output_folder = ../outputs/seismograms/            
 wavefield_output_folder = ../outputs/snapshots/     
+
+#---------------------------------------------------------------------------------------------------
+# Migration parameters 
+#--------------------------------------------------------------------------------------------------- 
+#   [0] - Kirchhoff pre-stack depth migration
+#   [1] - Scalar reverse time depth migration 
+#---------------------------------------------------------------------------------------------------
+
+migration_type = 0
+
+input_data_folder = ../inputs/data/        
+input_data_prefix = migration_test_data_nSamples2001_nRec81_shot_  

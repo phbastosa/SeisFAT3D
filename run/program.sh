@@ -179,19 +179,17 @@ case "$1" in
 
 -test_migration)
 
-    python3 ../tests/migration/generate_models.py
+    # python3 ../tests/migration/generate_models.py
 
-    ./../bin/modeling.exe ../tests/migration/parFiles/parameters_mod_diffraction.txt
-    ./../bin/modeling.exe ../tests/migration/parFiles/parameters_mod_homogeneous.txt
+    # ./../bin/modeling.exe ../tests/migration/parFiles/parameters_mod_diffraction.txt
+    # ./../bin/modeling.exe ../tests/migration/parFiles/parameters_mod_homogeneous.txt
 
-    python3 ../tests/migration/prepare_data.py
+    # python3 ../tests/migration/prepare_data.py
+
+    ./../bin/migration.exe ../tests/migration/parFiles/parameters_migration.txt
 
 
-
-
-
-    python3 ../tests/migration/generate_figures.py
-
+    # python3 ../tests/migration/generate_figures.py
 
 	exit 0
 ;;

@@ -41,16 +41,12 @@ protected:
     std::string receiver_output_folder;
     std::string wavefield_output_folder;
 
-    int sidx, sidy, sidz;
-
     void set_boundary();
 
     virtual void set_models() = 0;
     virtual void set_volumes() = 0;
     virtual void set_outputs() = 0;
     virtual void set_specifics() = 0;
-
-    virtual void initialization() = 0;
 
     virtual void get_receiver_output() = 0;
     virtual void get_wavefield_output() = 0;
@@ -70,9 +66,11 @@ public:
     int threadsPerBlock;
 
     float dx, dy, dz;
+
     int nx, ny, nz, nPoints;
     int nxx, nyy, nzz, volsize;
 
+    int sidx, sidy, sidz;
     int nbxl, nbxr, nbyl; 
     int nbyr, nbzu, nbzd;
 
@@ -103,6 +101,7 @@ public:
     
     void export_outputs();
 
+    virtual void initialization() = 0;
     virtual void set_forward_solver() = 0;
     virtual void free_space() = 0;    
 };

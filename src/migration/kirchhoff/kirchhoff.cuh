@@ -3,15 +3,21 @@
 
 # include "../migration.hpp"
 
+# include "../../modeling/eikonal_equation/isotropic/ultimate_FSM.cuh"
+
 class Kirchhoff : public Migration
 {
+private:
+
+    void set_modeling_type();
+
 protected:
 
-    std::string name;        
 
+     
 public:
     
-    void set_name();
+    void image_building();
 };
 
 # endif
