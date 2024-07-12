@@ -20,6 +20,11 @@ protected:
 
     float * Tr = nullptr;
     float * Ts = nullptr;
+    float * Im = nullptr;
+
+    float * dTx = nullptr;
+    float * dTy = nullptr;
+    float * dTz = nullptr;
 
     float * data = nullptr;
 

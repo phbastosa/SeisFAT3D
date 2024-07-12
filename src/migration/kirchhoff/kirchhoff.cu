@@ -9,6 +9,8 @@ void Kirchhoff::image_building()
 {
     modeling->set_runtime();
 
+    float pi = 4.0f*atanf(1.0f);
+
     // for (int node = 0; node < modeling->total_nodes; node++)
     // {            
     //     modeling->get_information();
@@ -27,7 +29,7 @@ void Kirchhoff::image_building()
     //     export_binary_float("../outputs/snapshots/travel_time_volume_receiver_" + std::to_string(node+1) + ".bin", modeling->wavefield_output, modeling->nPoints);
     // }
 
-    for (int shot = 0; shot < modeling->total_shots; shot++)
+    for (int shot = 0; shot < 1; shot++)
     {
         modeling->shot_index = shot;
 
@@ -40,22 +42,55 @@ void Kirchhoff::image_building()
         modeling->set_configuration();
         modeling->set_forward_solver();
 
-        for (int node = 0; node < modeling->total_nodes; node++)
+        for (int node = 0; node < 1; node++)
         {            
             import_binary_float("../outputs/snapshots/travel_time_volume_receiver_" + std::to_string(node+1) + ".bin", Tr, modeling->nPoints);
         
             for (int index = 0; index < modeling->nPoints; index++)
             {   
-                Ts[index] = modeling->wavefield_output[index] + Tr[index] - modeling->receiver_output[node];
+                int k = (int) (index / (modeling->nx*modeling->nz));                  // y direction
+                int j = (int) (index - k*modeling->nx*modeling->nz) / modeling->nz;   // x direction
+                int i = (int) (index - j*modeling->nz - k*modeling->nx*modeling->nz); // z direction                
 
-                int seism_index = (int)(Ts[index] / dt);
+                Im[index] = modeling->wavefield_output[index] + Tr[index] - modeling->receiver_output[node];
 
-                if (seism_index < nt) image[index] += data[seism_index + node*nt] * Tr[index];  
+                int seism_index = (int)(Im[index] / dt);
+
+                if ((i > 0) && (i < modeling->nz-1) && (j > 0) && (j < modeling->nx-1) && (k > 0) && (k < modeling->ny-1))
+                {
+                    float dTs_dz = (modeling->wavefield_output[index + 1] - Ts[index - 1]) / (2.0f*modeling->dz);     
+                    float dTs_dx = (modeling->wavefield_output[index + modeling->nz] - Ts[index - modeling->nz]) / (2.0f*modeling->dx);
+                    float dTs_dy = (modeling->wavefield_output[index + modeling->nx*modeling->nz] - Ts[index - modeling->nx*modeling->nz]) / (2.0f*modeling->dy);
+
+                    float dTs_norm = sqrtf(dTs_dx*dTs_dx + dTs_dy*dTs_dy + dTs_dz*dTs_dz);
+
+                    float dTr_dz = (Tr[index + 1] - Tr[index - 1]) / (2.0f*modeling->dz);
+                    float dTr_dx = (Tr[index + modeling->nz] - Tr[index - modeling->nz]) / (2.0f*modeling->dx);
+                    float dTr_dy = (Tr[index + modeling->nx*modeling->nz] - Tr[index - modeling->nx*modeling->nz]) / (2.0f*modeling->dy);
+
+                    float dTr_norm = sqrtf(dTr_dx*dTr_dx + dTr_dy*dTr_dy + dTr_dz*dTr_dz);
+
+                    dTx[index] = dTs_dx/dTs_norm + dTr_dx/dTr_norm; 
+                    dTy[index] = dTs_dy/dTs_norm + dTr_dy/dTr_norm; 
+                    dTz[index] = dTs_dz/dTs_norm + dTr_dz/dTr_norm; 
+                        
+                    //     float Ts_dot_Tr = dTs_dx*dTr_dx + dTs_dy*dTr_dy + dTs_dz*dTr_dz;
+                    //     float norm_dots = sqrtf(dTs_dx*dTs_dx + dTs_dy*dTs_dy + dTs_dz*dTs_dz) * sqrtf(dTr_dx*dTr_dx + dTr_dy*dTr_dy + dTr_dz*dTr_dz); 
+
+                    //     float angle = 0.5f*acosf(Ts_dot_Tr / norm_dots);
+                }
+            
+                if ((seism_index < nt)) 
+                    image[index] += data[seism_index + node*nt];  
             }
 
         }
 
         export_binary_float("test_image.bin", image, modeling->nPoints);
+        
+        export_binary_float("test_dTx.bin", dTx, modeling->nPoints);
+        export_binary_float("test_dTy.bin", dTy, modeling->nPoints);
+        export_binary_float("test_dTz.bin", dTz, modeling->nPoints);
     }
 
     modeling->get_runtime();
