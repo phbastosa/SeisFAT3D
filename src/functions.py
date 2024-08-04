@@ -3,8 +3,6 @@ import segyio as sgy
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 
-mpl.use("Qt5Agg")
-
 from scipy.interpolate import interp1d
 from matplotlib.widgets import Cursor
 from mpl_toolkits.axes_grid1 import make_axes_locatable
