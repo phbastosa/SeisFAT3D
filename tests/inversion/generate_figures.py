@@ -7,11 +7,11 @@ import functions
 
 #-------------------------------------------------------------------------
 
-nx = 201
-ny = 201
-nz = 51
+nx = 401
+ny = 401
+nz = 101
 
-dh = np.array([100, 100, 100])
+dh = np.array([50, 50, 50])
 
 true_model = functions.read_binary_volume(nz, nx, ny, f"../inputs/models/trueModelTest_{nz}x{nx}x{ny}_{dh[0]:.0f}m.bin")
 init_model = functions.read_binary_volume(nz, nx, ny, f"../inputs/models/initModelTest_{nz}x{nx}x{ny}_{dh[0]:.0f}m.bin")
@@ -19,13 +19,14 @@ init_model = functions.read_binary_volume(nz, nx, ny, f"../inputs/models/initMod
 shots_file = "../inputs/geometry/xyz_shots_position.txt"
 nodes_file = "../inputs/geometry/xyz_nodes_position.txt"
  
-slices = np.array([20, 75, 75], dtype = int) # [xy, zy, zx]
+slices = np.array([60, 160, 160], dtype = int) # [xy, zy, zx]
 
 functions.plot_model_3D(true_model, dh, slices,
                         shots = shots_file,
                         nodes = nodes_file,
-                        vmin = 2000,
+                        vmin = 1500,
                         vmax = 4500,
+                        adjx = 0.8,
                         scale = 2.5)
 
 plt.savefig(f"trueModel.png", dpi = 200)
@@ -34,8 +35,9 @@ plt.clf()
 functions.plot_model_3D(init_model, dh, slices,
                         shots = shots_file,
                         nodes = nodes_file,
-                        vmin = 2000,
+                        vmin = 1500,
                         vmax = 4500,
+                        adjx = 0.8,
                         scale = 2.5)
 
 plt.savefig(f"initModel.png", dpi = 200)
@@ -46,7 +48,9 @@ functions.plot_model_3D(true_model - init_model, dh, slices,
                         nodes = nodes_file,
                         vmin = -500,
                         vmax = +500,
-                        scale = 2.5)
+                        adjx = 0.8,
+                        scale = 2.5,
+                        cmap = "bwr")
 
 plt.savefig(f"diffModel.png", dpi = 200)
 plt.clf()
@@ -59,8 +63,9 @@ final_model_adj = functions.read_binary_volume(nz, nx, ny, f"../outputs/models/a
 functions.plot_model_3D(final_model_ls, dh, slices,
                         shots = shots_file,
                         nodes = nodes_file,
-                        vmin = 2000,
+                        vmin = 1500,
                         vmax = 4500,
+                        adjx = 0.8,
                         scale = 2.5)
 
 plt.savefig(f"final_model_ls.png", dpi = 200)
@@ -69,8 +74,9 @@ plt.clf()
 functions.plot_model_3D(final_model_adj, dh, slices,
                         shots = shots_file,
                         nodes = nodes_file,
-                        vmin = 2000,
+                        vmin = 1500,
                         vmax = 4500,
+                        adjx = 0.8,
                         scale = 2.5)
 
 plt.savefig(f"final_model_adj.png", dpi = 200)
@@ -79,7 +85,9 @@ plt.clf()
 functions.plot_model_3D(final_model_ls - init_model, dh, slices,
                         vmin = -200,
                         vmax = +200,
-                        scale = 2.5)
+                        adjx = 0.8,
+                        scale = 2.5,
+                        cmap = "bwr")
 
 plt.savefig(f"diff_model_ls.png", dpi = 200)
 plt.clf()
@@ -87,7 +95,9 @@ plt.clf()
 functions.plot_model_3D(final_model_adj - init_model, dh, slices,
                         vmin = -200,
                         vmax = +200,
-                        scale = 2.5)
+                        adjx = 0.8,
+                        scale = 2.5,
+                        cmap = "bwr")
 
 plt.savefig(f"diff_model_adj.png", dpi = 200)
 plt.clf()
@@ -117,17 +127,17 @@ print(f"|{'-'*74}|\n")
 shots = np.loadtxt(shots_file, delimiter = ',')
 nodes = np.loadtxt(nodes_file, delimiter = ',')  
 
-ns = len(shots)
-nr = len(nodes)
+ns = len(nodes)
+nr = len(shots)
 
 ls_data = np.zeros(ns*nr)
 adj_data = np.zeros(ns*nr)
 obs_data = np.zeros(ns*nr)
 
 for i in range(ns):
-    ls_data[i*nr:nr+i*nr] = np.fromfile(f"../outputs/seismograms/ls_fsm_data_nRec400_shot_{i+1}.bin", count = nr, dtype = np.float32)
-    adj_data[i*nr:nr+i*nr] = np.fromfile(f"../outputs/seismograms/adj_fsm_data_nRec400_shot_{i+1}.bin", count = nr, dtype = np.float32)
-    obs_data[i*nr:nr+i*nr] = np.fromfile(f"../inputs/data/obs_fsm_data_nRec400_shot_{i+1}.bin", count = nr, dtype = np.float32)
+    ls_data[i*nr:nr+i*nr] = np.fromfile(f"../outputs/seismograms/ls_fsm_data_nRec{nr}_shot_{i+1}.bin", count = nr, dtype = np.float32)
+    adj_data[i*nr:nr+i*nr] = np.fromfile(f"../outputs/seismograms/adj_fsm_data_nRec{nr}_shot_{i+1}.bin", count = nr, dtype = np.float32)
+    obs_data[i*nr:nr+i*nr] = np.fromfile(f"../inputs/data/obs_fsm_data_nRec{nr}_shot_{i+1}.bin", count = nr, dtype = np.float32)
 
 rms_error_ls = np.sqrt(np.sum((obs_data - ls_data)**2)/(ns*nr))
 rms_error_adj = np.sqrt(np.sum((obs_data - adj_data)**2)/(ns*nr))

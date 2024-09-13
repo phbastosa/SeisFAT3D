@@ -4,7 +4,7 @@ x_max = 2e4
 y_max = 2e4
 z_max = 5e3
 
-dh = 100.0
+dh = 50.0
 
 nx = int((x_max / dh) + 1)
 ny = int((y_max / dh) + 1)
@@ -13,24 +13,22 @@ nz = int((z_max / dh) + 1)
 init_model = 1500.0 * np.ones((nz, nx, ny))
 true_model = 1500.0 * np.ones((nz, nx, ny))
 
-z = np.arange(nz)*dh
-dv = 50
-vi = 2000
-
-v = vi + z*dv/dh
+dv = 30
+vi = 1500
 
 for i in range(nz):
-    true_model[i] = v[i]
-    init_model[i] = v[i]
+    if i > 20:
+        true_model[i] = vi + (i-10)*dv
+        init_model[i] = vi + (i-10)*dv
 
 radius = 1000
 
 velocity_variation = np.array([-500, 500, 500, -500])
 
-circle_centers = np.array([[2500, 7500, 7500],
-                           [2500, 7500, 11500],
-                           [2500, 11500, 7500],
-                           [2500, 11500, 11500]])
+circle_centers = np.array([[3000, 8000, 8000],
+                           [3000, 8000, 12000],
+                           [3000, 12000, 8000],
+                           [3000, 12000, 12000]])
 
 x, z, y = np.meshgrid(np.arange(nx)*dh, np.arange(nz)*dh, np.arange(ny)*dh)
 

@@ -76,7 +76,7 @@ def plot_model_3D(model, dh, slices, **kwargs):
     px = 1.0 / plt.rcParams['figure.dpi']  
     ticks = np.array([3, 7, 7], dtype = int)
 
-    fig = plt.figure(figsize = (910*px, 780*px))
+    fig = plt.figure(figsize = (900*px, 780*px))
 
     xloc = np.linspace(0, nx-1, ticks[1], dtype = int)
     yloc = np.linspace(0, ny-1, ticks[2], dtype = int)
@@ -234,7 +234,7 @@ def plot_model_3D(model, dh, slices, **kwargs):
                     ax.contour(eiks[k], levels = 5, linestyles = "dashed")
 
             if nodes_defined:
-                ax.plot(xnode[k], ynode[k], "v", markersize = 5, color = "gray")
+                ax.plot(xnode[k], ynode[k], "o", markersize = 5, color = "gray")
             
             if shots_defined:
                 ax.plot(xshot[k], yshot[k], "*", markersize = 5, color = "black")
