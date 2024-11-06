@@ -1,11 +1,10 @@
+import sys.path; path.append("../src/")
+
 import numpy as np
 import matplotlib.pyplot as plt
+import functions as pyf
 
 from os import system
-
-from sys import path
-path.append("../src/")
-import functions
 
 nx = 201
 ny = 201

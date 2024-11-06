@@ -1,52 +1,33 @@
 # ifndef GEOMETRY_HPP
 # define GEOMETRY_HPP
 
-# include "../io/io.hpp"
-
-class Coord
-{
-public:
-
-    int total;
-
-    float * x = nullptr;
-    float * y = nullptr;
-    float * z = nullptr;    
-};
+# include "../ioFunctions/ioFunctions.hpp"
 
 class Geometry
 {
-private:
-
-    std::vector<float> linspace(float xi, float xf, int n);
-
-protected:
-
-    bool reciprocity;
-    
-    bool import_geometry;
-    std::string shots_file;
-    std::string nodes_file;
-
-    std::vector<int> nlines;
-    std::vector<float> SW, NW, SE;    
-    std::vector<std::string> splitted;
-
-    void set_reciprocity();
-    void import_coordinates();
-    void export_coordinates();
-    void set_general_parameters();
-
-    void set_regular(Coord &obj);
-
 public:
 
-    Coord shots;
-    Coord nodes;
+    int nsrc;
+    int nrec;
+    int nrel;
 
-    std::string file;
+    int * sInd = nullptr;
+    int * iRec = nullptr;
+    int * fRec = nullptr;
 
-    virtual void set_geometry() = 0;     
+    int * spread = nullptr;
+
+    float * xsrc = nullptr;
+    float * ysrc = nullptr;
+    float * zsrc = nullptr;
+
+    float * xrec = nullptr;
+    float * yrec = nullptr;
+    float * zrec = nullptr;
+
+    std::string parameters;
+
+    void set_parameters();     
 };
 
 # endif

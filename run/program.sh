@@ -2,81 +2,70 @@
 
 # Input Output scripts --------------------------------------------------------------------------------
 
-io="../src/io/io.cpp"
+ioFunctions="../src/ioFunctions/ioFunctions.cpp"
 
 # Acquisition geometry scripts ------------------------------------------------------------------------
 
 geometry="../src/geometry/geometry.cpp"
 
-regular="../src/geometry/regular/regular.cpp"
-circular="../src/geometry/circular/circular.cpp"
-
-geometry_main="../src/main/geometry_main.cpp"
-
-geometry_all="$geometry $regular $circular"
-
 # Seismic modeling scripts ----------------------------------------------------------------------------
 
 modeling="../src/modeling/modeling.cpp"
 
-eikonal="../src/modeling/eikonal_equation/eikonal.cpp"
+eikonal="../src/modeling/hfreq/eikonal.cpp"
+elastic="../src/modeling/lfreq/elastic.cu"
 
-classical="../src/modeling/eikonal_equation/isotropic/classical.cu"
-block_FIM="../src/modeling/eikonal_equation/isotropic/block_FIM.cu"
-ultimate_FSM="../src/modeling/eikonal_equation/isotropic/ultimate_FSM.cu"
+eikonal_iso="../src/modeling/hfreq/eikonal_iso.cu"
+elastic_iso="../src/modeling/lfreq/elastic_iso.cu"
 
-fullwave="../src/modeling/wave_equation/wave.cu"
+modeling_main="../src/modeling_main.cpp"
 
-scalar="../src/modeling/wave_equation/isotropic/scalar.cu"
-elastic="../src/modeling/wave_equation/isotropic/elastic.cu"
-acoustic="../src/modeling/wave_equation/isotropic/acoustic.cu"
-
-modeling_main="../src/main/modeling_main.cpp"
-
-modeling_all="$modeling $eikonal $classical $block_FIM $ultimate_FSM 
-              $fullwave $scalar $acoustic $elastic"
+modeling_all="$modeling $eikonal $elastic $eikonal_iso $elastic_iso"
 
 # Seismic inversion scripts ---------------------------------------------------------------------------
 
 tomography="../src/inversion/tomography.cpp"
 
-least_squares="../src/inversion/least_squares/least_squares.cu"
-adjoint_state="../src/inversion/adjoint_state/adjoint_state.cu"
+least_squares="../src/inversion/least_squares.cpp"
+adjoint_state="../src/inversion/adjoint_state.cu"
 
-inversion_main="../src/main/inversion_main.cpp"
+inversion_main="../src/inversion_main.cpp"
 
 inversion_all="$tomography $least_squares $adjoint_state"
 
 # Seismic migration scripts ---------------------------------------------------------------------------
 
+kirchhoff="../src/migration/kirchhoff.cu"
+
 migration="../src/migration/migration.cpp"
 
-kirchhoff="../src/migration/kirchhoff/kirchhoff.cu"
+migration_main="../src/migration_main.cpp"
 
-migration_main="../src/main/migration_main.cpp"
-
-migration_all="$kirchhoff $migration"
+migration_all="$migration $kirchhoff"
 
 # Compiler flags --------------------------------------------------------------------------------------
 
-flags="-Xcompiler -fopenmp --std=c++11 -lm -O3 -w -g --relocatable-device-code=true"
+flags="-Xcompiler -fopenmp --std=c++11 -lm -lfftw3 -O3"
 
 # Main dialogue ---------------------------------------------------------------------------------------
 
 USER_MESSAGE="
-Usage:\n
-    $ $0 -compile             # Create executables 
-    $ $0 -modeling            # Perform eikonal solver          
-    $ $0 -inversion           # Perform first arrival tomography
-    $ $0 -migration           # Perform kirchhoff depth migration   
+-------------------------------------------------------------------------------
+                                 \033[34mSeisFAT2D\033[0;0m
+-------------------------------------------------------------------------------
+\nUsage:\n
+    $ $0 -compile              
+    $ $0 -modeling                      
+    $ $0 -inversion           
+    $ $0 -migration
 
-Tests:\n
-    $ $0 -test_modeling       # Perform a small modeling experiment          
-    $ $0 -test_inversion      # Perform a small inversion experiment
-    $ $0 -test_migration      # Perform a small migration experiment          
+Tests:
 
-Visualiation:\n
-    $ $0 -check_geometry      # Perform and show experiments of expanded abstract
+    $ $0 -test_modeling                      
+    $ $0 -test_inversion           
+    $ $0 -test_migration
+    
+-------------------------------------------------------------------------------
 "
 
 [ -z "$1" ] && 
@@ -98,17 +87,14 @@ case "$1" in
 
     echo -e "Compiling stand-alone executables!\n"
 
-    echo -e "../bin/\033[31mgeometry.exe\033[m" 
-    nvcc $io $geometry_all $geometry_main $flags -o ../bin/geometry.exe
-
     echo -e "../bin/\033[31mmodeling.exe\033[m" 
-    nvcc $io $geometry_all $modeling_all $modeling_main $flags -o ../bin/modeling.exe
+    nvcc $ioFunctions $geometry $modeling_all $modeling_main $flags -o ../bin/modeling.exe
 
     echo -e "../bin/\033[31minversion.exe\033[m" 
-    nvcc $io $geometry_all $modeling_all $inversion_all $inversion_main $flags -o ../bin/inversion.exe
+    nvcc $ioFunctions $geometry $modeling_all $inversion_all $inversion_main $flags -o ../bin/inversion.exe
 
     echo -e "../bin/\033[31mmigration.exe\033[m"
-    nvcc $io $geometry_all $modeling_all $migration_all $migration_main $flags -o ../bin/migration.exe
+    nvcc $ioFunctions $geometry $modeling_all $migration_all $migration_main $flags -o ../bin/migration.exe
 
 	exit 0
 ;;
@@ -136,68 +122,44 @@ case "$1" in
 
 -test_modeling)
 
-    python3 ../tests/modeling/eikonal_equation/generate_models.py
+    python3 -B ../tests/modeling/generate_models.py
+    python3 -B ../tests/modeling/generate_geometry.py
 
-    spacings=(100 50 25)
-    methods=("pod" "fim" "fsm")
+    ./../bin/modeling.exe ../tests/modeling/parameters_eikonal.txt
+    ./../bin/modeling.exe ../tests/modeling/parameters_elastic.txt
 
-    for method in ${methods[@]}; do 
-        for spacing in ${spacings[@]}; do 
-            ./../bin/modeling.exe ../tests/modeling/eikonal_equation/parFiles/parameters_"$method"_"$spacing"m.txt; 
-        done    
-    done 
-
-    python3 ../tests/modeling/eikonal_equation/generate_figures.py
-
-    python3 ../tests/modeling/wave_equation/generate_models.py 
-
-    ./../bin/modeling.exe ../tests/modeling/wave_equation/parFiles/parameters_scalar_homogeneous.txt
-    ./../bin/modeling.exe ../tests/modeling/wave_equation/parFiles/parameters_acoustic_homogeneous.txt
-    ./../bin/modeling.exe ../tests/modeling/wave_equation/parFiles/parameters_elastic_homogeneous.txt
-
-    python3 ../tests/modeling/wave_equation/generate_figures.py 
+    python3 -B ../tests/modeling/generate_figures.py
 
 	exit 0
 ;;
 
 -test_inversion) 
 
-    python3 ../tests/inversion/generate_models.py
+    python3 -B ../tests/inversion/generate_models.py
+    python3 -B ../tests/inversion/generate_geometry.py
 
-    ./../bin/modeling.exe ../tests/inversion/parFiles/parameters_obsData.txt
+    ./../bin/modeling.exe ../tests/inversion/parameters_obsData.txt
 
-    ./../bin/inversion.exe ../tests/inversion/parFiles/parameters_leastSquares.txt
-    ./../bin/inversion.exe ../tests/inversion/parFiles/parameters_adjointState.txt
+    ./../bin/inversion.exe ../tests/inversion/parameters_least_squares.txt
+    ./../bin/inversion.exe ../tests/inversion/parameters_adjoint_state.txt
 
-    ./../bin/modeling.exe ../tests/inversion/parFiles/parameters_lsFinalModeling.txt
-    ./../bin/modeling.exe ../tests/inversion/parFiles/parameters_adjFinalModeling.txt
+    python3 -B ../tests/inversion/generate_figures.py
 
-    python3 ../tests/inversion/generate_figures.py
-	
     exit 0
 ;;
 
 -test_migration)
 
-    python3 ../tests/migration/generate_models.py
+    python3 -B ../tests/migration/generate_models.py
+    python3 -B ../tests/migration/generate_geometry.py
 
-    ./../bin/modeling.exe ../tests/migration/parFiles/parameters_mod_diffraction.txt
-    ./../bin/modeling.exe ../tests/migration/parFiles/parameters_mod_homogeneous.txt
+    ./../bin/modeling.exe ../tests/migration/parameters.txt
 
-    python3 ../tests/migration/prepare_data.py
+    python3 -B ../tests/migration/data_preconditioning.py
 
-    ./../bin/migration.exe ../tests/migration/parFiles/parameters_migration.txt
+    ./../bin/migration.exe ../tests/migration/parameters.txt
 
-    python3 ../tests/migration/generate_figures.py
-
-	exit 0
-;;
-
--check_geometry)
-
-    ./../bin/geometry.exe parameters.txt
-
-    python3 ../src/visualization/check_geometry.py parameters.txt
+    python3 -B ../tests/migration/generate_figures.py
 
 	exit 0
 ;;
