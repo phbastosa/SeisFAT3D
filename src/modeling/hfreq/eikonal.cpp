@@ -15,9 +15,11 @@ void Eikonal::set_boundaries()
 
 void Eikonal::initialization()
 {
-    sIdx = (int)(geometry->xsrc[geometry->sInd[srcId]] / dx) + nb;
-    sIdy = (int)(geometry->ysrc[geometry->sInd[srcId]] / dy) + nb;
-    sIdz = (int)(geometry->zsrc[geometry->sInd[srcId]] / dz) + nb;
+    int sId = geometry->sInd[srcId];
+
+    sIdx = (int)(geometry->xsrc[sId] / dx) + nb;
+    sIdy = (int)(geometry->ysrc[sId] / dy) + nb;
+    sIdz = (int)(geometry->zsrc[sId] / dz) + nb;
 
     # pragma omp parallel for
     for (int index = 0; index < volsize; index++) 
@@ -33,10 +35,10 @@ void Eikonal::initialization()
                 int xi = sIdx + (j - 1);
                 int zi = sIdz + (i - 1);
 
-                T[zi + xi*nzz + yi*nxx*nzz] = S[zi + xi*nzz] * 
-                    sqrtf(powf((xi - nb)*dx - geometry->xsrc[geometry->sInd[srcId]], 2.0f) + 
-                          powf((yi - nb)*dz - geometry->ysrc[geometry->sInd[srcId]], 2.0f) +
-                          powf((zi - nb)*dz - geometry->zsrc[geometry->sInd[srcId]], 2.0f));
+                T[zi + xi*nzz + yi*nxx*nzz] = S[zi + xi*nzz + yi*nxx*nzz] * 
+                    sqrtf(powf((xi - nb)*dx - geometry->xsrc[sId], 2.0f) + 
+                          powf((yi - nb)*dz - geometry->ysrc[sId], 2.0f) +
+                          powf((zi - nb)*dz - geometry->zsrc[sId], 2.0f));
             }
         }
     }
@@ -46,7 +48,9 @@ void Eikonal::compute_seismogram()
 {
     int spread = 0;
 
-    for (recId = geometry->iRec[geometry->sInd[srcId]]; recId < geometry->fRec[geometry->sInd[srcId]]; recId++)
+    int sId = geometry->sInd[srcId];
+
+    for (recId = geometry->iRec[sId]; recId < geometry->fRec[sId]; recId++)
     {
         float x = geometry->xrec[recId];
         float y = geometry->yrec[recId];
@@ -60,16 +64,16 @@ void Eikonal::compute_seismogram()
         float y1 = floorf(y / dy) * dy + dy;
         float z1 = floorf(z / dz) * dz + dz;
 
-        int id = ((int)(z / dz)) + ((int)(x / dx))*nz + ((int)(y / dy))*nx*nz;
+        int id = ((int)(z / dz) + nb) + ((int)(x / dx) + nb)*nzz + ((int)(y / dy) + nb)*nxx*nzz;
 
         float c000 = T[id];
         float c001 = T[id + 1];
-        float c100 = T[id + nz]; 
-        float c101 = T[id + 1 + nz]; 
-        float c010 = T[id + nx*nz]; 
-        float c011 = T[id + 1 + nx*nz]; 
-        float c110 = T[id + nz + nx*nz]; 
-        float c111 = T[id + 1 + nz + nx*nz];
+        float c100 = T[id + nzz]; 
+        float c101 = T[id + 1 + nzz]; 
+        float c010 = T[id + nxx*nzz]; 
+        float c011 = T[id + 1 + nxx*nzz]; 
+        float c110 = T[id + nzz + nxx*nzz]; 
+        float c111 = T[id + 1 + nzz + nxx*nzz];
 
         float xd = (x - x0) / (x1 - x0);
         float yd = (y - y0) / (y1 - y0);

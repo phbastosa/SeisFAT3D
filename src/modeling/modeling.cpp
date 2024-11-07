@@ -85,7 +85,7 @@ void Modeling::expand_boundary(float * input, float * output)
             for (int i = 0; i < nzz; i++)
             {
                 output[i + j*nzz + k*nxx*nzz] = output[i + j*nzz + nb*nxx*nzz];
-                output[i + j*nzz + (nyy - j - 1)*nxx*nzz] = output[i + j*nzz + (nyy - nb - 1)*nxx*nzz];
+                output[i + j*nzz + (nyy - k - 1)*nxx*nzz] = output[i + j*nzz + (nyy - nb - 1)*nxx*nzz];
             }
         }
     }
