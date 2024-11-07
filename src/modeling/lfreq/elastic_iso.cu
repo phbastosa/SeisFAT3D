@@ -85,13 +85,15 @@ void Elastic_Iso::initialization()
 	cudaMemset(d_Tyz, 0.0f, volsize*sizeof(float));
 	cudaMemset(d_Txy, 0.0f, volsize*sizeof(float));
 
-    sIdx = (int)(geometry->xsrc[geometry->sInd[srcId]] / dx) + nb;
-    sIdy = (int)(geometry->ysrc[geometry->sInd[srcId]] / dy) + nb;
-    sIdz = (int)(geometry->zsrc[geometry->sInd[srcId]] / dz) + nb;
+    int sId = geometry->sInd[srcId];
+
+    sIdx = (int)(geometry->xsrc[sId] / dx) + nb;
+    sIdy = (int)(geometry->ysrc[sId] / dy) + nb;
+    sIdz = (int)(geometry->zsrc[sId] / dz) + nb;
 
     spread = 0;
 
-    for (recId = geometry->iRec[srcId]; recId < geometry->fRec[srcId]; recId++)
+    for (recId = geometry->iRec[sId]; recId < geometry->fRec[sId]; recId++)
     {
         current_xrec[spread] = (int)(geometry->xrec[recId] / dx) + nb;
         current_yrec[spread] = (int)(geometry->yrec[recId] / dy) + nb;

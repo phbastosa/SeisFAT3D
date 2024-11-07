@@ -7,25 +7,16 @@ from scipy.interpolate import interp1d
 from matplotlib.widgets import Cursor
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 
-def catch_parameter(filename, target):
-    file = open(filename,'r')
-    for line in file.readlines():
-        if line[0] != '#':
-            splitted = line.split()
-            if len(splitted) != 0:
-                if splitted[0] == target: 
-                    return splitted[2]
-
-def read_binary_array(n1,filename):
+def read_binary_array(n1, filename):
     return np.fromfile(filename, dtype = np.float32, count = n1)    
 
-def read_binary_matrix(n1,n2,filename):
+def read_binary_matrix(n1, n2, filename):
     data = np.fromfile(filename, dtype = np.float32, count = n1*n2)    
-    return np.reshape(data, [n1,n2], order='F')
+    return np.reshape(data, [n1, n2], order = 'F')
 
-def read_binary_volume(n1,n2,n3,filename):
+def read_binary_volume(n1, n2, n3, filename):
     data = np.fromfile(filename, dtype = np.float32, count = n1*n2*n3)    
-    return np.reshape(data, [n1,n2,n3], order='F')
+    return np.reshape(data, [n1, n2, n3], order = 'F')
     
 def get_analytical_refractions(v, z, x):
 
@@ -46,6 +37,7 @@ def plot_model_3D(model, dh, slices, **kwargs):
     scale = kwargs.get("scale") if "scale" in kwargs else 2.8 
     cmap = kwargs.get("cmap") if "cmap" in kwargs else "jet" 
     adjx = kwargs.get("adjx") if "adjx" in kwargs else 0.5
+    cblab = kwargs.get("cblab") if "cblab" in kwargs else "Velocity [km/s]"
 
     shots_defined = True if "shots" in kwargs else False
     nodes_defined = True if "nodes" in kwargs else False
@@ -215,7 +207,7 @@ def plot_model_3D(model, dh, slices, **kwargs):
             cax = divider.append_axes("bottom", size="5%", pad=0)
             cbar = fig.colorbar(mpl.cm.ScalarMappable(norm = norm, cmap = cmap), cax = cax, ticks = np.linspace(vmin*m2km, vmax*m2km, 5), orientation = "horizontal")
             cbar.ax.set_xticklabels(np.around(np.linspace(vmin*m2km, vmax*m2km, 5), decimals = 1))
-            cbar.set_label("Velocity [km/s]", fontsize = 15)
+            cbar.set_label(cblab, fontsize = 15)
          
         else:
             

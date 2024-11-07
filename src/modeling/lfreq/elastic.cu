@@ -29,7 +29,7 @@ void Elastic::set_boundaries()
 
     float * damp1D = new float[nb]();
     float * damp2D = new float[nb*nb]();
-    float * damp3D = new float[nb*nb]();
+    float * damp3D = new float[nb*nb*nb]();
 
     for (int i = 0; i < nb; i++) 
     {
@@ -40,8 +40,8 @@ void Elastic::set_boundaries()
     {
         for (int j = 0; j < nb; j++)
         {   
-            damp2D[j + i*nb] += damp1D[i]; // up to bottom
-            damp2D[i + j*nb] += damp1D[i]; // left to right
+            damp2D[j + i*nb] += damp1D[i];
+            damp2D[i + j*nb] += damp1D[i];
         }
     }
 
@@ -51,9 +51,9 @@ void Elastic::set_boundaries()
         {
             for(int k = 0; k < nb; k++)
             {
-                damp3D[i + j*nb + k*nb*nb] += d2D[i + j*nb]; // XY plane
-                damp3D[i + j*nb + k*nb*nb] += d2D[j + k*nb]; // ZX plane
-                damp3D[i + j*nb + k*nb*nb] += d2D[i + k*nb]; // ZY plane
+                damp3D[i + j*nb + k*nb*nb] += damp2D[i + j*nb];
+                damp3D[i + j*nb + k*nb*nb] += damp2D[j + k*nb];
+                damp3D[i + j*nb + k*nb*nb] += damp2D[i + k*nb];
             }
         }
     }    

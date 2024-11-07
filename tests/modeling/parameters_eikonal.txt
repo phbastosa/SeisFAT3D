@@ -2,17 +2,17 @@
 # Model paramenters --------------------------------------------------------------------------------
 #---------------------------------------------------------------------------------------------------
 
-x_samples = 801                           # <int>  
-y_samples = 501                           # <int>  
-z_samples = 201                           # <int>  
+x_samples = 321                           # <int>  
+y_samples = 201                           # <int>  
+z_samples = 81                            # <int>  
 
-x_spacing = 10.0                          # [m] <float> 
-y_spacing = 10.0                          # [m] <float> 
-z_spacing = 10.0                          # [m] <float> 
+x_spacing = 25.0                          # [m] <float> 
+y_spacing = 25.0                          # [m] <float> 
+z_spacing = 25.0                          # [m] <float> 
 
-vp_model_file = ../inputs/models/modeling_test_vp_model_201x801x501_10m.bin   
-vs_model_file = ../inputs/models/modeling_test_vs_model_201x801x501_10m.bin   
-rho_model_file = ../inputs/models/modeling_test_rho_model_201x801x501_10m.bin   
+vp_model_file = ../inputs/models/modeling_test_vp_model_81x321x201_25m.bin   
+vs_model_file = ../inputs/models/modeling_test_vs_model_81x321x201_25m.bin   
+rho_model_file = ../inputs/models/modeling_test_rho_model_81x321x201_25m.bin   
 
 #---------------------------------------------------------------------------------------------------
 # Geometry parameters ------------------------------------------------------------------------------

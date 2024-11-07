@@ -126,9 +126,9 @@ case "$1" in
     # python3 -B ../tests/modeling/generate_geometry.py
 
     # ./../bin/modeling.exe ../tests/modeling/parameters_eikonal.txt
-    ./../bin/modeling.exe ../tests/modeling/parameters_elastic.txt
+    # ./../bin/modeling.exe ../tests/modeling/parameters_elastic.txt
 
-    # python3 -B ../tests/modeling/generate_figures.py
+    python3 -B ../tests/modeling/generate_figures.py
 
 	exit 0
 ;;

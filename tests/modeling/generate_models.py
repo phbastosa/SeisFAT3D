@@ -4,7 +4,7 @@ x_max = 8e3
 y_max = 5e3
 z_max = 2e3
 
-dh = 10.0
+dh = 25.0
 
 nx = int((x_max / dh) + 1)
 ny = int((y_max / dh) + 1)
