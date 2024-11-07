@@ -1,0 +1,41 @@
+#---------------------------------------------------------------------------------------------------
+# Model paramenters --------------------------------------------------------------------------------
+#---------------------------------------------------------------------------------------------------
+
+x_samples = 801                           # <int>  
+y_samples = 501                           # <int>  
+z_samples = 201                           # <int>  
+
+x_spacing = 10.0                          # [m] <float> 
+y_spacing = 10.0                          # [m] <float> 
+z_spacing = 10.0                          # [m] <float> 
+
+vp_model_file = ../inputs/models/modeling_test_vp_model_201x801x501_10m.bin   
+vs_model_file = ../inputs/models/modeling_test_vs_model_201x801x501_10m.bin   
+rho_model_file = ../inputs/models/modeling_test_rho_model_201x801x501_10m.bin   
+
+#---------------------------------------------------------------------------------------------------
+# Geometry parameters ------------------------------------------------------------------------------
+#---------------------------------------------------------------------------------------------------
+
+SPS = ../inputs/geometry/modeling_test_SPS.txt              
+RPS = ../inputs/geometry/modeling_test_RPS.txt     
+XPS = ../inputs/geometry/modeling_test_XPS.txt     
+
+#---------------------------------------------------------------------------------------------------
+# Modeling parameters ------------------------------------------------------------------------------
+#---------------------------------------------------------------------------------------------------
+# [0] - Eikonal Isotropic 
+# [1] - Elastic Isotropic
+# --------------------------------------------------------------------------------------------------
+
+modeling_type = 0 
+
+time_samples = 1001
+time_spacing = 1e-3
+max_frequency = 30.0
+
+boundary_samples = 100
+boundary_damping = 0.0025
+
+modeling_output_folder = ../outputs/syntheticData/            
