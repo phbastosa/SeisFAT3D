@@ -7,22 +7,23 @@ class Eikonal : public Modeling
 {
 private:
 
-    void set_models();
-    void set_outputs();
+    void set_boundaries();
+    void set_specifications();
 
 protected:
 
-    virtual void set_volumes() = 0;
-    virtual void set_specifics() = 0;
-    virtual void initialization() = 0;
+    void compute_seismogram();
 
-    void get_receiver_output();
-    void get_wavefield_output();
+    virtual void set_conditions() = 0;
+    virtual void set_properties() = 0;
 
-public: 
+public:
 
-    virtual void set_forward_solver() = 0;
-    virtual void free_space() = 0;
+    void initialization();
+
+    virtual void forward_solver() = 0;
+
+    void export_synthetic_data();
 };
 
 # endif

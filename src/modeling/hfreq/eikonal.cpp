@@ -1,45 +1,56 @@
 # include "eikonal.hpp"
 
-void Eikonal::set_models()
+void Eikonal::set_specifications()
 {
-    std::string vp_file = catch_parameter("vp_model_file", file);
+    set_properties();    
+    set_conditions();    
 
-    V = new float[nPoints](); 
-    S = new float[volsize]();
-
-    import_binary_float(vp_file, V, nPoints);
-
-    for (int index = 0; index < nPoints; index++)
-        V[index] = 1.0f / V[index];
-    
-    expand_boundary(V,S);
-
-    delete[] V;
+    synthetic_data = new float[max_spread]();
 }
 
-void Eikonal::set_outputs()
+void Eikonal::set_boundaries()
 {
-    wavefield_output_samples = nPoints;
-    receiver_output_samples = total_nodes;
-
-    receiver_output = new float[receiver_output_samples]();
-    wavefield_output = new float[wavefield_output_samples]();
+    nb = 1;    
 }
 
-void Eikonal::get_wavefield_output()
-{   
-    reduce_boundary(T, wavefield_output);
-
-    wavefield_output_file = wavefield_output_folder + type_name + "_time_volume_" + std::to_string(nz) + "x" + std::to_string(nx) + "x" + std::to_string(ny) + "_shot_" + std::to_string(shot_index+1) + ".bin";
-}
-
-void Eikonal::get_receiver_output()
+void Eikonal::initialization()
 {
-    for (int r = 0; r < total_nodes; r++)
+    sIdx = (int)(geometry->xsrc[geometry->sInd[srcId]] / dx) + nb;
+    sIdy = (int)(geometry->ysrc[geometry->sInd[srcId]] / dy) + nb;
+    sIdz = (int)(geometry->zsrc[geometry->sInd[srcId]] / dz) + nb;
+
+    # pragma omp parallel for
+    for (int index = 0; index < volsize; index++) 
+        T[index] = 1e6f;
+
+    for (int k = 0; k < 3; k++)
     {
-        float x = geometry->nodes.x[r];
-        float y = geometry->nodes.y[r];
-        float z = geometry->nodes.z[r];
+        for (int j = 0; j < 3; j++)
+        {
+            for (int i = 0; i < 3; i++)
+            {
+                int yi = sIdy + (k - 1);
+                int xi = sIdx + (j - 1);
+                int zi = sIdz + (i - 1);
+
+                T[zi + xi*nzz + yi*nxx*nzz] = S[zi + xi*nzz] * 
+                    sqrtf(powf((xi - nb)*dx - geometry->xsrc[geometry->sInd[srcId]], 2.0f) + 
+                          powf((yi - nb)*dz - geometry->ysrc[geometry->sInd[srcId]], 2.0f) +
+                          powf((zi - nb)*dz - geometry->zsrc[geometry->sInd[srcId]], 2.0f));
+            }
+        }
+    }
+}
+
+void Eikonal::compute_seismogram()
+{
+    int spread = 0;
+
+    for (recId = geometry->iRec[geometry->sInd[srcId]]; recId < geometry->fRec[geometry->sInd[srcId]]; recId++)
+    {
+        float x = geometry->xrec[recId];
+        float y = geometry->yrec[recId];
+        float z = geometry->zrec[recId];
 
         float x0 = floorf(x / dx) * dx;
         float y0 = floorf(y / dy) * dy;
@@ -51,14 +62,14 @@ void Eikonal::get_receiver_output()
 
         int id = ((int)(z / dz)) + ((int)(x / dx))*nz + ((int)(y / dy))*nx*nz;
 
-        float c000 = wavefield_output[id];
-        float c001 = wavefield_output[id + 1];
-        float c100 = wavefield_output[id + nz]; 
-        float c101 = wavefield_output[id + 1 + nz]; 
-        float c010 = wavefield_output[id + nx*nz]; 
-        float c011 = wavefield_output[id + 1 + nx*nz]; 
-        float c110 = wavefield_output[id + nz + nx*nz]; 
-        float c111 = wavefield_output[id + 1 + nz + nx*nz];
+        float c000 = T[id];
+        float c001 = T[id + 1];
+        float c100 = T[id + nz]; 
+        float c101 = T[id + 1 + nz]; 
+        float c010 = T[id + nx*nz]; 
+        float c011 = T[id + 1 + nx*nz]; 
+        float c110 = T[id + nz + nx*nz]; 
+        float c111 = T[id + 1 + nz + nx*nz];
 
         float xd = (x - x0) / (x1 - x0);
         float yd = (y - y0) / (y1 - y0);
@@ -72,8 +83,13 @@ void Eikonal::get_receiver_output()
         float c0 = c00*(1 - yd) + c10*yd;
         float c1 = c01*(1 - yd) + c11*yd;
 
-        receiver_output[r] = c0*(1 - zd) + c1*zd;
+        synthetic_data[spread++] = c0*(1 - zd) + c1*zd;
     }
+}
 
-    receiver_output_file = receiver_output_folder + type_name + "_data_nRec" + std::to_string(total_nodes) + "_shot_" + std::to_string(shot_index+1) + ".bin";
+void Eikonal::export_synthetic_data()
+{
+    int sId = geometry->sInd[srcId];    
+    std::string data_file = data_folder + modeling_type + "nStations" + std::to_string(geometry->spread[sId]) + "_shot_" + std::to_string(sId+1) + ".bin";
+    export_binary_float(data_file, synthetic_data, geometry->spread[sId]);    
 }

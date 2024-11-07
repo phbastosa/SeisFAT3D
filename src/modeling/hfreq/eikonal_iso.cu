@@ -1,21 +1,30 @@
-# include "ultimate_FSM.cuh"
+# include "eikonal_iso.cuh"
 
-int Ultimate_FSM::iDivUp(int a, int b) 
+int Eikonal_Iso::iDivUp(int a, int b) 
 { 
     return ( (a % b) != 0 ) ? (a / b + 1) : (a / b); 
 }
 
-void Ultimate_FSM::set_specifics()
+void Eikonal_Iso::set_properties()
 {
-    nbxl = 1; nbxr = 1;
-    nbyl = 1; nbyr = 1;
-    nbzu = 1; nbzd = 1;
+    Vp = new float[nPoints]();
+
+    std::string model_file = catch_parameter("vp_model_file", parameters);
+
+    import_binary_float(model_file, Vp, nPoints);
+
+    for (int index = 0; index < nPoints; index++)
+        Vp[index] = 1.0f / Vp[index];
+
+    S = new float[volsize]();
+
+    expand_boundary(Vp, S);
 }
 
-void Ultimate_FSM::set_volumes()
+void Eikonal_Iso::set_conditions()
 {
-    type_name = std::string("fsm");
-    type_message = std::string("[2] - Accurate FSM (Detrixhe et al., 2013; Noble et al., 2014)");
+    modeling_type = "eikonal_iso_";
+    modeling_name = "Eikonal isotropic time propagation";
 
     nSweeps = 8;
     meshDim = 3;
@@ -30,7 +39,7 @@ void Ultimate_FSM::set_volumes()
 
     dsum = dz2i + dx2i + dy2i;
 
-    totalLevels = (nxx - 1) + (nyy - 1) + (nzz - 1);
+    total_levels = (nxx - 1) + (nyy - 1) + (nzz - 1);
 
     std::vector<std::vector<int>> sgnv = {{1,1,1}, {0,1,1}, {1,1,0}, {0,1,0}, {1,0,1}, {0,0,1}, {1,0,0}, {0,0,0}};
     std::vector<std::vector<int>> sgnt = {{1,1,1}, {-1,1,1}, {1,1,-1}, {-1,1,-1}, {1,-1,1}, {-1,-1,1}, {1,-1,-1}, {-1,-1,-1}};
@@ -41,13 +50,13 @@ void Ultimate_FSM::set_volumes()
     for (int index = 0; index < nSweeps * meshDim; index++)
     {
         int j = index / nSweeps;
-	int i = index % nSweeps;				
+    	int i = index % nSweeps;				
 
-	h_sgnv[i + j * nSweeps] = sgnv[i][j];
-	h_sgnt[i + j * nSweeps] = sgnt[i][j];
+	    h_sgnv[i + j * nSweeps] = sgnv[i][j];
+	    h_sgnt[i + j * nSweeps] = sgnt[i][j];
     }
 
-    T = new float[volsize](); 
+    T = new float[volsize]();
 
     cudaMalloc((void**)&(d_T), volsize*sizeof(float));
     cudaMalloc((void**)&(d_S), volsize*sizeof(float));
@@ -65,113 +74,61 @@ void Ultimate_FSM::set_volumes()
     std::vector<std::vector<int>>().swap(sgnt);
 }
 
-void Ultimate_FSM::initialization()
-{
-    for (int index = 0; index < volsize; index++) 
-        T[index] = 1e6f;
-
-    T[source_index] = S[source_index] * sqrtf(powf((sidx-nbxl)*dx - geometry->shots.x[shot_index], 2.0f) + powf((sidy-nbyl)*dy - geometry->shots.y[shot_index], 2.0f) + powf((sidz-nbzu)*dz - geometry->shots.z[shot_index], 2.0f));
-
-    T[source_index + 1] = S[source_index] * sqrtf(powf((sidx-nbxl)*dx - geometry->shots.x[shot_index], 2.0f) + powf((sidy-nbyl)*dy - geometry->shots.y[shot_index], 2.0f) + powf(((sidz-nbzu)+1)*dz - geometry->shots.z[shot_index], 2.0f));
-    T[source_index - 1] = S[source_index] * sqrtf(powf((sidx-nbxl)*dx - geometry->shots.x[shot_index], 2.0f) + powf((sidy-nbyl)*dy - geometry->shots.y[shot_index], 2.0f) + powf(((sidz-nbzu)-1)*dz - geometry->shots.z[shot_index], 2.0f));
-
-    T[source_index + nzz] = S[source_index] * sqrtf(powf(((sidx-nbxl)+1)*dx - geometry->shots.x[shot_index], 2.0f) + powf((sidy-nbyl)*dy - geometry->shots.y[shot_index], 2.0f) + powf((sidz-nbzu)*dz - geometry->shots.z[shot_index], 2.0f));
-    T[source_index - nzz] = S[source_index] * sqrtf(powf(((sidx-nbxl)-1)*dx - geometry->shots.x[shot_index], 2.0f) + powf((sidy-nbyl)*dy - geometry->shots.y[shot_index], 2.0f) + powf((sidz-nbzu)*dz - geometry->shots.z[shot_index], 2.0f));
-    
-    T[source_index + nxx*nzz] = S[source_index] * sqrtf(powf((sidx-nbxl)*dx - geometry->shots.x[shot_index], 2.0f) + powf(((sidy-nbyl)+1)*dy - geometry->shots.y[shot_index], 2.0f) + powf((sidz-nbzu)*dz - geometry->shots.z[shot_index], 2.0f));
-    T[source_index - nxx*nzz] = S[source_index] * sqrtf(powf((sidx-nbxl)*dx - geometry->shots.x[shot_index], 2.0f) + powf(((sidy-nbyl)-1)*dy - geometry->shots.y[shot_index], 2.0f) + powf((sidz-nbzu)*dz - geometry->shots.z[shot_index], 2.0f));
-    
-    T[source_index + 1 + nzz] = S[source_index] * sqrtf(powf(((sidx-nbxl)+1)*dx - geometry->shots.x[shot_index], 2.0f) + powf((sidy-nbyl)*dy - geometry->shots.y[shot_index], 2.0f) + powf(((sidz-nbzu)+1)*dz - geometry->shots.z[shot_index], 2.0f));
-    T[source_index + 1 - nzz] = S[source_index] * sqrtf(powf(((sidx-nbxl)+1)*dx - geometry->shots.x[shot_index], 2.0f) + powf((sidy-nbyl)*dy - geometry->shots.y[shot_index], 2.0f) + powf(((sidz-nbzu)-1)*dz - geometry->shots.z[shot_index], 2.0f));
-    T[source_index - 1 + nzz] = S[source_index] * sqrtf(powf(((sidx-nbxl)-1)*dx - geometry->shots.x[shot_index], 2.0f) + powf((sidy-nbyl)*dy - geometry->shots.y[shot_index], 2.0f) + powf(((sidz-nbzu)+1)*dz - geometry->shots.z[shot_index], 2.0f));
-    T[source_index - 1 - nzz] = S[source_index] * sqrtf(powf(((sidx-nbxl)-1)*dx - geometry->shots.x[shot_index], 2.0f) + powf((sidy-nbyl)*dy - geometry->shots.y[shot_index], 2.0f) + powf(((sidz-nbzu)-1)*dz - geometry->shots.z[shot_index], 2.0f));
-    
-    T[source_index + 1 + nxx*nzz] = S[source_index] * sqrtf(powf((sidx-nbxl)*dx - geometry->shots.x[shot_index], 2.0f) + powf(((sidy-nbyl)+1)*dy - geometry->shots.y[shot_index], 2.0f) + powf(((sidz-nbzu)+1)*dz - geometry->shots.z[shot_index], 2.0f));
-    T[source_index + 1 - nxx*nzz] = S[source_index] * sqrtf(powf((sidx-nbxl)*dx - geometry->shots.x[shot_index], 2.0f) + powf(((sidy-nbyl)-1)*dy - geometry->shots.y[shot_index], 2.0f) + powf(((sidz-nbzu)+1)*dz - geometry->shots.z[shot_index], 2.0f));
-    T[source_index - 1 + nxx*nzz] = S[source_index] * sqrtf(powf((sidx-nbxl)*dx - geometry->shots.x[shot_index], 2.0f) + powf(((sidy-nbyl)+1)*dy - geometry->shots.y[shot_index], 2.0f) + powf(((sidz-nbzu)-1)*dz - geometry->shots.z[shot_index], 2.0f));
-    T[source_index - 1 - nxx*nzz] = S[source_index] * sqrtf(powf((sidx-nbxl)*dx - geometry->shots.x[shot_index], 2.0f) + powf(((sidy-nbyl)-1)*dy - geometry->shots.y[shot_index], 2.0f) + powf(((sidz-nbzu)-1)*dz - geometry->shots.z[shot_index], 2.0f));
-    
-    T[source_index + nzz + nxx*nzz] = S[source_index] * sqrtf(powf(((sidx-nbxl)+1)*dx - geometry->shots.x[shot_index], 2.0f) + powf(((sidy-nbyl)+1)*dy - geometry->shots.y[shot_index], 2.0f) + powf((sidz-nbzu)*dz - geometry->shots.z[shot_index], 2.0f));
-    T[source_index + nzz - nxx*nzz] = S[source_index] * sqrtf(powf(((sidx-nbxl)+1)*dx - geometry->shots.x[shot_index], 2.0f) + powf(((sidy-nbyl)-1)*dy - geometry->shots.y[shot_index], 2.0f) + powf((sidz-nbzu)*dz - geometry->shots.z[shot_index], 2.0f));
-    T[source_index - nzz + nxx*nzz] = S[source_index] * sqrtf(powf(((sidx-nbxl)-1)*dx - geometry->shots.x[shot_index], 2.0f) + powf(((sidy-nbyl)+1)*dy - geometry->shots.y[shot_index], 2.0f) + powf((sidz-nbzu)*dz - geometry->shots.z[shot_index], 2.0f));
-    T[source_index - nzz - nxx*nzz] = S[source_index] * sqrtf(powf(((sidx-nbxl)-1)*dx - geometry->shots.x[shot_index], 2.0f) + powf(((sidy-nbyl)-1)*dy - geometry->shots.y[shot_index], 2.0f) + powf((sidz-nbzu)*dz - geometry->shots.z[shot_index], 2.0f));
-    
-    T[source_index + 1 + nzz + nxx*nzz] = S[source_index] * sqrtf(powf(((sidx-nbxl)+1)*dx - geometry->shots.x[shot_index], 2.0f) + powf(((sidy-nbyl)+1)*dy - geometry->shots.y[shot_index], 2.0f) + powf(((sidz-nbzu)+1)*dz - geometry->shots.z[shot_index], 2.0f));
-    T[source_index + 1 - nzz + nxx*nzz] = S[source_index] * sqrtf(powf(((sidx-nbxl)-1)*dx - geometry->shots.x[shot_index], 2.0f) + powf(((sidy-nbyl)+1)*dy - geometry->shots.y[shot_index], 2.0f) + powf(((sidz-nbzu)+1)*dz - geometry->shots.z[shot_index], 2.0f));
-    T[source_index + 1 + nzz - nxx*nzz] = S[source_index] * sqrtf(powf(((sidx-nbxl)+1)*dx - geometry->shots.x[shot_index], 2.0f) + powf(((sidy-nbyl)-1)*dy - geometry->shots.y[shot_index], 2.0f) + powf(((sidz-nbzu)+1)*dz - geometry->shots.z[shot_index], 2.0f));
-    T[source_index + 1 - nzz - nxx*nzz] = S[source_index] * sqrtf(powf(((sidx-nbxl)-1)*dx - geometry->shots.x[shot_index], 2.0f) + powf(((sidy-nbyl)-1)*dy - geometry->shots.y[shot_index], 2.0f) + powf(((sidz-nbzu)+1)*dz - geometry->shots.z[shot_index], 2.0f));
-
-    T[source_index - 1 + nzz + nxx*nzz] = S[source_index] * sqrtf(powf(((sidx-nbxl)+1)*dx - geometry->shots.x[shot_index], 2.0f) + powf(((sidy-nbyl)+1)*dy - geometry->shots.y[shot_index], 2.0f) + powf(((sidz-nbzu)-1)*dz - geometry->shots.z[shot_index], 2.0f));
-    T[source_index - 1 - nzz + nxx*nzz] = S[source_index] * sqrtf(powf(((sidx-nbxl)-1)*dx - geometry->shots.x[shot_index], 2.0f) + powf(((sidy-nbyl)+1)*dy - geometry->shots.y[shot_index], 2.0f) + powf(((sidz-nbzu)-1)*dz - geometry->shots.z[shot_index], 2.0f));
-    T[source_index - 1 + nzz - nxx*nzz] = S[source_index] * sqrtf(powf(((sidx-nbxl)+1)*dx - geometry->shots.x[shot_index], 2.0f) + powf(((sidy-nbyl)-1)*dy - geometry->shots.y[shot_index], 2.0f) + powf(((sidz-nbzu)-1)*dz - geometry->shots.z[shot_index], 2.0f));
-    T[source_index - 1 - nzz - nxx*nzz] = S[source_index] * sqrtf(powf(((sidx-nbxl)-1)*dx - geometry->shots.x[shot_index], 2.0f) + powf(((sidy-nbyl)-1)*dy - geometry->shots.y[shot_index], 2.0f) + powf(((sidz-nbzu)-1)*dz - geometry->shots.z[shot_index], 2.0f));
-}
-
-void Ultimate_FSM::set_forward_solver()
+void Eikonal_Iso::forward_solver()
 {
     cudaMemcpy(d_T, T, volsize*sizeof(float), cudaMemcpyHostToDevice);
     cudaMemcpy(d_S, S, volsize*sizeof(float), cudaMemcpyHostToDevice);
 
     for (int sweep = 0; sweep < nSweeps; sweep++)
     { 
-	int start = (sweep == 3 || sweep == 5 || sweep == 6 || sweep == 7) ? totalLevels : meshDim;
-	int end = (start == meshDim) ? totalLevels + 1 : meshDim - 1;
-	int incr = (start == meshDim) ? true : false;
+	    int start = (sweep == 3 || sweep == 5 || sweep == 6 || sweep == 7) ? total_levels : meshDim;
+	    int end = (start == meshDim) ? total_levels + 1 : meshDim - 1;
+	    int incr = (start == meshDim) ? true : false;
 
-	int xSweepOff = (sweep == 3 || sweep == 4) ? nxx : 0;
-	int ySweepOff = (sweep == 2 || sweep == 5) ? nyy : 0;
-	int zSweepOff = (sweep == 1 || sweep == 6) ? nzz : 0;
+	    int xSweepOff = (sweep == 3 || sweep == 4) ? nxx : 0;
+	    int ySweepOff = (sweep == 2 || sweep == 5) ? nyy : 0;
+	    int zSweepOff = (sweep == 1 || sweep == 6) ? nzz : 0;
 		
-	for (int level = start; level != end; level = (incr) ? level + 1 : level - 1)
-	{			
-	    int xs = max(1, level - (nyy + nzz));	
-	    int ys = max(1, level - (nxx + nzz));
-		
-	    int xe = min(nxx, level - (meshDim - 1));
-	    int ye = min(nyy, level - (meshDim - 1));	
-		
-	    int xr = xe - xs + 1;
-	    int yr = ye - ys + 1;
+	    for (int level = start; level != end; level = (incr) ? level + 1 : level - 1)
+	    {			
+            int xs = max(1, level - (nyy + nzz));	
+            int ys = max(1, level - (nxx + nzz));
+            
+            int xe = min(nxx, level - (meshDim - 1));
+            int ye = min(nyy, level - (meshDim - 1));	
+            
+            int xr = xe - xs + 1;
+            int yr = ye - ys + 1;
 
-	    int nThreads = xr * yr;
-			
-	    dim3 bs(16, 16, 1);
+            int nThreads = xr * yr;
+                
+            dim3 bs(16, 16, 1);
 
-	    if (nThreads < threadsPerBlock) { bs.x = xr; bs.y = yr; } 
+            if (nThreads < 32) { bs.x = xr; bs.y = yr; }  
 
-	    dim3 gs(iDivUp(xr, bs.x), iDivUp(yr , bs.y), 1);
-			
+            dim3 gs(iDivUp(xr, bs.x), iDivUp(yr , bs.y), 1);
+                
             int sgni = sweep + 0*nSweeps;
             int sgnj = sweep + 1*nSweeps;
             int sgnk = sweep + 2*nSweeps;
 
-	    fast_sweeping_kernel<<<gs,bs>>>(d_S, d_T, d_sgnt, d_sgnv, sgni, sgnj, sgnk, level, xs, ys, 
-                                            xSweepOff, ySweepOff, zSweepOff, nxx, nyy, nzz, dx, dy, dz, 
-                                            dx2i, dy2i, dz2i, dz2dx2, dz2dy2, dx2dy2, dsum);
-		
+            inner_sweep<<<gs, bs>>>(d_S, d_T, d_sgnt, d_sgnv, sgni, sgnj, sgnk, level, xs, ys, 
+                                    xSweepOff, ySweepOff, zSweepOff, nxx, nyy, nzz, dx, dy, dz, 
+                                    dx2i, dy2i, dz2i, dz2dx2, dz2dy2, dx2dy2, dsum);
+            
             cudaDeviceSynchronize();
-	}
+	    }
     }
 
     cudaMemcpy(T, d_T, volsize*sizeof(float), cudaMemcpyDeviceToHost);
 
-    get_wavefield_output();
-    get_receiver_output();
+    compute_seismogram();
 }
 
-void Ultimate_FSM::free_space()
-{
-    cudaFree(d_T);
-    cudaFree(d_S);
-
-    cudaFree(d_sgnt);
-    cudaFree(d_sgnv);
-}
-
-__global__ void fast_sweeping_kernel(float * S, float * T, int * sgnt, int * sgnv, int sgni, int sgnj, int sgnk, 
-                                     int level, int xOffset, int yOffset, int xSweepOffset, int ySweepOffset, int zSweepOffset, 
-                                     int nxx, int nyy, int nzz, float dx, float dy, float dz, float dx2i, float dy2i, float dz2i, 
-                                     float dz2dx2, float dz2dy2, float dx2dy2, float dsum)
+__global__ void inner_sweep(float * S, float * T, int * sgnt, int * sgnv, int sgni, int sgnj, int sgnk, 
+                            int level, int xOffset, int yOffset, int xSweepOffset, int ySweepOffset, int zSweepOffset, 
+                            int nxx, int nyy, int nzz, float dx, float dy, float dz, float dx2i, float dy2i, float dz2i, 
+                            float dz2dx2, float dz2dy2, float dx2dy2, float dsum)
 {
     int x = (blockIdx.x * blockDim.x + threadIdx.x) + xOffset;
     int y = (blockIdx.y * blockDim.y + threadIdx.y) + yOffset;
@@ -181,48 +138,48 @@ __global__ void fast_sweeping_kernel(float * S, float * T, int * sgnt, int * sgn
 
     if ((x < nxx) && (y < nyy)) 
     {
-	int z = level - (x + y);
+	    int z = level - (x + y);
 		
-	if ((z >= 0) && (z < nzz))	
-	{
-	    int i = abs(z - zSweepOffset);
-	    int j = abs(x - xSweepOffset);
-	    int k = abs(y - ySweepOffset);
+        if ((z >= 0) && (z < nzz))	
+        {
+            int i = abs(z - zSweepOffset);
+            int j = abs(x - xSweepOffset);
+            int k = abs(y - ySweepOffset);
 
-	    if ((i > 0) && (i < nzz-1) && (j > 0) && (j < nxx-1) && (k > 0) && (k < nyy-1))
-	    {		
-	        int i1 = i - sgnv[sgni];
-		int j1 = j - sgnv[sgnj];
-		int k1 = k - sgnv[sgnk];
+            if ((i > 0) && (i < nzz-1) && (j > 0) && (j < nxx-1) && (k > 0) && (k < nyy-1))
+            {		
+                int i1 = i - sgnv[sgni];
+                int j1 = j - sgnv[sgnj];
+                int k1 = k - sgnv[sgnk];
 
-		int ijk = i + j*nzz + k*nxx*nzz;
-				
-		float tv = T[(i - sgnt[sgni]) + j*nzz + k*nxx*nzz];
-		float te = T[i + (j - sgnt[sgnj])*nzz + k*nxx*nzz];
-		float tn = T[i + j*nzz + (k - sgnt[sgnk])*nxx*nzz];
+                int ijk = i + j*nzz + k*nxx*nzz;
+                        
+                float tv = T[(i - sgnt[sgni]) + j*nzz + k*nxx*nzz];
+                float te = T[i + (j - sgnt[sgnj])*nzz + k*nxx*nzz];
+                float tn = T[i + j*nzz + (k - sgnt[sgnk])*nxx*nzz];
 
-		float tev = T[(i - sgnt[sgni]) + (j - sgnt[sgnj])*nzz + k*nxx*nzz];
-		float ten = T[i + (j - sgnt[sgnj])*nzz + (k - sgnt[sgnk])*nxx*nzz];
-		float tnv = T[(i - sgnt[sgni]) + j*nzz + (k - sgnt[sgnk])*nxx*nzz];
-				
-		float tnve = T[(i - sgnt[sgni]) + (j - sgnt[sgnj])*nzz + (k - sgnt[sgnk])*nxx*nzz];
+                float tev = T[(i - sgnt[sgni]) + (j - sgnt[sgnj])*nzz + k*nxx*nzz];
+                float ten = T[i + (j - sgnt[sgnj])*nzz + (k - sgnt[sgnk])*nxx*nzz];
+                float tnv = T[(i - sgnt[sgni]) + j*nzz + (k - sgnt[sgnk])*nxx*nzz];
+                        
+                float tnve = T[(i - sgnt[sgni]) + (j - sgnt[sgnj])*nzz + (k - sgnt[sgnk])*nxx*nzz];
 
-		t1D1 = tv + dz * min(S[i1 + max(j-1,1)*nzz   + max(k-1,1)*nxx*nzz], 
-				 min(S[i1 + max(j-1,1)*nzz   + min(k,nyy-1)*nxx*nzz], 
-				 min(S[i1 + min(j,nxx-1)*nzz + max(k-1,1)*nxx*nzz],
-				     S[i1 + min(j,nxx-1)*nzz + min(k,nyy-1)*nxx*nzz])));                                     
+                t1D1 = tv + dz * min(S[i1 + max(j-1,1)*nzz   + max(k-1,1)*nxx*nzz], 
+                                 min(S[i1 + max(j-1,1)*nzz   + min(k,nyy-1)*nxx*nzz], 
+                                 min(S[i1 + min(j,nxx-1)*nzz + max(k-1,1)*nxx*nzz],
+                                     S[i1 + min(j,nxx-1)*nzz + min(k,nyy-1)*nxx*nzz])));                                     
 
-		t1D2 = te + dx * min(S[max(i-1,1)   + j1*nzz + max(k-1,1)*nxx*nzz], 
-				 min(S[min(i,nzz-1) + j1*nzz + max(k-1,1)*nxx*nzz],
-				 min(S[max(i-1,1)   + j1*nzz + min(k,nyy-1)*nxx*nzz], 
-				     S[min(i,nzz-1) + j1*nzz + min(k,nyy-1)*nxx*nzz])));                    
+                t1D2 = te + dx * min(S[max(i-1,1)   + j1*nzz + max(k-1,1)*nxx*nzz], 
+                                 min(S[min(i,nzz-1) + j1*nzz + max(k-1,1)*nxx*nzz],
+                                 min(S[max(i-1,1)   + j1*nzz + min(k,nyy-1)*nxx*nzz], 
+                                     S[min(i,nzz-1) + j1*nzz + min(k,nyy-1)*nxx*nzz])));                    
 
-		t1D3 = tn + dy * min(S[max(i-1,1)   + max(j-1,1)*nzz   + k1*nxx*nzz], 
-				 min(S[max(i-1,1)   + min(j,nxx-1)*nzz + k1*nxx*nzz],
-				 min(S[min(i,nzz-1) + max(j-1,1)*nzz   + k1*nxx*nzz], 
-				     S[min(i,nzz-1) + min(j,nxx-1)*nzz + k1*nxx*nzz])));
+                t1D3 = tn + dy * min(S[max(i-1,1)   + max(j-1,1)*nzz   + k1*nxx*nzz], 
+                                 min(S[max(i-1,1)   + min(j,nxx-1)*nzz + k1*nxx*nzz],
+                                 min(S[min(i,nzz-1) + max(j-1,1)*nzz   + k1*nxx*nzz], 
+                                     S[min(i,nzz-1) + min(j,nxx-1)*nzz + k1*nxx*nzz])));
 
-		t1D = min(t1D1, min(t1D2, t1D3));
+                t1D = min(t1D1, min(t1D2, t1D3));
 
                 //------------------- 2D operators - 4 points operator ---------------------------------------------------------------------------------------------------
                 t2D1 = 1e6; t2D2 = 1e6; t2D3 = 1e6;
@@ -285,7 +242,7 @@ __global__ void fast_sweeping_kernel(float * S, float * T, int * sgnt, int * sgn
                     }
                 }
 
-		T[ijk] = min(T[ijk], min(t1D, min(t2D, t3D)));
+		        T[ijk] = min(T[ijk], min(t1D, min(t2D, t3D)));
             }
         }
     }

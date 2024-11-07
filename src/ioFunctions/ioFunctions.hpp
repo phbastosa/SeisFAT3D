@@ -2,6 +2,7 @@
 # define IO_FUNCTIONS_CPP
 
 # include <cmath>
+# include <chrono>
 # include <string>
 # include <vector>
 # include <sstream>

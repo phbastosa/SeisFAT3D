@@ -1,46 +1,39 @@
-# include "../modeling/eikonal_equation/isotropic/classical.cuh"
-# include "../modeling/eikonal_equation/isotropic/block_FIM.cuh"
-# include "../modeling/eikonal_equation/isotropic/ultimate_FSM.cuh"
-
-# include "../modeling/wave_equation/isotropic/scalar.cuh"
-# include "../modeling/wave_equation/isotropic/elastic.cuh"
-# include "../modeling/wave_equation/isotropic/acoustic.cuh"
+# include "modeling/hfreq/eikonal_iso.cuh"
+# include "modeling/lfreq/elastic_iso.cuh"
 
 int main(int argc, char **argv)
 {
     std::vector<Modeling *> modeling = 
     {
-        new Classical(),
-        new Block_FIM(),
-        new Ultimate_FSM(),
-
-        new Scalar(),
-        new Acoustic(),
-        new Elastic()
+        new Eikonal_Iso(),
+        new Elastic_Iso()
     };
-    
-    auto file = std::string(argv[1]);
-    auto type = std::stoi(catch_parameter("modeling_type", file));
 
-    modeling[type]->file = file;
+    auto file = std::string(argv[1]);
+    auto type = std::stoi(catch_parameter("modeling_type", file));    
+
+    modeling[type]->parameters = file;
 
     modeling[type]->set_parameters();
 
-    modeling[type]->set_runtime();
+    auto ti = std::chrono::system_clock::now();
 
-    for (int shot = 0; shot < modeling[type]->total_shots; shot++)
+    for (int shot = 0; shot < modeling[type]->geometry->nrel; shot++)
     {
-        modeling[type]->shot_index = shot;
+        modeling[type]->srcId = shot;
 
-        modeling[type]->get_information();
-        modeling[type]->set_configuration();
-        modeling[type]->set_forward_solver();
-        
-        modeling[type]->export_outputs();
+        modeling[type]->show_information();
+
+        modeling[type]->initialization();
+        modeling[type]->forward_solver();
+
+        modeling[type]->export_synthetic_data();
     }
 
-    modeling[type]->get_runtime();
-    modeling[type]->free_space();    
+    auto tf = std::chrono::system_clock::now();
 
+    std::chrono::duration<double> elapsed_seconds = tf - ti;
+    std::cout << "\nRun time: " << elapsed_seconds.count() << " s." << std::endl;
+    
     return 0;
 }

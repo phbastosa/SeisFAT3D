@@ -1,17 +1,18 @@
-# ifndef ULTIMATE_FSM_CUH
-# define ULTIMATE_FSM_CUH
+# ifndef EIKONAL_ISO_CUH
+# define EIKONAL_ISO_CUH
 
-# include "../eikonal.hpp"
+# include "eikonal.hpp"
 
-class Ultimate_FSM : public Eikonal
+class Eikonal_Iso : public Eikonal
 {
 private:
 
-    int totalLevels;
-    int nSweeps, meshDim;
+    float dx2i, dy2i, dz2i, dsum;
+    float dz2dx2, dz2dy2, dx2dy2;
 
-    float dx2i, dy2i, dz2i, dsum; 
-    float dx2dy2, dz2dx2, dz2dy2;
+    int total_levels;
+    int nSweeps, meshDim;
+    int nThreads, nBlocks;
 
     float * d_T = nullptr;
     float * d_S = nullptr;
@@ -19,22 +20,19 @@ private:
     int * d_sgnv = nullptr;
     int * d_sgnt = nullptr;
 
-    int iDivUp(int a, int b);
+    void set_properties();
+    void set_conditions();
 
-    void set_volumes();
-    void set_specifics();
-    void initialization();
+    int iDivUp(int a, int b);
 
 public:
 
-    void set_forward_solver();
-    void free_space();
+    void forward_solver();
 };
 
-__global__ void fast_sweeping_kernel(float * S, float * T, int * sgnt, int * sgnv, int sgni, int sgnj, int sgnk, 
-                                     int level, int xOffset, int yOffset, int xSweepOffset, int ySweepOffset, int zSweepOffset, 
-                                     int nxx, int nyy, int nzz, float dx, float dy, float dz, float dx2i, float dy2i, float dz2i, 
-                                     float dz2dx2, float dz2dy2, float dx2dy2, float dsum);
-
+__global__ void inner_sweep(float * S, float * T, int * sgnt, int * sgnv, int sgni, int sgnj, int sgnk, 
+                            int level, int xOffset, int yOffset, int xSweepOffset, int ySweepOffset, int zSweepOffset, 
+                            int nxx, int nyy, int nzz, float dx, float dy, float dz, float dx2i, float dy2i, float dz2i, 
+                            float dz2dx2, float dz2dy2, float dx2dy2, float dsum);
 
 # endif

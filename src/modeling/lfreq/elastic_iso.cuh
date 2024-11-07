@@ -1,39 +1,48 @@
-# ifndef ELASTIC_CUH
-# define ELASTIC_CUH
+# ifndef ELASTIC_ISO_CUH
+# define ELASTIC_ISO_CUH
 
-# include "../wave.cuh"
+# include "elastic.cuh"
 
-class Elastic : public Wave
+class Elastic_Iso : public Elastic
 {
 private:
 
-    float * Vx = nullptr;
-    float * Vy = nullptr;
-    float * Vz = nullptr;
+    float * M = nullptr;
+    float * L = nullptr;
+    float * B = nullptr;
+    float * P = nullptr;
 
-    float * Txx = nullptr;
-    float * Tyy = nullptr;
-    float * Tzz = nullptr;
-    float * Txy = nullptr;
-    float * Txz = nullptr;
-    float * Tyz = nullptr;
+    float * d_M = nullptr;
+    float * d_L = nullptr;
+    float * d_B = nullptr;
+    float * d_P = nullptr;
 
-    void set_models();
-    void set_volumes();
+    float * d_Vx = nullptr;
+    float * d_Vy = nullptr;
+    float * d_Vz = nullptr;
+
+    float * d_Txx = nullptr;
+    float * d_Tyy = nullptr;
+    float * d_Tzz = nullptr;
+    
+    float * d_Txz = nullptr;
+    float * d_Tyz = nullptr;
+    float * d_Txy = nullptr;
+
+    void set_properties();
+    void set_conditions();
+
+public:
+
     void initialization();
-
-protected:
-
-
-public: 
-
-    void set_forward_solver();
-    void free_space();
+    void forward_solver();
 };
 
-__global__ void compute_velocity(float * Vx, float * Vy, float * Vz, float * Txx, float * Tyy, float * Tzz, float * Txz, float * Tyz, float * Txy, float * B, float * wavelet, int sId, int tId, float dx, float dy, float dz, float dt, int nxx, int nyy, int nzz);
-__global__ void compute_stress(float * Vx, float * Vy, float * Vz, float * Txx, float * Tyy, float * Tzz, float * Txz, float * Tyz, float * Txy, float * P, float * M, float * L, float * damp1D, float * damp2D, float * damp3D, float dx, float dy, float dz, float dt, int nxx, int nyy, int nzz, int nabc);
-__global__ void compute_seismogram(float * seismogram, float * P, int * rx, int * ry, int * rz, int total_nodes, int nxx, int nzz, int nt, int time_id);
+__global__ void compute_velocity(float * Vx, float * Vy, float * Vz, float * Txx, float * Tyy, float * Tzz, float * Txz, float * Tyz, float * Txy, float * B, float * wavelet, int sIdx, int sIdy, int sIdz, int tId, int nt, float dx, float dy, float dz, float dt, int nxx, int nyy, int nzz);
+__global__ void compute_pressure(float * Vx, float * Vy, float * Vz, float * Txx, float * Tyy, float * Tzz, float * Txz, float * Tyz, float * Txy, float * P, float * M, float * L, float * damp1D, float * damp2D, float * damp3D, float dx, float dy, float dz, float dt, int nxx, int nyy, int nzz, int nb);
 
+__global__ void compute_seismogram(float * P, int * rIdx, int * rIdy, int * rIdz, float * seismogram, int spread, int tId, int tlag, int nt, int nxx, int nzz);
+
+__device__ float get_boundary_damper(float * damp1D, float * damp2D, float * damp3D, int i, int j, int k, int nxx, int nyy, int nzz, int nabc);
 
 # endif
