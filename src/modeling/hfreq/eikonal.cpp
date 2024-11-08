@@ -46,11 +46,9 @@ void Eikonal::initialization()
 
 void Eikonal::compute_seismogram()
 {
-    int spread = 0;
+    spread = 0;
 
-    int sId = geometry->sInd[srcId];
-
-    for (recId = geometry->iRec[sId]; recId < geometry->fRec[sId]; recId++)
+    for (recId = geometry->iRec[srcId]; recId < geometry->fRec[srcId]; recId++)
     {
         float x = geometry->xrec[recId];
         float y = geometry->yrec[recId];
@@ -92,8 +90,7 @@ void Eikonal::compute_seismogram()
 }
 
 void Eikonal::export_synthetic_data()
-{
-    int sId = geometry->sInd[srcId];    
-    std::string data_file = data_folder + modeling_type + "nStations" + std::to_string(geometry->spread[sId]) + "_shot_" + std::to_string(sId+1) + ".bin";
-    export_binary_float(data_file, synthetic_data, geometry->spread[sId]);    
+{    
+    std::string data_file = data_folder + modeling_type + "_nStations" + std::to_string(spread) + "_shot_" + std::to_string(geometry->sInd[srcId]+1) + ".bin";
+    export_binary_float(data_file, synthetic_data, spread);    
 }

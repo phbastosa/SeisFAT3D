@@ -29,7 +29,7 @@ void Elastic_Iso::set_properties()
 
 void Elastic_Iso::set_conditions()
 {
-    modeling_type = "elastic_iso_";
+    modeling_type = "elastic_iso";
     modeling_name = "Elastic isotropic wave propagation";
 
     M = new float[volsize]();
@@ -93,13 +93,13 @@ void Elastic_Iso::initialization()
 
     spread = 0;
 
-    for (recId = geometry->iRec[sId]; recId < geometry->fRec[sId]; recId++)
+    for (recId = geometry->iRec[srcId]; recId < geometry->fRec[srcId]; recId++)
     {
         current_xrec[spread] = (int)(geometry->xrec[recId] / dx) + nb;
         current_yrec[spread] = (int)(geometry->yrec[recId] / dy) + nb;
         current_zrec[spread] = (int)(geometry->zrec[recId] / dz) + nb;
-
-        spread++;
+    
+        ++spread;
     }
 
     sBlocks = (int)((spread + nThreads - 1) / nThreads); 
@@ -113,12 +113,12 @@ void Elastic_Iso::initialization()
 
 void Elastic_Iso::forward_solver()
 {
-    for (int tId = 0; tId < tlag + nt; tId++)
+    for (int tId = 0; tId < nt + tlag; tId++)
     {
         compute_velocity<<<nBlocks, nThreads>>>(d_Vx, d_Vy, d_Vz, d_Txx, d_Tyy, d_Tzz, d_Txz, d_Tyz, d_Txy, d_B, wavelet, sIdx, sIdy, sIdz, tId, nt, dx, dy, dz, dt, nxx, nyy, nzz);
         cudaDeviceSynchronize();
 
-        compute_pressure<<<nBlocks, nThreads>>>(d_Vx, d_Vy, d_Vz, d_Txx, d_Tyy, d_Tzz, d_Txz, d_Tyz, d_Txy, d_P, d_M, d_L, d1D, d2D, d3D, dx, dy, dz, dt, nxx, nzz, nzz, nb);
+        compute_pressure<<<nBlocks, nThreads>>>(d_Vx, d_Vy, d_Vz, d_Txx, d_Tyy, d_Tzz, d_Txz, d_Tyz, d_Txy, d_P, d_M, d_L, d1D, d2D, d3D, dx, dy, dz, dt, nxx, nyy, nzz, nb);
         cudaDeviceSynchronize();
 
         compute_seismogram<<<sBlocks, nThreads>>>(d_P, rIdx, rIdy, rIdz, seismogram, spread, tId, tlag, nt, nxx, nzz);     

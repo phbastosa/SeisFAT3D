@@ -25,8 +25,8 @@ void Modeling::set_parameters()
     max_spread = 0;
     for (int index = 0; index < geometry->nrel; index++)
     {   
-        if (max_spread < geometry->spread[geometry->sInd[index]])
-            max_spread = geometry->spread[geometry->sInd[index]]; 
+        if (max_spread < geometry->spread[index])
+            max_spread = geometry->spread[index]; 
     }
 
     set_boundaries();

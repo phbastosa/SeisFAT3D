@@ -1,7 +1,5 @@
 # include "elastic.cuh"
 
-# include "elastic.cuh"
-
 void Elastic::set_specifications()
 {
     fmax = std::stof(catch_parameter("max_frequency", parameters));
@@ -114,7 +112,6 @@ void Elastic::set_wavelet()
 
 void Elastic::export_synthetic_data()
 {
-    int sId = geometry->sInd[srcId];
-    std::string data_file = data_folder + modeling_type + "nStations" + std::to_string(geometry->spread[sId]) + "_nSamples" + std::to_string(nt) + "_shot_" + std::to_string(sId+1) + ".bin";
-    export_binary_float(data_file, synthetic_data, nt*geometry->spread[sId]);    
+    std::string data_file = data_folder + modeling_type + "_nStations" + std::to_string(spread) + "_nSamples" + std::to_string(nt) + "_shot_" + std::to_string(geometry->sInd[srcId]+1) + ".bin";
+    export_binary_float(data_file, synthetic_data, nt*spread);    
 }
