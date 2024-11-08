@@ -33,9 +33,9 @@ modeling_type = 1
 
 time_samples = 5001
 time_spacing = 1e-3
-max_frequency = 15.0
+max_frequency = 10.0
 
-boundary_samples = 100
-boundary_damping = 0.0025
+boundary_samples = 50
+boundary_damping = 0.0045
 
 modeling_output_folder = ../outputs/syntheticData/            

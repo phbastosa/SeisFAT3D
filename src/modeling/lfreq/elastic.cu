@@ -81,9 +81,10 @@ void Elastic::set_wavelet()
     float * signal = new float[nt]();
 
     float pi = 4.0f*atanf(1.0f);
+    float t0 = 2.0f*sqrtf(pi) / fmax;
+    float fc = fmax / (3.0f * sqrtf(pi));
 
-    float t0 = 2.0f*sqrtf(pi)/fmax;
-    float fc = fmax/(3.0f * sqrtf(pi));
+    tlag = (int)(t0 / dt) + 1;
 
     for (int n = 0; n < nt; n++)
     {
