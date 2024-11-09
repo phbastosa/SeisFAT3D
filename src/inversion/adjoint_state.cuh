@@ -1,39 +1,56 @@
 # ifndef ADJOINT_STATE_CUH
 # define ADJOINT_STATE_CUH
 
-# include "../tomography.hpp"
+# include "tomography.hpp"
 
 class Adjoint_State : public Tomography
 {
 private:
 
-    int totalLevels;
+    int total_levels;
     int nSweeps, meshDim;
+    int nThreads, nBlocks;
 
-    float cell_volume;
+    float cell_area;
+
+    float * m = nullptr;
+    float * v = nullptr;
+
+    float * m_hat = nullptr;
+    float * v_hat = nullptr;
 
     float * d_T = nullptr;
 
-    float * source = nullptr;       
-    float * adjoint = nullptr;
-    
-    float * d_source = nullptr;
-    float * d_adjoint = nullptr;
+    float * d_source_grad = nullptr;
+    float * d_source_comp = nullptr;
 
-    int iDivUp(int a, int b);
+    float * d_adjoint_grad = nullptr;
+    float * d_adjoint_comp = nullptr;
 
-    void set_specific_parameters();
+    float * source_grad = nullptr;
+    float * source_comp = nullptr;
+
+    float * adjoint_grad = nullptr;
+    float * adjoint_comp = nullptr;
+
+    float * gradient = nullptr;
+    float * illumination = nullptr;
+
+    void initialization();
+    void set_specifications();
     void gradient_preconditioning();
     void apply_inversion_technique();
+
+    int iDivUp(int a, int b);
 
 public:
 
     void optimization();
+
 };
 
+
+__global__ void adjoint_state_kernel(float * T, float * adjoint_grad, float * adjoint_comp, float * source_grad, float * source_comp, int level, int xOffset, 
+                                     int yOffset, int xSweepOffset, int ySweepOffset, int zSweepOffset, int nxx, int nyy, int nzz, float dx, float dy, float dz);
+
 # endif
-
-__global__ void adjoint_state_kernel(float * adjoint, float * source, float * T, int level, int xOffset, int yOffset, int xSweepOffset, int ySweepOffset, 
-                                     int zSweepOffset, int nxx, int nyy, int nzz, float dx, float dy, float dz);
-
-

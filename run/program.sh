@@ -90,8 +90,8 @@ case "$1" in
     echo -e "../bin/\033[31mmodeling.exe\033[m" 
     nvcc $ioFunctions $geometry $modeling_all $modeling_main $flags -o ../bin/modeling.exe
 
-    # echo -e "../bin/\033[31minversion.exe\033[m" 
-    # nvcc $ioFunctions $geometry $modeling_all $inversion_all $inversion_main $flags -o ../bin/inversion.exe
+    echo -e "../bin/\033[31minversion.exe\033[m" 
+    nvcc $ioFunctions $geometry $modeling_all $inversion_all $inversion_main $flags -o ../bin/inversion.exe
 
     # echo -e "../bin/\033[31mmigration.exe\033[m"
     # nvcc $ioFunctions $geometry $modeling_all $migration_all $migration_main $flags -o ../bin/migration.exe

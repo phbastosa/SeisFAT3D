@@ -1,30 +1,25 @@
-# ifndef LEAST_SQUARES_CUH
-# define LEAST_SQUARES_CUH
+# ifndef LEAST_SQUARES_HPP
+# define LEAST_SQUARES_HPP
 
-# include "../tomography.hpp"
+# include "tomography.hpp"
 
 class Least_Squares : public Tomography
 {
 private:
 
-    int tk_order;   
-    float lambda;
+    int nx_tomo, ny_tomo, nz_tomo;
+    float dx_tomo, dy_tomo, dz_tomo;
 
-    int M, N, NNZ;
+    int tk_order;
+    float tk_param;
 
-    int nx_tomo;  
-    int ny_tomo;  
-    int nz_tomo; 
-
-    float dx_tomo;
-    float dy_tomo;
-    float dz_tomo;
+    size_t ray_path_max_samples;
 
     std::vector<int> iG;
     std::vector<int> jG;
     std::vector<float> vG;
 
-    size_t ray_path_estimated_samples;
+    int M, N, NNZ;
 
     int * iA = nullptr;
     int * jA = nullptr;
@@ -32,13 +27,13 @@ private:
     float * B = nullptr;
     float * x = nullptr; 
 
+    void set_specifications();
+
     void apply_regularization();
     void solve_linear_system_lscg();
     void slowness_variation_rescaling();
 
     void apply_inversion_technique();
-    void set_specific_parameters();
-    void gradient_preconditioning();
 
 public:
 

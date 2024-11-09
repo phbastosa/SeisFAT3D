@@ -1,86 +1,87 @@
-# include "least_squares.cuh"
+# include "least_squares.hpp"
 
-void Least_Squares::set_specific_parameters()
+void Least_Squares::set_specifications()
 {
-    dx_tomo = std::stof(catch_parameter("dx_tomo", file));
-    dy_tomo = std::stof(catch_parameter("dy_tomo", file));
-    dz_tomo = std::stof(catch_parameter("dz_tomo", file));
+    inversion_name = "least_squares_";
+    inversion_method = "Least-Squares First-Arrival Tomography";
 
-    nz_tomo = (int)((modeling->nz-1) * modeling->dz / dz_tomo) + 1;    
+    dx_tomo = std::stof(catch_parameter("dx_tomo", parameters));
+    dy_tomo = std::stof(catch_parameter("dy_tomo", parameters));
+    dz_tomo = std::stof(catch_parameter("dz_tomo", parameters));
+
+    if ((dx_tomo < modeling->dx) || (dy_tomo < modeling->dy) || (dz_tomo < modeling->dz))
+        throw std::invalid_argument("\033[31mDownsampling with smaller spacing than original!\033[0;0m\n");
+
     nx_tomo = (int)((modeling->nx-1) * modeling->dx / dx_tomo) + 1;    
-    ny_tomo = (int)((modeling->ny-1) * modeling->dy / dy_tomo) + 1;  
+    ny_tomo = (int)((modeling->ny-1) * modeling->dy / dy_tomo) + 1;    
+    nz_tomo = (int)((modeling->nz-1) * modeling->dz / dz_tomo) + 1;    
 
-    lambda = std::stof(catch_parameter("tk_param", file));
-    tk_order = std::stoi(catch_parameter("tk_order", file));
+    tk_order = std::stoi(catch_parameter("tk_order", parameters));
+    tk_param = std::stof(catch_parameter("tk_param", parameters));
 
     n_model = nx_tomo * ny_tomo * nz_tomo;
 
-    inversion_method = "[0] - Classical least squares first arrival tomography";
+    ray_path_max_samples = 0;
 
-    ray_path_estimated_samples = 0;
-
-    for (int shot = 0; shot < modeling->total_shots; shot++)
+    for (int shot = 0; shot < modeling->geometry->nrel; shot++)
     {
-        for (int node = 0; node < modeling->total_nodes; node++)
+        for (int node = modeling->geometry->iRec[shot]; node < modeling->geometry->fRec[shot]; node++)
         {
-            float dx = (modeling->geometry->shots.x[shot] - modeling->geometry->nodes.x[node]) / modeling->dx;
-            float dy = (modeling->geometry->shots.y[shot] - modeling->geometry->nodes.y[node]) / modeling->dy;
-            float dz = (modeling->geometry->shots.z[shot] - modeling->geometry->nodes.z[node]) / modeling->dz;
+            float dx = (modeling->geometry->xsrc[modeling->geometry->sInd[shot]] - modeling->geometry->xrec[node]) / modeling->dx;
+            float dy = (modeling->geometry->ysrc[modeling->geometry->sInd[shot]] - modeling->geometry->yrec[node]) / modeling->dy;
+            float dz = (modeling->geometry->zsrc[modeling->geometry->sInd[shot]] - modeling->geometry->zrec[node]) / modeling->dz;
             
-            ray_path_estimated_samples += (size_t)(2.0f*sqrtf(dx*dx + dy*dy + dz*dz));
+            ray_path_max_samples += (size_t)(sqrtf(dx*dx + dy*dy + dz*dz));
         }
     }
 
-    iG.reserve(ray_path_estimated_samples);
-    jG.reserve(ray_path_estimated_samples);
-    vG.reserve(ray_path_estimated_samples);
+    iG.reserve(ray_path_max_samples);
+    jG.reserve(ray_path_max_samples);
+    vG.reserve(ray_path_max_samples);
 }
 
 void Least_Squares::apply_inversion_technique()
 {
-    int nxx = modeling->nxx;
-    int nzz = modeling->nzz;
+    int sIdx = (int)(modeling->geometry->xsrc[modeling->geometry->sInd[modeling->srcId]] / dx_tomo);
+    int sIdy = (int)(modeling->geometry->ysrc[modeling->geometry->sInd[modeling->srcId]] / dy_tomo);
+    int sIdz = (int)(modeling->geometry->zsrc[modeling->geometry->sInd[modeling->srcId]] / dz_tomo);
 
-    int sIdz = (int)(modeling->geometry->shots.z[modeling->shot_index] / dz_tomo);
-    int sIdx = (int)(modeling->geometry->shots.x[modeling->shot_index] / dx_tomo);
-    int sIdy = (int)(modeling->geometry->shots.y[modeling->shot_index] / dy_tomo);
-
-    int sId = sIdz + sIdx*nz_tomo + sIdy*nx_tomo*nz_tomo;   
+    int sId = sIdz + sIdx*nz_tomo + sIdy*nx_tomo*nz_tomo; 
 
     float rayStep = 0.2f * modeling->dz;
 
-    std::vector < int > ray_index;
+    std::vector < int > ray_index; 
 
-    for (int ray_id = 0; ray_id < modeling->total_nodes; ray_id++)
+    for (int ray_id = modeling->geometry->iRec[modeling->srcId]; ray_id < modeling->geometry->fRec[modeling->srcId]; ray_id++)
     {
-        float zi = modeling->geometry->nodes.z[ray_id];
-        float xi = modeling->geometry->nodes.x[ray_id];
-        float yi = modeling->geometry->nodes.y[ray_id];
+        float xi = modeling->geometry->xrec[ray_id];        
+        float yi = modeling->geometry->yrec[ray_id];        
+        float zi = modeling->geometry->zrec[ray_id];
 
-        if ((modeling->geometry->shots.z[modeling->shot_index] == zi) && 
-            (modeling->geometry->shots.x[modeling->shot_index] == xi) && 
-            (modeling->geometry->shots.y[modeling->shot_index] == yi))
-            continue;
+        if ((modeling->geometry->xsrc[modeling->geometry->sInd[modeling->srcId]] == xi) && 
+            (modeling->geometry->ysrc[modeling->geometry->sInd[modeling->srcId]] == yi) &&
+            (modeling->geometry->zsrc[modeling->geometry->sInd[modeling->srcId]] == zi))
+            continue;        
 
         while (true)
         {
-            int i = (int)(zi / modeling->dz) + modeling->nbzu;
-            int j = (int)(xi / modeling->dx) + modeling->nbxl;
-            int k = (int)(yi / modeling->dy) + modeling->nbyl;
+            int k = (int)(yi / modeling->dy) + modeling->nb;
+            int j = (int)(xi / modeling->dx) + modeling->nb;
+            int i = (int)(zi / modeling->dz) + modeling->nb;
 
-            float dTz = (modeling->T[(i+1) + j*nzz + k*nxx*nzz] - modeling->T[(i-1) + j*nzz + k*nxx*nzz]) / (2.0f*modeling->dz);    
-            float dTx = (modeling->T[i + (j+1)*nzz + k*nxx*nzz] - modeling->T[i + (j-1)*nzz + k*nxx*nzz]) / (2.0f*modeling->dx);    
-            float dTy = (modeling->T[i + j*nzz + (k+1)*nxx*nzz] - modeling->T[i + j*nzz + (k-1)*nxx*nzz]) / (2.0f*modeling->dy);
+            float dTx = (modeling->T[i + (j+1)*modeling->nzz + k*modeling->nxx*modeling->nzz] - modeling->T[i + (j-1)*modeling->nzz + k*modeling->nxx*modeling->nzz]) / (2.0f*modeling->dx);    
+            float dTy = (modeling->T[i + j*modeling->nzz + (k+1)*modeling->nxx*modeling->nzz] - modeling->T[i + j*modeling->nzz + (k+1)*modeling->nxx*modeling->nzz]) / (2.0f*modeling->dy);    
+            float dTz = (modeling->T[(i+1) + j*modeling->nzz + k*modeling->nxx*modeling->nzz] - modeling->T[(i-1) + j*modeling->nzz + k*modeling->nxx*modeling->nzz]) / (2.0f*modeling->dz);    
 
-            float norm = sqrtf(dTx*dTx + dTy*dTy + dTz*dTz);
+            float norm = sqrtf(dTx*dTx + dTz*dTz + dTz*dTz);
 
-            zi -= rayStep*dTz / norm;    
             xi -= rayStep*dTx / norm;   
             yi -= rayStep*dTy / norm;   
+            zi -= rayStep*dTz / norm;    
 
-            int im = (int)(zi / dz_tomo); 
-            int jm = (int)(xi / dx_tomo); 
             int km = (int)(yi / dy_tomo); 
+            int jm = (int)(xi / dx_tomo); 
+            int im = (int)(zi / dz_tomo); 
 
             int index = im + jm*nz_tomo + km*nx_tomo*nz_tomo;
             
@@ -89,9 +90,9 @@ void Least_Squares::apply_inversion_technique()
             if (ray_index.back() == sId) break;
         }
    
-        float final_distance = sqrtf(powf(zi - modeling->geometry->shots.z[modeling->shot_index],2.0f) + 
-                                     powf(xi - modeling->geometry->shots.x[modeling->shot_index],2.0f) + 
-                                     powf(yi - modeling->geometry->shots.y[modeling->shot_index],2.0f));
+        float final_distance = sqrtf(powf(xi - modeling->geometry->xsrc[modeling->geometry->sInd[modeling->srcId]], 2.0f) + 
+                                     powf(yi - modeling->geometry->ysrc[modeling->geometry->sInd[modeling->srcId]], 2.0f) +
+                                     powf(zi - modeling->geometry->zsrc[modeling->geometry->sInd[modeling->srcId]], 2.0f));
 
         std::sort(ray_index.begin(), ray_index.end());
 
@@ -108,7 +109,7 @@ void Least_Squares::apply_inversion_technique()
             {
                 vG.emplace_back(distance_per_voxel);
                 jG.emplace_back(current_voxel_index);
-                iG.emplace_back(ray_id + modeling->shot_index * modeling->total_nodes);
+                iG.emplace_back(ray_id + modeling->srcId * modeling->geometry->spread[modeling->srcId]);
 
                 if (current_voxel_index == sId) vG.back() = final_distance;
 
@@ -121,123 +122,17 @@ void Least_Squares::apply_inversion_technique()
         {
             vG.emplace_back(final_distance);
             jG.emplace_back(current_voxel_index);
-            iG.emplace_back(ray_id + modeling->shot_index * modeling->total_nodes);
+            iG.emplace_back(ray_id + modeling->srcId * modeling->geometry->spread[modeling->srcId]);
         }
         else 
         {
             vG.emplace_back(distance_per_voxel);
             jG.emplace_back(current_voxel_index);
-            iG.emplace_back(ray_id + modeling->shot_index * modeling->total_nodes);
+            iG.emplace_back(ray_id + modeling->srcId * modeling->geometry->spread[modeling->srcId]);
         }
 
-        std::vector < int >().swap(ray_index);
-    }    
-}
-
-void Least_Squares::gradient_preconditioning()
-{
-    float * grad = new float[n_model]();
-
-    for (int index = 0; index < vG.size(); index++)
-    {
-        grad[jG[index]] += (dobs[iG[index]] - dcal[iG[index]]) / vG[index];
+        std::vector<int>().swap(ray_index);
     }
-
-    for (int index = 0; index < modeling->nPoints; index++)
-    {
-        int k = (int) (index / (modeling->nx*modeling->nz));        
-        int j = (int) (index - k*modeling->nx*modeling->nz) / modeling->nz;    
-        int i = (int) (index - j*modeling->nz - k*modeling->nx*modeling->nz);  
-        
-        if ((i >= (int)(0.5f*dz_tomo/modeling->dz)) && (i < modeling->nz - (int)(0.5f*dz_tomo/modeling->dz)) &&
-            (j >= (int)(0.5f*dx_tomo/modeling->dx)) && (j < modeling->nx - (int)(0.5f*dx_tomo/modeling->dx)) &&
-            (k >= (int)(0.5f*dy_tomo/modeling->dy)) && (k < modeling->ny - (int)(0.5f*dy_tomo/modeling->dy)))
-        {
-            float zp = (i - (int)(0.5f*dz_tomo/modeling->dz))*modeling->dz; 
-            float xp = (j - (int)(0.5f*dx_tomo/modeling->dx))*modeling->dx; 
-            float yp = (k - (int)(0.5f*dy_tomo/modeling->dy))*modeling->dy; 
-
-            float x0 = floorf(xp/dx_tomo)*dx_tomo;
-            float y0 = floorf(yp/dy_tomo)*dy_tomo;
-            float z0 = floorf(zp/dz_tomo)*dz_tomo;
-
-            float x1 = floorf(xp/dx_tomo)*dx_tomo + dx_tomo;
-            float y1 = floorf(yp/dy_tomo)*dy_tomo + dy_tomo;
-            float z1 = floorf(zp/dz_tomo)*dz_tomo + dz_tomo;
-
-            int idz = (int)(zp/dz_tomo);
-            int idx = (int)(xp/dx_tomo);
-            int idy = (int)(yp/dy_tomo);
-
-            int ind_m = (int)(idz + idx*nz_tomo + idy*nx_tomo*nz_tomo);
-            
-            float c000 = grad[ind_m];                  
-            float c001 = grad[ind_m + 1];
-            float c100 = grad[ind_m + nz_tomo];
-            float c101 = grad[ind_m + 1 + nz_tomo];
-            float c010 = grad[ind_m + nx_tomo*nz_tomo];
-            float c011 = grad[ind_m + 1 + nx_tomo*nz_tomo];
-            float c110 = grad[ind_m + nz_tomo + nx_tomo*nz_tomo];
-            float c111 = grad[ind_m + 1 + nz_tomo + nx_tomo*nz_tomo];  
-
-            float xd = (xp - x0) / (x1 - x0);
-            float yd = (yp - y0) / (y1 - y0);
-            float zd = (zp - z0) / (z1 - z0);
-
-            float c00 = c000*(1 - xd) + c100*xd;    
-            float c01 = c001*(1 - xd) + c101*xd;    
-            float c10 = c010*(1 - xd) + c110*xd;    
-            float c11 = c011*(1 - xd) + c111*xd;    
-
-            float c0 = c00*(1 - yd) + c10*yd;
-            float c1 = c01*(1 - yd) + c11*yd;
-
-            float g_ijk = (c0*(1 - zd) + c1*zd);
-
-            gradient[i + j*modeling->nz + k*modeling->nx*modeling->nz] = g_ijk;                        
-        }
-    }    
-
-    if (smooth)
-    { 
-        int aux_nx = modeling->nx + 2*smoother_samples;
-        int aux_ny = modeling->ny + 2*smoother_samples;
-        int aux_nz = modeling->nz + 2*smoother_samples;
-
-        int aux_nPoints = aux_nx*aux_ny*aux_nz;
-
-        float * grad_aux = new float[aux_nPoints]();
-        float * grad_smooth = new float[aux_nPoints]();
-
-        for (int index = 0; index < modeling->nPoints; index++)
-        {
-            int k = (int) (index / (modeling->nx*modeling->nz));        
-            int j = (int) (index - k*modeling->nx*modeling->nz) / modeling->nz;    
-            int i = (int) (index - j*modeling->nz - k*modeling->nx*modeling->nz);          
-
-            int ind_filt = (i + smoother_samples) + (j + smoother_samples)*aux_nz + (k + smoother_samples)*aux_nx*aux_nz;
-
-            grad_aux[ind_filt] = gradient[i + j*modeling->nz + k*modeling->nx*modeling->nz];
-        }
-
-        smooth_volume(grad_aux, grad_smooth, aux_nx, aux_ny, aux_nz);
-
-        for (int index = 0; index < modeling->nPoints; index++)
-        {
-            int k = (int) (index / (modeling->nx*modeling->nz));        
-            int j = (int) (index - k*modeling->nx*modeling->nz) / modeling->nz;    
-            int i = (int) (index - j*modeling->nz - k*modeling->nx*modeling->nz);          
-
-            int ind_filt = (i + smoother_samples) + (j + smoother_samples)*aux_nz + (k + smoother_samples)*aux_nx*aux_nz;
-
-            gradient[i + j*modeling->nz + k*modeling->nx*modeling->nz] = grad_smooth[ind_filt];
-        }
-    
-        delete[] grad_aux;
-        delete[] grad_smooth;
-    }
-
-    delete[] grad;
 }
 
 void Least_Squares::optimization()
@@ -291,13 +186,13 @@ void Least_Squares::apply_regularization()
     float * vL = new float[nnz]();
 
     if (tk_order <= 0)
-    {
-	for (int index = 0; index < nnz; index++)
-	{
+    {   
+	    for (int index = 0; index < nnz; index++)
+	    {
             iL[index] = index;
-	    jL[index] = index;
-	    vL[index] = 1.0f;
-	}
+	        jL[index] = index;
+	        vL[index] = 1.0f;
+	    }
     } 
     else
     {
@@ -337,7 +232,7 @@ void Least_Squares::apply_regularization()
     {
         iA[index] = n_data + iL[index - (NNZ - nnz)];
         jA[index] = jL[index - (NNZ - nnz)];
-        vA[index] = lambda * vL[index - (NNZ - nnz)];        
+        vA[index] = tk_param * vL[index - (NNZ - nnz)];        
     }
 
     delete[] iL;
@@ -470,48 +365,7 @@ void Least_Squares::slowness_variation_rescaling()
             float c0 = c00*(1 - yd) + c10*yd;
             float c1 = c01*(1 - yd) + c11*yd;
 
-            float dm_ijk = (c0*(1 - zd) + c1*zd);
-
-            dm[index] = dm_ijk;            
+            perturbation[index] = c0*(1 - zd) + c1*zd;            
         } 
     }
-
-    if (smooth)
-    {
-        int aux_nx = modeling->nx + 2*smoother_samples;
-        int aux_ny = modeling->ny + 2*smoother_samples;
-        int aux_nz = modeling->nz + 2*smoother_samples;
-
-        int aux_nPoints = aux_nx*aux_ny*aux_nz;
-
-        float * dm_aux = new float[aux_nPoints]();
-        float * dm_smooth = new float[aux_nPoints]();
-
-        for (int index = 0; index < modeling->nPoints; index++)
-        {
-            int k = (int) (index / (modeling->nx*modeling->nz));        
-            int j = (int) (index - k*modeling->nx*modeling->nz) / modeling->nz;    
-            int i = (int) (index - j*modeling->nz - k*modeling->nx*modeling->nz);          
-
-            int ind_filt = (i + smoother_samples) + (j + smoother_samples)*aux_nz + (k + smoother_samples)*aux_nx*aux_nz;
-
-            dm_aux[ind_filt] = dm[i + j*modeling->nz + k*modeling->nx*modeling->nz];
-        }
-
-        smooth_volume(dm_aux, dm_smooth, aux_nx, aux_ny, aux_nz);
-
-        for (int index = 0; index < modeling->nPoints; index++)
-        {
-            int k = (int) (index / (modeling->nx*modeling->nz));        
-            int j = (int) (index - k*modeling->nx*modeling->nz) / modeling->nz;    
-            int i = (int) (index - j*modeling->nz - k*modeling->nx*modeling->nz);          
-
-            int ind_filt = (i + smoother_samples) + (j + smoother_samples)*aux_nz + (k + smoother_samples)*aux_nx*aux_nz;
-
-            dm[i + j*modeling->nz + k*modeling->nx*modeling->nz] = dm_smooth[ind_filt];
-        }
-    
-        delete[] dm_aux;
-        delete[] dm_smooth;
-    }    
 }

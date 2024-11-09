@@ -1,5 +1,5 @@
-# include "../inversion/least_squares/least_squares.cuh"
-# include "../inversion/adjoint_state/adjoint_state.cuh"
+# include "inversion/least_squares.hpp"
+# include "inversion/adjoint_state.cuh"
 
 int main(int argc, char **argv)
 {
@@ -12,10 +12,10 @@ int main(int argc, char **argv)
     auto file = std::string(argv[1]);
     auto type = std::stoi(catch_parameter("inversion_type", file));
 
-    inversion[type]->file = file;
+    inversion[type]->parameters = file;
 
     inversion[type]->set_parameters();
-    inversion[type]->import_obs_data();
+    inversion[type]->import_obsData();
 
     while (true)
     {

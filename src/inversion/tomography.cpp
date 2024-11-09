@@ -2,137 +2,106 @@
 
 void Tomography::set_parameters()
 {
-    max_iteration = std::stoi(catch_parameter("max_iteration", file));
-    max_slowness_variation = std::stof(catch_parameter("max_slowness", file));
+    max_iteration = std::stoi(catch_parameter("max_iteration", parameters));
 
-    obs_data_folder = catch_parameter("obs_data_folder", file);
-    obs_data_prefix = catch_parameter("obs_data_prefix", file);
+    obs_data_folder = catch_parameter("obs_data_folder", parameters);
+    obs_data_prefix = catch_parameter("obs_data_prefix", parameters);
 
-    smooth = str2bool(catch_parameter("smooth_per_iteration", file));
-    smoother_samples = std::stoi(catch_parameter("gaussian_filter_samples", file));
-    smoother_stdv = std::stoi(catch_parameter("gaussian_filter_stdv", file));
+    max_slowness_variation = std::stof(catch_parameter("max_slowness_variation", parameters));
+
+    smooth_model_per_iteration = str2bool(catch_parameter("smooth_per_iteration", parameters));
+    smoother_samples = std::stoi(catch_parameter("gaussian_filter_samples", parameters));
+    smoother_stdv = std::stoi(catch_parameter("gaussian_filter_stdv", parameters));
     
-    convergence_map_folder = catch_parameter("convergence_folder", file);
-    estimated_model_folder = catch_parameter("estimated_model_folder", file);
+    convergence_map_folder = catch_parameter("convergence_folder", parameters);
+    estimated_model_folder = catch_parameter("inversion_output_folder", parameters);
 
-    gradient_folder = catch_parameter("gradient_folder", file);
-
-    write_model_per_iteration = str2bool(catch_parameter("export_model_per_iteration", file));
-    write_gradient_per_iteration = str2bool(catch_parameter("export_gradient_per_iteration", file));
+    write_model_per_iteration = str2bool(catch_parameter("export_model_per_iteration", parameters));
 
     set_forward_modeling();
-
-    set_inversion_volumes();
-
-    set_specific_parameters();
+    set_inversion_elements();
+    set_specifications();
 } 
 
 void Tomography::set_forward_modeling()
 {
-    std::vector<Eikonal *> possibilities = 
-    {
-        new Classical(),
-        new Block_FIM(),
-        new Ultimate_FSM()
-    };
-    
-    auto type = std::stoi(catch_parameter("modeling_type", file));
+    modeling = new Eikonal_Iso();
 
-    modeling = possibilities[type];
-
-    modeling->file = file;
+    modeling->parameters = parameters;
 
     modeling->set_parameters();
-
-    modeling->set_runtime();
 }
 
-void Tomography::set_inversion_volumes()
-{
-    n_data = modeling->total_shots * modeling->total_nodes;
-    
+void Tomography::set_inversion_elements()
+{    
+    n_data = 0;
+    for (int shot = 0; shot < modeling->geometry->nrel; shot++)
+        n_data += modeling->geometry->spread[shot];
+
     dcal = new float[n_data]();
     dobs = new float[n_data]();
 
-    dm = new float[modeling->nPoints]();
-    model = new float[modeling->nPoints]();
-
-    gradient = new float[modeling->nPoints]();
-
-    modeling->reduce_boundary(modeling->S, model);
+    perturbation = new float[modeling->nPoints]();
 }
 
-void Tomography::import_obs_data()
+void Tomography::import_obsData()
 {
-    int ptr = 0; 
-    
-    float * data = new float[modeling->total_nodes]();
-
-    for (int shot = 0; shot < modeling->total_shots; shot++)
+    for (modeling->srcId = 0; modeling->srcId < modeling->geometry->nrel; modeling->srcId++)
     {
-        import_binary_float(obs_data_folder + obs_data_prefix + std::to_string(shot+1) + ".bin", data, modeling->total_nodes);
+        float * data = new float[modeling->geometry->spread[modeling->srcId]]();
 
-        for (int d = ptr; d < ptr + modeling->total_nodes; d++) 
-            dobs[d] = data[d - ptr];
+        std::string path = obs_data_folder + obs_data_prefix + std::to_string(modeling->geometry->sInd[modeling->srcId]+1) + ".bin";
 
-        ptr += modeling->total_nodes;        
+        import_binary_float(path, data, modeling->geometry->spread[modeling->srcId]);
+
+        int skipped = modeling->srcId * modeling->geometry->spread[modeling->srcId];    
+        
+        for (int i = 0; i < modeling->geometry->spread[modeling->srcId]; i++) 
+            dobs[i + skipped] = data[i];
+
+        delete[] data;
     }
-
-    delete[] data;    
 }
 
 void Tomography::forward_modeling()
 {
-    modeling->expand_boundary(model, modeling->S);
-
-    for (int index = 0; index < modeling->nPoints; index++)    
-        gradient[index] = 0.0f;
-
-    for (int shot = 0; shot < modeling->total_shots; shot++)
+    for (modeling->srcId = 0; modeling->srcId < modeling->geometry->nrel; modeling->srcId++)
     {
-        modeling->shot_index = shot;
-    
-        modeling->get_information();
+        show_information();
 
-        set_tomography_message();
+        modeling->initialization();
+        modeling->forward_solver();
 
-        modeling->set_configuration();
-        modeling->set_forward_solver();
-
-        extract_calculated_data();
+        concatenate_data();
         
         if (iteration != max_iteration)
             apply_inversion_technique();
     }
-
-    if (iteration != max_iteration)
-    {
-        gradient_preconditioning();
-        export_gradient();
-    }    
 }
 
-void Tomography::set_tomography_message()
+void Tomography::show_information()
 {
-    std::cout<<"Tomography type: ";
-    std::cout<<inversion_method<<"\n\n";
+    modeling->show_information();    
+    
+    std::cout << "\nInversion type: ";
+    std::cout << inversion_method << "\n\n";
 
-    if (iteration == max_iteration)
-    { 
-        std::cout<<"------- Checking final residuo ------------\n\n";
-    }
+    if (iteration == max_iteration) 
+        std::cout << "-------- Checking final residuo --------\n\n";
     else
-        std::cout<<"------- Computing iteration "<<iteration+1<<" of "<<max_iteration<<" ------------\n\n";
+    {    
+        std::cout << "-------- Computing iteration " << iteration + 1 << " of " << max_iteration << " --------\n\n";
 
-    if (iteration > 0) std::cout<<"Previous residuo: "<<residuo.back()<<"\n\n";    
+        if (iteration > 0) std::cout << "Previous residuo: " << residuo.back() << "\n\n";   
+    }
 }
 
-void Tomography::extract_calculated_data()
+void Tomography::concatenate_data()
 {
-    int skipped = modeling->shot_index * modeling->total_nodes;
+    int skipped = modeling->srcId * modeling->geometry->spread[modeling->srcId];
 
-    for (int i = 0; i < modeling->total_nodes; i++) 
-        dcal[i + skipped] = modeling->receiver_output[i];
+    for (int i = 0; i < modeling->geometry->spread[modeling->srcId]; i++) 
+        dcal[i + skipped] = modeling->synthetic_data[i];    
 }
 
 void Tomography::check_convergence()
@@ -146,7 +115,7 @@ void Tomography::check_convergence()
 
     if ((iteration >= max_iteration))
     {
-        std::cout << "\nFinal residuo: "<< residuo.back() <<"\n\n";
+        std::cout << "Final residuo: "<< residuo.back() <<"\n";
         converged = true;
     }
     else
@@ -158,60 +127,64 @@ void Tomography::check_convergence()
 
 void Tomography::model_update()
 {
-    float * velocity = new float[modeling->nPoints]();
+    if (smooth_model_per_iteration)
+    {
+        int aux_nx = modeling->nx + 2*smoother_samples;
+        int aux_ny = modeling->ny + 2*smoother_samples;
+        int aux_nz = modeling->nz + 2*smoother_samples;
 
+        int aux_nPoints = aux_nx*aux_ny*aux_nz;
+
+        float * dm_aux = new float[aux_nPoints]();
+        float * dm_smooth = new float[aux_nPoints]();
+
+        # pragma omp parallel for
+        for (int index = 0; index < modeling->nPoints; index++)
+        {
+            int k = (int) (index / (modeling->nx*modeling->nz));         
+            int j = (int) (index - k*modeling->nx*modeling->nz) / modeling->nz;   
+            int i = (int) (index - j*modeling->nz - k*modeling->nx*modeling->nz); 
+
+            int ind_filt = (i + smoother_samples) + (j + smoother_samples)*aux_nz + (k + smoother_samples)*aux_nx*aux_nz;
+
+            dm_aux[ind_filt] = perturbation[i + j*modeling->nz + k*modeling->nx*modeling->nz];
+        }
+
+        smooth_volume(dm_aux, dm_smooth, aux_nx, aux_ny, aux_nz);
+
+        # pragma omp parallel for    
+        for (int index = 0; index < modeling->nPoints; index++)
+        {
+            int k = (int) (index / (modeling->nx*modeling->nz));         
+            int j = (int) (index - k*modeling->nx*modeling->nz) / modeling->nz;   
+            int i = (int) (index - j*modeling->nz - k*modeling->nx*modeling->nz); 
+
+            int ind_filt = (i + smoother_samples) + (j + smoother_samples)*aux_nz + (k + smoother_samples)*aux_nx*aux_nz;
+
+            perturbation[i + j*modeling->nz + k*modeling->nx*modeling->nz] = dm_smooth[ind_filt];
+        }
+    
+        delete[] dm_aux;
+        delete[] dm_smooth;
+    }   
+    
     for (int index = 0; index < modeling->nPoints; index++)
     {
-        model[index] += dm[index];
+        int k = (int) (index / (modeling->nx*modeling->nz));         
+        int j = (int) (index - k*modeling->nx*modeling->nz) / modeling->nz;   
+        int i = (int) (index - j*modeling->nz - k*modeling->nx*modeling->nz); 
 
-        velocity[index] = 1.0f / model[index]; 
+        int indb = (i + modeling->nb) + (j + modeling->nb)*modeling->nzz + (k + modeling->nb)*modeling->nxx*modeling->nzz;
+
+        modeling->S[indb] += perturbation[index];
+        modeling->Vp[index] = 1.0f / modeling->S[indb];
     }
 
     if (write_model_per_iteration)
     {
-        std::string model_iteration_path = estimated_model_folder + "model_iteration_" + std::to_string(iteration) + "_" + std::to_string(modeling->nz) + "x" + std::to_string(modeling->nx) + "x" + std::to_string(modeling->ny) + ".bin";
+        std::string model_iteration_path = estimated_model_folder + inversion_name + "model_iteration_" + std::to_string(iteration) + "_" + std::to_string(modeling->nz) + "x" + std::to_string(modeling->nx) + "x" + std::to_string(modeling->ny) + ".bin";
 
-        export_binary_float(model_iteration_path, velocity, modeling->nPoints);
-    }
-
-    delete[] velocity;
-}
-
-void Tomography::export_results()
-{
-    float * final_model = new float[modeling->nPoints]();
-
-    for (int index = 0; index < modeling->nPoints; index++)
-    {
-        final_model[index] = 1.0f / model[index];
-    }
-    
-    std::string estimated_model_path = estimated_model_folder + "final_model_" + std::to_string(modeling->nz) + "x" + std::to_string(modeling->nx) + "x" + std::to_string(modeling->ny) + ".bin";
-    std::string convergence_map_path = convergence_map_folder + "convergence_" + std::to_string(iteration) + "_iterations.txt"; 
-
-    export_binary_float(estimated_model_path, final_model, modeling->nPoints);
-
-    std::ofstream resFile(convergence_map_path, std::ios::out);
-    
-    for (int r = 0; r < residuo.size(); r++) 
-        resFile << residuo[r] << "\n";
-
-    resFile.close();
-
-    std::cout<<"Text file "<<convergence_map_path<<" was successfully written."<<std::endl;
-
-    modeling->get_runtime();
-
-    delete[] final_model;
-}
-
-void Tomography::export_gradient()
-{
-    if (write_gradient_per_iteration)
-    {
-        std::string gradient_path = gradient_folder + "gradient_iteration_" + std::to_string(iteration+1) + "_" + std::to_string(modeling->nz) + "x" + std::to_string(modeling->nx) + "x" + std::to_string(modeling->ny) + ".bin";
-
-        export_binary_float(gradient_path, gradient, modeling->nPoints);
+        export_binary_float(model_iteration_path, modeling->Vp, modeling->nPoints);
     }
 }
 
@@ -288,11 +261,19 @@ void Tomography::smooth_volume(float * input, float * output, int nx, int ny, in
     delete[] kernel;
 }
 
+void Tomography::export_results()
+{    
+    std::string estimated_model_path = estimated_model_folder + inversion_name + "final_model_" + std::to_string(modeling->nz) + "x" + std::to_string(modeling->nx) + "x" + std::to_string(modeling->ny) + ".bin";
+    std::string convergence_map_path = convergence_map_folder + inversion_name + "convergence_" + std::to_string(iteration) + "_iterations.txt"; 
 
+    export_binary_float(estimated_model_path, modeling->Vp, modeling->nPoints);
 
+    std::ofstream resFile(convergence_map_path, std::ios::out);
+    
+    for (int r = 0; r < residuo.size(); r++) 
+        resFile << residuo[r] << "\n";
 
+    resFile.close();
 
-
-
-
-
+    std::cout << "Text file \033[34m" << convergence_map_path << "\033[0;0m was successfully written." << std::endl;
+}
