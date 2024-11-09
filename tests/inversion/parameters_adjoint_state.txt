@@ -1,0 +1,73 @@
+#---------------------------------------------------------------------------------------------------
+# Model paramenters --------------------------------------------------------------------------------
+#---------------------------------------------------------------------------------------------------
+
+x_samples = 201                           # <int>  
+y_samples = 201                           # <int>  
+z_samples = 51                            # <int>  
+
+x_spacing = 100.0                         # [m] <float> 
+y_spacing = 100.0                         # [m] <float> 
+z_spacing = 100.0                         # [m] <float> 
+
+vp_model_file = ../inputs/models/inversion_test_init_model_51x201x201_100m.bin   
+vs_model_file = ../inputs/models/inversion_test_init_model_51x201x201_100m.bin   
+rho_model_file = ../inputs/models/inversion_test_init_model_51x201x201_100m.bin 
+
+#---------------------------------------------------------------------------------------------------
+# Geometry parameters ------------------------------------------------------------------------------
+#---------------------------------------------------------------------------------------------------
+
+SPS = ../inputs/geometry/inversion_test_SPS.txt              
+RPS = ../inputs/geometry/inversion_test_RPS.txt     
+XPS = ../inputs/geometry/inversion_test_XPS.txt     
+
+#---------------------------------------------------------------------------------------------------
+# Modeling parameters ------------------------------------------------------------------------------
+#---------------------------------------------------------------------------------------------------
+# [0] - Eikonal Isotropic 
+# [1] - Elastic Isotropic
+# --------------------------------------------------------------------------------------------------
+
+modeling_type = 0 
+
+time_samples = 1001
+time_spacing = 1e-3
+max_frequency = 30.0
+
+boundary_samples = 100
+boundary_damping = 0.0025
+
+modeling_output_folder = ../outputs/syntheticData/            
+
+#---------------------------------------------------------------------------------------------------
+# Inversion parameters 
+#---------------------------------------------------------------------------------------------------
+#   [0] - Least-squares first-arrival tomography 
+#   [1] - Adjoint-state first-arrival tomography
+#---------------------------------------------------------------------------------------------------
+
+inversion_type = 1                          # <int> 
+
+dx_tomo = 100                               # [m] <float> 
+dy_tomo = 100                               # [m] <float> 
+dz_tomo = 100                               # [m] <float>
+
+tk_order = 2                                # Tikhonov order <int>
+tk_param = 1e4                              # Tikhonov parameter <float>
+
+max_iteration = 5                           # <int>
+
+max_slowness_variation = 1e-3               # <float>
+
+smooth_per_iteration = true                 # <bool>
+gaussian_filter_stdv = 2.0                  # <float>
+gaussian_filter_samples = 5                 # [odd number] <int> 
+
+export_model_per_iteration = false          # <bool>
+
+convergence_folder = ../outputs/convergence/inversion_test_         
+inversion_output_folder = ../outputs/recoveredModels/inversion_test_    
+
+obs_data_folder = ../inputs/data/        
+obs_data_prefix = inversion_test_eikonal_iso_nStations1506_shot_   

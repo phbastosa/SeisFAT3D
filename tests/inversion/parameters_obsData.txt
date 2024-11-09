@@ -1,0 +1,41 @@
+#---------------------------------------------------------------------------------------------------
+# Model paramenters --------------------------------------------------------------------------------
+#---------------------------------------------------------------------------------------------------
+
+x_samples = 201                           # <int>  
+y_samples = 201                           # <int>  
+z_samples = 51                            # <int>  
+
+x_spacing = 100.0                         # [m] <float> 
+y_spacing = 100.0                         # [m] <float> 
+z_spacing = 100.0                         # [m] <float> 
+
+vp_model_file = ../inputs/models/inversion_test_true_model_51x201x201_100m.bin   
+vs_model_file = ../inputs/models/inversion_test_true_model_51x201x201_100m.bin   
+rho_model_file = ../inputs/models/inversion_test_true_model_51x201x201_100m.bin 
+
+#---------------------------------------------------------------------------------------------------
+# Geometry parameters ------------------------------------------------------------------------------
+#---------------------------------------------------------------------------------------------------
+
+SPS = ../inputs/geometry/inversion_test_SPS.txt              
+RPS = ../inputs/geometry/inversion_test_RPS.txt     
+XPS = ../inputs/geometry/inversion_test_XPS.txt     
+
+#---------------------------------------------------------------------------------------------------
+# Modeling parameters ------------------------------------------------------------------------------
+#---------------------------------------------------------------------------------------------------
+# [0] - Eikonal Isotropic 
+# [1] - Elastic Isotropic
+# --------------------------------------------------------------------------------------------------
+
+modeling_type = 0 
+
+time_samples = 1001
+time_spacing = 1e-3
+max_frequency = 30.0
+
+boundary_samples = 100
+boundary_damping = 0.0025
+
+modeling_output_folder = ../inputs/data/inversion_test_            

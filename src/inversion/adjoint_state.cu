@@ -10,9 +10,12 @@ void Adjoint_State::set_specifications()
     nSweeps = 8;
     meshDim = 3;
 
+    cell_area = modeling->dx*modeling->ny*modeling->dz;
+
     total_levels = (modeling->nxx - 1) + (modeling->nyy - 1) + (modeling->nzz - 1);
 
-    inversion_method = "[1] - Adjoint State first arrival tomography";
+    inversion_name = "adjoint_state_";
+    inversion_method = "Adjoint-State first-arrival tomography";
 
     source_grad = new float[modeling->volsize]();
     source_comp = new float[modeling->volsize]();
@@ -21,7 +24,9 @@ void Adjoint_State::set_specifications()
     adjoint_comp = new float[modeling->volsize]();
 
     gradient = new float[modeling->nPoints]();
-    illumination = new float[modeling->nPoints]();     
+
+    m = new float[modeling->nPoints]();
+    v = new float[modeling->nPoints]();
 
     cudaMalloc((void**)&(d_T), modeling->volsize*sizeof(float));
     
@@ -87,7 +92,6 @@ void Adjoint_State::apply_inversion_technique()
     cudaMemcpy(adjoint_grad, d_adjoint_grad, modeling->volsize*sizeof(float), cudaMemcpyDeviceToHost);
     cudaMemcpy(adjoint_comp, d_adjoint_comp, modeling->volsize*sizeof(float), cudaMemcpyDeviceToHost);
 
-    # pragma omp parallel for reduction(+:gradient[:modeling->nPoints])
     for (int index = 0; index < modeling->nPoints; index++) 
     {
         int k = (int) (index / (modeling->nx*modeling->nz));        
@@ -97,7 +101,8 @@ void Adjoint_State::apply_inversion_technique()
         int indp = i + j*modeling->nz + k*modeling->nx*modeling->nz; 
         int indb = (i + modeling->nb) + (j + modeling->nb)*modeling->nzz + (k + modeling->nb)*modeling->nxx*modeling->nzz;
 
-        gradient[indp] += (adjoint_grad[indb] / (adjoint_comp[indb] + 1e-6f))*cell_area / modeling->geometry->nrel;
+        // gradient[indp] += (adjoint_grad[indb] / (adjoint_comp[indb] + 1e-6f))*cell_area / modeling->geometry->nrel;
+        gradient[indp] += adjoint_grad[indb]*cell_area / modeling->geometry->nrel;
     }
 }
 
@@ -191,11 +196,11 @@ void Adjoint_State::optimization()
         
         v[index] = beta2*v[index] + (1.0f - beta2)*gradient[index]*gradient[index];
 
-        m_hat[index] = m[index] / (1.0f - powf(beta1, iteration));
+        float m_hat = m[index] / (1.0f - powf(beta1, iteration));
         
-        v_hat[index] = v[index] / (1.0f - powf(beta2, iteration));
+        float v_hat = v[index] / (1.0f - powf(beta2, iteration));
 
-        perturbation[index] = max_slowness_variation*m_hat[index] / (sqrtf(v_hat[index]) + epsilon);
+        perturbation[index] = max_slowness_variation*m_hat / (sqrtf(v_hat) + epsilon);
     }
 
     memset(gradient, 0.0f, modeling->nPoints);

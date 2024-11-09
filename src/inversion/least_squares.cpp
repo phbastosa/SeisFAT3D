@@ -19,7 +19,7 @@ void Least_Squares::set_specifications()
     tk_order = std::stoi(catch_parameter("tk_order", parameters));
     tk_param = std::stof(catch_parameter("tk_param", parameters));
 
-    n_model = nx_tomo * ny_tomo * nz_tomo;
+    n_model = nx_tomo*ny_tomo*nz_tomo;
 
     ray_path_max_samples = 0;
 
@@ -70,10 +70,10 @@ void Least_Squares::apply_inversion_technique()
             int i = (int)(zi / modeling->dz) + modeling->nb;
 
             float dTx = (modeling->T[i + (j+1)*modeling->nzz + k*modeling->nxx*modeling->nzz] - modeling->T[i + (j-1)*modeling->nzz + k*modeling->nxx*modeling->nzz]) / (2.0f*modeling->dx);    
-            float dTy = (modeling->T[i + j*modeling->nzz + (k+1)*modeling->nxx*modeling->nzz] - modeling->T[i + j*modeling->nzz + (k+1)*modeling->nxx*modeling->nzz]) / (2.0f*modeling->dy);    
+            float dTy = (modeling->T[i + j*modeling->nzz + (k+1)*modeling->nxx*modeling->nzz] - modeling->T[i + j*modeling->nzz + (k-1)*modeling->nxx*modeling->nzz]) / (2.0f*modeling->dy);    
             float dTz = (modeling->T[(i+1) + j*modeling->nzz + k*modeling->nxx*modeling->nzz] - modeling->T[(i-1) + j*modeling->nzz + k*modeling->nxx*modeling->nzz]) / (2.0f*modeling->dz);    
 
-            float norm = sqrtf(dTx*dTx + dTz*dTz + dTz*dTz);
+            float norm = sqrtf(dTx*dTx + dTy*dTy + dTz*dTz);
 
             xi -= rayStep*dTx / norm;   
             yi -= rayStep*dTy / norm;   
@@ -137,7 +137,7 @@ void Least_Squares::apply_inversion_technique()
 
 void Least_Squares::optimization()
 {
-    std::cout<<"\nSolving linear system using Tikhonov regularization with order " + std::to_string(tk_order) + "\n\n";
+    std::cout<<"Solving linear system using Tikhonov regularization with order " + std::to_string(tk_order);
 
     M = n_model;                                  
     N = n_data + n_model - tk_order;                    
@@ -168,6 +168,7 @@ void Least_Squares::optimization()
     solve_linear_system_lscg();
     slowness_variation_rescaling();
 
+    delete[] x;
     delete[] B;
     delete[] iA;
     delete[] jA;
@@ -322,13 +323,17 @@ void Least_Squares::slowness_variation_rescaling()
         int j = (int) (index - k*modeling->nx*modeling->nz) / modeling->nz;    
         int i = (int) (index - j*modeling->nz - k*modeling->nx*modeling->nz);  
         
-        if ((i >= (int)(0.5f*dz_tomo/modeling->dz)) && (i < modeling->nz - (int)(0.5f*dz_tomo/modeling->dz)) &&
-            (j >= (int)(0.5f*dx_tomo/modeling->dx)) && (j < modeling->nx - (int)(0.5f*dx_tomo/modeling->dx)) &&
-            (k >= (int)(0.5f*dy_tomo/modeling->dy)) && (k < modeling->ny - (int)(0.5f*dy_tomo/modeling->dy)))
+        int dhx = (int)(0.5f*dx_tomo/modeling->dx); 
+        int dhy = (int)(0.5f*dy_tomo/modeling->dy); 
+        int dhz = (int)(0.5f*dz_tomo/modeling->dz); 
+
+        if ((i > dhz) && (i < modeling->nz - dhz - 1) &&
+            (j > dhx) && (j < modeling->nx - dhx - 1) &&
+            (k > dhy) && (k < modeling->ny - dhy - 1))
         {
-            float zp = (i - (int)(0.5f*dz_tomo/modeling->dz))*modeling->dz; 
-            float xp = (j - (int)(0.5f*dx_tomo/modeling->dx))*modeling->dx; 
-            float yp = (k - (int)(0.5f*dy_tomo/modeling->dy))*modeling->dy; 
+            float zp = (i - dhz)*modeling->dz; 
+            float xp = (j - dhx)*modeling->dx; 
+            float yp = (k - dhy)*modeling->dy; 
             
             float x0 = floorf(xp/dx_tomo)*dx_tomo;
             float y0 = floorf(yp/dy_tomo)*dy_tomo;
@@ -365,7 +370,7 @@ void Least_Squares::slowness_variation_rescaling()
             float c0 = c00*(1 - yd) + c10*yd;
             float c1 = c01*(1 - yd) + c11*yd;
 
-            perturbation[index] = c0*(1 - zd) + c1*zd;            
+            perturbation[index] = c0*(1 - zd) + c1*zd;         
         } 
     }
 }

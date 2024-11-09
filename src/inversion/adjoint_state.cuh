@@ -16,9 +16,6 @@ private:
     float * m = nullptr;
     float * v = nullptr;
 
-    float * m_hat = nullptr;
-    float * v_hat = nullptr;
-
     float * d_T = nullptr;
 
     float * d_source_grad = nullptr;
@@ -34,7 +31,6 @@ private:
     float * adjoint_comp = nullptr;
 
     float * gradient = nullptr;
-    float * illumination = nullptr;
 
     void initialization();
     void set_specifications();
@@ -46,9 +42,7 @@ private:
 public:
 
     void optimization();
-
 };
-
 
 __global__ void adjoint_state_kernel(float * T, float * adjoint_grad, float * adjoint_comp, float * source_grad, float * source_comp, int level, int xOffset, 
                                      int yOffset, int xSweepOffset, int ySweepOffset, int zSweepOffset, int nxx, int nyy, int nzz, float dx, float dy, float dz);
