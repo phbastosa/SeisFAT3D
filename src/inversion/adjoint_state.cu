@@ -101,8 +101,7 @@ void Adjoint_State::apply_inversion_technique()
         int indp = i + j*modeling->nz + k*modeling->nx*modeling->nz; 
         int indb = (i + modeling->nb) + (j + modeling->nb)*modeling->nzz + (k + modeling->nb)*modeling->nxx*modeling->nzz;
 
-        // gradient[indp] += (adjoint_grad[indb] / (adjoint_comp[indb] + 1e-6f))*cell_area / modeling->geometry->nrel;
-        gradient[indp] += adjoint_grad[indb]*cell_area / modeling->geometry->nrel;
+        gradient[indp] += (adjoint_grad[indb] / (adjoint_comp[indb] + 1e-6f))*cell_area / modeling->geometry->nrel;
     }
 }
 
