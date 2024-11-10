@@ -1,23 +1,24 @@
 # ifndef KIRCHHOFF_CUH
 # define KIRCHHOFF_CUH
 
-# include "../migration.hpp"
-
-# include "../../modeling/eikonal_equation/isotropic/ultimate_FSM.cuh"
+# include "migration.hpp"
 
 class Kirchhoff : public Migration
 {
 private:
 
-    void set_modeling_type();
+    int nBlocks;
+    int nThreads;
 
-protected:
+    float * d_Tr = nullptr;
+    float * d_Ts = nullptr;
+    float * d_image = nullptr;
+    float * d_seismic = nullptr;
 
-
-     
-public:
-    
-    void image_building();
+    void set_specifications();
+    void run_cross_correlation();
 };
+
+__global__ void cross_correlation(float * seismic, float * Ts, float * Tr, float * image, int nPoints, int spread, int nt, float dt);
 
 # endif

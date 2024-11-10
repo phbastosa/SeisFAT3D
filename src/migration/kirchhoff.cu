@@ -1,67 +1,58 @@
 # include "kirchhoff.cuh"
-# include <omp.h>
 
-void Kirchhoff::set_modeling_type()
+void Kirchhoff::set_specifications()
 {
-    modeling = new Ultimate_FSM();
+    cudaMalloc((void**)&(d_Tr), modeling->nPoints*sizeof(float));
+    cudaMalloc((void**)&(d_Ts), modeling->nPoints*sizeof(float));
+    cudaMalloc((void**)&(d_image), modeling->nPoints*sizeof(float));
+
+    cudaMalloc((void**)&(d_seismic), modeling->nt*modeling->max_spread*sizeof(float));
+
+    nThreads = 256;
+    nBlocks = (int)((modeling->nPoints + nThreads - 1) / nThreads);
 }
 
-void Kirchhoff::image_building()
+void Kirchhoff::run_cross_correlation()
 {
-    modeling->set_runtime();
+    cudaMemset(d_image, 0.0f, modeling->nPoints*sizeof(float));
 
-    // for (int node = 0; node < modeling->total_nodes; node++)
-    // {            
-    //     modeling->get_information();
-
-    //     std::cout << "Computing travel times at receiver " << node+1 << " of " << modeling->total_nodes << "\n";
-
-    //     modeling->sidx = (int)(modeling->geometry->nodes.x[node] / modeling->dx) + modeling->nbxl;
-    //     modeling->sidy = (int)(modeling->geometry->nodes.y[node] / modeling->dy) + modeling->nbyl;
-    //     modeling->sidz = (int)(modeling->geometry->nodes.z[node] / modeling->dz) + modeling->nbzu; 
-
-    //     modeling->source_index = modeling->sidz + modeling->sidx*modeling->nzz + modeling->sidy*modeling->nxx*modeling->nzz;
-
-    //     modeling->initialization();
-    //     modeling->set_forward_solver();
-
-    //     export_binary_float("../outputs/snapshots/travel_time_volume_receiver_" + std::to_string(node+1) + ".bin", modeling->wavefield_output, modeling->nPoints);
-    // }
-
-    for (int shot = 0; shot < 1; shot++)
+    for (modeling->srcId = 0; modeling->srcId < modeling->geometry->nrel; modeling->srcId++)
     {
-        modeling->shot_index = shot;
+        read_seismic_data();
 
-        read_input_data();
-        
-        modeling->get_information();
+        modeling->show_information();
 
-        std::cout << "Kirchhoff depth migration \n\n";
+        std::cout << "\nKirchhoff depth migration \n\n";
 
-        modeling->set_configuration();
-        modeling->set_forward_solver();
+        modeling->initialization();
+        modeling->forward_solver();
 
-        for (int node = 0; node < modeling->total_nodes; node++)
-        {            
-            import_binary_float("../outputs/snapshots/travel_time_volume_receiver_" + std::to_string(node+1) + ".bin", Tr, modeling->nPoints);
+        modeling->reduce_boundary(modeling->T, Ts);
 
-            #pragma omp parallel for     
-            for (int index = 0; index < modeling->nPoints; index++)
-            {   
-                int k = (int) (index / (modeling->nx*modeling->nz));                  // y direction
-                int j = (int) (index - k*modeling->nx*modeling->nz) / modeling->nz;   // x direction
-                int i = (int) (index - j*modeling->nz - k*modeling->nx*modeling->nz); // z direction                
+        cudaMemcpy(d_Ts, Ts, modeling->nPoints*sizeof(float), cudaMemcpyHostToDevice);
+        cudaMemcpy(d_seismic, seismic, modeling->nt*modeling->geometry->spread[modeling->srcId]*sizeof(float), cudaMemcpyHostToDevice);
 
-                Im[index] = modeling->wavefield_output[index] + Tr[index] - modeling->receiver_output[node];
+        for (modeling->recId = modeling->geometry->iRec[modeling->srcId]; modeling->recId < modeling->geometry->fRec[modeling->srcId]; modeling->recId++)
+        {
+            import_binary_float("../outputs/travelTimeTables/traveltimes_receiver_" + std::to_string(modeling->recId+1) + ".bin", Tr, modeling->nPoints);
+            
+            cudaMemcpy(d_Tr, Tr, modeling->nPoints*sizeof(float), cudaMemcpyHostToDevice);
 
-                int seism_index = (int)(Im[index] / dt);
-
-                if (seism_index < nt) image[index] += data[seism_index + node*nt];
-            }
+            cross_correlation<<<nBlocks, nThreads>>>(d_seismic, d_Ts, d_Tr, d_image, modeling->nPoints, modeling->geometry->spread[modeling->srcId], modeling->nt, modeling->dt);
         }
     }
- 
-    export_binary_float("../outputs/images/image_kirchhoff_migration_test.bin", image, modeling->nPoints);
 
-    modeling->get_runtime();
+    cudaMemcpy(image, d_image, modeling->nPoints*sizeof(float), cudaMemcpyDeviceToHost);
+}
+
+__global__ void cross_correlation(float * seismic, float * Ts, float * Tr, float * image, int nPoints, int spread, int nt, float dt)
+{
+    int index = blockIdx.x * blockDim.x + threadIdx.x;
+
+    if (index < nPoints)
+    {
+        int seisId = (int)((Ts[index] + Tr[index]) / dt);
+
+        if (seisId < nt) image[index] += seismic[seisId + spread*nt];
+    }
 }

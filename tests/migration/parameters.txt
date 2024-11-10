@@ -1,0 +1,48 @@
+#---------------------------------------------------------------------------------------------------
+# Model paramenters --------------------------------------------------------------------------------
+#---------------------------------------------------------------------------------------------------
+
+x_samples = 241                           # <int>  
+y_samples = 161                           # <int>  
+z_samples = 41                            # <int>  
+
+x_spacing = 12.5                          # [m] <float> 
+y_spacing = 12.5                          # [m] <float> 
+z_spacing = 12.5                          # [m] <float> 
+
+vp_model_file = ../inputs/models/migration_test_vp_model_41x241x161_12.5m.bin   
+vs_model_file = ../inputs/models/migration_test_vs_model_41x241x161_12.5m.bin   
+rho_model_file = ../inputs/models/migration_test_rho_model_41x241x161_12.5m.bin   
+
+#---------------------------------------------------------------------------------------------------
+# Geometry parameters ------------------------------------------------------------------------------
+#---------------------------------------------------------------------------------------------------
+
+SPS = ../inputs/geometry/migration_test_SPS.txt              
+RPS = ../inputs/geometry/migration_test_RPS.txt     
+XPS = ../inputs/geometry/migration_test_XPS.txt     
+
+#---------------------------------------------------------------------------------------------------
+# Modeling parameters ------------------------------------------------------------------------------
+#---------------------------------------------------------------------------------------------------
+# [0] - Eikonal Isotropic 
+# [1] - Elastic Isotropic
+# --------------------------------------------------------------------------------------------------
+
+modeling_type = 1 
+
+time_samples = 501
+time_spacing = 1e-3
+max_frequency = 30.0
+
+boundary_samples = 50
+boundary_damping = 0.0045
+
+modeling_output_folder = ../inputs/data/migration_test_            
+
+#---------------------------------------------------------------------------------------------------
+# Migration parameters 
+#--------------------------------------------------------------------------------------------------- 
+
+input_data_folder = ../inputs/data/        
+input_data_prefix = marmousi2_elastic_iso_nStations241_nSamples10001_shot_    

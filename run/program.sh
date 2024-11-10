@@ -93,8 +93,8 @@ case "$1" in
     echo -e "../bin/\033[31minversion.exe\033[m" 
     nvcc $ioFunctions $geometry $modeling_all $inversion_all $inversion_main $flags -o ../bin/inversion.exe
 
-    # echo -e "../bin/\033[31mmigration.exe\033[m"
-    # nvcc $ioFunctions $geometry $modeling_all $migration_all $migration_main $flags -o ../bin/migration.exe
+    echo -e "../bin/\033[31mmigration.exe\033[m"
+    nvcc $ioFunctions $geometry $modeling_all $migration_all $migration_main $flags -o ../bin/migration.exe
 
 	exit 0
 ;;
@@ -153,11 +153,11 @@ case "$1" in
     python3 -B ../tests/migration/generate_models.py
     python3 -B ../tests/migration/generate_geometry.py
 
-    ./../bin/modeling.exe ../tests/migration/parameters.txt
+    # ./../bin/modeling.exe ../tests/migration/parameters.txt
 
-    python3 -B ../tests/migration/data_preconditioning.py
+    # python3 -B ../tests/migration/data_preconditioning.py
 
-    ./../bin/migration.exe ../tests/migration/parameters.txt
+    # ./../bin/migration.exe ../tests/migration/parameters.txt
 
     python3 -B ../tests/migration/generate_figures.py
 

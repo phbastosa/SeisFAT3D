@@ -1,7 +1,7 @@
 # ifndef MIGRATION_HPP
 # define MIGRATION_HPP
 
-# include "../modeling/modeling.hpp"
+# include "../modeling/hfreq/eikonal_iso.cuh"
 
 class Migration
 {
@@ -10,35 +10,34 @@ private:
     std::string input_data_folder;
     std::string input_data_prefix;
 
+    void initialization();
+    void show_information();
+    void get_receiver_traveltimes();
+    void export_receiver_traveltimes();
+
 protected:
-
-    int nt;
-    int nr;
-    int ns;
-
-    float dt;
 
     float * Tr = nullptr;
     float * Ts = nullptr;
-    float * Im = nullptr;
-
-    float * data = nullptr;
 
     float * image = nullptr;
+    float * seismic = nullptr;
 
     Modeling * modeling = nullptr;
 
-    virtual void set_modeling_type() = 0;
+    virtual void set_specifications() = 0;
+    virtual void run_cross_correlation() = 0;
 
 public:
     
-    std::string file;
+    std::string parameters;
 
     void set_parameters();
-    void read_input_data();
+    
+    void read_seismic_data();
 
-    virtual void image_building() = 0;
-
+    void image_building();
+    void export_outputs();
 };
 
 # endif
