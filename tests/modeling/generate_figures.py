@@ -46,6 +46,12 @@ dt = 1e-3
 ns = 4
 nr = 157
 
+xloc = np.linspace(0, nr-1, 5)
+xlab = np.linspace(50, 7950, 5, dtype = int)
+
+tloc = np.linspace(0, nt-1, 11)
+tlab = np.linspace(0, (nt-1)*dt, 11, dtype = int)
+
 fig, ax = plt.subplots(ncols = 4, figsize = (16,6))
 
 for i in range(ns):
@@ -58,4 +64,12 @@ for i in range(ns):
     ax[i].imshow(elastic, aspect = "auto", cmap = "Greys", vmin = -scale, vmax = scale)
     ax[i].plot(eikonal / dt, "--")
 
-plt.show()
+    ax[i].set_xticks(xloc)
+    ax[i].set_yticks(tloc)
+    ax[i].set_xticklabels(xlab)    
+    ax[i].set_yticklabels(tlab)    
+    ax[i].set_ylabel("Time [s]", fontsize = 15)
+    ax[i].set_xlabel("Distance [m]", fontsize = 15)
+    
+plt.tight_layout()
+plt.savefig("modeling_test_results.png", dpi = 300)

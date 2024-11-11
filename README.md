@@ -4,13 +4,6 @@ ___
 
 Modeling, inversion and migration using massive computational parallelism in object-oriented programming.
 
-### Publications:
-
-**Alves, P. H. B.**; Moreira, R. M.; Cetale, M.; Lopez, J. First arrival tomography application in low illumination time-lapse reservoir monitoring. In: Sociedade Brasileira de Geofísica. *18th International Congress of the Brazilian Geophysical Society*, 2023. [link](https://sbgf.org.br/mysbgf/eventos/expanded_abstracts/18th_CISBGf/a8c88a0055f636e4a163a5e3d16adab7CISBGf_2023_tomography.pdf)
-
-**Alves, P. H. B.**; Capuzzo, F.; Cetale, M.; Santos, L. 3D refraction travel times accuracy study in high contrasted media. Brazilian Journal of Geophysics, Vol. 41, Nº 1, 2023. [link](https://sbgf.org.br/revista/index.php/rbgf/article/view/2295)
-___
-
 ### Requirements:
 
 - A linux distribution or the Windows Subsystem for linux
@@ -37,8 +30,43 @@ Tests:
     $ ./program.sh -test_modeling                 
     $ ./program.sh -test_inversion      
     $ ./program.sh -test_migration      
-
-Visualization:
-
-    $ ./program.sh -check_geometry               
 ```
+
+# Test results
+
+### Modeling test
+
+<p float="left">
+  <img src="https://github.com/user-attachments/assets/2302a923-5d7b-4b40-a486-e0236bcee9c0" width="30%" />
+  <img src="https://github.com/user-attachments/assets/1e5d2842-655e-4acb-98ca-79b0fdb78712" width="30%" />
+  <img src="https://github.com/user-attachments/assets/b0ec784c-d5e6-4061-9057-f6eb514dbf2e" width="30%" />
+</p>
+
+
+![modeling_test_results](https://github.com/user-attachments/assets/8913e790-c2fe-4e95-aab1-592e54e9054d)
+
+### Inversion test
+
+<p float="left">
+  <img src="https://github.com/user-attachments/assets/18e734d1-e359-40bc-a457-77d652f1a765" width="30%" />
+  <img src="https://github.com/user-attachments/assets/b7d04aaa-89ad-413a-bca4-ed84e778d53c" width="30%" />
+  <img src="https://github.com/user-attachments/assets/1aac2342-c16d-4ac0-9c4f-aa10b91d5ccc" width="30%" />
+</p>
+
+<p float="left">
+  <img src="https://github.com/user-attachments/assets/6d520107-94fd-44c2-8f3b-4d69b67e84d6" width="45%" />
+  <img src="https://github.com/user-attachments/assets/2b9ca071-8e1a-4d3d-be76-135f6db621fd" width="45%" />
+</p>
+
+![inversion_test_convergence](https://github.com/user-attachments/assets/949402ff-6645-47b6-ae00-f7bfe0f758be)
+
+### Migration test
+
+
+<p float="left">
+  <img src="https://github.com/user-attachments/assets/1f1960ac-2611-427a-8972-71971819c4aa" width="30%" />
+  <img src="https://github.com/user-attachments/assets/36a6b804-34eb-4fa7-ba61-9d06745b7d5c" width="30%" />
+  <img src="https://github.com/user-attachments/assets/99da2e61-403c-44b5-9df7-ed39ea1ca565" width="30%" />
+</p>
+
+![migration_test_result](https://github.com/user-attachments/assets/1274cf57-5bd6-49a9-b224-0fdeee14c74f)
