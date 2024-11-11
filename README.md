@@ -37,9 +37,9 @@ Tests:
 ### Modeling test
 
 <p float="left">
-  <img src="https://github.com/user-attachments/assets/2302a923-5d7b-4b40-a486-e0236bcee9c0" width="33%" />
-  <img src="https://github.com/user-attachments/assets/1e5d2842-655e-4acb-98ca-79b0fdb78712" width="33%" />
-  <img src="https://github.com/user-attachments/assets/b0ec784c-d5e6-4061-9057-f6eb514dbf2e" width="33%" />
+  <img src="https://github.com/user-attachments/assets/2302a923-5d7b-4b40-a486-e0236bcee9c0" width="32.8%" />
+  <img src="https://github.com/user-attachments/assets/1e5d2842-655e-4acb-98ca-79b0fdb78712" width="32.8%" />
+  <img src="https://github.com/user-attachments/assets/b0ec784c-d5e6-4061-9057-f6eb514dbf2e" width="32.8%" />
 </p>
 
 
@@ -48,9 +48,9 @@ Tests:
 ### Inversion test
 
 <p float="left">
-  <img src="https://github.com/user-attachments/assets/18e734d1-e359-40bc-a457-77d652f1a765" width="33%" />
-  <img src="https://github.com/user-attachments/assets/b7d04aaa-89ad-413a-bca4-ed84e778d53c" width="33%" />
-  <img src="https://github.com/user-attachments/assets/1aac2342-c16d-4ac0-9c4f-aa10b91d5ccc" width="33%" />
+  <img src="https://github.com/user-attachments/assets/18e734d1-e359-40bc-a457-77d652f1a765" width="32.8%" />
+  <img src="https://github.com/user-attachments/assets/b7d04aaa-89ad-413a-bca4-ed84e778d53c" width="32.8%" />
+  <img src="https://github.com/user-attachments/assets/1aac2342-c16d-4ac0-9c4f-aa10b91d5ccc" width="32.8%" />
 </p>
 
 <p float="left">
@@ -64,9 +64,9 @@ Tests:
 
 
 <p float="left">
-  <img src="https://github.com/user-attachments/assets/1f1960ac-2611-427a-8972-71971819c4aa" width="33%" />
-  <img src="https://github.com/user-attachments/assets/36a6b804-34eb-4fa7-ba61-9d06745b7d5c" width="33%" />
-  <img src="https://github.com/user-attachments/assets/99da2e61-403c-44b5-9df7-ed39ea1ca565" width="33%" />
+  <img src="https://github.com/user-attachments/assets/1f1960ac-2611-427a-8972-71971819c4aa" width="32.8%" />
+  <img src="https://github.com/user-attachments/assets/36a6b804-34eb-4fa7-ba61-9d06745b7d5c" width="32.8%" />
+  <img src="https://github.com/user-attachments/assets/99da2e61-403c-44b5-9df7-ed39ea1ca565" width="32.8%" />
 </p>
 
 ![migration_test_result](https://github.com/user-attachments/assets/1274cf57-5bd6-49a9-b224-0fdeee14c74f)
