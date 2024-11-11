@@ -43,7 +43,7 @@ Tests:
 </p>
 
 
-![modeling_test_results](https://github.com/user-attachments/assets/8913e790-c2fe-4e95-aab1-592e54e9054d)
+![modeling_test_results](https://github.com/user-attachments/assets/3dbb3849-aed4-49a6-9617-6247e94a69f0)
 
 ### Inversion test
 

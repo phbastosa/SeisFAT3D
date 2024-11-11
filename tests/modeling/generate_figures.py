@@ -50,7 +50,7 @@ xloc = np.linspace(0, nr-1, 5)
 xlab = np.linspace(50, 7950, 5, dtype = int)
 
 tloc = np.linspace(0, nt-1, 11)
-tlab = np.linspace(0, (nt-1)*dt, 11, dtype = int)
+tlab = np.linspace(0, (nt-1)*dt, 11)
 
 fig, ax = plt.subplots(ncols = 4, figsize = (16,6))
 
