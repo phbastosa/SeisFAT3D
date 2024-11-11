@@ -31,7 +31,7 @@ XPS = ../inputs/geometry/migration_test_XPS.txt
 
 modeling_type = 1 
 
-time_samples = 501
+time_samples = 1001
 time_spacing = 1e-3
 max_frequency = 30.0
 
@@ -45,4 +45,4 @@ modeling_output_folder = ../inputs/data/migration_test_
 #--------------------------------------------------------------------------------------------------- 
 
 input_data_folder = ../inputs/data/        
-input_data_prefix = marmousi2_elastic_iso_nStations241_nSamples10001_shot_    
+input_data_prefix = migration_test_elastic_iso_nStations200_nSamples1001_shot_    

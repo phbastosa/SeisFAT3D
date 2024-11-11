@@ -30,11 +30,11 @@ for i in range(len(A)):
 
 surface = z_max - 0.75*z_max/np.max(surface)*surface
 
-vp_model = np.zeros((nz, nx, ny)) + 2000
+vp_model = np.zeros((nz, nx, ny)) + 1200
 
 for j in range(nx):
     for k in range(ny):
-        vp_model[int(surface[j,k]/dz):, j, k] = 2500.0
+        vp_model[int(surface[j,k]/dz):, j, k] = 1800.0
 
 vs_model = 0.7*vp_model
 rho_model = 310*vp_model**0.25

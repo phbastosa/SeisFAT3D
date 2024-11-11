@@ -1,6 +1,7 @@
 import sys; sys.path.append("../src/")
 
 import numpy as np
+import scipy as sc
 import matplotlib.pyplot as plt
 import functions as pyf
 
@@ -25,37 +26,33 @@ slices = np.array([0.5*nz, 0.5*ny, 0.5*nx], dtype = int)
 pyf.plot_model_3D(model_vp, dh, slices, shots = path_SPS, 
                   nodes = path_RPS, adjx = 0.85, dbar = 1.7,
                   scale = 4.3, cblab = "P wave velocity [km/s]", 
-                  vmin = 1500, vmax = 2500)
-plt.savefig("modeling_test_vp.png", dpi = 300)
+                  vmin = 1000, vmax = 2000)
+plt.savefig("migration_test_vp.png", dpi = 300)
 
 pyf.plot_model_3D(model_vs, dh, slices, shots = path_SPS, 
                   nodes = path_RPS, adjx = 0.85, dbar = 1.7,
                   scale = 4.3,cblab = "S wave velocity [km/s]",
-                  vmin = 1500, vmax = 2500)
-plt.savefig("modeling_test_vs.png", dpi = 300)
+                  vmin = 1000, vmax = 2000)
+plt.savefig("migration_test_vs.png", dpi = 300)
 
 pyf.plot_model_3D(model_rho, dh, slices, shots = path_SPS, 
                   nodes = path_RPS, adjx = 0.85, dbar = 1.7,
                   scale = 4.3, cblab = "Density [g/cm³]",
-                  vmin = 1500, vmax = 2500)
-plt.savefig("modeling_test_rho.png", dpi = 300)
+                  vmin = 1000, vmax = 2000)
+plt.savefig("migration_test_rho.png", dpi = 300)
 plt.show()
-# nt = 5001
-# dt = 1e-3
 
-# ns = 4
-# nr = 157
+image = pyf.read_binary_volume(nz, nx, ny, f"../outputs/migratedImages/kirchhoff_result_{nz}x{nx}x{ny}.bin")
 
-# fig, ax = plt.subplots(ncols = 4, figsize = (16,6))
+scale = 5.0*np.std(image)
 
-# for i in range(ns):
-    
-#     eikonal = pyf.read_binary_array(nr, f"../outputs/syntheticData/eikonal_iso_nStations157_shot_{i+1}.bin")
-#     elastic = pyf.read_binary_matrix(nt, nr, f"../outputs/syntheticData/elastic_iso_nStations157_nSamples5001_shot_{i+1}.bin")
+slices = np.array([0.5*nz, 0.37*ny, 0.5*nx], dtype = int)
 
-#     scale = 0.9*np.std(elastic)
+image = sc.ndimage.laplace(image)
 
-#     ax[i].imshow(elastic, aspect = "auto", cmap = "Greys", vmin = -scale, vmax = scale)
-#     ax[i].plot(eikonal / dt, "--")
-
-# plt.show()
+pyf.plot_model_3D(image, dh, slices, shots = path_SPS, 
+                  nodes = path_RPS, adjx = 0.85, dbar = 1.7,
+                  scale = 4.3, cblab = "Amplitude",
+                  vmin = -scale, vmax = scale, cmap = "seismic")
+plt.savefig("migration_test_result.png", dpi = 300)
+plt.show()

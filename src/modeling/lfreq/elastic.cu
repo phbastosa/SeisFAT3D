@@ -92,7 +92,7 @@ void Elastic::set_wavelet()
 
         float arg = pi*pi*pi*fc*fc*td*td;
 
-        aux_s[n] = (1.0f - 2.0f*arg)*expf(-arg);
+        aux_s[n] = 1e5f*(1.0f - 2.0f*arg)*expf(-arg);
     }
 
     for (int n = 0; n < nt; n++)

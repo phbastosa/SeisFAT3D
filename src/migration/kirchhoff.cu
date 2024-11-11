@@ -22,7 +22,7 @@ void Kirchhoff::run_cross_correlation()
 
         modeling->show_information();
 
-        std::cout << "\nKirchhoff depth migration \n\n";
+        std::cout << "\nKirchhoff depth migration: computing image volume\n\n";
 
         modeling->initialization();
         modeling->forward_solver();
@@ -32,13 +32,17 @@ void Kirchhoff::run_cross_correlation()
         cudaMemcpy(d_Ts, Ts, modeling->nPoints*sizeof(float), cudaMemcpyHostToDevice);
         cudaMemcpy(d_seismic, seismic, modeling->nt*modeling->geometry->spread[modeling->srcId]*sizeof(float), cudaMemcpyHostToDevice);
 
+        int spread = 0;
+
         for (modeling->recId = modeling->geometry->iRec[modeling->srcId]; modeling->recId < modeling->geometry->fRec[modeling->srcId]; modeling->recId++)
         {
-            import_binary_float("../outputs/travelTimeTables/traveltimes_receiver_" + std::to_string(modeling->recId+1) + ".bin", Tr, modeling->nPoints);
+            import_binary_float("../outputs/travelTimeTables/receiver_travelTimes_" + std::to_string(modeling->recId+1) + ".bin", Tr, modeling->nPoints);
             
             cudaMemcpy(d_Tr, Tr, modeling->nPoints*sizeof(float), cudaMemcpyHostToDevice);
 
-            cross_correlation<<<nBlocks, nThreads>>>(d_seismic, d_Ts, d_Tr, d_image, modeling->nPoints, modeling->geometry->spread[modeling->srcId], modeling->nt, modeling->dt);
+            cross_correlation<<<nBlocks, nThreads>>>(d_seismic, d_Ts, d_Tr, d_image, modeling->nPoints, spread, modeling->nt, modeling->dt);
+        
+            ++spread;
         }
     }
 
@@ -51,8 +55,10 @@ __global__ void cross_correlation(float * seismic, float * Ts, float * Tr, float
 
     if (index < nPoints)
     {
-        int seisId = (int)((Ts[index] + Tr[index]) / dt);
+        float T = Ts[index] + Tr[index];
 
-        if (seisId < nt) image[index] += seismic[seisId + spread*nt];
+        int tId = (int)(T / dt);
+
+        if (tId < nt) image[index] += seismic[tId + spread*nt];
     }
 }
