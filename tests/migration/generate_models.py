@@ -13,7 +13,7 @@ nx = int((x_max / dx) + 1)
 ny = int((y_max / dy) + 1)
 nz = int((z_max / dz) + 1)
 
-A = np.array([1, 2, -1, 2, 1])
+A = np.array([0.5, 1, -0.5, 1, 0.5])
 
 xc = np.array([0.25*x_max, 0.25*x_max, 0.5*x_max, 0.75*x_max, 0.75*x_max])
 yc = np.array([0.25*y_max, 0.75*y_max, 0.5*y_max, 0.25*y_max, 0.75*y_max])
@@ -28,13 +28,13 @@ surface = np.zeros((nx, ny))
 for i in range(len(A)):
     surface += A[i]*np.exp(-0.5*( ((x - xc[i])/sigx[i])**2 + ((y - yc[i])/sigy[i])**2))
 
-surface = z_max - 0.75*z_max/np.max(surface)*surface
+surface = z_max - 0.5*z_max/np.max(surface)*surface
 
-vp_model = np.zeros((nz, nx, ny)) + 1200
+vp_model = np.zeros((nz, nx, ny)) + 1500
 
 for j in range(nx):
     for k in range(ny):
-        vp_model[int(surface[j,k]/dz):, j, k] = 1800.0
+        vp_model[int(surface[j,k]/dz):, j, k] = 2000.0
 
 vs_model = 0.7*vp_model
 rho_model = 310*vp_model**0.25

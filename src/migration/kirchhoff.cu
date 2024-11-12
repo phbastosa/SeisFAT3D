@@ -22,7 +22,7 @@ void Kirchhoff::run_cross_correlation()
 
         modeling->show_information();
 
-        std::cout << "\nKirchhoff depth migration: computing image volume\n\n";
+        std::cout << "\nKirchhoff depth migration: computing image volume\n";
 
         modeling->initialization();
         modeling->forward_solver();

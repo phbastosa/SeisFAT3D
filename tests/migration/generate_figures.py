@@ -21,7 +21,7 @@ model_vs = pyf.read_binary_volume(nz, nx, ny, f"../inputs/models/migration_test_
 model_rho = pyf.read_binary_volume(nz, nx, ny, f"../inputs/models/migration_test_rho_model_{nz}x{nx}x{ny}_{dx:.1f}m.bin")
 
 dh = np.array([dx, dy, dz])
-slices = np.array([0.5*nz, 0.5*ny, 0.5*nx], dtype = int)
+slices = np.array([0.5*nz, 0.37*ny, 0.5*nx], dtype = int)
 
 pyf.plot_model_3D(model_vp, dh, slices, shots = path_SPS, 
                   nodes = path_RPS, adjx = 0.85, dbar = 1.7,

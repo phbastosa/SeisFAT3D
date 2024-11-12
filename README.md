@@ -1,6 +1,6 @@
 ___
 
-## Seismic First Arrival Toolkit - SeisFAT3D
+## Seismic First-Arrival Toolkit : SeisFAT3D
 
 Modeling, inversion and migration using massive computational parallelism in object-oriented programming.
 

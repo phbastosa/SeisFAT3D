@@ -28,7 +28,7 @@ void Migration::read_seismic_data()
 
 void Migration::image_building()
 {
-    // get_receiver_traveltimes();
+    get_receiver_traveltimes();
 
     run_cross_correlation();
 }
