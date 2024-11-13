@@ -188,12 +188,12 @@ void Least_Squares::apply_regularization()
 
     if (tk_order <= 0)
     {   
-	    for (int index = 0; index < nnz; index++)
-	    {
+	for (int index = 0; index < nnz; index++)
+	{
             iL[index] = index;
-	        jL[index] = index;
-	        vL[index] = 1.0f;
-	    }
+	    jL[index] = index;
+	    vL[index] = 1.0f;
+	}
     } 
     else
     {
