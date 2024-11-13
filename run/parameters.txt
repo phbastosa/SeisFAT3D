@@ -50,12 +50,13 @@ modeling_output_folder = ../outputs/syntheticData/
 inversion_type = 0                          # <int> 
 
 dx_tomo = 50                                # [m] <float> 
+dy_tomo = 50                                # [m] <float> 
 dz_tomo = 50                                # [m] <float>
 
 tk_order = 2                                # Tikhonov order <int>
-tk_param = 1e3                              # Tikhonov parameter <float>
+tk_param = 1e4                              # Tikhonov parameter <float>
 
-max_iteration = 2                           # <int>
+max_iteration = 5                           # <int>
 
 max_slowness_variation = 1e-5               # <float>
 
@@ -68,15 +69,15 @@ export_model_per_iteration = true           # <bool>
 convergence_folder = ../outputs/convergence/         
 inversion_output_folder = ../outputs/recoveredModels/    
 
-obs_data_folder = ../outputs/syntheticData/        
-obs_data_prefix = travel_time_240_stations_shot_    
+obs_data_folder = ../inputs/data/        
+obs_data_prefix = picks_data_shot_    
 
 #---------------------------------------------------------------------------------------------------
 # Migration parameters 
 #--------------------------------------------------------------------------------------------------- 
 
 input_data_folder = ../inputs/data/        
-input_data_prefix = marmousi2_elastic_iso_nStations241_nSamples10001_shot_
+input_data_prefix = seismic_data_nStations241_nSamples1001_shot_
 
 output_image_folder = ../outputs/migratedImages/
 output_table_folder = ../outputs/travelTimeTables/
