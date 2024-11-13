@@ -39,44 +39,41 @@ void Adjoint_State::apply_inversion_technique()
     cudaMemcpy(d_source, h_source, modeling->volsize*sizeof(float), cudaMemcpyHostToDevice);
     cudaMemcpy(d_adjoint, h_adjoint, modeling->volsize*sizeof(float), cudaMemcpyHostToDevice);
 
-    for (int sweepCount = 0; sweepCount < meshDim; sweepCount++)
-    {
-        for (int sweep = 0; sweep < nSweeps; sweep++)
-        { 
-            int start = (sweep == 3 || sweep == 5 || sweep == 6 || sweep == 7) ? total_levels : meshDim;
-            int end = (start == meshDim) ? total_levels + 1 : meshDim - 1;
-            int incr = (start == meshDim) ? true : false;
-
-            int xSweepOff = (sweep == 3 || sweep == 4) ? modeling->nxx : 0;
-            int ySweepOff = (sweep == 2 || sweep == 5) ? modeling->nyy : 0;
-            int zSweepOff = (sweep == 1 || sweep == 6) ? modeling->nzz : 0;
-            
-            for (int level = start; level != end; level = (incr) ? level + 1 : level - 1)
-            {			
-                int xs = max(1, level - (modeling->nyy + modeling->nzz));	
-                int ys = max(1, level - (modeling->nxx + modeling->nzz));
-
-                int xe = min(modeling->nxx, level - (meshDim - 1));
-                int ye = min(modeling->nyy, level - (meshDim - 1));	
-            
-                int xr = xe - xs + 1;
-                int yr = ye - ys + 1;
-
-                int nThreads = xr * yr;
-                    
-                dim3 bs(16, 16, 1);
-
-                if (nThreads < 256) { bs.x = xr; bs.y = yr; } 
-
-                dim3 gs(iDivUp(xr, bs.x), iDivUp(yr , bs.y), 1);
-
-                adjoint_state_kernel<<<gs,bs>>>(d_T, d_adjoint, d_source, level, xs, ys, xSweepOff, ySweepOff, zSweepOff, 
-                                                modeling->nxx, modeling->nyy, modeling->nzz, modeling->dx, modeling->dy, modeling->dz);
-
-                cudaDeviceSynchronize();
-            }
-        }
-    }
+	for (int sweep = 0; sweep < nSweeps; sweep++)
+	{ 
+	    int start = (sweep == 3 || sweep == 5 || sweep == 6 || sweep == 7) ? total_levels : meshDim;
+	    int end = (start == meshDim) ? total_levels + 1 : meshDim - 1;
+	    int incr = (start == meshDim) ? true : false;
+	
+	    int xSweepOff = (sweep == 3 || sweep == 4) ? modeling->nxx : 0;
+	    int ySweepOff = (sweep == 2 || sweep == 5) ? modeling->nyy : 0;
+	    int zSweepOff = (sweep == 1 || sweep == 6) ? modeling->nzz : 0;
+	    
+	    for (int level = start; level != end; level = (incr) ? level + 1 : level - 1)
+	    {			
+			int xs = max(1, level - (modeling->nyy + modeling->nzz));	
+			int ys = max(1, level - (modeling->nxx + modeling->nzz));
+		
+			int xe = min(modeling->nxx, level - (meshDim - 1));
+			int ye = min(modeling->nyy, level - (meshDim - 1));	
+		    
+			int xr = xe - xs + 1;
+			int yr = ye - ys + 1;
+		
+			int nThreads = xr * yr;
+			    
+			dim3 bs(16, 16, 1);
+		
+			if (nThreads < 256) { bs.x = xr; bs.y = yr; } 
+		
+			dim3 gs(iDivUp(xr, bs.x), iDivUp(yr , bs.y), 1);
+		
+			adjoint_state_kernel<<<gs,bs>>>(d_T, d_adjoint, d_source, level, xs, ys, xSweepOff, ySweepOff, zSweepOff, 
+							modeling->nxx, modeling->nyy, modeling->nzz, modeling->dx, modeling->dy, modeling->dz);
+		
+			cudaDeviceSynchronize();
+	    }
+	}
     
     cudaMemcpy(h_adjoint, d_adjoint, modeling->volsize*sizeof(float), cudaMemcpyDeviceToHost);
 
