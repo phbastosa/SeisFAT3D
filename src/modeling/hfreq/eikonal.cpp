@@ -15,11 +15,9 @@ void Eikonal::set_boundaries()
 
 void Eikonal::initialization()
 {
-    int sId = geometry->sInd[srcId];
-
-    sIdx = (int)(geometry->xsrc[sId] / dx) + nb;
-    sIdy = (int)(geometry->ysrc[sId] / dy) + nb;
-    sIdz = (int)(geometry->zsrc[sId] / dz) + nb;
+    sIdx = (int)(geometry->xsrc[geometry->sInd[srcId]] / dx) + nb;
+    sIdy = (int)(geometry->ysrc[geometry->sInd[srcId]] / dy) + nb;
+    sIdz = (int)(geometry->zsrc[geometry->sInd[srcId]] / dz) + nb;
 
     # pragma omp parallel for
     for (int index = 0; index < volsize; index++) 
@@ -36,9 +34,9 @@ void Eikonal::initialization()
                 int zi = sIdz + (i - 1);
 
                 T[zi + xi*nzz + yi*nxx*nzz] = S[zi + xi*nzz + yi*nxx*nzz] * 
-                    sqrtf(powf((xi - nb)*dx - geometry->xsrc[sId], 2.0f) + 
-                          powf((yi - nb)*dz - geometry->ysrc[sId], 2.0f) +
-                          powf((zi - nb)*dz - geometry->zsrc[sId], 2.0f));
+                    sqrtf(powf((xi - nb)*dx - geometry->xsrc[geometry->sInd[srcId]], 2.0f) + 
+                          powf((yi - nb)*dz - geometry->ysrc[geometry->sInd[srcId]], 2.0f) +
+                          powf((zi - nb)*dz - geometry->zsrc[geometry->sInd[srcId]], 2.0f));
             }
         }
     }
@@ -46,7 +44,7 @@ void Eikonal::initialization()
 
 void Eikonal::compute_seismogram()
 {
-    spread = 0;
+    int spread = 0;
 
     for (recId = geometry->iRec[srcId]; recId < geometry->fRec[srcId]; recId++)
     {
@@ -91,6 +89,6 @@ void Eikonal::compute_seismogram()
 
 void Eikonal::export_synthetic_data()
 {    
-    std::string data_file = data_folder + modeling_type + "_nStations" + std::to_string(spread) + "_shot_" + std::to_string(geometry->sInd[srcId]+1) + ".bin";
-    export_binary_float(data_file, synthetic_data, spread);    
+    std::string data_file = data_folder + modeling_type + "_nStations" + std::to_string(geometry->spread[srcId]) + "_shot_" + std::to_string(geometry->sInd[srcId]+1) + ".bin";
+    export_binary_float(data_file, synthetic_data, geometry->spread[srcId]);    
 }

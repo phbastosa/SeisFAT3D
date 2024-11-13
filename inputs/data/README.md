@@ -1,1 +1,1 @@
-## Input data folder
+# SeisFAT3D

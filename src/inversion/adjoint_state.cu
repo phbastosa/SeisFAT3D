@@ -7,6 +7,9 @@ int Adjoint_State::iDivUp(int a, int b)
 
 void Adjoint_State::set_specifications()
 {
+    inversion_name = "adjoint_state_";
+    inversion_method = "Adjoint-State First-Arrival Tomography";
+
     nSweeps = 8;
     meshDim = 3;
 
@@ -14,14 +17,8 @@ void Adjoint_State::set_specifications()
 
     total_levels = (modeling->nxx - 1) + (modeling->nyy - 1) + (modeling->nzz - 1);
 
-    inversion_name = "adjoint_state_";
-    inversion_method = "Adjoint-State first-arrival tomography";
-
-    source_grad = new float[modeling->volsize]();
-    source_comp = new float[modeling->volsize]();
-
-    adjoint_grad = new float[modeling->volsize]();
-    adjoint_comp = new float[modeling->volsize]();
+    h_source = new float[modeling->volsize]();
+    h_adjoint = new float[modeling->volsize]();
 
     gradient = new float[modeling->nPoints]();
 
@@ -30,11 +27,8 @@ void Adjoint_State::set_specifications()
 
     cudaMalloc((void**)&(d_T), modeling->volsize*sizeof(float));
     
-    cudaMalloc((void**)&(d_source_grad), modeling->volsize*sizeof(float));
-    cudaMalloc((void**)&(d_source_comp), modeling->volsize*sizeof(float));
-    
-    cudaMalloc((void**)&(d_adjoint_grad), modeling->volsize*sizeof(float));
-    cudaMalloc((void**)&(d_adjoint_comp), modeling->volsize*sizeof(float));
+    cudaMalloc((void**)&(d_source), modeling->volsize*sizeof(float));    
+    cudaMalloc((void**)&(d_adjoint), modeling->volsize*sizeof(float));
 }
 
 void Adjoint_State::apply_inversion_technique()
@@ -42,12 +36,8 @@ void Adjoint_State::apply_inversion_technique()
     initialization();
 
     cudaMemcpy(d_T, modeling->T, modeling->volsize*sizeof(float), cudaMemcpyHostToDevice);
-
-    cudaMemcpy(d_source_grad, source_grad, modeling->volsize*sizeof(float), cudaMemcpyHostToDevice);
-    cudaMemcpy(d_source_comp, source_comp, modeling->volsize*sizeof(float), cudaMemcpyHostToDevice);    
-
-    cudaMemcpy(d_adjoint_grad, adjoint_grad, modeling->volsize*sizeof(float), cudaMemcpyHostToDevice);
-    cudaMemcpy(d_adjoint_comp, adjoint_comp, modeling->volsize*sizeof(float), cudaMemcpyHostToDevice);    
+    cudaMemcpy(d_source, h_source, modeling->volsize*sizeof(float), cudaMemcpyHostToDevice);
+    cudaMemcpy(d_adjoint, h_adjoint, modeling->volsize*sizeof(float), cudaMemcpyHostToDevice);
 
     for (int sweepCount = 0; sweepCount < meshDim; sweepCount++)
     {
@@ -80,17 +70,15 @@ void Adjoint_State::apply_inversion_technique()
 
                 dim3 gs(iDivUp(xr, bs.x), iDivUp(yr , bs.y), 1);
 
-                adjoint_state_kernel<<<gs,bs>>>(d_T, d_adjoint_grad, d_adjoint_comp, d_source_grad, d_source_comp, 
-                                                level, xs, ys, xSweepOff, ySweepOff, zSweepOff, modeling->nxx, 
-                                                modeling->nyy, modeling->nzz, modeling->dx, modeling->dy, modeling->dz);
+                adjoint_state_kernel<<<gs,bs>>>(d_T, d_adjoint, d_source, level, xs, ys, xSweepOff, ySweepOff, zSweepOff, 
+                                                modeling->nxx, modeling->nyy, modeling->nzz, modeling->dx, modeling->dy, modeling->dz);
 
                 cudaDeviceSynchronize();
             }
         }
     }
     
-    cudaMemcpy(adjoint_grad, d_adjoint_grad, modeling->volsize*sizeof(float), cudaMemcpyDeviceToHost);
-    cudaMemcpy(adjoint_comp, d_adjoint_comp, modeling->volsize*sizeof(float), cudaMemcpyDeviceToHost);
+    cudaMemcpy(h_adjoint, d_adjoint, modeling->volsize*sizeof(float), cudaMemcpyDeviceToHost);
 
     for (int index = 0; index < modeling->nPoints; index++) 
     {
@@ -101,7 +89,7 @@ void Adjoint_State::apply_inversion_technique()
         int indp = i + j*modeling->nz + k*modeling->nx*modeling->nz; 
         int indb = (i + modeling->nb) + (j + modeling->nb)*modeling->nzz + (k + modeling->nb)*modeling->nxx*modeling->nzz;
 
-        gradient[indp] += (adjoint_grad[indb] / (adjoint_comp[indb] + 1e-6f))*cell_area / modeling->geometry->nrel;
+        gradient[indp] += h_adjoint[indb]*cell_area / modeling->geometry->nrel;
     }
 }
 
@@ -110,11 +98,9 @@ void Adjoint_State::initialization()
     # pragma omp parallel for
     for (int index = 0; index < modeling->volsize; index++) 
     {
-        source_grad[index] = 0.0f;    
-        source_comp[index] = 0.0f;    
+        h_source[index] = 0.0f;    
         
-        adjoint_grad[index] = 1e6f;
-        adjoint_comp[index] = 1e6f;
+        h_adjoint[index] = 1e6f;
 
         int k = (int) (index / (modeling->nxx*modeling->nzz));         
         int j = (int) (index - k*modeling->nxx*modeling->nzz) / modeling->nzz;   
@@ -122,11 +108,8 @@ void Adjoint_State::initialization()
 
         if ((i == 0) || (i == modeling->nzz - 1) || 
             (j == 0) || (j == modeling->nxx - 1) || 
-            (k == 0) || (k == modeling->nyy - 1)) 
-        {    
-            adjoint_grad[index] = 0.0f;        
-            adjoint_comp[index] = 0.0f;        
-        }
+            (k == 0) || (k == modeling->nyy - 1))     
+            h_adjoint[index] = 0.0f;        
     }
 
     int sId = modeling->geometry->sInd[modeling->srcId];
@@ -136,8 +119,6 @@ void Adjoint_State::initialization()
     int sIdx = (int)(modeling->geometry->xsrc[sId] / modeling->dx) + modeling->nb;
     int sIdy = (int)(modeling->geometry->ysrc[sId] / modeling->dy) + modeling->nb;
     int sIdz = (int)(modeling->geometry->zsrc[sId] / modeling->dz) + modeling->nb;
-
-    float So = modeling->S[sIdz + sIdx*modeling->nzz + sIdy*modeling->nxx*modeling->nzz];
 
     int spread = 0;
 
@@ -163,8 +144,7 @@ void Adjoint_State::initialization()
 
                     int index = zi + xi*modeling->nzz + yi*modeling->nxx*modeling->nzz; 
                     
-                    source_grad[index] += (dobs[spread + skipped] - modeling->T[index]) / cell_area;
-                    source_comp[index] += 1.0f / (X*X*So);
+                    h_source[index] += (dobs[spread + skipped] - modeling->T[index]) / cell_area;
                 }
             }
         }
@@ -175,8 +155,6 @@ void Adjoint_State::initialization()
 
 void Adjoint_State::optimization()  
 {
-    gradient_preconditioning();
-
     float gdot = 0.0f;
     #pragma omp parallel for reduction(+:gdot)
     for (int index = 0; index < modeling->nPoints; index++)
@@ -199,21 +177,14 @@ void Adjoint_State::optimization()
         
         float v_hat = v[index] / (1.0f - powf(beta2, iteration));
 
-        perturbation[index] = max_slowness_variation*m_hat / (sqrtf(v_hat) + epsilon);
+        perturbation[index] = powf(0.5f, iteration)*max_slowness_variation*m_hat/(sqrtf(v_hat) + epsilon);
     }
 
     memset(gradient, 0.0f, modeling->nPoints);
 }
 
-void Adjoint_State::gradient_preconditioning()
-{       
-
-
-
-}
-
-__global__ void adjoint_state_kernel(float * T, float * adjoint_grad, float * adjoint_comp, float * source_grad, float * source_comp, int level, int xOffset, 
-                                     int yOffset, int xSweepOffset, int ySweepOffset, int zSweepOffset, int nxx, int nyy, int nzz, float dx, float dy, float dz)
+__global__ void adjoint_state_kernel(float * T, float * adjoint, float * source, int level, int xOffset, int yOffset, int xSweepOffset, 
+                                     int ySweepOffset, int zSweepOffset, int nxx, int nyy, int nzz, float dx, float dy, float dz)
 {
     int x = (blockIdx.x * blockDim.x + threadIdx.x) + xOffset;
     int y = (blockIdx.y * blockDim.y + threadIdx.y) + yOffset;
@@ -231,54 +202,45 @@ __global__ void adjoint_state_kernel(float * T, float * adjoint_grad, float * ad
             if ((i > 0) && (i < nzz - 1) && (j > 0) && (j < nxx - 1) && (k > 0) && (k < nyy - 1))
             {
                 float a1 = -1.0f*(T[i + j*nzz + k*nxx*nzz] - T[i + (j-1)*nzz + k*nxx*nzz]) / dx;                                                
-                float ap1 = (a1 + abs(a1)) / 2.0f;
-                float am1 = (a1 - abs(a1)) / 2.0f;
+                float ap1 = (a1 + fabsf(a1)) / 2.0f;
+                float am1 = (a1 - fabsf(a1)) / 2.0f;
 
                 float a2 = -1.0f*(T[i + (j+1)*nzz + k*nxx*nzz] - T[i + j*nzz + k*nxx*nzz]) / dx;
-                float ap2 = (a2 + abs(a2)) / 2.0f;
-                float am2 = (a2 - abs(a2)) / 2.0f;
+                float ap2 = (a2 + fabsf(a2)) / 2.0f;
+                float am2 = (a2 - fabsf(a2)) / 2.0f;
 
                 float b1 = -1.0f*(T[i + j*nzz + k*nxx*nzz] - T[i + j*nzz + (k-1)*nxx*nzz]) / dy;
-                float bp1 = (b1 + abs(b1)) / 2.0f;
-                float bm1 = (b1 - abs(b1)) / 2.0f;
+                float bp1 = (b1 + fabsf(b1)) / 2.0f;
+                float bm1 = (b1 - fabsf(b1)) / 2.0f;
 
                 float b2 = -1.0f*(T[i + j*nzz + (k+1)*nxx*nzz] - T[i + j*nzz + k*nxx*nzz]) / dy;
-                float bp2 = (b2 + abs(b2)) / 2.0f;
-                float bm2 = (b2 - abs(b2)) / 2.0f;
+                float bp2 = (b2 + fabsf(b2)) / 2.0f;
+                float bm2 = (b2 - fabsf(b2)) / 2.0f;
 
                 float c1 = -1.0f*(T[i + j*nzz + k*nxx*nzz] - T[(i-1) + j*nzz + k*nxx*nzz]) / dz;
-                float cp1 = (c1 + abs(c1)) / 2.0f;
-                float cm1 = (c1 - abs(c1)) / 2.0f;
+                float cp1 = (c1 + fabsf(c1)) / 2.0f;
+                float cm1 = (c1 - fabsf(c1)) / 2.0f;
 
                 float c2 = -1.0f*(T[(i+1) + j*nzz + k*nxx*nzz] - T[i + j*nzz + k*nxx*nzz]) / dz;        
-                float cp2 = (c2 + abs(c2)) / 2.0f;
-                float cm2 = (c2 - abs(c2)) / 2.0f;
+                float cp2 = (c2 + fabsf(c2)) / 2.0f;
+                float cm2 = (c2 - fabsf(c2)) / 2.0f;
 
                 float d = (ap2 - am1)/dx + (bp2 - bm1)/dy + (cp2 - cm1)/dz;
 
                 if (fabsf(d) < 1e-6f)
                 {
-                    adjoint_grad[i + j*nzz + k*nxx*nzz] = 0.0f;    
-                    adjoint_comp[i + j*nzz + k*nxx*nzz] = 0.0f;    
+                    adjoint[i + j*nzz + k*nxx*nzz] = 0.0f;    
                 }
                 else
                 {
-                    float eg = (ap1*adjoint_grad[i + (j-1)*nzz + k*nxx*nzz] - am2*adjoint_grad[i + (j+1)*nzz + k*nxx*nzz]) / dx +
-                               (bp1*adjoint_grad[i + j*nzz + (k-1)*nxx*nzz] - bm2*adjoint_grad[i + j*nzz + (k+1)*nxx*nzz]) / dy +
-                               (cp1*adjoint_grad[(i-1) + j*nzz + k*nxx*nzz] - cm2*adjoint_grad[(i+1) + j*nzz + k*nxx*nzz]) / dz;
+                    float e = (ap1*adjoint[i + (j-1)*nzz + k*nxx*nzz] - am2*adjoint[i + (j+1)*nzz + k*nxx*nzz]) / dx +
+                              (bp1*adjoint[i + j*nzz + (k-1)*nxx*nzz] - bm2*adjoint[i + j*nzz + (k+1)*nxx*nzz]) / dy +
+                              (cp1*adjoint[(i-1) + j*nzz + k*nxx*nzz] - cm2*adjoint[(i+1) + j*nzz + k*nxx*nzz]) / dz;
 
-                    float ec = (ap1*adjoint_comp[i + (j-1)*nzz + k*nxx*nzz] - am2*adjoint_comp[i + (j+1)*nzz + k*nxx*nzz]) / dx +
-                               (bp1*adjoint_comp[i + j*nzz + (k-1)*nxx*nzz] - bm2*adjoint_comp[i + j*nzz + (k+1)*nxx*nzz]) / dy +
-                               (cp1*adjoint_comp[(i-1) + j*nzz + k*nxx*nzz] - cm2*adjoint_comp[(i+1) + j*nzz + k*nxx*nzz]) / dz;
+                    float f = (e + source[i + j*nzz + k*nxx*nzz]) / d;
 
-                    float fg = (eg + source_grad[i + j*nzz + k*nxx*nzz]) / d;
-                    float fc = (ec + source_comp[i + j*nzz + k*nxx*nzz]) / d;
-
-                    if (adjoint_grad[i + j*nzz + k*nxx*nzz] > fg) 
-                        adjoint_grad[i + j*nzz + k*nxx*nzz] = fg;
-
-                    if (adjoint_comp[i + j*nzz + k*nxx*nzz] > fc) 
-                        adjoint_comp[i + j*nzz + k*nxx*nzz] = fc;
+                    if (adjoint[i + j*nzz + k*nxx*nzz] > f) 
+                        adjoint[i + j*nzz + k*nxx*nzz] = f;
                 }
             }
         }

@@ -40,7 +40,6 @@ pyf.plot_model_3D(model_rho, dh, slices, shots = path_SPS,
                   scale = 4.3, cblab = "Density [g/cm³]",
                   vmin = 1000, vmax = 2000)
 plt.savefig("migration_test_rho.png", dpi = 300)
-plt.show()
 
 image = pyf.read_binary_volume(nz, nx, ny, f"../outputs/migratedImages/kirchhoff_result_{nz}x{nx}x{ny}.bin")
 
@@ -53,6 +52,5 @@ image = sc.ndimage.laplace(image)
 pyf.plot_model_3D(image, dh, slices, shots = path_SPS, 
                   nodes = path_RPS, adjx = 0.85, dbar = 1.7,
                   scale = 4.3, cblab = "Amplitude",
-                  vmin = -scale, vmax = scale, cmap = "seismic")
+                  vmin = -scale*1.5, vmax = scale*1.5, cmap = "seismic")
 plt.savefig("migration_test_result.png", dpi = 300)
-plt.show()

@@ -18,23 +18,17 @@ private:
 
     float * d_T = nullptr;
 
-    float * d_source_grad = nullptr;
-    float * d_source_comp = nullptr;
+    float * d_source = nullptr;
+    float * h_source = nullptr;
 
-    float * d_adjoint_grad = nullptr;
-    float * d_adjoint_comp = nullptr;
-
-    float * source_grad = nullptr;
-    float * source_comp = nullptr;
-
-    float * adjoint_grad = nullptr;
-    float * adjoint_comp = nullptr;
+    float * d_adjoint = nullptr;
+    float * h_adjoint = nullptr;
 
     float * gradient = nullptr;
 
     void initialization();
     void set_specifications();
-    void gradient_preconditioning();
+
     void apply_inversion_technique();
 
     int iDivUp(int a, int b);
@@ -44,7 +38,6 @@ public:
     void optimization();
 };
 
-__global__ void adjoint_state_kernel(float * T, float * adjoint_grad, float * adjoint_comp, float * source_grad, float * source_comp, int level, int xOffset, 
-                                     int yOffset, int xSweepOffset, int ySweepOffset, int zSweepOffset, int nxx, int nyy, int nzz, float dx, float dy, float dz);
-
+__global__ void adjoint_state_kernel(float * T, float * adjoint, float * source, int level, int xOffset, int yOffset, int xSweepOffset, 
+                                     int ySweepOffset, int zSweepOffset, int nxx, int nyy, int nzz, float dx, float dy, float dz);
 # endif

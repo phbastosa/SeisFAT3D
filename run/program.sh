@@ -141,7 +141,7 @@ case "$1" in
     ./../bin/modeling.exe ../tests/inversion/parameters_obsData.txt
 
     ./../bin/inversion.exe ../tests/inversion/parameters_least_squares.txt
-    # ./../bin/inversion.exe ../tests/inversion/parameters_adjoint_state.txt
+    ./../bin/inversion.exe ../tests/inversion/parameters_adjoint_state.txt
 
     python3 -B ../tests/inversion/generate_figures.py
 
@@ -150,14 +150,14 @@ case "$1" in
 
 -test_migration)
 
-    python3 -B ../tests/migration/generate_models.py
-    python3 -B ../tests/migration/generate_geometry.py
+    # python3 -B ../tests/migration/generate_models.py
+    # python3 -B ../tests/migration/generate_geometry.py
 
-    ./../bin/modeling.exe ../tests/migration/parameters.txt
+    # ./../bin/modeling.exe ../tests/migration/parameters.txt
 
-    python3 -B ../tests/migration/data_preconditioning.py
+    # python3 -B ../tests/migration/data_preconditioning.py
 
-    ./../bin/migration.exe ../tests/migration/parameters.txt
+    # ./../bin/migration.exe ../tests/migration/parameters.txt
 
     python3 -B ../tests/migration/generate_figures.py
 

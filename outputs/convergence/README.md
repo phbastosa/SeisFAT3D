@@ -1,1 +1,1 @@
-## Convergence map folder
+# SeisFAT3D

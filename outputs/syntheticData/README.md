@@ -1,1 +1,1 @@
-## First arrivals output folder
+# SeisFAT3D

@@ -27,10 +27,9 @@ public:
     float * Vs = nullptr;
     float * Rho = nullptr;
 
-    int max_spread, spread;
-
     float * synthetic_data = nullptr;
 
+    int max_spread;
     Geometry * geometry;
     
     std::string parameters;

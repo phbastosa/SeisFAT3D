@@ -1,1 +1,1 @@
-## Input geometry folder
+# SeisFAT3D

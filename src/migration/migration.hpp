@@ -7,9 +7,6 @@ class Migration
 {
 private:
 
-    std::string input_data_folder;
-    std::string input_data_prefix;
-
     void initialization();
     void show_information();
     void get_receiver_traveltimes();
@@ -24,6 +21,12 @@ protected:
     float * seismic = nullptr;
 
     Modeling * modeling = nullptr;
+
+    std::string input_data_folder;
+    std::string input_data_prefix;
+
+    std::string output_image_folder;
+    std::string output_table_folder;    
 
     virtual void set_specifications() = 0;
     virtual void run_cross_correlation() = 0;

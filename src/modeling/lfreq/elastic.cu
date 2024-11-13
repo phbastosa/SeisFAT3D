@@ -77,8 +77,8 @@ void Elastic::set_boundaries()
 
 void Elastic::set_wavelet()
 {
-    float * aux_s = new float[nt]();
-    float * signal = new float[nt]();
+    float * signal_aux1 = new float[nt]();
+    float * signal_aux2 = new float[nt]();
 
     float pi = 4.0f*atanf(1.0f);
     float t0 = 2.0f*sqrtf(pi) / fmax;
@@ -92,27 +92,28 @@ void Elastic::set_wavelet()
 
         float arg = pi*pi*pi*fc*fc*td*td;
 
-        aux_s[n] = 1e5f*(1.0f - 2.0f*arg)*expf(-arg);
+        signal_aux1[n] = 1e5f*(1.0f - 2.0f*arg)*expf(-arg);
     }
 
     for (int n = 0; n < nt; n++)
     {
         float summation = 0;
         for (int i = 0; i < n; i++)
-            summation += aux_s[i];    
+            summation += signal_aux1[i];    
         
-        signal[n] = summation;
+        signal_aux2[n] = summation;
     }
 
     cudaMalloc((void**)&(wavelet), nt*sizeof(float));
 
-    cudaMemcpy(wavelet, signal, nt*sizeof(float), cudaMemcpyHostToDevice);
+    cudaMemcpy(wavelet, signal_aux2, nt*sizeof(float), cudaMemcpyHostToDevice);
 
-    delete[] signal;
+    delete[] signal_aux1;
+    delete[] signal_aux2;
 }
 
 void Elastic::export_synthetic_data()
 {
-    std::string data_file = data_folder + modeling_type + "_nStations" + std::to_string(spread) + "_nSamples" + std::to_string(nt) + "_shot_" + std::to_string(geometry->sInd[srcId]+1) + ".bin";
-    export_binary_float(data_file, synthetic_data, nt*spread);    
+    std::string data_file = data_folder + modeling_type + "_nStations" + std::to_string(geometry->spread[srcId]) + "_nSamples" + std::to_string(nt) + "_shot_" + std::to_string(geometry->sInd[srcId]+1) + ".bin";
+    export_binary_float(data_file, synthetic_data, nt*geometry->spread[srcId]);    
 }

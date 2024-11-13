@@ -24,7 +24,7 @@ void Eikonal_Iso::set_properties()
 void Eikonal_Iso::set_conditions()
 {
     modeling_type = "eikonal_iso";
-    modeling_name = "Eikonal isotropic time propagation";
+    modeling_name = "Modeling type: Eikonal isotropic time propagation";
 
     nSweeps = 8;
     meshDim = 3;

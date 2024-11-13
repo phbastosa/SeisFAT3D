@@ -45,4 +45,7 @@ modeling_output_folder = ../inputs/data/migration_test_
 #--------------------------------------------------------------------------------------------------- 
 
 input_data_folder = ../inputs/data/        
-input_data_prefix = migration_test_elastic_iso_nStations200_nSamples1001_shot_    
+input_data_prefix = migration_test_elastic_iso_nStations200_nSamples1001_shot_ 
+
+output_image_folder = ../outputs/migratedImages/
+output_table_folder = ../outputs/travelTimeTables/

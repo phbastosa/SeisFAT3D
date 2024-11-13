@@ -36,7 +36,7 @@ void Kirchhoff::run_cross_correlation()
 
         for (modeling->recId = modeling->geometry->iRec[modeling->srcId]; modeling->recId < modeling->geometry->fRec[modeling->srcId]; modeling->recId++)
         {
-            import_binary_float("../outputs/travelTimeTables/receiver_travelTimes_" + std::to_string(modeling->recId+1) + ".bin", Tr, modeling->nPoints);
+            import_binary_float(output_table_folder + "traveltimes_receiver_" + std::to_string(modeling->recId+1) + ".bin", Tr, modeling->nPoints);
             
             cudaMemcpy(d_Tr, Tr, modeling->nPoints*sizeof(float), cudaMemcpyHostToDevice);
 
@@ -52,7 +52,7 @@ void Kirchhoff::run_cross_correlation()
 __global__ void cross_correlation(float * seismic, float * Ts, float * Tr, float * image, int nPoints, int spread, int nt, float dt)
 {
     int index = blockIdx.x * blockDim.x + threadIdx.x;
-
+    
     if (index < nPoints)
     {
         float T = Ts[index] + Tr[index];

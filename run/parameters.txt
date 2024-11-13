@@ -76,4 +76,7 @@ obs_data_prefix = travel_time_240_stations_shot_
 #--------------------------------------------------------------------------------------------------- 
 
 input_data_folder = ../inputs/data/        
-input_data_prefix = marmousi2_elastic_iso_nStations241_nSamples10001_shot_    
+input_data_prefix = marmousi2_elastic_iso_nStations241_nSamples10001_shot_
+
+output_image_folder = ../outputs/migratedImages/
+output_table_folder = ../outputs/travelTimeTables/

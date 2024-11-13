@@ -1,1 +1,1 @@
-## Recovered model output folder
+# SeisFAT3D

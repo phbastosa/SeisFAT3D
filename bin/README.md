@@ -1,1 +1,1 @@
-## Executables folder
+# SeisFAT3D

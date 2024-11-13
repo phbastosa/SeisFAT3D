@@ -48,10 +48,7 @@ void Modeling::expand_boundary(float * input, float * output)
         int j = (int) (index - k*nx*nz) / nz;    
         int i = (int) (index - j*nz - k*nx*nz);  
 
-        int indp = i + j*nz + k*nx*nz;
-        int indb = (i + nb) + (j + nb)*nzz + (k + nb)*nxx*nzz;
-
-        output[indb] = input[indp];       
+        output[(i + nb) + (j + nb)*nzz + (k + nb)*nxx*nzz] = input[i + j*nz + k*nx*nz];       
     }
 
     for (int k = nb; k < nyy - nb; k++)
@@ -100,10 +97,7 @@ void Modeling::reduce_boundary(float * input, float * output)
         int j = (int) (index - k*nx*nz) / nz;    
         int i = (int) (index - j*nz - k*nx*nz);  
 
-        int indp = i + j*nz + k*nx*nz;
-        int indb = (i + nb) + (j + nb)*nzz + (k + nb)*nxx*nzz;
-
-        output[indp] = input[indb];
+        output[i + j*nz + k*nx*nz] = input[(i + nb) + (j + nb)*nzz + (k + nb)*nxx*nzz];
     }
 }
 
@@ -112,7 +106,7 @@ void Modeling::show_information()
     auto clear = system("clear");
     
     std::cout << "-------------------------------------------------------------------------------\n";
-    std::cout << "                                 \033[34mSeisFAT2D\033[0;0m\n";
+    std::cout << "                                 \033[34mSeisFAT3D\033[0;0m\n";
     std::cout << "-------------------------------------------------------------------------------\n\n";
 
     std::cout << "Model dimensions: (z = " << (nz - 1)*dz << ", x = " << (nx - 1) * dx <<", y = " << (ny - 1) * dy << ") m\n\n";

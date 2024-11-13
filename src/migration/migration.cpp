@@ -9,6 +9,9 @@ void Migration::set_parameters()
     input_data_folder = catch_parameter("input_data_folder", parameters);
     input_data_prefix = catch_parameter("input_data_prefix", parameters);
 
+    output_image_folder = catch_parameter("output_image_folder", parameters);
+    output_table_folder = catch_parameter("output_table_folder", parameters);
+
     Tr = new float[modeling->nPoints]();
     Ts = new float[modeling->nPoints]();
 
@@ -75,7 +78,7 @@ void Migration::initialization()
 
                 modeling->T[index] = modeling->S[index] * 
                     sqrtf(powf((xi - modeling->nb)*modeling->dx - modeling->geometry->xrec[modeling->recId], 2.0f) + 
-                          powf((yi - modeling->nb)*modeling->dz - modeling->geometry->yrec[modeling->recId], 2.0f) +
+                          powf((yi - modeling->nb)*modeling->dy - modeling->geometry->yrec[modeling->recId], 2.0f) +
                           powf((zi - modeling->nb)*modeling->dz - modeling->geometry->zrec[modeling->recId], 2.0f));
             }
         }
@@ -87,7 +90,7 @@ void Migration::show_information()
     auto clear = system("clear");
     
     std::cout << "-------------------------------------------------------------------------------\n";
-    std::cout << "                                 \033[34mSeisFAT2D\033[0;0m\n";
+    std::cout << "                                 \033[34mSeisFAT3D\033[0;0m\n";
     std::cout << "-------------------------------------------------------------------------------\n\n";
 
     std::cout << "Model dimensions: (z = " << (modeling->nz - 1)*modeling->dz << 
@@ -106,10 +109,10 @@ void Migration::show_information()
 void Migration::export_receiver_traveltimes()
 {
     modeling->reduce_boundary(modeling->T, Tr);
-    export_binary_float("../outputs/travelTimeTables/receiver_travelTimes_" + std::to_string(modeling->recId+1) + ".bin", Tr, modeling->nPoints);    
+    export_binary_float(output_table_folder + "traveltimes_receiver_" + std::to_string(modeling->recId+1) + ".bin", Tr, modeling->nPoints);    
 }
 
 void Migration::export_outputs()
 {
-    export_binary_float("../outputs/migratedImages/kirchhoff_result_" + std::to_string(modeling->nz) + "x" + std::to_string(modeling->nx) + "x" + std::to_string(modeling->ny) + ".bin", image, modeling->nPoints);
+    export_binary_float(output_image_folder + "kirchhoff_result_" + std::to_string(modeling->nz) + "x" + std::to_string(modeling->nx) + "x" + std::to_string(modeling->ny) + ".bin", image, modeling->nPoints);
 }

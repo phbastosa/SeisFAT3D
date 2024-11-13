@@ -30,7 +30,7 @@ void Elastic_Iso::set_properties()
 void Elastic_Iso::set_conditions()
 {
     modeling_type = "elastic_iso";
-    modeling_name = "Elastic isotropic wave propagation";
+    modeling_name = "Modeling type: Elastic isotropic wave propagation";
 
     M = new float[volsize]();
     L = new float[volsize]();
@@ -85,13 +85,11 @@ void Elastic_Iso::initialization()
 	cudaMemset(d_Tyz, 0.0f, volsize*sizeof(float));
 	cudaMemset(d_Txy, 0.0f, volsize*sizeof(float));
 
-    int sId = geometry->sInd[srcId];
+    sIdx = (int)(geometry->xsrc[geometry->sInd[srcId]] / dx) + nb;
+    sIdy = (int)(geometry->ysrc[geometry->sInd[srcId]] / dy) + nb;
+    sIdz = (int)(geometry->zsrc[geometry->sInd[srcId]] / dz) + nb;
 
-    sIdx = (int)(geometry->xsrc[sId] / dx) + nb;
-    sIdy = (int)(geometry->ysrc[sId] / dy) + nb;
-    sIdz = (int)(geometry->zsrc[sId] / dz) + nb;
-
-    spread = 0;
+    int spread = 0;
 
     for (recId = geometry->iRec[srcId]; recId < geometry->fRec[srcId]; recId++)
     {
@@ -102,13 +100,13 @@ void Elastic_Iso::initialization()
         ++spread;
     }
 
-    sBlocks = (int)((spread + nThreads - 1) / nThreads); 
+    sBlocks = (int)((geometry->spread[srcId] + nThreads - 1) / nThreads); 
 
-    cudaMemcpy(rIdx, current_xrec, spread*sizeof(int), cudaMemcpyHostToDevice);
-    cudaMemcpy(rIdy, current_yrec, spread*sizeof(int), cudaMemcpyHostToDevice);
-    cudaMemcpy(rIdz, current_zrec, spread*sizeof(int), cudaMemcpyHostToDevice);
+    cudaMemcpy(rIdx, current_xrec, geometry->spread[srcId]*sizeof(int), cudaMemcpyHostToDevice);
+    cudaMemcpy(rIdy, current_yrec, geometry->spread[srcId]*sizeof(int), cudaMemcpyHostToDevice);
+    cudaMemcpy(rIdz, current_zrec, geometry->spread[srcId]*sizeof(int), cudaMemcpyHostToDevice);
 
-    cudaMemset(seismogram, 0.0f, nt*spread*sizeof(float));
+    cudaMemset(seismogram, 0.0f, nt*geometry->spread[srcId]*sizeof(float));
 }
 
 void Elastic_Iso::forward_solver()
@@ -121,11 +119,11 @@ void Elastic_Iso::forward_solver()
         compute_velocity<<<nBlocks, nThreads>>>(d_Vx, d_Vy, d_Vz, d_Txx, d_Tyy, d_Tzz, d_Txz, d_Tyz, d_Txy, d_B, d1D, d2D, d3D, dx, dy, dz, dt, nxx, nyy, nzz, nb);
         cudaDeviceSynchronize();
 
-        compute_seismogram<<<sBlocks, nThreads>>>(d_P, rIdx, rIdy, rIdz, seismogram, spread, tId, tlag, nt, nxx, nzz);     
+        compute_seismogram<<<sBlocks, nThreads>>>(d_P, rIdx, rIdy, rIdz, seismogram, geometry->spread[srcId], tId, tlag, nt, nxx, nzz);     
         cudaDeviceSynchronize();
     }
 
-    cudaMemcpy(synthetic_data, seismogram, nt*spread*sizeof(float), cudaMemcpyDeviceToHost);
+    cudaMemcpy(synthetic_data, seismogram, nt*geometry->spread[srcId]*sizeof(float), cudaMemcpyDeviceToHost);
 }
 
 __global__ void compute_pressure(float * Vx, float * Vy, float * Vz, float * Txx, float * Tyy, float * Tzz, float * Txz, float * Tyz, float * Txy, float * P, float * M, float * L, float * wavelet, int sIdx, int sIdy, int sIdz, int tId, int nt, float dx, float dy, float dz, float dt, int nxx, int nyy, int nzz)
@@ -315,7 +313,6 @@ __global__ void compute_velocity(float * Vx, float * Vy, float * Vz, float * Txx
         Txy[index] *= damper;    
     }
 }
-
 
 __global__ void compute_seismogram(float * P, int * rIdx, int * rIdy, int * rIdz, float * seismogram, int spread, int tId, int tlag, int nt, int nxx, int nzz)
 {
