@@ -11,7 +11,21 @@ Modeling, inversion and migration using massive computational parallelism in obj
 - Cuda 12 or higher with compatible drivers
 - C++ and Python 3 programming languages    
 ____
+### Citation:
 
+```console
+@software{paulo_h_b_alves_2024_14170690,
+  author       = {Paulo H. B. Alves},
+  title        = {phbastosa/SeisFAT3D: Initial},
+  month        = November,
+  year         = 2024,
+  publisher    = {Zenodo},
+  version      = {1.0},
+  doi          = {10.5281/zenodo.14170690},
+  url          = {https://doi.org/10.5281/zenodo.14170690}
+}
+```
+____
 ### Usage:
 
 ```console
