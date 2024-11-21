@@ -99,6 +99,20 @@ case "$1" in
 	exit 0
 ;;
 
+-clean)
+
+    rm ../bin/*.exe
+    rm ../inputs/data/*.bin
+    rm ../inputs/geometry/*.txt
+    rm ../inputs/models/*.bin
+    rm ../outputs/convergence/*.txt
+    rm ../outputs/migratedImages/*.bin
+    rm ../outputs/recoveredModels/*.bin
+    rm ../outputs/syntheticData/*.bin
+    rm ../outputs/travelTimeTables/*.bin
+
+;;
+
 -modeling) 
 
     ./../bin/modeling.exe parameters.txt
