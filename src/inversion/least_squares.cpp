@@ -5,21 +5,10 @@ void Least_Squares::set_specifications()
     inversion_name = "least_squares_";
     inversion_method = "Least-Squares First-Arrival Tomography";
 
-    dx_tomo = std::stof(catch_parameter("dx_tomo", parameters));
-    dy_tomo = std::stof(catch_parameter("dy_tomo", parameters));
-    dz_tomo = std::stof(catch_parameter("dz_tomo", parameters));
-
-    if ((dx_tomo < modeling->dx) || (dy_tomo < modeling->dy) || (dz_tomo < modeling->dz))
-        throw std::invalid_argument("\033[31mDownsampling with smaller spacing than original!\033[0;0m\n");
-
-    nx_tomo = (int)((modeling->nx-1) * modeling->dx / dx_tomo) + 1;    
-    ny_tomo = (int)((modeling->ny-1) * modeling->dy / dy_tomo) + 1;    
-    nz_tomo = (int)((modeling->nz-1) * modeling->dz / dz_tomo) + 1;    
-
     tk_order = std::stoi(catch_parameter("tk_order", parameters));
     tk_param = std::stof(catch_parameter("tk_param", parameters));
 
-    n_model = nx_tomo*ny_tomo*nz_tomo;
+    n_model = modeling->nPoints;
 
     ray_path_max_samples = 0;
 
@@ -42,11 +31,11 @@ void Least_Squares::set_specifications()
 
 void Least_Squares::apply_inversion_technique()
 {
-    int sIdx = (int)(modeling->geometry->xsrc[modeling->geometry->sInd[modeling->srcId]] / dx_tomo);
-    int sIdy = (int)(modeling->geometry->ysrc[modeling->geometry->sInd[modeling->srcId]] / dy_tomo);
-    int sIdz = (int)(modeling->geometry->zsrc[modeling->geometry->sInd[modeling->srcId]] / dz_tomo);
+    int sIdx = (int)(modeling->geometry->xsrc[modeling->geometry->sInd[modeling->srcId]] / modeling->dx);
+    int sIdy = (int)(modeling->geometry->ysrc[modeling->geometry->sInd[modeling->srcId]] / modeling->dy);
+    int sIdz = (int)(modeling->geometry->zsrc[modeling->geometry->sInd[modeling->srcId]] / modeling->dz);
 
-    int sId = sIdz + sIdx*nz_tomo + sIdy*nx_tomo*nz_tomo; 
+    int sId = sIdz + sIdx*modeling->nz + sIdy*modeling->nx*modeling->nz; 
 
     float rayStep = 0.2f * modeling->dz;
 
@@ -79,11 +68,11 @@ void Least_Squares::apply_inversion_technique()
             yi -= rayStep*dTy / norm;   
             zi -= rayStep*dTz / norm;    
 
-            int km = (int)(yi / dy_tomo); 
-            int jm = (int)(xi / dx_tomo); 
-            int im = (int)(zi / dz_tomo); 
+            int km = (int)(yi / modeling->dy); 
+            int jm = (int)(xi / modeling->dx); 
+            int im = (int)(zi / modeling->dz); 
 
-            int index = im + jm*nz_tomo + km*nx_tomo*nz_tomo;
+            int index = im + jm*modeling->nz + km*modeling->nx*modeling->nz;
             
             ray_index.push_back(index);
 
@@ -166,7 +155,9 @@ void Least_Squares::optimization()
 
     apply_regularization();
     solve_linear_system_lscg();
-    slowness_variation_rescaling();
+
+    for (int index = 0; index < n_model; index++)
+        perturbation[index] = x[index];
 
     delete[] x;
     delete[] B;
@@ -188,12 +179,12 @@ void Least_Squares::apply_regularization()
 
     if (tk_order <= 0)
     {   
-	for (int index = 0; index < nnz; index++)
-	{
+	    for (int index = 0; index < nnz; index++)
+	    {
             iL[index] = index;
-	    jL[index] = index;
-	    vL[index] = 1.0f;
-	}
+	        jL[index] = index;
+	        vL[index] = 1.0f;
+	    }
     } 
     else
     {
@@ -312,65 +303,5 @@ void Least_Squares::solve_linear_system_lscg()
 
         for (int k = 0; k < NNZ; k++) 
             q[iA[k]] += vA[k] * p[jA[k]];     // q = G * p   
-    }
-}
-
-void Least_Squares::slowness_variation_rescaling()
-{
-    for (int index = 0; index < modeling->nPoints; index++)
-    {
-        int k = (int) (index / (modeling->nx*modeling->nz));        
-        int j = (int) (index - k*modeling->nx*modeling->nz) / modeling->nz;    
-        int i = (int) (index - j*modeling->nz - k*modeling->nx*modeling->nz);  
-        
-        int dhx = (int)(0.5f*dx_tomo/modeling->dx); 
-        int dhy = (int)(0.5f*dy_tomo/modeling->dy); 
-        int dhz = (int)(0.5f*dz_tomo/modeling->dz); 
-
-        if ((i > dhz) && (i < modeling->nz - dhz - 1) &&
-            (j > dhx) && (j < modeling->nx - dhx - 1) &&
-            (k > dhy) && (k < modeling->ny - dhy - 1))
-        {
-            float zp = (i - dhz)*modeling->dz; 
-            float xp = (j - dhx)*modeling->dx; 
-            float yp = (k - dhy)*modeling->dy; 
-            
-            float x0 = floorf(xp/dx_tomo)*dx_tomo;
-            float y0 = floorf(yp/dy_tomo)*dy_tomo;
-            float z0 = floorf(zp/dz_tomo)*dz_tomo;
-
-            float x1 = floorf(xp/dx_tomo)*dx_tomo + dx_tomo;
-            float y1 = floorf(yp/dy_tomo)*dy_tomo + dy_tomo;
-            float z1 = floorf(zp/dz_tomo)*dz_tomo + dz_tomo;
-
-            int idz = (int)(zp/dz_tomo);
-            int idx = (int)(xp/dx_tomo);
-            int idy = (int)(yp/dy_tomo);
-
-            int ind_m = (int)(idz + idx*nz_tomo + idy*nx_tomo*nz_tomo);
-
-            float c000 = x[ind_m];                  
-            float c001 = x[ind_m + 1];
-            float c100 = x[ind_m + nz_tomo];
-            float c101 = x[ind_m + 1 + nz_tomo];
-            float c010 = x[ind_m + nx_tomo*nz_tomo];
-            float c011 = x[ind_m + 1 + nx_tomo*nz_tomo];
-            float c110 = x[ind_m + nz_tomo + nx_tomo*nz_tomo];
-            float c111 = x[ind_m + 1 + nz_tomo + nx_tomo*nz_tomo];  
-
-            float xd = (xp - x0) / (x1 - x0);
-            float yd = (yp - y0) / (y1 - y0);
-            float zd = (zp - z0) / (z1 - z0);
-
-            float c00 = c000*(1 - xd) + c100*xd;    
-            float c01 = c001*(1 - xd) + c101*xd;    
-            float c10 = c010*(1 - xd) + c110*xd;    
-            float c11 = c011*(1 - xd) + c111*xd;    
-
-            float c0 = c00*(1 - yd) + c10*yd;
-            float c1 = c01*(1 - yd) + c11*yd;
-
-            perturbation[index] = c0*(1 - zd) + c1*zd;         
-        } 
     }
 }

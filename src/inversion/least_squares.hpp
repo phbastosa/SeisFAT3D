@@ -7,9 +7,6 @@ class Least_Squares : public Tomography
 {
 private:
 
-    int nx_tomo, ny_tomo, nz_tomo;
-    float dx_tomo, dy_tomo, dz_tomo;
-
     int tk_order;
     float tk_param;
 
@@ -31,8 +28,6 @@ private:
 
     void apply_regularization();
     void solve_linear_system_lscg();
-    void slowness_variation_rescaling();
-
     void apply_inversion_technique();
 
 public:

@@ -49,22 +49,18 @@ modeling_output_folder = ../outputs/syntheticData/
 
 inversion_type = 0                          # <int> 
 
-dx_tomo = 50                                # [m] <float> 
-dy_tomo = 50                                # [m] <float> 
-dz_tomo = 50                                # [m] <float>
+max_iteration = 5                           # <int>
 
 tk_order = 2                                # Tikhonov order <int>
 tk_param = 1e4                              # Tikhonov parameter <float>
-
-max_iteration = 5                           # <int>
-
-max_slowness_variation = 1e-5               # <float>
 
 smooth_per_iteration = true                 # <bool>
 gaussian_filter_stdv = 2.0                  # <float>
 gaussian_filter_samples = 5                 # [odd number] <int> 
 
-export_model_per_iteration = true           # <bool>
+max_slowness_variation = 1e-5               # <float>
+
+export_model_per_iteration = false          # <bool>
 
 convergence_folder = ../outputs/convergence/         
 inversion_output_folder = ../outputs/recoveredModels/    
