@@ -72,6 +72,9 @@ obs_data_prefix = picks_data_shot_
 # Migration parameters 
 #--------------------------------------------------------------------------------------------------- 
 
+mig_aperture_x = 50                         # degrees <float>
+mig_aperture_y = 50                         # degrees <float>
+
 input_data_folder = ../inputs/data/        
 input_data_prefix = seismic_data_nStations241_nSamples1001_shot_
 
