@@ -10,6 +10,8 @@
 # include <iostream>
 # include <algorithm>
 
+# define PI 3.14159265359
+
 bool str2bool(std::string s);
 
 void import_binary_float(std::string path, float * array, int n);

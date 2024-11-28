@@ -12,17 +12,25 @@ private:
     int nThreads, nBlocks;
 
     float cell_area;
+    float aperture_x;
+    float aperture_y;
 
     float * m = nullptr;
     float * v = nullptr;
 
     float * d_T = nullptr;
 
-    float * d_source = nullptr;
-    float * h_source = nullptr;
+    float * d_source_grad = nullptr;
+    float * d_source_comp = nullptr;
 
-    float * d_adjoint = nullptr;
-    float * h_adjoint = nullptr;
+    float * d_adjoint_grad = nullptr;
+    float * d_adjoint_comp = nullptr;
+
+    float * h_source_grad = nullptr;
+    float * h_source_comp = nullptr;
+
+    float * h_adjoint_grad = nullptr;
+    float * h_adjoint_comp = nullptr;
 
     float * gradient = nullptr;
 
@@ -38,6 +46,7 @@ public:
     void optimization();
 };
 
-__global__ void adjoint_state_kernel(float * T, float * adjoint, float * source, int level, int xOffset, int yOffset, int xSweepOffset, 
-                                     int ySweepOffset, int zSweepOffset, int nxx, int nyy, int nzz, float dx, float dy, float dz);
+__global__ void adjoint_state_kernel(float * T, float * adjoint_grad, float * adjoint_comp, float * source_grad, float * source_comp, int level, int xOffset, 
+                                     int yOffset, int xSweepOffset, int ySweepOffset, int zSweepOffset, int nxx, int nyy, int nzz, float dx, float dy, float dz);
+
 # endif

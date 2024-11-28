@@ -26,9 +26,7 @@ void Tomography::set_parameters()
 void Tomography::set_forward_modeling()
 {
     modeling = new Eikonal_Iso();
-
     modeling->parameters = parameters;
-
     modeling->set_parameters();
 }
 
@@ -83,8 +81,7 @@ void Tomography::show_information()
 {
     modeling->show_information();    
     
-    std::cout << "\nInversion type: ";
-    std::cout << inversion_method << "\n\n";
+    std::cout << "\nInversion type: " << inversion_method << "\n\n";
 
     if (iteration == max_iteration) 
         std::cout << "-------- Checking final residuo --------\n\n";
@@ -190,7 +187,6 @@ void Tomography::model_update()
 
 void Tomography::smooth_volume(float * input, float * output, int nx, int ny, int nz)
 {
-    int init = smoother_samples / 2;
     int nPoints = nx * ny * nz;
     int nKernel = smoother_samples * smoother_samples * smoother_samples;
 
@@ -210,13 +206,13 @@ void Tomography::smooth_volume(float * input, float * output, int nx, int ny, in
     {
         float sum = 0.0f;
 
-        for (int y = -init; y <= init; y++)
+        for (int y = -mid; y <= mid; y++)
         {
-            for (int x = -init; x <= init; x++)
+            for (int x = -mid; x <= mid; x++)
             {
-                for (int z = -init; z <= init; z++)
+                for (int z = -mid; z <= mid; z++)
                 {          
-                    int index = (z+init) + (x+init)*smoother_samples + (y+init)*smoother_samples*smoother_samples; 
+                    int index = (z + mid) + (x + mid)*smoother_samples + (y + mid)*smoother_samples*smoother_samples; 
                     
                     float r = sqrtf(x*x + y*y + z*z);
 
@@ -231,11 +227,11 @@ void Tomography::smooth_volume(float * input, float * output, int nx, int ny, in
             kernel[i] /= sum;
     }
         
-    for (int k = init; k < ny - init; k++)
+    for (int k = mid; k < ny - mid; k++)
     {   
-        for (int j = init; j < nx - init; j++)
+        for (int j = mid; j < nx - mid; j++)
         {
-            for (int i = init; i < nz - init; i++)
+            for (int i = mid; i < nz - mid; i++)
             {       
                 float accum = 0.0f;
                 
@@ -246,7 +242,7 @@ void Tomography::smooth_volume(float * input, float * output, int nx, int ny, in
                         for (int zk = 0; zk < smoother_samples; zk++)
                         {   
                             int index = zk + xk*smoother_samples + yk*smoother_samples*smoother_samples;   
-                            int partial = (i-init+zk) + (j-init+xk)*nz + (k-init+yk)*nx*nz; 
+                            int partial = (i - mid + zk) + (j - mid + xk)*nz + (k - mid + yk)*nx*nz; 
 
                             accum += input[partial] * kernel[index];
                         }        

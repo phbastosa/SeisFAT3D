@@ -30,9 +30,9 @@ int main(int argc, char **argv)
         inversion[type]->model_update();
     }
 
-    inversion[type]->export_results();
-
     auto tf = std::chrono::system_clock::now();
+
+    inversion[type]->export_results();
 
     std::chrono::duration<double> elapsed_seconds = tf - ti;
     std::cout << "\nRun time: " << elapsed_seconds.count() << " s." << std::endl;

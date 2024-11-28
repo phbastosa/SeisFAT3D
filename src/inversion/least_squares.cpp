@@ -126,8 +126,6 @@ void Least_Squares::apply_inversion_technique()
 
 void Least_Squares::optimization()
 {
-    std::cout<<"Solving linear system using Tikhonov regularization with order " + std::to_string(tk_order);
-
     M = n_model;                                  
     N = n_data + n_model - tk_order;                    
     NNZ = vG.size() + (tk_order + 1) * (n_model - tk_order);
@@ -156,6 +154,7 @@ void Least_Squares::optimization()
     apply_regularization();
     solve_linear_system_lscg();
 
+    # pragma omp parallel for
     for (int index = 0; index < n_model; index++)
         perturbation[index] = x[index];
 
