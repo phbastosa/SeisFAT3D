@@ -6,6 +6,7 @@ import functions as pyf
 
 path_SPS = "../inputs/geometry/modeling_test_SPS.txt"
 path_RPS = "../inputs/geometry/modeling_test_RPS.txt"
+path_XPS = "../inputs/geometry/modeling_test_XPS.txt"
 
 nx = 321
 ny = 201
@@ -73,3 +74,44 @@ for i in range(ns):
     
 plt.tight_layout()
 plt.savefig("modeling_test_results.png", dpi = 300)
+
+SPS = np.loadtxt(path_SPS, dtype = float, delimiter = ",")
+RPS = np.loadtxt(path_RPS, dtype = float, delimiter = ",")
+XPS = np.loadtxt(path_XPS, dtype = int, delimiter = ",")
+
+eikonal_an = np.zeros(nr)
+
+v = np.array([1500, 1700, 1900, 2300, 3000])
+z = np.array([400, 400, 400, 400])
+
+fig, ax = plt.subplots(nrows = 4, figsize = (10,7))
+
+for i in range(ns):
+
+    eikonal_nu = pyf.read_binary_array(nr, f"../outputs/syntheticData/eikonal_iso_nStations{nr}_shot_{i+1}.bin")
+
+    x = np.sqrt((SPS[i,0] - RPS[XPS[i,1]:XPS[i,2],0])**2 + (SPS[i,1] - RPS[XPS[i,1]:XPS[i,2],1])**2)
+
+    refractions = pyf.get_analytical_refractions(v,z,x)
+    
+    for k in range(nr):
+        
+        eikonal_an[k] = min(x[k]/v[0], np.min(refractions[:,k]))
+
+    ax[i].plot(eikonal_an - eikonal_nu, "k")
+
+    ax[i].set_ylabel("(Ta - Tn) [ms]", fontsize = 15)
+    ax[i].set_xlabel("Channel index", fontsize = 15)
+    
+    ax[i].set_yticks(np.linspace(-0.005, 0.005, 5))
+    ax[i].set_yticklabels(np.linspace(-5, 5, 5, dtype = float))
+
+    ax[i].set_xticks(np.linspace(0, nr, 11))
+    ax[i].set_xticklabels(np.linspace(0, nr, 11, dtype = int))
+
+    ax[i].set_xlim([0, nr])
+
+    ax[i].invert_yaxis()
+
+fig.tight_layout()
+plt.savefig("modeling_test_accuracy.png", dpi = 200)
