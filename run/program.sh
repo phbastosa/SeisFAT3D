@@ -151,9 +151,9 @@ case "$1" in
     python3 -B ../tests/inversion/generate_models.py
     python3 -B ../tests/inversion/generate_geometry.py
 
-    # ./../bin/modeling.exe ../tests/inversion/parameters_obsData.txt
+    ./../bin/modeling.exe ../tests/inversion/parameters_obsData.txt
 
-    # ./../bin/inversion.exe ../tests/inversion/parameters_least_squares.txt
+    ./../bin/inversion.exe ../tests/inversion/parameters_least_squares.txt
     ./../bin/inversion.exe ../tests/inversion/parameters_adjoint_state.txt
 
     python3 -B ../tests/inversion/generate_figures.py
