@@ -10,6 +10,8 @@ void Adjoint_State::set_specifications()
     inversion_name = "adjoint_state_";
     inversion_method = "Adjoint-State First-Arrival Tomography";
 
+    adam_rate = std::stof(catch_parameter("adam_rate", parameters));
+
     aperture_x = std::stof(catch_parameter("inv_aperture_x", parameters));
     aperture_y = std::stof(catch_parameter("inv_aperture_y", parameters));
 
@@ -52,67 +54,57 @@ void Adjoint_State::apply_inversion_technique()
     cudaMemcpy(d_adjoint_grad, h_adjoint_grad, modeling->volsize*sizeof(float), cudaMemcpyHostToDevice);
     cudaMemcpy(d_adjoint_comp, h_adjoint_comp, modeling->volsize*sizeof(float), cudaMemcpyHostToDevice);
 
-	for (int sweep = 0; sweep < nSweeps; sweep++)
-	{ 
-	    int start = (sweep == 3 || sweep == 5 || sweep == 6 || sweep == 7) ? total_levels : meshDim;
-	    int end = (start == meshDim) ? total_levels + 1 : meshDim - 1;
-	    int incr = (start == meshDim) ? true : false;
-	
-	    int xSweepOff = (sweep == 3 || sweep == 4) ? modeling->nxx : 0;
-	    int ySweepOff = (sweep == 2 || sweep == 5) ? modeling->nyy : 0;
-	    int zSweepOff = (sweep == 1 || sweep == 6) ? modeling->nzz : 0;
-	    
-	    for (int level = start; level != end; level = (incr) ? level + 1 : level - 1)
-	    {			
-			int xs = max(1, level - (modeling->nyy + modeling->nzz));	
-			int ys = max(1, level - (modeling->nxx + modeling->nzz));
-		
-			int xe = min(modeling->nxx, level - (meshDim - 1));
-			int ye = min(modeling->nyy, level - (meshDim - 1));	
-		    
-			int xr = xe - xs + 1;
-			int yr = ye - ys + 1;
-		
-			int nThreads = xr * yr;
-			    
-			dim3 bs(16, 16, 1);
-		
-			if (nThreads < 256) { bs.x = xr; bs.y = yr; } 
-		
-			dim3 gs(iDivUp(xr, bs.x), iDivUp(yr , bs.y), 1);
-		
-			adjoint_state_kernel<<<gs,bs>>>(d_T, d_adjoint_grad, d_adjoint_comp, d_source_grad, d_source_comp, level, xs, ys, xSweepOff, ySweepOff, 
-                                            zSweepOff, modeling->nxx, modeling->nyy, modeling->nzz, modeling->dx, modeling->dy, modeling->dz);
-		
-			cudaDeviceSynchronize();
-	    }
-	}
-    
+    for (int sweep_iter = 0; sweep_iter < meshDim; sweep_iter++)
+    {
+        for (int sweep = 0; sweep < nSweeps; sweep++)
+        { 
+            int start = (sweep == 3 || sweep == 5 || sweep == 6 || sweep == 7) ? total_levels : meshDim;
+            int end = (start == meshDim) ? total_levels + 1 : meshDim - 1;
+            int incr = (start == meshDim) ? true : false;
+        
+            int xSweepOff = (sweep == 3 || sweep == 4) ? modeling->nxx : 0;
+            int ySweepOff = (sweep == 2 || sweep == 5) ? modeling->nyy : 0;
+            int zSweepOff = (sweep == 1 || sweep == 6) ? modeling->nzz : 0;
+            
+            for (int level = start; level != end; level = (incr) ? level + 1 : level - 1)
+            {			
+                int xs = max(1, level - (modeling->nyy + modeling->nzz));	
+                int ys = max(1, level - (modeling->nxx + modeling->nzz));
+            
+                int xe = min(modeling->nxx, level - (meshDim - 1));
+                int ye = min(modeling->nyy, level - (meshDim - 1));	
+                
+                int xr = xe - xs + 1;
+                int yr = ye - ys + 1;
+            
+                int nThreads = xr * yr;
+                    
+                dim3 bs(16, 16, 1);
+            
+                if (nThreads < 256) { bs.x = xr; bs.y = yr; } 
+            
+                dim3 gs(iDivUp(xr, bs.x), iDivUp(yr , bs.y), 1);
+            
+                adjoint_state_kernel<<<gs,bs>>>(d_T, d_adjoint_grad, d_adjoint_comp, d_source_grad, d_source_comp, level, xs, ys, xSweepOff, ySweepOff, 
+                                                zSweepOff, modeling->nxx, modeling->nyy, modeling->nzz, modeling->dx, modeling->dy, modeling->dz);
+            
+                cudaDeviceSynchronize();
+            }
+        }
+    }
+
     cudaMemcpy(h_adjoint_grad, d_adjoint_grad, modeling->volsize*sizeof(float), cudaMemcpyDeviceToHost);
     cudaMemcpy(h_adjoint_comp, d_adjoint_comp, modeling->volsize*sizeof(float), cudaMemcpyDeviceToHost);
 
-    float Tmax = 0.0f;
-
-    float adj_max = 0.0f;
-    float adj_min = 1e6f;
-
-    float com_max = 0.0f;
-    float com_min = 1e6f;
+    float grad_max = 0.0f;
+    float comp_max = 0.0f;
 
     for (int index = 0; index < modeling->volsize; index++)
     {
-        Tmax = std::max(Tmax, modeling->T[index]);
-
-        adj_max = std::max(adj_max, h_adjoint_grad[index]);
-        adj_min = std::min(adj_min, h_adjoint_grad[index]);
-        com_max = std::max(com_max, h_adjoint_comp[index]);
-        com_min = std::min(com_min, h_adjoint_comp[index]);
+        grad_max = std::max(grad_max, h_adjoint_grad[index]);
+        comp_max = std::max(comp_max, h_adjoint_comp[index]);
     }
 
-    adj_max *= 1e-3f;
-    adj_min *= 1e-3f;
-
-    float alpha;
     float cmp_x; 
     float cmp_y;
 
@@ -123,7 +115,6 @@ void Adjoint_State::apply_inversion_technique()
 
     float sx = modeling->geometry->xsrc[modeling->geometry->sInd[modeling->srcId]]; 
     float sy = modeling->geometry->ysrc[modeling->geometry->sInd[modeling->srcId]]; 
-    float sz = modeling->geometry->zsrc[modeling->geometry->sInd[modeling->srcId]]; 
 
     for (int rId = ri; rId < rf; rId++)
     {
@@ -150,10 +141,8 @@ void Adjoint_State::apply_inversion_technique()
         int indp = i + j*modeling->nz + k*modeling->nx*modeling->nz; 
         int indb = (i + modeling->nb) + (j + modeling->nb)*modeling->nzz + (k + modeling->nb)*modeling->nxx*modeling->nzz;
 
-        alpha = (h_adjoint_comp[indb] >= adj_max) ? com_min :
-                (h_adjoint_comp[indb] <= adj_min) ? com_max :
-                (com_min + (h_adjoint_comp[indb] - adj_max) * 
-                (com_max - com_min) / (adj_min - adj_max));
+        h_adjoint_grad[indb] *= 1.0f / grad_max;
+        h_adjoint_comp[indb] *= 1.0f / comp_max;
 
         float sigma_x = tanf(aperture_x * PI / 180.0f)*i*modeling->dz;
         float sigma_y = tanf(aperture_y * PI / 180.0f)*i*modeling->dz;
@@ -163,15 +152,7 @@ void Adjoint_State::apply_inversion_technique()
 
         float value = expf(-0.5*(par_x + par_y));
 
-        float Treg = fabsf(0.5*Tmax - modeling->T[indb]);
-
-        float dreg = sqrtf(powf(sz - (float)(i*modeling->dz), 2.0f) + 
-                           powf(sx - (float)(j*modeling->dx), 2.0f) +
-                           powf(sy - (float)(k*modeling->dy), 2.0f));
-
-        dreg = (dreg < 0.1f) ? 1e6f : dreg;        
-
-        gradient[indp] += value*(h_adjoint_grad[indb] / (h_adjoint_comp[indb] + alpha)*Treg*cell_area / dreg / modeling->geometry->nrel);    
+        gradient[indp] += value*(h_adjoint_grad[indb] / (h_adjoint_comp[indb] + 1e-3f)*cell_area / modeling->geometry->nrel);    
     }
 }
 
@@ -253,7 +234,7 @@ void Adjoint_State::optimization()
     float beta1 = 0.9f;
     float beta2 = 0.999f;
 
-    float epsilon = 1e-10f;
+    float epsilon = 1e-8f;
 
     for (int index = 0; index < modeling->nPoints; index++)
     {
@@ -267,7 +248,7 @@ void Adjoint_State::optimization()
         
         float v_hat = v[index] / (1.0f - powf(beta2, iteration));
 
-        perturbation[index] = max_slowness_variation*m_hat/(sqrtf(v_hat) + epsilon);
+        perturbation[index] = adam_rate*m_hat/(sqrtf(v_hat) + epsilon);
     }
 
     memset(gradient, 0.0f, modeling->nPoints);

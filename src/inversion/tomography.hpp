@@ -14,8 +14,6 @@ protected:
     int iteration, smoother_samples;
     float smoother_stdv;
 
-    float max_slowness_variation;
-
     float * dcal = nullptr;
     float * dobs = nullptr;
 
@@ -31,7 +29,7 @@ protected:
     std::string convergence_map_folder;
     std::string estimated_model_folder;
 
-    Eikonal * modeling;
+    Modeling * modeling;
 
     void set_forward_modeling();
     void set_inversion_elements();

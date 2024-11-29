@@ -12,6 +12,7 @@ private:
     int nThreads, nBlocks;
 
     float cell_area;
+    float adam_rate;
     float aperture_x;
     float aperture_y;
 
