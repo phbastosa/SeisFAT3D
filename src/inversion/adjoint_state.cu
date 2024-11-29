@@ -91,18 +91,18 @@ void Adjoint_State::apply_inversion_technique()
     cudaMemcpy(h_adjoint_grad, d_adjoint_grad, modeling->volsize*sizeof(float), cudaMemcpyDeviceToHost);
     cudaMemcpy(h_adjoint_comp, d_adjoint_comp, modeling->volsize*sizeof(float), cudaMemcpyDeviceToHost);
 
+    float Tmax = 0.0f;
+
     float adj_max = 0.0f;
     float adj_min = 1e6f;
 
     float com_max = 0.0f;
     float com_min = 1e6f;
 
-    float Tmax = 0.0f; 
-
     for (int index = 0; index < modeling->volsize; index++)
     {
         Tmax = std::max(Tmax, modeling->T[index]);
-        
+
         adj_max = std::max(adj_max, h_adjoint_grad[index]);
         adj_min = std::min(adj_min, h_adjoint_grad[index]);
         com_max = std::max(com_max, h_adjoint_comp[index]);
@@ -113,22 +113,33 @@ void Adjoint_State::apply_inversion_technique()
     adj_min *= 1e-3f;
 
     float alpha;
+    float cmp_x; 
+    float cmp_y;
+
+    float max_offset = 0.0f;
+
+    int ri = modeling->geometry->iRec[modeling->srcId];
+    int rf = modeling->geometry->fRec[modeling->srcId];
 
     float sx = modeling->geometry->xsrc[modeling->geometry->sInd[modeling->srcId]]; 
     float sy = modeling->geometry->ysrc[modeling->geometry->sInd[modeling->srcId]]; 
     float sz = modeling->geometry->zsrc[modeling->geometry->sInd[modeling->srcId]]; 
 
-    int ri = modeling->geometry->iRec[modeling->srcId];
-    int rf = modeling->geometry->fRec[modeling->srcId];
+    for (int rId = ri; rId < rf; rId++)
+    {
+        float rx = modeling->geometry->xrec[rId];
+        float ry = modeling->geometry->yrec[rId];
 
-    float xrec_min = min(modeling->geometry->xrec[ri], modeling->geometry->xrec[rf-1]);
-    float xrec_max = max(modeling->geometry->xrec[ri], modeling->geometry->xrec[rf-1]);
+        float offset = sqrtf((sx - rx)*(sx - rx) + (sy - ry)*(sy - ry));
 
-    float yrec_min = min(modeling->geometry->yrec[ri], modeling->geometry->yrec[rf-1]);
-    float yrec_max = max(modeling->geometry->yrec[ri], modeling->geometry->yrec[rf-1]);
+        if (max_offset < offset)
+        {
+            cmp_x = sx + 0.5f*(rx - sx);
+            cmp_y = sy + 0.5f*(ry - sy);
 
-    float cmp_x = xrec_min + 0.5f*fabsf(xrec_min - max(xrec_max, sx));
-    float cmp_y = yrec_min + 0.5f*fabsf(yrec_min - max(yrec_max, sy));
+            max_offset = offset;
+        }
+    }
 
     for (int index = 0; index < modeling->nPoints; index++) 
     {
@@ -138,12 +149,6 @@ void Adjoint_State::apply_inversion_technique()
 
         int indp = i + j*modeling->nz + k*modeling->nx*modeling->nz; 
         int indb = (i + modeling->nb) + (j + modeling->nb)*modeling->nzz + (k + modeling->nb)*modeling->nxx*modeling->nzz;
-
-        float d = sqrtf(powf(sy - (float)(k*modeling->dy), 2.0f) + 
-                        powf(sx - (float)(j*modeling->dx), 2.0f) + 
-                        powf(sz - (float)(i*modeling->dz), 2.0f));
-
-        if (d < 0.1f) d = 1e6f;
 
         alpha = (h_adjoint_comp[indb] >= adj_max) ? com_min :
                 (h_adjoint_comp[indb] <= adj_min) ? com_max :
@@ -158,7 +163,15 @@ void Adjoint_State::apply_inversion_technique()
 
         float value = expf(-0.5*(par_x + par_y));
 
-        gradient[indp] += value*(h_adjoint_grad[indb] / (h_adjoint_comp[indb] + alpha)*cell_area*fabsf(0.5f*Tmax - modeling->T[indb]) / d / modeling->geometry->nrel);
+        float Treg = fabsf(0.5*Tmax - modeling->T[indb]);
+
+        float dreg = sqrtf(powf(sz - (float)(i*modeling->dz), 2.0f) + 
+                           powf(sx - (float)(j*modeling->dx), 2.0f) +
+                           powf(sy - (float)(k*modeling->dy), 2.0f));
+
+        dreg = (dreg < 0.1f) ? 1e6f : dreg;        
+
+        gradient[indp] += value*(h_adjoint_grad[indb] / (h_adjoint_comp[indb] + alpha)*Treg*cell_area / dreg / modeling->geometry->nrel);    
     }
 }
 
@@ -240,7 +253,7 @@ void Adjoint_State::optimization()
     float beta1 = 0.9f;
     float beta2 = 0.999f;
 
-    float epsilon = 1e-8f;
+    float epsilon = 1e-10f;
 
     for (int index = 0; index < modeling->nPoints; index++)
     {
