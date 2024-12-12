@@ -18,7 +18,7 @@ dz = 25.0
 
 model_vp = pyf.read_binary_volume(nz, nx, ny, f"../inputs/models/modeling_test_vp_model_{nz}x{nx}x{ny}_{dx:.0f}m.bin")
 model_vs = pyf.read_binary_volume(nz, nx, ny, f"../inputs/models/modeling_test_vs_model_{nz}x{nx}x{ny}_{dx:.0f}m.bin")
-model_rho = pyf.read_binary_volume(nz, nx, ny, f"../inputs/models/modeling_test_rho_model_{nz}x{nx}x{ny}_{dx:.0f}m.bin")
+model_ro = pyf.read_binary_volume(nz, nx, ny, f"../inputs/models/modeling_test_ro_model_{nz}x{nx}x{ny}_{dx:.0f}m.bin")
 
 dh = np.array([dx, dy, dz])
 slices = np.array([0.5*nz, 0.5*ny, 0.5*nx], dtype = int)
@@ -35,7 +35,7 @@ pyf.plot_model_3D(model_vs, dh, slices, shots = path_SPS,
                   vmin = 1000, vmax = 3000)
 plt.savefig("modeling_test_vs.png", dpi = 300)
 
-pyf.plot_model_3D(model_rho, dh, slices, shots = path_SPS, 
+pyf.plot_model_3D(model_ro, dh, slices, shots = path_SPS, 
                   nodes = path_RPS, adjx = 0.8, dbar = 1.5,
                   cblab = "Density [g/cm³]",
                   vmin = 1000, vmax = 3000)

@@ -1,5 +1,4 @@
 import numpy as np
-import matplotlib.pyplot as plt
 
 x_max = 3e3
 y_max = 2e3
@@ -37,8 +36,8 @@ for j in range(nx):
         vp_model[int(surface[j,k]/dz):, j, k] = 2000.0
 
 vs_model = 0.7*vp_model
-rho_model = 310*vp_model**0.25
+ro_model = 310*vp_model**0.25
 
 vp_model.flatten("F").astype(np.float32, order = "F").tofile(f"../inputs/models/migration_test_vp_model_{nz}x{nx}x{ny}_{dx:.1f}m.bin")
 vs_model.flatten("F").astype(np.float32, order = "F").tofile(f"../inputs/models/migration_test_vs_model_{nz}x{nx}x{ny}_{dx:.1f}m.bin")
-rho_model.flatten("F").astype(np.float32, order = "F").tofile(f"../inputs/models/migration_test_rho_model_{nz}x{nx}x{ny}_{dx:.1f}m.bin")
+ro_model.flatten("F").astype(np.float32, order = "F").tofile(f"../inputs/models/migration_test_ro_model_{nz}x{nx}x{ny}_{dx:.1f}m.bin")

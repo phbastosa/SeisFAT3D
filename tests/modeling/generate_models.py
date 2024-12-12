@@ -12,7 +12,7 @@ nz = int((z_max / dh) + 1)
 
 vp_model = np.zeros((nz, nx, ny)) + 1500
 vs_model = np.zeros((nz, nx, ny)) 
-rho_model = np.zeros((nz, nx, ny)) + 1000
+ro_model = np.zeros((nz, nx, ny)) + 1000
 
 v = np.array([1500, 1700, 1900, 2300, 3000])
 z = np.array([400, 400, 400, 400])
@@ -20,8 +20,8 @@ z = np.array([400, 400, 400, 400])
 for i in range(len(z)):
     vp_model[int(np.sum(z[:i+1]/dh)):] = v[i+1]
     vs_model[int(np.sum(z[:i+1]/dh)):] = 0.7*v[i+1]
-    rho_model[int(np.sum(z[:i+1]/dh)):] = 310*v[i+1]**0.25
+    ro_model[int(np.sum(z[:i+1]/dh)):] = 310*v[i+1]**0.25
 
 vp_model.flatten("F").astype(np.float32, order = "F").tofile(f"../inputs/models/modeling_test_vp_model_{nz}x{nx}x{ny}_{dh:.0f}m.bin")
 vs_model.flatten("F").astype(np.float32, order = "F").tofile(f"../inputs/models/modeling_test_vs_model_{nz}x{nx}x{ny}_{dh:.0f}m.bin")
-rho_model.flatten("F").astype(np.float32, order = "F").tofile(f"../inputs/models/modeling_test_rho_model_{nz}x{nx}x{ny}_{dh:.0f}m.bin")
+ro_model.flatten("F").astype(np.float32, order = "F").tofile(f"../inputs/models/modeling_test_ro_model_{nz}x{nx}x{ny}_{dh:.0f}m.bin")

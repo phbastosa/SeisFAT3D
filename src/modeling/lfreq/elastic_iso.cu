@@ -4,27 +4,27 @@ void Elastic_Iso::set_properties()
 {
     std::string vp_file = catch_parameter("vp_model_file", parameters);
     std::string vs_file = catch_parameter("vs_model_file", parameters);
-    std::string rho_file = catch_parameter("rho_model_file", parameters);
+    std::string ro_file = catch_parameter("ro_model_file", parameters);
 
     float * vp = new float[nPoints]();
     float * vs = new float[nPoints]();
-    float * rho = new float[nPoints]();
+    float * ro = new float[nPoints]();
 
     Vp = new float[volsize]();
     Vs = new float[volsize]();
-    Rho = new float[volsize]();
+    Ro = new float[volsize]();
 
     import_binary_float(vp_file, vp, nPoints);
     import_binary_float(vs_file, vs, nPoints);
-    import_binary_float(rho_file, rho, nPoints);
+    import_binary_float(ro_file, ro, nPoints);
 
     expand_boundary(vp, Vp);
     expand_boundary(vs, Vs);
-    expand_boundary(rho, Rho);
+    expand_boundary(ro, Ro);
 
     delete[] vp;
     delete[] vs;
-    delete[] rho;
+    delete[] ro;
 }
 
 void Elastic_Iso::set_conditions()
@@ -39,9 +39,9 @@ void Elastic_Iso::set_conditions()
 
     for (int index = 0; index < volsize; index++)
     {
-        M[index] = Rho[index]*Vs[index]*Vs[index];
-        L[index] = Rho[index]*Vp[index]*Vp[index] - 2.0f*M[index];
-        B[index] = 1.0f / Rho[index];
+        M[index] = Ro[index]*Vs[index]*Vs[index];
+        L[index] = Ro[index]*Vp[index]*Vp[index] - 2.0f*M[index];
+        B[index] = 1.0f / Ro[index];
     }
 
     synthetic_data = new float[nt*max_spread]();

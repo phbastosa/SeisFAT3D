@@ -12,7 +12,7 @@ z_spacing = 12.5                          # [m] <float>
 
 vp_model_file = ../inputs/models/migration_test_vp_model_41x241x161_12.5m.bin   
 vs_model_file = ../inputs/models/migration_test_vs_model_41x241x161_12.5m.bin   
-rho_model_file = ../inputs/models/migration_test_rho_model_41x241x161_12.5m.bin   
+ro_model_file = ../inputs/models/migration_test_ro_model_41x241x161_12.5m.bin   
 
 #---------------------------------------------------------------------------------------------------
 # Geometry parameters ------------------------------------------------------------------------------

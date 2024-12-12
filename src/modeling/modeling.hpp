@@ -25,7 +25,7 @@ public:
     float * T = nullptr;
     float * Vp = nullptr;
     float * Vs = nullptr;
-    float * Rho = nullptr;
+    float * Ro = nullptr;
 
     float * synthetic_data = nullptr;
 

@@ -12,11 +12,14 @@ geometry="../src/geometry/geometry.cpp"
 
 modeling="../src/modeling/modeling.cpp"
 
-eikonal="../src/modeling/hfreq/eikonal.cpp"
+eikonal="../src/modeling/hfreq/eikonal.cu"
 elastic="../src/modeling/lfreq/elastic.cu"
 
 eikonal_iso="../src/modeling/hfreq/eikonal_iso.cu"
+eikonal_vti="../src/modeling/hfreq/eikonal_vti.cu"
+
 elastic_iso="../src/modeling/lfreq/elastic_iso.cu"
+elastic_vti="../src/modeling/lfreq/elastic_vti.cu"
 
 modeling_main="../src/modeling_main.cpp"
 
