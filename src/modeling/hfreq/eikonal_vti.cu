@@ -18,9 +18,9 @@ void Eikonal_VTI::set_properties()
     std::string vs_file = catch_parameter("vs_model_file", parameters);
     std::string ro_file = catch_parameter("ro_model_file", parameters);
 
-    std::string e_file = catch_parameter("epsilon_model_file", parameters);
-    std::string d_file = catch_parameter("delta_model_file", parameters);
     std::string g_file = catch_parameter("gamma_model_file", parameters);
+    std::string d_file = catch_parameter("delta_model_file", parameters);
+    std::string e_file = catch_parameter("epsilon_model_file", parameters);
 
     import_binary_float(vp_file, Vp, nPoints);
     import_binary_float(vs_file, Vs, nPoints);
@@ -32,11 +32,13 @@ void Eikonal_VTI::set_properties()
     
     float * slowness = new float[nPoints]();
 
+    # pragma omp parallel for
     for (int index = 0; index < nPoints; index++)
         slowness[index] = 1.0f / Vp[index];
 
     expand_boundary(slowness, S);
 
+    # pragma omp parallel for
     for (int index = 0; index < volsize; index++)
         S_vti[index] = S[index];
 
@@ -60,52 +62,50 @@ void Eikonal_VTI::set_conditions()
 void Eikonal_VTI::forward_solver()
 {
     cudaMemcpy(d_S, S, volsize*sizeof(float), cudaMemcpyHostToDevice);
-
-    initialization();
-
     cudaMemcpy(d_T, T, volsize*sizeof(float), cudaMemcpyHostToDevice);
 
     fast_sweeping_method();
 
     cudaMemcpy(T, d_T, volsize*sizeof(float), cudaMemcpyDeviceToHost);
 
-    int sIdx = (int)(geometry->xrec[geometry->sInd[srcId]] / dx);
-    int sIdy = (int)(geometry->xrec[geometry->sInd[srcId]] / dy);
-    int sIdz = (int)(geometry->xrec[geometry->sInd[srcId]] / dz);
+    int sIdx = (int)(geometry->xrec[geometry->sInd[srcId]] / dx) + nb;
+    int sIdy = (int)(geometry->xrec[geometry->sInd[srcId]] / dy) + nb;
+    int sIdz = (int)(geometry->xrec[geometry->sInd[srcId]] / dz) + nb;
 
-    for (int index = 0; index < nPoints; index++)
+    for (int index = 0; index < volsize; index++)
     {
-        int k = (int) (index / (nx*nz));         
-        int j = (int) (index - k*nx*nz) / nz;    
-        int i = (int) (index - j*nz - k*nx*nz);  
+        int k = (int) (index / (nxx*nzz));         
+        int j = (int) (index - k*nxx*nzz) / nzz;    
+        int i = (int) (index - j*nzz - k*nxx*nzz);  
 
         if ((i == sIdz) && (j == sIdx) && (k == sIdy))    
             continue;
 
-        aId = i + j*nx + k*nx*nz;
-        bId = (i + nb) + (j + nb)*nzz + (k + nb)*nxx*nzz;
+        if ((i >= nb) && (i < nzz-nb) && (j >= nb) && (j < nxx-nb) && (k >= nb) && (k < nyy-nb))
+        {
+            aId = (i-nb) + (j-nb)*nz + (k-nb)*nx*nz;
 
-        float dTz = 0.5f*(T[bId + 1] - T[bId - 1]) / dz;
-        float dTx = 0.5f*(T[bId + nzz] - T[bId - nzz]) / dx;
-        float dTy = 0.5f*(T[bId + nxx*nzz] - T[bId - nxx*nzz]) / dy;
+            float dTz = 0.5f*(T[(i+1) + j*nzz + k*nxx*nzz] - T[(i-1) + j*nzz + k*nxx*nzz]) / dz;
+            float dTx = 0.5f*(T[i + (j+1)*nzz + k*nxx*nzz] - T[i + (j-1)*nzz + k*nxx*nzz]) / dx;
+            float dTy = 0.5f*(T[i + j*nzz + (k+1)*nxx*nzz] - T[i + j*nzz + (k-1)*nxx*nzz]) / dy;
 
-        float norm = sqrtf(dTx*dTx + dTy*dTy + dTz*dTz);
+            float norm = sqrtf(dTx*dTx + dTy*dTy + dTz*dTz);
 
-        p[0] = dTz / norm;
-        p[1] = dTx / norm;
-        p[2] = dTy / norm;
+            p[0] = dTz / norm;
+            p[1] = dTx / norm;
+            p[2] = dTy / norm;
 
-        get_stiffness();    
-        get_christoffel();
-        get_eigen_values();
+            get_stiffness();    
+            get_christoffel();
+            get_eigen_values();
 
-        S_vti[bId] = 1.0f / sqrtf(Gv[0] * Ro[aId]);
+            S_vti[index] = 1.0f / sqrtf(Gv[0] * Ro[aId]);
+        }
     }
-
-    cudaMemcpy(d_S, S_vti, volsize*sizeof(float), cudaMemcpyHostToDevice);
 
     initialization();
 
+    cudaMemcpy(d_S, S_vti, volsize*sizeof(float), cudaMemcpyHostToDevice);
     cudaMemcpy(d_T, T, volsize*sizeof(float), cudaMemcpyHostToDevice);
 
     fast_sweeping_method();
@@ -131,14 +131,17 @@ int Eikonal_VTI::voigt_map(int i, int j)
 
 void Eikonal_VTI::get_stiffness()
 {
-    float A33 = Vp[aId]*Vp[aId]*Ro[aId];
-    float A55 = Vs[aId]*Vs[aId]*Ro[aId];
-    float A11 = A33*(1 + 2*E[aId]); 
-    float A66 = A55*(1 + 2*G[aId]);
-    float A13 = sqrtf(2*D[aId]*A33*(A33 - A55) + (A33 - A55)*(A33 - A55)) - A55;
+    float B2, A11, A33, A55, A66, A13;
 
-    float B2 = 1.0f / Ro[aId] / Ro[aId];
+    B2 = 1.0f / Ro[aId] / Ro[aId];
 
+    A33 = Vp[aId]*Vp[aId]*Ro[aId];
+    A55 = Vs[aId]*Vs[aId]*Ro[aId];
+    A11 = A33*(1.0f + 2.0f*E[aId]); 
+    A66 = A55*(1.0f + 2.0f*G[aId]);
+
+    A13 = sqrtf(2.0f*D[aId]*A33*(A33 - A55) + (A33 - A55)*(A33 - A55)) - A55;
+    
     Cijkl[2 + 2*v] = A33 * B2;
     Cijkl[5 + 5*v] = A66 * B2;
     Cijkl[0 + 0*v] = Cijkl[1 + 1*v] = A11 * B2;

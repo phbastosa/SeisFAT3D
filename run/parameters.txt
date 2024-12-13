@@ -2,34 +2,41 @@
 # Model paramenters --------------------------------------------------------------------------------
 #---------------------------------------------------------------------------------------------------
 
-x_samples = 101                           # <int>  
-y_samples = 101                           # <int>  
-z_samples = 101                           # <int>  
+x_samples = 201                            # <int>  
+y_samples = 101                            # <int>  
+z_samples = 51                             # <int>  
 
-x_spacing = 5.0                           # [m] <float> 
-y_spacing = 5.0                           # [m] <float> 
-z_spacing = 5.0                           # [m] <float> 
+x_spacing = 10.0                           # [m] <float> 
+y_spacing = 10.0                           # [m] <float> 
+z_spacing = 10.0                           # [m] <float> 
 
-vp_model_file = ../inputs/models/simple_vp_model_101x101_5m.bin   
-vs_model_file = ../inputs/models/simple_vs_model_101x101_5m.bin   
-rho_model_file = ../inputs/models/simple_rho_model_101x101_5m.bin   
+vp_model_file = ../inputs/models/anisoTest_vp.bin   
+vs_model_file = ../inputs/models/anisoTest_vs.bin   
+ro_model_file = ../inputs/models/anisoTest_ro.bin
+
+gamma_model_file = ../inputs/models/anisoTest_G.bin
+delta_model_file = ../inputs/models/anisoTest_D.bin
+epsilon_model_file = ../inputs/models/anisoTest_E.bin
 
 #---------------------------------------------------------------------------------------------------
 # Geometry parameters ------------------------------------------------------------------------------
 #---------------------------------------------------------------------------------------------------
 
-SPS = ../inputs/geometry/simple_SPS.txt              
-RPS = ../inputs/geometry/simple_RPS.txt     
-XPS = ../inputs/geometry/simple_XPS.txt     
+SPS = ../inputs/geometry/anisoTest_SPS.txt              
+RPS = ../inputs/geometry/anisoTest_RPS.txt     
+XPS = ../inputs/geometry/anisoTest_XPS.txt     
 
 #---------------------------------------------------------------------------------------------------
 # Modeling parameters ------------------------------------------------------------------------------
 #---------------------------------------------------------------------------------------------------
-# [0] - Eikonal Isotropic 
-# [1] - Elastic Isotropic
+# [0] - Eikonal ISO
+# [1] - Eikonal VTI
+#
+# [2] - Elastic ISO
+# [3] - Elastic VTI
 # --------------------------------------------------------------------------------------------------
 
-modeling_type = 0 
+modeling_type = 1 
 
 time_samples = 1001
 time_spacing = 1e-3

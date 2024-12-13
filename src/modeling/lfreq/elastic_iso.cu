@@ -1,33 +1,6 @@
 # include "elastic_iso.cuh"
 
-void Elastic_Iso::set_properties()
-{
-    std::string vp_file = catch_parameter("vp_model_file", parameters);
-    std::string vs_file = catch_parameter("vs_model_file", parameters);
-    std::string ro_file = catch_parameter("ro_model_file", parameters);
-
-    float * vp = new float[nPoints]();
-    float * vs = new float[nPoints]();
-    float * ro = new float[nPoints]();
-
-    Vp = new float[volsize]();
-    Vs = new float[volsize]();
-    Ro = new float[volsize]();
-
-    import_binary_float(vp_file, vp, nPoints);
-    import_binary_float(vs_file, vs, nPoints);
-    import_binary_float(ro_file, ro, nPoints);
-
-    expand_boundary(vp, Vp);
-    expand_boundary(vs, Vs);
-    expand_boundary(ro, Ro);
-
-    delete[] vp;
-    delete[] vs;
-    delete[] ro;
-}
-
-void Elastic_Iso::set_conditions()
+void Elastic_ISO::set_conditions()
 {
     modeling_type = "elastic_iso";
     modeling_name = "Modeling type: Elastic isotropic wave propagation";
@@ -35,7 +8,6 @@ void Elastic_Iso::set_conditions()
     M = new float[volsize]();
     L = new float[volsize]();
     B = new float[volsize]();
-    P = new float[volsize]();
 
     for (int index = 0; index < volsize; index++)
     {
@@ -44,72 +16,16 @@ void Elastic_Iso::set_conditions()
         B[index] = 1.0f / Ro[index];
     }
 
-    synthetic_data = new float[nt*max_spread]();
-    cudaMalloc((void**)&(seismogram), nt*max_spread*sizeof(float));
-
     cudaMalloc((void**)&(d_M), volsize*sizeof(float));
     cudaMalloc((void**)&(d_L), volsize*sizeof(float));
     cudaMalloc((void**)&(d_B), volsize*sizeof(float));
-    cudaMalloc((void**)&(d_P), volsize*sizeof(float));
-
-    cudaMalloc((void**)&(d_Vx), volsize*sizeof(float));
-    cudaMalloc((void**)&(d_Vy), volsize*sizeof(float));
-    cudaMalloc((void**)&(d_Vz), volsize*sizeof(float));
-
-    cudaMalloc((void**)&(d_Txx), volsize*sizeof(float));
-    cudaMalloc((void**)&(d_Tyy), volsize*sizeof(float));
-    cudaMalloc((void**)&(d_Tzz), volsize*sizeof(float));
-    
-	cudaMalloc((void**)&(d_Txz), volsize*sizeof(float));
-	cudaMalloc((void**)&(d_Tyz), volsize*sizeof(float));
-	cudaMalloc((void**)&(d_Txy), volsize*sizeof(float));
 
     cudaMemcpy(d_M, M, volsize*sizeof(float), cudaMemcpyHostToDevice);
     cudaMemcpy(d_L, L, volsize*sizeof(float), cudaMemcpyHostToDevice);
     cudaMemcpy(d_B, B, volsize*sizeof(float), cudaMemcpyHostToDevice);
 }
 
-void Elastic_Iso::initialization()
-{
-    cudaMemset(d_P, 0.0f, volsize*sizeof(float));
-    
-	cudaMemset(d_Vx, 0.0f, volsize*sizeof(float));
-    cudaMemset(d_Vy, 0.0f, volsize*sizeof(float));
-    cudaMemset(d_Vz, 0.0f, volsize*sizeof(float));
-    
-	cudaMemset(d_Txx, 0.0f, volsize*sizeof(float));
-	cudaMemset(d_Tyy, 0.0f, volsize*sizeof(float));
-    cudaMemset(d_Tzz, 0.0f, volsize*sizeof(float));
-    
-	cudaMemset(d_Txz, 0.0f, volsize*sizeof(float));
-	cudaMemset(d_Tyz, 0.0f, volsize*sizeof(float));
-	cudaMemset(d_Txy, 0.0f, volsize*sizeof(float));
-
-    sIdx = (int)(geometry->xsrc[geometry->sInd[srcId]] / dx) + nb;
-    sIdy = (int)(geometry->ysrc[geometry->sInd[srcId]] / dy) + nb;
-    sIdz = (int)(geometry->zsrc[geometry->sInd[srcId]] / dz) + nb;
-
-    int spread = 0;
-
-    for (recId = geometry->iRec[srcId]; recId < geometry->fRec[srcId]; recId++)
-    {
-        current_xrec[spread] = (int)(geometry->xrec[recId] / dx) + nb;
-        current_yrec[spread] = (int)(geometry->yrec[recId] / dy) + nb;
-        current_zrec[spread] = (int)(geometry->zrec[recId] / dz) + nb;
-    
-        ++spread;
-    }
-
-    sBlocks = (int)((geometry->spread[srcId] + nThreads - 1) / nThreads); 
-
-    cudaMemcpy(rIdx, current_xrec, geometry->spread[srcId]*sizeof(int), cudaMemcpyHostToDevice);
-    cudaMemcpy(rIdy, current_yrec, geometry->spread[srcId]*sizeof(int), cudaMemcpyHostToDevice);
-    cudaMemcpy(rIdz, current_zrec, geometry->spread[srcId]*sizeof(int), cudaMemcpyHostToDevice);
-
-    cudaMemset(seismogram, 0.0f, nt*geometry->spread[srcId]*sizeof(float));
-}
-
-void Elastic_Iso::forward_solver()
+void Elastic_ISO::forward_solver()
 {
     for (int tId = 0; tId < nt + tlag; tId++)
     {

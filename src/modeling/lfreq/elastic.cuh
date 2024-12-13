@@ -9,6 +9,7 @@ private:
 
     void set_wavelet();
     void set_boundaries();
+    void set_properties();
     void set_specifications();
 
 protected:
@@ -17,6 +18,21 @@ protected:
 
     int tlag, nThreads;
     int sBlocks, nBlocks;
+
+    float * P = nullptr;
+    float * d_P = nullptr;
+
+    float * d_Vx = nullptr;
+    float * d_Vy = nullptr;
+    float * d_Vz = nullptr;
+
+    float * d_Txx = nullptr;
+    float * d_Tyy = nullptr;
+    float * d_Tzz = nullptr;
+    
+    float * d_Txz = nullptr;
+    float * d_Tyz = nullptr;
+    float * d_Txy = nullptr;
 
     float * d1D = nullptr;
     float * d2D = nullptr;
@@ -35,11 +51,11 @@ protected:
     float * seismogram = nullptr;
 
     virtual void set_conditions() = 0;
-    virtual void set_properties() = 0;
 
 public:
 
-    virtual void initialization() = 0;
+    void initialization();
+    
     virtual void forward_solver() = 0;
 
     void export_synthetic_data();

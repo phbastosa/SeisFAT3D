@@ -7,7 +7,7 @@ class Eikonal_VTI : public Eikonal
 {
 private:
 
-    int n, v, aId, bId;
+    int n, v, aId;
 
     float * E = nullptr;
     float * D = nullptr;

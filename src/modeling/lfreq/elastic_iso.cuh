@@ -3,38 +3,22 @@
 
 # include "elastic.cuh"
 
-class Elastic_Iso : public Elastic
+class Elastic_ISO : public Elastic
 {
 private:
 
     float * M = nullptr;
     float * L = nullptr;
     float * B = nullptr;
-    float * P = nullptr;
 
     float * d_M = nullptr;
     float * d_L = nullptr;
     float * d_B = nullptr;
-    float * d_P = nullptr;
 
-    float * d_Vx = nullptr;
-    float * d_Vy = nullptr;
-    float * d_Vz = nullptr;
-
-    float * d_Txx = nullptr;
-    float * d_Tyy = nullptr;
-    float * d_Tzz = nullptr;
-    
-    float * d_Txz = nullptr;
-    float * d_Tyz = nullptr;
-    float * d_Txy = nullptr;
-
-    void set_properties();
     void set_conditions();
 
 public:
 
-    void initialization();
     void forward_solver();
 };
 

@@ -2,7 +2,7 @@
 
 void Migration::set_parameters()
 {
-    modeling = new Eikonal_Iso();
+    modeling = new Eikonal_ISO();
     modeling->parameters = parameters;
     modeling->set_parameters();
 

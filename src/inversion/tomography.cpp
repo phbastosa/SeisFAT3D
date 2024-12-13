@@ -23,7 +23,7 @@ void Tomography::set_parameters()
 
 void Tomography::set_forward_modeling()
 {
-    modeling = new Eikonal_Iso();
+    modeling = new Eikonal_ISO();
     modeling->parameters = parameters;
     modeling->set_parameters();
 }
