@@ -2,6 +2,7 @@
 # include "modeling/hfreq/eikonal_vti.cuh"
 
 # include "modeling/lfreq/elastic_iso.cuh"
+# include "modeling/lfreq/elastic_vti.cuh"
 
 int main(int argc, char **argv)
 {
@@ -10,7 +11,8 @@ int main(int argc, char **argv)
         new Eikonal_ISO(),
         new Eikonal_VTI(),
 
-        new Elastic_ISO()
+        new Elastic_ISO(),
+        new Elastic_VTI()
     };
 
     auto file = std::string(argv[1]);

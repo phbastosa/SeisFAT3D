@@ -23,7 +23,9 @@ elastic_vti="../src/modeling/lfreq/elastic_vti.cu"
 
 modeling_main="../src/modeling_main.cpp"
 
-modeling_all="$modeling $eikonal $elastic $eikonal_iso $elastic_iso $eikonal_vti"
+modeling_all="$modeling $eikonal $elastic 
+              $eikonal_iso $elastic_iso 
+              $eikonal_vti $elastic_vti"
 
 # Seismic inversion scripts ---------------------------------------------------------------------------
 
@@ -48,7 +50,7 @@ migration_all="$migration $kirchhoff"
 
 # Compiler flags --------------------------------------------------------------------------------------
 
-flags="-Xcompiler -fopenmp --std=c++11 -lm -lfftw3 -O3"
+flags="-Xcompiler -fopenmp --std=c++11 --use_fast_math --relocatable-device-code=true -lm -O4"
 
 # Main dialogue ---------------------------------------------------------------------------------------
 

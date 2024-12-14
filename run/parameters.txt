@@ -36,7 +36,7 @@ XPS = ../inputs/geometry/anisoTest_XPS.txt
 # [3] - Elastic VTI
 # --------------------------------------------------------------------------------------------------
 
-modeling_type = 1 
+modeling_type = 0 
 
 time_samples = 1001
 time_spacing = 1e-3
