@@ -52,9 +52,9 @@ __global__ void compute_pressure(float * Vx, float * Vy, float * Vz, float * Txx
 
     if ((index == 0) && (tId < nt))
     {
-        Txx[sIdz + sIdx*nzz + sIdy*nxx*nzz] += wavelet[tId] / (dx*dy*dz);
-        Tyy[sIdz + sIdx*nzz + sIdy*nxx*nzz] += wavelet[tId] / (dx*dy*dz);
-        Tzz[sIdz + sIdx*nzz + sIdy*nxx*nzz] += wavelet[tId] / (dx*dy*dz);
+        Txx[sIdz + sIdx*nzz + sIdy*nxx*nzz] = wavelet[tId] / (dx*dy*dz);
+        Tyy[sIdz + sIdx*nzz + sIdy*nxx*nzz] = wavelet[tId] / (dx*dy*dz);
+        Tzz[sIdz + sIdx*nzz + sIdy*nxx*nzz] = wavelet[tId] / (dx*dy*dz);
     }
 
     if((i >= 3) && (i < nzz-4) && (j >= 3) && (j < nxx-4) && (k >= 3) && (k < nyy-4)) 

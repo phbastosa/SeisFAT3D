@@ -2,17 +2,17 @@
 # Model paramenters --------------------------------------------------------------------------------
 #---------------------------------------------------------------------------------------------------
 
-x_samples = 201                            # <int>  
-y_samples = 101                            # <int>  
-z_samples = 51                             # <int>  
+x_samples = 801                            # <int>  
+y_samples = 801                            # <int>  
+z_samples = 171                            # <int>  
 
-x_spacing = 10.0                           # [m] <float> 
-y_spacing = 10.0                           # [m] <float> 
-z_spacing = 10.0                           # [m] <float> 
+x_spacing = 25.0                           # [m] <float> 
+y_spacing = 25.0                           # [m] <float> 
+z_spacing = 25.0                           # [m] <float> 
 
-vp_model_file = ../inputs/models/anisoTest_vp.bin   
-vs_model_file = ../inputs/models/anisoTest_vs.bin   
-ro_model_file = ../inputs/models/anisoTest_ro.bin
+vp_model_file = ../inputs/models/overthrust_vp_171x801x801_25m.bin   
+vs_model_file = ../inputs/models/overthrust_vs_171x801x801_25m.bin   
+ro_model_file = ../inputs/models/overthrust_ro_171x801x801_25m.bin
 
 gamma_model_file = ../inputs/models/anisoTest_G.bin
 delta_model_file = ../inputs/models/anisoTest_D.bin
@@ -22,9 +22,9 @@ epsilon_model_file = ../inputs/models/anisoTest_E.bin
 # Geometry parameters ------------------------------------------------------------------------------
 #---------------------------------------------------------------------------------------------------
 
-SPS = ../inputs/geometry/anisoTest_SPS.txt              
-RPS = ../inputs/geometry/anisoTest_RPS.txt     
-XPS = ../inputs/geometry/anisoTest_XPS.txt     
+SPS = ../inputs/geometry/overthrust_SPS.txt              
+RPS = ../inputs/geometry/overthrust_RPS.txt     
+XPS = ../inputs/geometry/overthrust_XPS.txt     
 
 #---------------------------------------------------------------------------------------------------
 # Modeling parameters ------------------------------------------------------------------------------
@@ -42,8 +42,8 @@ time_samples = 1001
 time_spacing = 1e-3
 max_frequency = 30.0
 
-boundary_samples = 100
-boundary_damping = 0.0025
+boundary_samples = 50
+boundary_damping = 0.0045
 
 modeling_output_folder = ../outputs/syntheticData/            
 
