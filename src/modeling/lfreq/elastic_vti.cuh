@@ -10,6 +10,13 @@ private:
     float * E = nullptr;
     float * D = nullptr;
     float * G = nullptr;
+    float * B = nullptr;
+
+    float * C11 = nullptr;
+    float * C33 = nullptr;
+    float * C55 = nullptr;
+    float * C66 = nullptr;
+    float * C13 = nullptr;
 
     float * d_B = nullptr;
     float * d_C11 = nullptr;

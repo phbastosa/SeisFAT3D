@@ -29,12 +29,12 @@ void Elastic_VTI::set_conditions()
     delete[] d;
     delete[] g;
 
-    float * B = new float[volsize]();
-    float * C11 = new float[volsize]();
-    float * C33 = new float[volsize]();
-    float * C55 = new float[volsize]();
-    float * C66 = new float[volsize]();
-    float * C13 = new float[volsize]();
+    B = new float[volsize]();
+    C11 = new float[volsize]();
+    C33 = new float[volsize]();
+    C55 = new float[volsize]();
+    C66 = new float[volsize]();
+    C13 = new float[volsize]();
 
     # pragma omp parallel for
     for (int index = 0; index < volsize; index++)
@@ -63,13 +63,6 @@ void Elastic_VTI::set_conditions()
     cudaMemcpy(d_C55, C55, volsize*sizeof(float), cudaMemcpyHostToDevice);
     cudaMemcpy(d_C66, C66, volsize*sizeof(float), cudaMemcpyHostToDevice);
     cudaMemcpy(d_C13, C13, volsize*sizeof(float), cudaMemcpyHostToDevice);
-
-    delete[] B;
-    delete[] C11;
-    delete[] C33;
-    delete[] C55;
-    delete[] C66;
-    delete[] C13;
 }
 
 void Elastic_VTI::forward_solver()
