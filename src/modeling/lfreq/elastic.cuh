@@ -65,6 +65,6 @@ __global__ void compute_seismogram(float * P, int * rIdx, int * rIdy, int * rIdz
 
 __device__ float get_boundary_damper(float * damp1D, float * damp2D, float * damp3D, int i, int j, int k, int nxx, int nyy, int nzz, int nabc);
 
-__global__ void compute_velocity(float * Vx, float * Vy, float * Vz, float * Txx, float * Tyy, float * Tzz, float * Txz, float * Tyz, float * Txy, float * B,  float * damp1D, float * damp2D, float * damp3D, float dx, float dy, float dz, float dt, int nxx, int nyy, int nzz, int nb);
+__global__ void compute_velocity(float * Vx, float * Vy, float * Vz, float * Txx, float * Tyy, float * Tzz, float * Txz, float * Tyz, float * Txy, float * B, float * T,  float * damp1D, float * damp2D, float * damp3D, float dx, float dy, float dz, float dt, int tId, int tlag, int nxx, int nyy, int nzz, int nb);
 
 # endif
