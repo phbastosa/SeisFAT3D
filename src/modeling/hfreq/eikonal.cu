@@ -137,6 +137,8 @@ void Eikonal::compute_seismogram()
 {
     int spread = 0;
 
+    float P[2][2][2];
+
     for (recId = geometry->iRec[srcId]; recId < geometry->fRec[srcId]; recId++)
     {
         float x = geometry->xrec[recId];
@@ -151,30 +153,30 @@ void Eikonal::compute_seismogram()
         float y1 = floorf(y / dy) * dy + dy;
         float z1 = floorf(z / dz) * dz + dz;
 
-        int id = ((int)(z / dz) + nb) + ((int)(x / dx) + nb)*nzz + ((int)(y / dy) + nb)*nxx*nzz;
-
-        float c000 = T[id];
-        float c001 = T[id + 1];
-        float c100 = T[id + nzz]; 
-        float c101 = T[id + 1 + nzz]; 
-        float c010 = T[id + nxx*nzz]; 
-        float c011 = T[id + 1 + nxx*nzz]; 
-        float c110 = T[id + nzz + nxx*nzz]; 
-        float c111 = T[id + 1 + nzz + nxx*nzz];
-
         float xd = (x - x0) / (x1 - x0);
         float yd = (y - y0) / (y1 - y0);
         float zd = (z - z0) / (z1 - z0);
 
-        float c00 = c000*(1 - xd) + c100*xd;    
-        float c01 = c001*(1 - xd) + c101*xd;    
-        float c10 = c010*(1 - xd) + c110*xd;    
-        float c11 = c011*(1 - xd) + c111*xd;    
+        int index = ((int)(z / dz) + nb) + 
+                    ((int)(x / dx) + nb)*nzz + 
+                    ((int)(y / dy) + nb)*nxx*nzz;
 
-        float c0 = c00*(1 - yd) + c10*yd;
-        float c1 = c01*(1 - yd) + c11*yd;
+        int k = (int) (index / (nxx*nzz));         
+        int j = (int) (index - k*nxx*nzz) / nzz;   
+        int i = (int) (index - j*nzz - k*nxx*nzz); 
 
-        synthetic_data[spread++] = c0*(1 - zd) + c1*zd;
+        for (int pIdx = 0; pIdx < 2; pIdx++)
+        {
+            for (int pIdy = 0; pIdy < 2; pIdy++)
+            {
+                for (int pIdz = 0; pIdz < 2; pIdz++)
+                {    
+                    P[pIdx][pIdy][pIdz] = T[(i + pIdz) + (j + pIdx)*nzz + (k + pIdy)*nxx*nzz];
+                }
+            }
+        }   
+
+        synthetic_data[spread++] = linear3d(P, xd, yd, zd);
     }
 }
 
@@ -182,6 +184,52 @@ void Eikonal::export_synthetic_data()
 {    
     std::string data_file = data_folder + modeling_type + "_nStations" + std::to_string(geometry->spread[srcId]) + "_shot_" + std::to_string(geometry->sInd[srcId]+1) + ".bin";
     export_binary_float(data_file, synthetic_data, geometry->spread[srcId]);    
+}
+
+float Eikonal::linear1d(float P[2], float dx)
+{
+    return P[0] + dx*(P[1] - P[0]);
+}
+
+float Eikonal::cubic1d(float P[4], float dx)
+{
+    return P[1] + 0.5f*dx*(P[2] - P[0] + dx*(2.0f*P[0] - 5.0f*P[1] + 4.0f*P[2] - P[3] + dx*(3.0f*(P[1] - P[2]) + P[3] - P[0])));
+}
+
+float Eikonal::linear2d(float P[2][2], float dx, float dy)
+{    
+    float p[2];
+    p[0] = linear1d(P[0], dy);
+    p[1] = linear1d(P[1], dy);
+    return linear1d(p, dx);
+}
+
+float Eikonal::cubic2d(float P[4][4], float dx, float dy)
+{    
+    float p[4];
+    p[0] = cubic1d(P[0], dy);
+    p[1] = cubic1d(P[1], dy);
+    p[2] = cubic1d(P[2], dy);
+    p[3] = cubic1d(P[3], dy);    
+    return cubic1d(p, dx);
+}
+
+float Eikonal::linear3d(float P[2][2][2], float dx, float dy, float dz)
+{    
+    float p[2];
+    p[0] = linear2d(P[0], dy, dz);
+    p[1] = linear2d(P[1], dy, dz);
+    return linear1d(p, dx);
+}
+
+float Eikonal::cubic3d(float P[4][4][4], float dx, float dy, float dz)
+{    
+    float p[4];
+    p[0] = cubic2d(P[0], dy, dz);
+    p[1] = cubic2d(P[1], dy, dz);
+    p[2] = cubic2d(P[2], dy, dz);
+    p[3] = cubic2d(P[3], dy, dz);
+    return cubic1d(p, dx);
 }
 
 int Eikonal::iDivUp(int a, int b) 

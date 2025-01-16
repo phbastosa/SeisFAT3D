@@ -10,6 +10,14 @@ private:
     void set_boundaries();
     void set_specifications();
 
+    float cubic1d(float P[4], float dx);
+    float cubic2d(float P[4][4], float dx, float dy);
+    float cubic3d(float P[4][4][4], float dx, float dy, float dz);
+
+    float linear1d(float P[2], float dx);
+    float linear2d(float P[2][2], float dx, float dy);
+    float linear3d(float P[2][2][2], float dx, float dy, float dz);
+
 protected:
 
     int total_levels;
