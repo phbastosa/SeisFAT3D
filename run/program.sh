@@ -16,16 +16,16 @@ eikonal="../src/modeling/hfreq/eikonal.cu"
 elastic="../src/modeling/lfreq/elastic.cu"
 
 eikonal_iso="../src/modeling/hfreq/eikonal_iso.cu"
-eikonal_vti="../src/modeling/hfreq/eikonal_vti.cu"
+eikonal_ani="../src/modeling/hfreq/eikonal_ani.cu"
 
 elastic_iso="../src/modeling/lfreq/elastic_iso.cu"
-elastic_vti="../src/modeling/lfreq/elastic_vti.cu"
+elastic_ani="../src/modeling/lfreq/elastic_ani.cu"
 
 modeling_main="../src/modeling_main.cpp"
 
 modeling_all="$modeling $eikonal $elastic 
               $eikonal_iso $elastic_iso 
-              $eikonal_vti $elastic_vti"
+              $eikonal_ani $elastic_ani"
 
 # Seismic inversion scripts ---------------------------------------------------------------------------
 
@@ -95,11 +95,11 @@ case "$1" in
     echo -e "../bin/\033[31mmodeling.exe\033[m" 
     nvcc $ioFunctions $geometry $modeling_all $modeling_main $flags -o ../bin/modeling.exe
 
-    echo -e "../bin/\033[31minversion.exe\033[m" 
-    nvcc $ioFunctions $geometry $modeling_all $inversion_all $inversion_main $flags -o ../bin/inversion.exe
+    # echo -e "../bin/\033[31minversion.exe\033[m" 
+    # nvcc $ioFunctions $geometry $modeling_all $inversion_all $inversion_main $flags -o ../bin/inversion.exe
 
-    echo -e "../bin/\033[31mmigration.exe\033[m"
-    nvcc $ioFunctions $geometry $modeling_all $migration_all $migration_main $flags -o ../bin/migration.exe
+    # echo -e "../bin/\033[31mmigration.exe\033[m"
+    # nvcc $ioFunctions $geometry $modeling_all $migration_all $migration_main $flags -o ../bin/migration.exe
 
 	exit 0
 ;;
