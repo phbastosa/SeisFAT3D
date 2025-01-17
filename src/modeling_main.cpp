@@ -1,18 +1,18 @@
 # include "modeling/hfreq/eikonal_iso.cuh"
-# include "modeling/hfreq/eikonal_vti.cuh"
+# include "modeling/hfreq/eikonal_ani.cuh"
 
 # include "modeling/lfreq/elastic_iso.cuh"
-# include "modeling/lfreq/elastic_vti.cuh"
+# include "modeling/lfreq/elastic_ani.cuh"
 
 int main(int argc, char **argv)
 {
     std::vector<Modeling *> modeling = 
     {
         new Eikonal_ISO(),
-        new Eikonal_VTI(),
+        new Eikonal_ANI(),
 
         new Elastic_ISO(),
-        new Elastic_VTI()
+        new Elastic_ANI()
     };
 
     auto file = std::string(argv[1]);
