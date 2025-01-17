@@ -137,7 +137,7 @@ void Eikonal::compute_seismogram()
 {
     int spread = 0;
 
-    float P[2][2][2];
+    float P[4][4][4];
 
     for (recId = geometry->iRec[srcId]; recId < geometry->fRec[srcId]; recId++)
     {
@@ -157,26 +157,22 @@ void Eikonal::compute_seismogram()
         float yd = (y - y0) / (y1 - y0);
         float zd = (z - z0) / (z1 - z0);
 
-        int index = ((int)(z / dz) + nb) + 
-                    ((int)(x / dx) + nb)*nzz + 
-                    ((int)(y / dy) + nb)*nxx*nzz;
+        int i = (int)(z / dz) + nb; 
+        int j = (int)(x / dx) + nb;   
+        int k = (int)(y / dy) + nb;         
 
-        int k = (int) (index / (nxx*nzz));         
-        int j = (int) (index - k*nxx*nzz) / nzz;   
-        int i = (int) (index - j*nzz - k*nxx*nzz); 
-
-        for (int pIdx = 0; pIdx < 2; pIdx++)
+        for (int pIdx = 0; pIdx < 4; pIdx++)
         {
-            for (int pIdy = 0; pIdy < 2; pIdy++)
+            for (int pIdy = 0; pIdy < 4; pIdy++)
             {
-                for (int pIdz = 0; pIdz < 2; pIdz++)
+                for (int pIdz = 0; pIdz < 4; pIdz++)
                 {    
-                    P[pIdx][pIdy][pIdz] = T[(i + pIdz) + (j + pIdx)*nzz + (k + pIdy)*nxx*nzz];
+                    P[pIdx][pIdy][pIdz] = T[(i + pIdz - 1) + (j + pIdx - 1)*nzz + (k + pIdy - 1)*nxx*nzz];
                 }
             }
         }   
 
-        synthetic_data[spread++] = linear3d(P, xd, yd, zd);
+        synthetic_data[spread++] = cubic3d(P, xd, yd, zd);
     }
 }
 
@@ -186,22 +182,9 @@ void Eikonal::export_synthetic_data()
     export_binary_float(data_file, synthetic_data, geometry->spread[srcId]);    
 }
 
-float Eikonal::linear1d(float P[2], float dx)
-{
-    return P[0] + dx*(P[1] - P[0]);
-}
-
 float Eikonal::cubic1d(float P[4], float dx)
 {
     return P[1] + 0.5f*dx*(P[2] - P[0] + dx*(2.0f*P[0] - 5.0f*P[1] + 4.0f*P[2] - P[3] + dx*(3.0f*(P[1] - P[2]) + P[3] - P[0])));
-}
-
-float Eikonal::linear2d(float P[2][2], float dx, float dy)
-{    
-    float p[2];
-    p[0] = linear1d(P[0], dy);
-    p[1] = linear1d(P[1], dy);
-    return linear1d(p, dx);
 }
 
 float Eikonal::cubic2d(float P[4][4], float dx, float dy)
@@ -212,14 +195,6 @@ float Eikonal::cubic2d(float P[4][4], float dx, float dy)
     p[2] = cubic1d(P[2], dy);
     p[3] = cubic1d(P[3], dy);    
     return cubic1d(p, dx);
-}
-
-float Eikonal::linear3d(float P[2][2][2], float dx, float dy, float dz)
-{    
-    float p[2];
-    p[0] = linear2d(P[0], dy, dz);
-    p[1] = linear2d(P[1], dy, dz);
-    return linear1d(p, dx);
 }
 
 float Eikonal::cubic3d(float P[4][4][4], float dx, float dy, float dz)
