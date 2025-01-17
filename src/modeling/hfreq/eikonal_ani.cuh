@@ -1,24 +1,46 @@
-# ifndef EIKONAL_VTI_CUH
-# define EIKONAL_VTI_CUH
+# ifndef EIKONAL_ANI_CUH
+# define EIKONAL_ANI_CUH
 
 # include "eikonal.cuh"
 
-class Eikonal_VTI : public Eikonal
+class Eikonal_ANI : public Eikonal
 {
 private:
 
     int n, v, aId;
 
-    float * E = nullptr;
-    float * D = nullptr;
-    float * G = nullptr;
+    float * C11 = nullptr;
+    float * C12 = nullptr;
+    float * C13 = nullptr;
+    float * C14 = nullptr;
+    float * C15 = nullptr;
+    float * C16 = nullptr;
+
+    float * C22 = nullptr;
+    float * C23 = nullptr;
+    float * C24 = nullptr;
+    float * C25 = nullptr;
+    float * C26 = nullptr;
+
+    float * C33 = nullptr;
+    float * C34 = nullptr;
+    float * C35 = nullptr;
+    float * C36 = nullptr;
+
+    float * C44 = nullptr;
+    float * C45 = nullptr;
+    float * C46 = nullptr;
+
+    float * C55 = nullptr;
+    float * C56 = nullptr;
+
+    float * C66 = nullptr;
 
     float * p = nullptr;
+    float * C = nullptr;
+    float * G = nullptr;
     float * Gv = nullptr;
-    float * qV = nullptr;
-    float * Gij = nullptr;
-    float * Cijkl = nullptr;
-    float * S_vti = nullptr;
+    float * qS = nullptr;
 
     void get_stiffness();
     void get_christoffel();

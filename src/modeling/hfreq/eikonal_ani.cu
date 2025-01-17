@@ -1,35 +1,19 @@
-# include "eikonal_vti.cuh"
+# include "eikonal_ani.cuh"
 
-void Eikonal_VTI::set_properties()
+void Eikonal_ANI::set_properties()
 {
-    S = new float[volsize]();
-
     Vp = new float[nPoints]();
-    Vs = new float[nPoints]();
     Ro = new float[nPoints]();
 
-    E = new float[nPoints]();
-    D = new float[nPoints]();
-    G = new float[nPoints](); 
-
-    S_vti = new float[volsize]();
+    S = new float[volsize]();
+    qS = new float[volsize]();
 
     std::string vp_file = catch_parameter("vp_model_file", parameters);
-    std::string vs_file = catch_parameter("vs_model_file", parameters);
     std::string ro_file = catch_parameter("ro_model_file", parameters);
 
-    std::string g_file = catch_parameter("gamma_model_file", parameters);
-    std::string d_file = catch_parameter("delta_model_file", parameters);
-    std::string e_file = catch_parameter("epsilon_model_file", parameters);
-
     import_binary_float(vp_file, Vp, nPoints);
-    import_binary_float(vs_file, Vs, nPoints);
     import_binary_float(ro_file, Ro, nPoints);
 
-    import_binary_float(e_file, E, nPoints);
-    import_binary_float(d_file, D, nPoints);
-    import_binary_float(g_file, G, nPoints);
-    
     float * slowness = new float[nPoints]();
 
     # pragma omp parallel for
@@ -40,26 +24,91 @@ void Eikonal_VTI::set_properties()
 
     # pragma omp parallel for
     for (int index = 0; index < volsize; index++)
-        S_vti[index] = S[index];
+        qS[index] = S[index];
 
     delete[] slowness;
 }
 
-void Eikonal_VTI::set_conditions()
+void Eikonal_ANI::set_conditions()
 {
-    modeling_type = "eikonal_vti";
-    modeling_name = "Modeling type: Eikonal vertically transverse isotropic time propagation";
+    modeling_type = "eikonal_ani";
+    modeling_name = "Modeling type: Anisotropic eikonal solver";
 
     n = 3;
     v = 6;
 
     p = new float[n]();
+    C = new float[v*v]();
+    G = new float[n*n]();
     Gv = new float[n]();
-    Gij = new float[n*n]();
-    Cijkl = new float[v*v]();
+
+    std::string Cijkl_folder = catch_parameter("Cijkl_folder", parameters);
+
+    C11 = new float[nPoints]();
+    import_binary_float(Cijkl_folder + "C11.bin", C11, nPoints);
+
+    C12 = new float[nPoints]();
+    import_binary_float(Cijkl_folder + "C12.bin", C12, nPoints);
+
+    C13 = new float[nPoints]();
+    import_binary_float(Cijkl_folder + "C13.bin", C13, nPoints);
+
+    C14 = new float[nPoints]();
+    import_binary_float(Cijkl_folder + "C14.bin", C14, nPoints);
+
+    C15 = new float[nPoints]();
+    import_binary_float(Cijkl_folder + "C15.bin", C15, nPoints);
+
+    C16 = new float[nPoints]();
+    import_binary_float(Cijkl_folder + "C16.bin", C16, nPoints);
+
+    C22 = new float[nPoints]();
+    import_binary_float(Cijkl_folder + "C22.bin", C22, nPoints);
+
+    C23 = new float[nPoints]();
+    import_binary_float(Cijkl_folder + "C23.bin", C23, nPoints);
+    
+    C24 = new float[nPoints]();
+    import_binary_float(Cijkl_folder + "C24.bin", C24, nPoints);
+
+    C25 = new float[nPoints]();
+    import_binary_float(Cijkl_folder + "C25.bin", C25, nPoints);
+
+    C26 = new float[nPoints]();
+    import_binary_float(Cijkl_folder + "C26.bin", C26, nPoints);
+
+    C33 = new float[nPoints]();
+    import_binary_float(Cijkl_folder + "C33.bin", C33, nPoints);
+    
+    C34 = new float[nPoints]();
+    import_binary_float(Cijkl_folder + "C34.bin", C34, nPoints);
+
+    C35 = new float[nPoints]();
+    import_binary_float(Cijkl_folder + "C35.bin", C35, nPoints);
+
+    C36 = new float[nPoints]();
+    import_binary_float(Cijkl_folder + "C36.bin", C36, nPoints);
+
+    C44 = new float[nPoints]();
+    import_binary_float(Cijkl_folder + "C44.bin", C44, nPoints);
+
+    C45 = new float[nPoints]();
+    import_binary_float(Cijkl_folder + "C45.bin", C45, nPoints);
+
+    C46 = new float[nPoints]();
+    import_binary_float(Cijkl_folder + "C46.bin", C46, nPoints);
+
+    C55 = new float[nPoints]();
+    import_binary_float(Cijkl_folder + "C55.bin", C55, nPoints);
+
+    C56 = new float[nPoints]();
+    import_binary_float(Cijkl_folder + "C56.bin", C56, nPoints);
+
+    C66 = new float[nPoints]();
+    import_binary_float(Cijkl_folder + "C66.bin", C66, nPoints);
 }
 
-void Eikonal_VTI::forward_solver()
+void Eikonal_ANI::forward_solver()
 {
     cudaMemcpy(d_S, S, volsize*sizeof(float), cudaMemcpyHostToDevice);
     cudaMemcpy(d_T, T, volsize*sizeof(float), cudaMemcpyHostToDevice);
@@ -83,7 +132,7 @@ void Eikonal_VTI::forward_solver()
 
         if ((i >= nb) && (i < nzz-nb) && (j >= nb) && (j < nxx-nb) && (k >= nb) && (k < nyy-nb))
         {
-            aId = (i-nb) + (j-nb)*nz + (k-nb)*nx*nz;
+            aId = (i - nb) + (j - nb)*nz + (k - nb)*nx*nz;
 
             float dTz = 0.5f*(T[(i+1) + j*nzz + k*nxx*nzz] - T[(i-1) + j*nzz + k*nxx*nzz]) / dz;
             float dTx = 0.5f*(T[i + (j+1)*nzz + k*nxx*nzz] - T[i + (j-1)*nzz + k*nxx*nzz]) / dx;
@@ -95,17 +144,17 @@ void Eikonal_VTI::forward_solver()
             p[1] = dTx / norm;
             p[2] = dTy / norm;
 
-            get_stiffness();    
+            get_stiffness();
             get_christoffel();
             get_eigen_values();
 
-            S_vti[index] = 1.0f / sqrtf(Gv[0] * Ro[aId]);
+            qS[index] = 1.0f / sqrtf(Gv[0] * Ro[aId]);
         }
     }
 
     initialization();
 
-    cudaMemcpy(d_S, S_vti, volsize*sizeof(float), cudaMemcpyHostToDevice);
+    cudaMemcpy(d_S, qS, volsize*sizeof(float), cudaMemcpyHostToDevice);
     cudaMemcpy(d_T, T, volsize*sizeof(float), cudaMemcpyHostToDevice);
 
     fast_sweeping_method();
@@ -115,46 +164,29 @@ void Eikonal_VTI::forward_solver()
     compute_seismogram();
 }
 
-int Eikonal_VTI::voigt_map(int i, int j)
+void Eikonal_ANI::get_stiffness()
 {
-    if (i == j)
-        return i;
-    if (((i == 1) && (j == 2)) || ((i == 2) && (j == 1)))
-        return 3;
-    if (((i == 2) && (j == 0)) || ((i == 0) && (j == 2)))
-        return 4;
-    if (((i == 0) && (j == 1)) || ((i == 1) && (j == 0)))
-        return 5;
+    C[0+0*v] = C11[aId]; C[0+1*v] = C12[aId]; C[0+2*v] = C13[aId]; 
+    C[1+0*v] = C12[aId]; C[1+1*v] = C22[aId]; C[1+2*v] = C23[aId]; 
+    C[2+0*v] = C13[aId]; C[2+1*v] = C23[aId]; C[2+2*v] = C33[aId]; 
+    C[3+0*v] = C14[aId]; C[3+1*v] = C24[aId]; C[3+2*v] = C34[aId]; 
+    C[4+0*v] = C15[aId]; C[4+1*v] = C25[aId]; C[4+2*v] = C35[aId]; 
+    C[5+0*v] = C16[aId]; C[5+1*v] = C26[aId]; C[5+2*v] = C36[aId]; 
     
-    return -9999999;
+    C[0+3*v] = C14[aId]; C[0+4*v] = C15[aId]; C[0+5*v] = C16[aId];
+    C[1+3*v] = C24[aId]; C[1+4*v] = C25[aId]; C[1+5*v] = C26[aId];
+    C[2+3*v] = C34[aId]; C[2+4*v] = C35[aId]; C[2+5*v] = C36[aId];
+    C[3+3*v] = C44[aId]; C[3+4*v] = C45[aId]; C[3+5*v] = C46[aId];
+    C[4+3*v] = C45[aId]; C[4+4*v] = C55[aId]; C[4+5*v] = C56[aId];
+    C[5+3*v] = C46[aId]; C[5+4*v] = C56[aId]; C[5+5*v] = C66[aId];
+
+    for (int i = 0; i < v*v; i++) C[i] *= 1.0f / Ro[aId] / Ro[aId];         
 }
 
-void Eikonal_VTI::get_stiffness()
-{
-    float B2, A11, A33, A55, A66, A13;
-
-    B2 = 1.0f / Ro[aId] / Ro[aId];
-
-    A33 = Vp[aId]*Vp[aId]*Ro[aId];
-    A55 = Vs[aId]*Vs[aId]*Ro[aId];
-    A11 = A33*(1.0f + 2.0f*E[aId]); 
-    A66 = A55*(1.0f + 2.0f*G[aId]);
-
-    A13 = sqrtf(2.0f*D[aId]*A33*(A33 - A55) + (A33 - A55)*(A33 - A55)) - A55;
-    
-    Cijkl[2 + 2*v] = A33 * B2;
-    Cijkl[5 + 5*v] = A66 * B2;
-    Cijkl[0 + 0*v] = Cijkl[1 + 1*v] = A11 * B2;
-    Cijkl[0 + 2*v] = Cijkl[0 + 2*v] = A13 * B2;
-    Cijkl[2 + 1*v] = Cijkl[1 + 2*v] = A13 * B2;
-    Cijkl[3 + 3*v] = Cijkl[4 + 4*v] = A55 * B2;
-    Cijkl[1 + 0*v] = Cijkl[0 + 1*v] = (A11 - 2.0f*A66) * B2;
-}
-
-void Eikonal_VTI::get_christoffel()
+void Eikonal_ANI::get_christoffel()
 {
     for (int index = 0; index < n*n; index++) 
-        Gij[index] = 0.0f; 
+        G[index] = 0.0f; 
 
     for (int i = 0; i < n; i++) 
     {
@@ -167,43 +199,43 @@ void Eikonal_VTI::get_christoffel()
                     int I = voigt_map(i, k);
                     int J = voigt_map(j, l);
 
-                    Gij[i + j*n] += Cijkl[I + J*v]*p[k]*p[l];
+                    G[i + j*n] += C[I + J*v]*p[k]*p[l];
                 }
             }
         }
     }
 }
 
-void Eikonal_VTI::get_eigen_values()
+void Eikonal_ANI::get_eigen_values()
 {
-    float a = -(Gij[0] + Gij[4] + Gij[8]);
+    float a = -(G[0] + G[4] + G[8]);
     
-    float b = Gij[0]*Gij[4] + Gij[4]*Gij[8] + 
-              Gij[0]*Gij[8] - Gij[3]*Gij[1] - 
-              Gij[6]*Gij[6] - Gij[7]*Gij[5];
+    float b = G[0]*G[4] + G[4]*G[8] + 
+              G[0]*G[8] - G[3]*G[1] - 
+              G[6]*G[6] - G[7]*G[5];
     
-    float c = -(Gij[0]*(Gij[4]*Gij[8] - Gij[7]*Gij[5]) -
-                Gij[3]*(Gij[1]*Gij[8] - Gij[7]*Gij[6]) +
-                Gij[6]*(Gij[1]*Gij[5] - Gij[4]*Gij[6]));
+    float c = -(G[0]*(G[4]*G[8] - G[7]*G[5]) -
+                G[3]*(G[1]*G[8] - G[7]*G[6]) +
+                G[6]*(G[1]*G[5] - G[4]*G[6]));
 
     float p = b - (a*a)/3.0f;
     float q = (2.0f*a*a*a)/27.0f - (a*b)/3.0f + c;
 
-    float detM = 0.25f*(q*q) + (p*p*p)/27.0f;
+    float detG = 0.25f*(q*q) + (p*p*p)/27.0f;
 
-    if (detM > 0) 
+    if (detG > 0) 
     {
-        float u = cbrtf(-0.5f*q + sqrtf(detM));
-        float v = cbrtf(-0.5f*q - sqrtf(detM));
+        float u = cbrtf(-0.5f*q + sqrtf(detG));
+        float v = cbrtf(-0.5f*q - sqrtf(detG));
         
         Gv[0] = u + v - a/3.0f;
     } 
-    else if (detM == 0) 
+    else if (detG == 0) 
     {       
         float u = cbrt(-0.5f*q);
 
         Gv[0] = 2.0f*u - a/3.0f;
-        Gv[1] = -u - a/3.0f;         
+        Gv[1] =-1.0f*u - a/3.0f;         
     } 
     else  
     {
@@ -217,7 +249,21 @@ void Eikonal_VTI::get_eigen_values()
         Gv[2] = r*cosf((phi + 4.0f*M_PI)/3.0f) - a/3.0f;      
     }
     
-    if (G[0] < G[1]) std::swap(G[0],G[1]);
-    if (G[1] < G[2]) std::swap(G[1],G[2]);
-    if (G[0] > G[1]) std::swap(G[0],G[1]);    
+    if (Gv[0] < Gv[1]) std::swap(Gv[0],Gv[1]);
+    if (Gv[1] < Gv[2]) std::swap(Gv[1],Gv[2]);
+    if (Gv[0] > Gv[1]) std::swap(Gv[0],Gv[1]);    
+}
+
+int Eikonal_ANI::voigt_map(int i, int j)
+{
+    if (i == j)
+        return i;
+    if (((i == 1) && (j == 2)) || ((i == 2) && (j == 1)))
+        return 3;
+    if (((i == 2) && (j == 0)) || ((i == 0) && (j == 2)))
+        return 4;
+    if (((i == 0) && (j == 1)) || ((i == 1) && (j == 0)))
+        return 5;
+    
+    return -1;
 }
