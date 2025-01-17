@@ -46,9 +46,8 @@ void Elastic::set_wavelet()
     float * signal_aux1 = new float[nt]();
     float * signal_aux2 = new float[nt]();
 
-    float pi = 4.0f*atanf(1.0f);
-    float t0 = 2.0f*sqrtf(pi) / fmax;
-    float fc = fmax / (3.0f * sqrtf(pi));
+    float t0 = 2.0f*sqrtf(M_PI) / fmax;
+    float fc = fmax / (3.0f * sqrtf(M_PI));
 
     tlag = (int)(t0 / dt) + 1;
 
@@ -56,7 +55,7 @@ void Elastic::set_wavelet()
     {
         float td = n*dt - t0;
 
-        float arg = pi*pi*pi*fc*fc*td*td;
+        float arg = M_PI*M_PI*M_PI*fc*fc*td*td;
 
         signal_aux1[n] = 1e5f*(1.0f - 2.0f*arg)*expf(-arg);
     }
