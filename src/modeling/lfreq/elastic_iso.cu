@@ -3,7 +3,7 @@
 void Elastic_ISO::set_conditions()
 {
     modeling_type = "elastic_iso";
-    modeling_name = "Modeling type: Elastic isotropic wave propagation";
+    modeling_name = "Modeling type: Elastic isotropic solver";
 
     eikonal = new Eikonal_ISO();
     eikonal->parameters = parameters;
@@ -72,9 +72,9 @@ __global__ void compute_pressure(float * Vx, float * Vy, float * Vz, float * Txx
 
     if ((index == 0) && (tId < nt))
     {
-        Txx[sIdz + sIdx*nzz + sIdy*nxx*nzz] = wavelet[tId] / (dx*dy*dz);
-        Tyy[sIdz + sIdx*nzz + sIdy*nxx*nzz] = wavelet[tId] / (dx*dy*dz);
-        Tzz[sIdz + sIdx*nzz + sIdy*nxx*nzz] = wavelet[tId] / (dx*dy*dz);
+        Txx[sIdz + sIdx*nzz + sIdy*nxx*nzz] += wavelet[tId] / (dx*dy*dz);
+        Tyy[sIdz + sIdx*nzz + sIdy*nxx*nzz] += wavelet[tId] / (dx*dy*dz);
+        Tzz[sIdz + sIdx*nzz + sIdy*nxx*nzz] += wavelet[tId] / (dx*dy*dz);
     }
 
     if ((index < nxx*nyy*nzz) && (T[index] < (float)(tId + tlag)*dt))
@@ -101,7 +101,7 @@ __global__ void compute_pressure(float * Vx, float * Vy, float * Vz, float * Txx
             Tzz[index] += dt*((L[index] + 2*M[index])*dVz_dz + L[index]*(dVx_dx + dVy_dy));                    
         }
 
-        if((i >= 0) && (i < nzz) && (j > 3) && (j < nxx-3) && (k > 3) && (k < nyy-3)) 
+        if((i >= 3) && (i < nzz-4) && (j > 3) && (j < nxx-3) && (k > 3) && (k < nyy-3)) 
         {
             float dVx_dy = (75.0f*(Vx[i + j*nzz + (k-4)*nxx*nzz] - Vx[i + j*nzz + (k+3)*nxx*nzz]) +
                           1029.0f*(Vx[i + j*nzz + (k+2)*nxx*nzz] - Vx[i + j*nzz + (k-3)*nxx*nzz]) +
@@ -119,7 +119,7 @@ __global__ void compute_pressure(float * Vx, float * Vy, float * Vz, float * Txx
             Txy[index] += dt*Mxy*(dVx_dy + dVy_dx);
         }
 
-        if((i > 3) && (i < nzz-3) && (j > 3) && (j < nxx-3) && (k >= 0) && (k < nyy)) 
+        if((i > 3) && (i < nzz-3) && (j > 3) && (j < nxx-3) && (k >= 3) && (k < nyy-4)) 
         {
             float dVx_dz = (75.0f*(Vx[(i-4) + j*nzz + k*nxx*nzz] - Vx[(i+3) + j*nzz + k*nxx*nzz]) +
                           1029.0f*(Vx[(i+2) + j*nzz + k*nxx*nzz] - Vx[(i-3) + j*nzz + k*nxx*nzz]) +
@@ -137,7 +137,7 @@ __global__ void compute_pressure(float * Vx, float * Vy, float * Vz, float * Txx
             Txz[index] += dt*Mxz*(dVx_dz + dVz_dx);
         }
 
-        if((i > 3) && (i < nzz-3) && (j >= 0) && (j < nxx) && (k > 3) && (k < nyy-3)) 
+        if((i > 3) && (i < nzz-3) && (j >= 3) && (j < nxx-4) && (k > 3) && (k < nyy-3)) 
         {
             float dVy_dz = (75.0f*(Vy[(i-4) + j*nzz + k*nxx*nzz] - Vy[(i+3) + j*nzz + k*nxx*nzz]) +
                           1029.0f*(Vy[(i+2) + j*nzz + k*nxx*nzz] - Vy[(i-3) + j*nzz + k*nxx*nzz]) +
