@@ -34,7 +34,7 @@ XPS = ../inputs/geometry/anisoTest_XPS.txt
 # [3] - Elastic ANI
 # --------------------------------------------------------------------------------------------------
 
-modeling_type = 2 
+modeling_type = 0 
 
 time_samples = 1001
 time_spacing = 1e-3

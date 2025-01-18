@@ -8,8 +8,8 @@ dh = 10.0
 
 # Thomsen paramters for Orthorhombic case
 
-E1 = 0.0
-E2 = 0.0
+E1 = 0.1
+E2 = 0.1
 D1 = 0.0
 D2 = 0.0
 D3 = 0.0
@@ -54,64 +54,57 @@ C12 = np.sqrt((C11 - C66)**2 + 2.0*D3*C11*(C11 - C66)) - C66
 
 # Tilt application
 
-# C = np.zeros((6,6))
-# M = np.zeros((6,6))
+C = np.zeros((6,6))
+M = np.zeros((6,6))
 
-# C[0,0] = C11; C[0,1] = C12; C[0,2] = C13; C[0,3] = C14; C[0,4] = C15; C[0,5] = C16  
-# C[1,0] = C12; C[1,1] = C22; C[1,2] = C23; C[1,3] = C24; C[1,4] = C25; C[1,5] = C26  
-# C[2,0] = C13; C[2,1] = C12; C[2,2] = C33; C[2,3] = C34; C[2,4] = C35; C[2,5] = C36  
-# C[3,0] = C14; C[3,1] = C24; C[3,2] = C34; C[3,3] = C44; C[3,4] = C45; C[3,5] = C46  
-# C[4,0] = C15; C[4,1] = C25; C[4,2] = C35; C[4,3] = C45; C[4,4] = C55; C[4,5] = C56  
-# C[5,0] = C16; C[5,1] = C26; C[5,2] = C36; C[5,3] = C46; C[5,4] = C56; C[5,5] = C66  
+C[0,0] = C11; C[0,1] = C12; C[0,2] = C13; C[0,3] = C14; C[0,4] = C15; C[0,5] = C16  
+C[1,0] = C12; C[1,1] = C22; C[1,2] = C23; C[1,3] = C24; C[1,4] = C25; C[1,5] = C26  
+C[2,0] = C13; C[2,1] = C12; C[2,2] = C33; C[2,3] = C34; C[2,4] = C35; C[2,5] = C36  
+C[3,0] = C14; C[3,1] = C24; C[3,2] = C34; C[3,3] = C44; C[3,4] = C45; C[3,5] = C46  
+C[4,0] = C15; C[4,1] = C25; C[4,2] = C35; C[4,3] = C45; C[4,4] = C55; C[4,5] = C56  
+C[5,0] = C16; C[5,1] = C26; C[5,2] = C36; C[5,3] = C46; C[5,4] = C56; C[5,5] = C66  
 
-# Rx = np.array([
-#     [1, 0, 0],
-#     [0, np.cos(theta_x),-np.sin(theta_x)],
-#     [0, np.sin(theta_x), np.cos(theta_x)]
-# ])
+Rx = np.array([
+    [1, 0, 0],
+    [0, np.cos(theta_x),-np.sin(theta_x)],
+    [0, np.sin(theta_x), np.cos(theta_x)]
+])
     
-# Ry = np.array([
-#     [np.cos(theta_y), 0, np.sin(theta_y)],
-#     [0, 1, 0],
-#     [-np.sin(theta_y), 0, np.cos(theta_y)]
-# ])
+Ry = np.array([
+    [np.cos(theta_y), 0, np.sin(theta_y)],
+    [0, 1, 0],
+    [-np.sin(theta_y), 0, np.cos(theta_y)]
+])
 
-# Rz = np.array([
-#     [np.cos(theta_z),-np.sin(theta_z), 0],
-#     [np.sin(theta_z), np.cos(theta_z), 0],
-#     [0, 0, 1]
-# ])
+Rz = np.array([
+    [np.cos(theta_z),-np.sin(theta_z), 0],
+    [np.sin(theta_z), np.cos(theta_z), 0],
+    [0, 0, 1]
+])
 
-# R = Rz @ Ry @ Rx
+R = Rz @ Ry @ Rx
 
-# pax = R[0,0]; pay = R[0,1]; paz = R[0,2]
-# pbx = R[1,0]; pby = R[1,1]; pbz = R[1,2]
-# pcx = R[2,0]; pcy = R[2,1]; pcz = R[2,2]
+pax = R[0,0]; pay = R[0,1]; paz = R[0,2]
+pbx = R[1,0]; pby = R[1,1]; pbz = R[1,2]
+pcx = R[2,0]; pcy = R[2,1]; pcz = R[2,2]
 
-# M[0,0] = pax*pax; M[1,0] = pbx*pbx; M[2,0] = pcx*pcx
-# M[0,1] = pay*pay; M[1,1] = pby*pby; M[2,1] = pcy*pcy
-# M[0,2] = paz*paz; M[1,2] = pbz*pbz; M[2,2] = pcz*pcz
+M[0,0] = pax*pax; M[1,0] = pbx*pbx; M[2,0] = pcx*pcx
+M[0,1] = pay*pay; M[1,1] = pby*pby; M[2,1] = pcy*pcy
+M[0,2] = paz*paz; M[1,2] = pbz*pbz; M[2,2] = pcz*pcz
 
-# M[3,0] = pbx*pcx; M[4,0] = pcx*pax; M[5,0] = pax*pbx
-# M[3,1] = pby*pcy; M[4,1] = pcy*pay; M[5,1] = pay*pby
-# M[3,2] = pbz*pcz; M[4,2] = pcz*paz; M[5,2] = paz*pbz
+M[3,0] = pbx*pcx; M[4,0] = pcx*pax; M[5,0] = pax*pbx
+M[3,1] = pby*pcy; M[4,1] = pcy*pay; M[5,1] = pay*pby
+M[3,2] = pbz*pcz; M[4,2] = pcz*paz; M[5,2] = paz*pbz
 
-# M[0,3] = 2.0*pay*paz; M[1,3] = 2.0*pby*pbz; M[2,3] = 2.0*pcy*pcz
-# M[0,4] = 2.0*paz*pax; M[1,4] = 2.0*pbz*pbx; M[2,4] = 2.0*pcz*pcx
-# M[0,5] = 2.0*pax*pay; M[1,5] = 2.0*pbx*pby; M[2,5] = 2.0*pcx*pcy
+M[0,3] = 2.0*pay*paz; M[1,3] = 2.0*pby*pbz; M[2,3] = 2.0*pcy*pcz
+M[0,4] = 2.0*paz*pax; M[1,4] = 2.0*pbz*pbx; M[2,4] = 2.0*pcz*pcx
+M[0,5] = 2.0*pax*pay; M[1,5] = 2.0*pbx*pby; M[2,5] = 2.0*pcx*pcy
 
-# M[3,3] = pby*pcz + pbz*pcy; M[4,3] = pay*pcz + paz*pcy; M[5,3] = pay*pbz + paz*pby
-# M[3,4] = pbx*pcz + pbz*pcx; M[4,4] = paz*pcx + pax*pcz; M[5,4] = paz*pbx + pax*pbz
-# M[3,5] = pby*pcx + pbx*pcy; M[4,5] = pax*pcy + pay*pcx; M[5,5] = pax*pby + pay*pbx
+M[3,3] = pby*pcz + pbz*pcy; M[4,3] = pay*pcz + paz*pcy; M[5,3] = pay*pbz + paz*pby
+M[3,4] = pbx*pcz + pbz*pcx; M[4,4] = paz*pcx + pax*pcz; M[5,4] = paz*pbx + pax*pbz
+M[3,5] = pby*pcx + pbx*pcy; M[4,5] = pax*pcy + pay*pcx; M[5,5] = pax*pby + pay*pbx
 
-# C_rot = M @ C @ M.T
-
-C_rot = np.array([[C11,C12,C13,C14,C15,C16],
-                  [ 0 ,C22,C23,C24,C25,C26],
-                  [ 0 , 0 ,C33,C34,C35,C36],
-                  [ 0 , 0 , 0 ,C44,C45,C46],
-                  [ 0 , 0 , 0 , 0 ,C55,C56],
-                  [ 0 , 0 , 0 , 0 , 0 ,C66]]) 
+C_rot = M @ C @ M.T
 
 # Filling properties
 
