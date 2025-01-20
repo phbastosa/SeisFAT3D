@@ -10,8 +10,6 @@ void Elastic_ANI::set_conditions()
     eikonal->set_parameters();
 
     B = new float[volsize]();
-    T = new float[volsize]();
-    TT = new float[nPoints]();
 
     # pragma omp parallel for
     for (int index = 0; index < volsize; index++)
@@ -104,8 +102,6 @@ void Elastic_ANI::set_conditions()
     C66 = new float[volsize]();
     import_binary_float(Cijkl_folder + "C66.bin", Cij, nPoints);
     expand_boundary(Cij, C66);
-
-    cudaMalloc((void**)&(d_T), volsize*sizeof(float));
 
     cudaMalloc((void**)&(d_B), volsize*sizeof(float));
     cudaMemcpy(d_B, B, volsize*sizeof(float), cudaMemcpyHostToDevice);

@@ -9,10 +9,6 @@ class Elastic_ANI : public Elastic
 {
 private:
 
-    float * T = nullptr;
-    float * TT = nullptr;
-    float * d_T = nullptr;
-
     float * B = nullptr;
 
     float * C11 = nullptr;

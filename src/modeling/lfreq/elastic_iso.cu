@@ -9,9 +9,6 @@ void Elastic_ISO::set_conditions()
     eikonal->parameters = parameters;
     eikonal->set_parameters();
 
-    T = new float[volsize]();
-    TT = new float[nPoints]();
-
     M = new float[volsize]();
     L = new float[volsize]();
     B = new float[volsize]();
@@ -22,8 +19,6 @@ void Elastic_ISO::set_conditions()
         L[index] = Ro[index]*Vp[index]*Vp[index] - 2.0f*M[index];
         B[index] = 1.0f / Ro[index];
     }
-
-    cudaMalloc((void**)&(d_T), volsize*sizeof(float));
     
     cudaMalloc((void**)&(d_M), volsize*sizeof(float));
     cudaMalloc((void**)&(d_L), volsize*sizeof(float));

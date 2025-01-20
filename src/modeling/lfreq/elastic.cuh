@@ -62,7 +62,7 @@ public:
     void initialization();
     void forward_solver();
 
-    virtual void forward_solver() = 0;
+    virtual void propagation() = 0;
 
     void export_synthetic_data();
 };

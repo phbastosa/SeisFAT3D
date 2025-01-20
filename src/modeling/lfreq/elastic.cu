@@ -12,7 +12,8 @@ void Elastic::set_specifications()
     nThreads = 256;
     nBlocks = (int)((volsize + nThreads - 1) / nThreads);
 
-    P = new float[volsize]();
+    T = new float[volsize]();
+    TT = new float[nPoints]();
 
     current_xrec = new int[max_spread]();
     current_yrec = new int[max_spread]();
@@ -21,6 +22,7 @@ void Elastic::set_specifications()
     synthetic_data = new float[nt*max_spread]();
 
     cudaMalloc((void**)&(d_P), volsize*sizeof(float));
+    cudaMalloc((void**)&(d_T), volsize*sizeof(float));
 
     cudaMalloc((void**)&(d_Vx), volsize*sizeof(float));
     cudaMalloc((void**)&(d_Vy), volsize*sizeof(float));
@@ -203,6 +205,7 @@ void Elastic::forward_solver()
 {
     eikonal->srcId = srcId;
     eikonal->forward_solver();
+
     eikonal->reduce_boundary(eikonal->T, TT);
     
     expand_boundary(TT, T);
@@ -210,7 +213,7 @@ void Elastic::forward_solver()
     cudaMemcpy(d_T, T, volsize*sizeof(float), cudaMemcpyHostToDevice);
 
     initialization();
-    
+
     propagation();
 
     cudaMemcpy(synthetic_data, seismogram, nt*geometry->spread[srcId]*sizeof(float), cudaMemcpyDeviceToHost);

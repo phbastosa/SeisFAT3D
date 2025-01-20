@@ -9,10 +9,6 @@ class Elastic_ISO : public Elastic
 {
 private:
 
-    float * T = nullptr;
-    float * TT = nullptr;
-    float * d_T = nullptr;
-
     float * M = nullptr;
     float * L = nullptr;
     float * B = nullptr;
