@@ -9,9 +9,9 @@ void Elastic_ANI::set_conditions()
     eikonal->parameters = parameters;
     eikonal->set_parameters();
 
-    T = new float[nPoints]();
-    TT = new float[volsize]();
     B = new float[volsize]();
+    T = new float[volsize]();
+    TT = new float[nPoints]();
 
     # pragma omp parallel for
     for (int index = 0; index < volsize; index++)
@@ -170,16 +170,20 @@ void Elastic_ANI::set_conditions()
 void Elastic_ANI::forward_solver()
 {
     eikonal->srcId = srcId;
-
-    eikonal->initialization();
     eikonal->forward_solver();
-
-    eikonal->reduce_boundary(eikonal->T, T);
+    eikonal->reduce_boundary(eikonal->T, TT);
     
-    expand_boundary(T, TT);
+    expand_boundary(TT, T);
     
-    cudaMemcpy(d_T, TT, volsize*sizeof(float), cudaMemcpyHostToDevice);
+    cudaMemcpy(d_T, T, volsize*sizeof(float), cudaMemcpyHostToDevice);
 
+	propagation();
+
+    cudaMemcpy(synthetic_data, seismogram, nt*geometry->spread[srcId]*sizeof(float), cudaMemcpyDeviceToHost);
+}
+
+void Elastic_ANI::propagation()
+{
     for (int tId = 0; tId < nt + tlag; tId++)
     {
         compute_pressure<<<nBlocks, nThreads>>>(d_Vx, d_Vy, d_Vz, d_Txx, d_Tyy, d_Tzz, d_Txz, d_Tyz, d_Txy, d_P, d_T, 
@@ -194,8 +198,6 @@ void Elastic_ANI::forward_solver()
         compute_seismogram<<<sBlocks, nThreads>>>(d_P, rIdx, rIdy, rIdz, seismogram, geometry->spread[srcId], tId, tlag, nt, nxx, nzz);     
         cudaDeviceSynchronize();
     }
-
-    cudaMemcpy(synthetic_data, seismogram, nt*geometry->spread[srcId]*sizeof(float), cudaMemcpyDeviceToHost);
 }
 
 __global__ void compute_pressure(float * Vx, float * Vy, float * Vz, float * Txx, float * Tyy, float * Tzz, float * Txz, float * Tyz, float * Txy, float * P, float * T, 

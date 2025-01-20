@@ -30,7 +30,6 @@ int main(int argc, char **argv)
 
         modeling[type]->show_information();
 
-        modeling[type]->initialization();
         modeling[type]->forward_solver();
 
         modeling[type]->export_synthetic_data();

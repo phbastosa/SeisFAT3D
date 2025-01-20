@@ -27,6 +27,7 @@ private:
 
 public:
 
+    void propagation();
     void forward_solver();
 };
 

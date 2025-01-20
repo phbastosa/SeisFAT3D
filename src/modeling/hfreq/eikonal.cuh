@@ -29,7 +29,6 @@ protected:
     float * d_T = nullptr;
     float * d_S = nullptr;
 
-    void fast_sweeping_method();
     void compute_seismogram();
 
     virtual void set_conditions() = 0;
@@ -39,8 +38,9 @@ protected:
 
 public:
 
+    void propagation();
     void initialization();
-
+    
     virtual void forward_solver() = 0;
 
     void export_synthetic_data();

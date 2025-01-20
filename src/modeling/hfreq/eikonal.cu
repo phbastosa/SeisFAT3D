@@ -89,8 +89,11 @@ void Eikonal::initialization()
     }
 }
 
-void Eikonal::fast_sweeping_method()
+void Eikonal::propagation()
 {
+    cudaMemcpy(d_S, S, volsize*sizeof(float), cudaMemcpyHostToDevice);
+    cudaMemcpy(d_T, T, volsize*sizeof(float), cudaMemcpyHostToDevice);
+
     for (int sweep = 0; sweep < nSweeps; sweep++)
     { 
 	    int start = (sweep == 3 || sweep == 5 || sweep == 6 || sweep == 7) ? total_levels : meshDim;
@@ -131,6 +134,8 @@ void Eikonal::fast_sweeping_method()
             cudaDeviceSynchronize();
 	    }
     }
+    
+    cudaMemcpy(T, d_T, volsize*sizeof(float), cudaMemcpyDeviceToHost);
 }
 
 void Eikonal::compute_seismogram()

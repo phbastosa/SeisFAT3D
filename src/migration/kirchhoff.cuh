@@ -3,8 +3,6 @@
 
 # include "migration.hpp"
 
-# define PI 3.14159265359
-
 class Kirchhoff : public Migration
 {
 private:

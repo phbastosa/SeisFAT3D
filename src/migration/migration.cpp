@@ -27,7 +27,7 @@ void Migration::set_parameters()
 
 void Migration::read_seismic_data()
 {
-    std::string data_path = input_data_folder + input_data_prefix + std::to_string(modeling->geometry->sInd[modeling->srcId] + 1) + ".bin";
+    std::string data_path = input_data_folder + input_data_prefix + std::to_string(modeling->geometry->sInd[modeling->srcId]+1) + ".bin";
 
     import_binary_float(data_path, seismic, modeling->nt*modeling->geometry->spread[modeling->srcId]);
 }
@@ -41,17 +41,13 @@ void Migration::image_building()
 
 void Migration::get_receiver_traveltimes()
 {
-    for (int recId = 0; recId < modeling->geometry->nrec; recId++)
+    for (modeling->recId = 0; modeling->recId < modeling->geometry->nrec; modeling->recId++)
     {
-        modeling->recId = recId;
+        show_information();
 
         initialization();
 
-        show_information();
-
-        modeling->forward_solver();
-
-        modeling->recId = recId;
+        modeling->propagation();
 
         export_receiver_traveltimes();
     }

@@ -110,16 +110,8 @@ void Eikonal_ANI::set_conditions()
 
 void Eikonal_ANI::forward_solver()
 {
-    cudaMemcpy(d_S, S, volsize*sizeof(float), cudaMemcpyHostToDevice);
-    cudaMemcpy(d_T, T, volsize*sizeof(float), cudaMemcpyHostToDevice);
-
-    fast_sweeping_method();
-
-    cudaMemcpy(T, d_T, volsize*sizeof(float), cudaMemcpyDeviceToHost);
-
-    int sIdx = (int)(geometry->xrec[geometry->sInd[srcId]] / dx) + nb;
-    int sIdy = (int)(geometry->xrec[geometry->sInd[srcId]] / dy) + nb;
-    int sIdz = (int)(geometry->xrec[geometry->sInd[srcId]] / dz) + nb;
+    initialization();
+    propagation();
 
     for (int index = 0; index < volsize; index++)
     {
@@ -148,20 +140,18 @@ void Eikonal_ANI::forward_solver()
             get_christoffel();
             get_eigen_values();
 
-            qS[index] = 1.0f / sqrtf(Gv[0] * Ro[aId]);
+            S[index] = 1.0f / sqrtf(Gv[0] * Ro[aId]);
         }
     }
 
     initialization();
-
-    cudaMemcpy(d_S, qS, volsize*sizeof(float), cudaMemcpyHostToDevice);
-    cudaMemcpy(d_T, T, volsize*sizeof(float), cudaMemcpyHostToDevice);
-
-    fast_sweeping_method();
-
-    cudaMemcpy(T, d_T, volsize*sizeof(float), cudaMemcpyDeviceToHost);
+    propagation();
 
     compute_seismogram();
+
+    # pragma omp parallel for
+    for (int index = 0; index < volsize; index++)
+        S[index] = qS[index];
 }
 
 void Eikonal_ANI::get_stiffness()

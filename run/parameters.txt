@@ -2,17 +2,17 @@
 # Model paramenters --------------------------------------------------------------------------------
 #---------------------------------------------------------------------------------------------------
 
-x_samples = 201                            # <int>  
-y_samples = 101                            # <int>  
-z_samples = 51                             # <int>  
+x_samples = 301                            # <int>  
+y_samples = 201                            # <int>  
+z_samples = 101                            # <int>  
 
 x_spacing = 10.0                           # [m] <float> 
 y_spacing = 10.0                           # [m] <float> 
 z_spacing = 10.0                           # [m] <float> 
 
-vp_model_file = ../inputs/models/anisoTest_vp.bin   
-vs_model_file = ../inputs/models/anisoTest_vs.bin   
-ro_model_file = ../inputs/models/anisoTest_ro.bin
+vp_model_file = ../inputs/models/cubicKirchhoff_vp.bin   
+vs_model_file = ../inputs/models/cubicKirchhoff_vs.bin   
+ro_model_file = ../inputs/models/cubicKirchhoff_ro.bin
 
 Cijkl_folder = ../inputs/models/anisoTest_
 
@@ -20,9 +20,9 @@ Cijkl_folder = ../inputs/models/anisoTest_
 # Geometry parameters ------------------------------------------------------------------------------
 #---------------------------------------------------------------------------------------------------
 
-SPS = ../inputs/geometry/anisoTest_SPS.txt              
-RPS = ../inputs/geometry/anisoTest_RPS.txt     
-XPS = ../inputs/geometry/anisoTest_XPS.txt     
+SPS = ../inputs/geometry/cubicKirchhoff_SPS.txt              
+RPS = ../inputs/geometry/cubicKirchhoff_RPS.txt     
+XPS = ../inputs/geometry/cubicKirchhoff_XPS.txt     
 
 #---------------------------------------------------------------------------------------------------
 # Modeling parameters ------------------------------------------------------------------------------
@@ -34,16 +34,16 @@ XPS = ../inputs/geometry/anisoTest_XPS.txt
 # [3] - Elastic ANI
 # --------------------------------------------------------------------------------------------------
 
-modeling_type = 0 
+modeling_type = 0
 
-time_samples = 1001
+time_samples = 3001
 time_spacing = 1e-3
 max_frequency = 30.0
 
 boundary_samples = 50
 boundary_damping = 0.0045
 
-modeling_output_folder = ../outputs/syntheticData/            
+modeling_output_folder = ../outputs/syntheticData/
 
 #---------------------------------------------------------------------------------------------------
 # Inversion parameters 
@@ -79,11 +79,11 @@ obs_data_prefix = picks_data_shot_
 # Migration parameters 
 #--------------------------------------------------------------------------------------------------- 
 
-mig_aperture_x = 50                         # degrees <float>
-mig_aperture_y = 50                         # degrees <float>
+mig_aperture_x = 20                         # degrees <float>
+mig_aperture_y = 20                         # degrees <float>
 
 input_data_folder = ../inputs/data/        
-input_data_prefix = seismic_data_nStations241_nSamples1001_shot_
+input_data_prefix = cubicKirchhoff_input_shot_
 
 output_image_folder = ../outputs/migratedImages/
 output_table_folder = ../outputs/travelTimeTables/

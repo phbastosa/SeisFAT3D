@@ -56,6 +56,7 @@ public:
 
     void initialization();
     
+    virtual void propagation() = 0;
     virtual void forward_solver() = 0;
 
     void export_synthetic_data();

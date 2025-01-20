@@ -19,20 +19,13 @@ void Eikonal_ISO::set_properties()
 void Eikonal_ISO::set_conditions()
 {
     modeling_type = "eikonal_iso";
-    modeling_name = "Modeling type: Eikonal isotropic time propagation";
+    modeling_name = "Modeling type: Eikonal isotropic solver";
 }
 
 void Eikonal_ISO::forward_solver()
 {
-    cudaMemcpy(d_S, S, volsize*sizeof(float), cudaMemcpyHostToDevice);
-
     initialization();
-
-    cudaMemcpy(d_T, T, volsize*sizeof(float), cudaMemcpyHostToDevice);
-
-    fast_sweeping_method();
-
-    cudaMemcpy(T, d_T, volsize*sizeof(float), cudaMemcpyDeviceToHost);
+    propagation();
 
     compute_seismogram();
 }

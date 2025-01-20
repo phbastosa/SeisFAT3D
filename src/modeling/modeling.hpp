@@ -43,6 +43,7 @@ public:
     void expand_boundary(float * input, float * output);
     void reduce_boundary(float * input, float * output);
 
+    virtual void propagation() = 0;    
     virtual void initialization() = 0;
     virtual void forward_solver() = 0;
 
