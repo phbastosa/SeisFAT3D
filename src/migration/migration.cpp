@@ -6,6 +6,8 @@ void Migration::set_parameters()
     modeling->parameters = parameters;
     modeling->set_parameters();
 
+    scale = std::stof(catch_parameter("image_scale", parameters));
+
     aperture_x = std::stof(catch_parameter("mig_aperture_x", parameters));
     aperture_y = std::stof(catch_parameter("mig_aperture_y", parameters));
 
@@ -15,10 +17,20 @@ void Migration::set_parameters()
     output_image_folder = catch_parameter("output_image_folder", parameters);
     output_table_folder = catch_parameter("output_table_folder", parameters);
 
-    Tr = new float[modeling->nPoints]();
     Ts = new float[modeling->nPoints]();
+    Tr = new float[modeling->nPoints]();
 
-    image = new float[modeling->nPoints]();
+    nx = (int)(scale*(modeling->nx - 1)) + 1;
+    ny = (int)(scale*(modeling->ny - 1)) + 1;
+    nz = (int)(scale*(modeling->nz - 1)) + 1;
+
+    dx = modeling->dx/scale;
+    dy = modeling->dy/scale;
+    dz = modeling->dz/scale;
+
+    nPoints = nx*ny*nz;
+
+    image = new float[nPoints]();
 
     seismic = new float[modeling->nt*modeling->max_spread]();
 
@@ -113,5 +125,5 @@ void Migration::export_receiver_traveltimes()
 
 void Migration::export_outputs()
 {
-    export_binary_float(output_image_folder + "kirchhoff_result_" + std::to_string(modeling->nz) + "x" + std::to_string(modeling->nx) + "x" + std::to_string(modeling->ny) + ".bin", image, modeling->nPoints);
+    export_binary_float(output_image_folder + "kirchhoff_result_" + std::to_string(nz) + "x" + std::to_string(nx) + "x" + std::to_string(ny) + ".bin", image, nPoints);
 }

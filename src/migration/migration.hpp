@@ -14,6 +14,10 @@ private:
 
 protected:
 
+    float scale;
+    float dx, dy, dz;
+    int nx, ny, nz, nPoints;
+
     float aperture_x;
     float aperture_y;
 
