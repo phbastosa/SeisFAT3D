@@ -167,21 +167,6 @@ void Elastic_ANI::set_conditions()
     delete[] Cij;
 }
 
-void Elastic_ANI::forward_solver()
-{
-    eikonal->srcId = srcId;
-    eikonal->forward_solver();
-    eikonal->reduce_boundary(eikonal->T, TT);
-    
-    expand_boundary(TT, T);
-    
-    cudaMemcpy(d_T, T, volsize*sizeof(float), cudaMemcpyHostToDevice);
-
-	propagation();
-
-    cudaMemcpy(synthetic_data, seismogram, nt*geometry->spread[srcId]*sizeof(float), cudaMemcpyDeviceToHost);
-}
-
 void Elastic_ANI::propagation()
 {
     for (int tId = 0; tId < nt + tlag; tId++)

@@ -22,6 +22,9 @@ protected:
     float * P = nullptr;
     float * d_P = nullptr;
 
+    float * TT = nullptr;
+    float * d_T = nullptr;
+
     float * d_Vx = nullptr;
     float * d_Vy = nullptr;
     float * d_Vz = nullptr;
@@ -50,13 +53,15 @@ protected:
 
     float * seismogram = nullptr;
 
+    Modeling * eikonal = nullptr;
+
     virtual void set_conditions() = 0;
 
 public:
 
     void initialization();
-    
-    virtual void propagation() = 0;
+    void forward_solver();
+
     virtual void forward_solver() = 0;
 
     void export_synthetic_data();

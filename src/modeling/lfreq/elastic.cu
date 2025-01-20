@@ -30,9 +30,9 @@ void Elastic::set_specifications()
     cudaMalloc((void**)&(d_Tyy), volsize*sizeof(float));
     cudaMalloc((void**)&(d_Tzz), volsize*sizeof(float));
     
-	cudaMalloc((void**)&(d_Txz), volsize*sizeof(float));
-	cudaMalloc((void**)&(d_Tyz), volsize*sizeof(float));
-	cudaMalloc((void**)&(d_Txy), volsize*sizeof(float));
+    cudaMalloc((void**)&(d_Txz), volsize*sizeof(float));
+    cudaMalloc((void**)&(d_Tyz), volsize*sizeof(float));
+    cudaMalloc((void**)&(d_Txy), volsize*sizeof(float));
 
     cudaMalloc((void**)&(rIdx), max_spread*sizeof(int));
     cudaMalloc((void**)&(rIdy), max_spread*sizeof(int));
@@ -197,6 +197,23 @@ void Elastic::initialization()
     cudaMemcpy(rIdz, current_zrec, geometry->spread[srcId]*sizeof(int), cudaMemcpyHostToDevice);
 
     cudaMemset(seismogram, 0.0f, nt*geometry->spread[srcId]*sizeof(float));
+}
+
+void Elastic::forward_solver()
+{
+    eikonal->srcId = srcId;
+    eikonal->forward_solver();
+    eikonal->reduce_boundary(eikonal->T, TT);
+    
+    expand_boundary(TT, T);
+    
+    cudaMemcpy(d_T, T, volsize*sizeof(float), cudaMemcpyHostToDevice);
+
+    initialization();
+    
+    propagation();
+
+    cudaMemcpy(synthetic_data, seismogram, nt*geometry->spread[srcId]*sizeof(float), cudaMemcpyDeviceToHost);
 }
 
 void Elastic::export_synthetic_data()

@@ -71,14 +71,11 @@ private:
 
     float * d_C66 = nullptr;
 
-    Modeling * eikonal = nullptr;
-
     void set_conditions();
 
 public:
 
     void propagation();
-    void forward_solver();
 };
 
 __global__ void compute_pressure(float * Vx, float * Vy, float * Vz, float * Txx, float * Tyy, float * Tzz, float * Txz, float * Tyz, float * Txy, float * P, float * T, 

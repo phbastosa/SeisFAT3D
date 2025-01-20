@@ -21,14 +21,11 @@ private:
     float * d_L = nullptr;
     float * d_B = nullptr;
 
-    Modeling * eikonal = nullptr;
-
     void set_conditions();
 
 public:
 
     void propagation();
-    void forward_solver();
 };
 
 __global__ void compute_pressure(float * Vx, float * Vy, float * Vz, float * Txx, float * Tyy, float * Tzz, float * Txz, float * Tyz, float * Txy, float * P, float * M, float * L, float * T, float * wavelet, int sIdx, int sIdy, int sIdz, int tId, int tlag, int nt, float dx, float dy, float dz, float dt, int nxx, int nyy, int nzz);
