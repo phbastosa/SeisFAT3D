@@ -111,6 +111,7 @@ void Eikonal_ANI::set_conditions()
 void Eikonal_ANI::forward_solver()
 {
     initialization();
+    
     propagation();
 
     for (int index = 0; index < volsize; index++)
@@ -140,11 +141,12 @@ void Eikonal_ANI::forward_solver()
             get_christoffel();
             get_eigen_values();
 
-            S[index] = 1.0f / sqrtf(Gv[0] * Ro[aId]);
+            S[index] = 1.0f / sqrtf(Gv[1] * Ro[aId]);
         }
     }
 
     initialization();
+
     propagation();
 
     compute_seismogram();
@@ -156,19 +158,12 @@ void Eikonal_ANI::forward_solver()
 
 void Eikonal_ANI::get_stiffness()
 {
-    C[0+0*v] = C11[aId]; C[0+1*v] = C12[aId]; C[0+2*v] = C13[aId]; 
-    C[1+0*v] = C12[aId]; C[1+1*v] = C22[aId]; C[1+2*v] = C23[aId]; 
-    C[2+0*v] = C13[aId]; C[2+1*v] = C23[aId]; C[2+2*v] = C33[aId]; 
-    C[3+0*v] = C14[aId]; C[3+1*v] = C24[aId]; C[3+2*v] = C34[aId]; 
-    C[4+0*v] = C15[aId]; C[4+1*v] = C25[aId]; C[4+2*v] = C35[aId]; 
-    C[5+0*v] = C16[aId]; C[5+1*v] = C26[aId]; C[5+2*v] = C36[aId]; 
-    
-    C[0+3*v] = C14[aId]; C[0+4*v] = C15[aId]; C[0+5*v] = C16[aId];
-    C[1+3*v] = C24[aId]; C[1+4*v] = C25[aId]; C[1+5*v] = C26[aId];
-    C[2+3*v] = C34[aId]; C[2+4*v] = C35[aId]; C[2+5*v] = C36[aId];
-    C[3+3*v] = C44[aId]; C[3+4*v] = C45[aId]; C[3+5*v] = C46[aId];
-    C[4+3*v] = C45[aId]; C[4+4*v] = C55[aId]; C[4+5*v] = C56[aId];
-    C[5+3*v] = C46[aId]; C[5+4*v] = C56[aId]; C[5+5*v] = C66[aId];
+    C[0+0*v] = C11[aId]; C[0+1*v] = C12[aId]; C[0+2*v] = C13[aId]; C[0+3*v] = C14[aId]; C[0+4*v] = C15[aId]; C[0+5*v] = C16[aId];
+    C[1+0*v] = C12[aId]; C[1+1*v] = C22[aId]; C[1+2*v] = C23[aId]; C[1+3*v] = C24[aId]; C[1+4*v] = C25[aId]; C[1+5*v] = C26[aId];
+    C[2+0*v] = C13[aId]; C[2+1*v] = C23[aId]; C[2+2*v] = C33[aId]; C[2+3*v] = C34[aId]; C[2+4*v] = C35[aId]; C[2+5*v] = C36[aId];
+    C[3+0*v] = C14[aId]; C[3+1*v] = C24[aId]; C[3+2*v] = C34[aId]; C[3+3*v] = C44[aId]; C[3+4*v] = C45[aId]; C[3+5*v] = C46[aId];
+    C[4+0*v] = C15[aId]; C[4+1*v] = C25[aId]; C[4+2*v] = C35[aId]; C[4+3*v] = C45[aId]; C[4+4*v] = C55[aId]; C[4+5*v] = C56[aId];
+    C[5+0*v] = C16[aId]; C[5+1*v] = C26[aId]; C[5+2*v] = C36[aId]; C[5+3*v] = C46[aId]; C[5+4*v] = C56[aId]; C[5+5*v] = C66[aId];
 
     for (int i = 0; i < v*v; i++) C[i] *= 1.0f / Ro[aId] / Ro[aId];         
 }
