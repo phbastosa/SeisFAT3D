@@ -31,13 +31,11 @@ void Least_Squares::set_specifications()
 
 void Least_Squares::apply_inversion_technique()
 {
-    int sIdx = (int)(modeling->geometry->xsrc[modeling->geometry->sInd[modeling->srcId]] / modeling->dx);
-    int sIdy = (int)(modeling->geometry->ysrc[modeling->geometry->sInd[modeling->srcId]] / modeling->dy);
-    int sIdz = (int)(modeling->geometry->zsrc[modeling->geometry->sInd[modeling->srcId]] / modeling->dz);
-
-    int sId = sIdz + sIdx*modeling->nz + sIdy*modeling->nx*modeling->nz; 
-
     float rayStep = 0.2f * modeling->dz;
+
+    int sId = (modeling->sIdz - modeling->nb) + 
+              (modeling->sIdx - modeling->nb)*modeling->nz + 
+              (modeling->sIdy - modeling->nb)*modeling->nx*modeling->nz; 
 
     std::vector < int > ray_index; 
 
@@ -54,13 +52,13 @@ void Least_Squares::apply_inversion_technique()
 
         while (true)
         {
-            int k = (int)(yi / modeling->dy) + modeling->nb;
-            int j = (int)(xi / modeling->dx) + modeling->nb;
             int i = (int)(zi / modeling->dz) + modeling->nb;
+            int j = (int)(xi / modeling->dx) + modeling->nb;
+            int k = (int)(yi / modeling->dy) + modeling->nb;
 
+            float dTz = (modeling->T[(i+1) + j*modeling->nzz + k*modeling->nxx*modeling->nzz] - modeling->T[(i-1) + j*modeling->nzz + k*modeling->nxx*modeling->nzz]) / (2.0f*modeling->dz);    
             float dTx = (modeling->T[i + (j+1)*modeling->nzz + k*modeling->nxx*modeling->nzz] - modeling->T[i + (j-1)*modeling->nzz + k*modeling->nxx*modeling->nzz]) / (2.0f*modeling->dx);    
             float dTy = (modeling->T[i + j*modeling->nzz + (k+1)*modeling->nxx*modeling->nzz] - modeling->T[i + j*modeling->nzz + (k-1)*modeling->nxx*modeling->nzz]) / (2.0f*modeling->dy);    
-            float dTz = (modeling->T[(i+1) + j*modeling->nzz + k*modeling->nxx*modeling->nzz] - modeling->T[(i-1) + j*modeling->nzz + k*modeling->nxx*modeling->nzz]) / (2.0f*modeling->dz);    
 
             float norm = sqrtf(dTx*dTx + dTy*dTy + dTz*dTz);
 

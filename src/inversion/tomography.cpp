@@ -65,7 +65,6 @@ void Tomography::forward_modeling()
     {
         show_information();
 
-        modeling->initialization();
         modeling->forward_solver();
 
         concatenate_data();

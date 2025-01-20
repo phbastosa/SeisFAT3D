@@ -180,15 +180,9 @@ void Adjoint_State::initialization()
         }    
     }
 
-    int sId = modeling->geometry->sInd[modeling->srcId];
-
     int skipped = modeling->srcId * modeling->geometry->spread[modeling->srcId];
 
-    int sIdx = (int)(modeling->geometry->xsrc[sId] / modeling->dx) + modeling->nb;
-    int sIdy = (int)(modeling->geometry->ysrc[sId] / modeling->dy) + modeling->nb;
-    int sIdz = (int)(modeling->geometry->zsrc[sId] / modeling->dz) + modeling->nb;
-
-    float Sref = modeling->S[sIdz + sIdx*modeling->nzz + sIdy*modeling->nxx*modeling->nzz];    
+    float Sref = modeling->S[modeling->sIdz + modeling->sIdx*modeling->nzz + modeling->sIdy*modeling->nxx*modeling->nzz];    
 
     int spread = 0;
 
@@ -210,9 +204,9 @@ void Adjoint_State::initialization()
 
                     int index = zi + xi*modeling->nzz + yi*modeling->nxx*modeling->nzz; 
 
-                    float X = sqrtf(powf((sIdy - yi)*modeling->dy, 2.0f) + 
-                                    powf((sIdx - xi)*modeling->dx, 2.0f) + 
-                                    powf((sIdz - zi)*modeling->dz, 2.0f));
+                    float X = sqrtf(powf((modeling->sIdy - yi)*modeling->dy, 2.0f) + 
+                                    powf((modeling->sIdx - xi)*modeling->dx, 2.0f) + 
+                                    powf((modeling->sIdz - zi)*modeling->dz, 2.0f));
 
                     h_source_grad[index] += (dobs[spread + skipped] - modeling->T[index]) / cell_area;    
                     h_source_comp[index] += 1.0f / (X*X*Sref);
