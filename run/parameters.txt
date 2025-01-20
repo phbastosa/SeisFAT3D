@@ -10,19 +10,19 @@ x_spacing = 10.0                           # [m] <float>
 y_spacing = 10.0                           # [m] <float> 
 z_spacing = 10.0                           # [m] <float> 
 
-vp_model_file = ../inputs/models/cubicKirchhoff_vp.bin   
-vs_model_file = ../inputs/models/cubicKirchhoff_vs.bin   
-ro_model_file = ../inputs/models/cubicKirchhoff_ro.bin
+vp_model_file = ../inputs/models/model_vp.bin   
+vs_model_file = ../inputs/models/model_vs.bin   
+ro_model_file = ../inputs/models/model_ro.bin
 
-Cijkl_folder = ../inputs/models/anisoTest_
+Cijkl_folder = ../inputs/models/element_
 
 #---------------------------------------------------------------------------------------------------
 # Geometry parameters ------------------------------------------------------------------------------
 #---------------------------------------------------------------------------------------------------
 
-SPS = ../inputs/geometry/cubicKirchhoff_SPS.txt              
-RPS = ../inputs/geometry/cubicKirchhoff_RPS.txt     
-XPS = ../inputs/geometry/cubicKirchhoff_XPS.txt     
+SPS = ../inputs/geometry/SPS.txt              
+RPS = ../inputs/geometry/RPS.txt     
+XPS = ../inputs/geometry/XPS.txt     
 
 #---------------------------------------------------------------------------------------------------
 # Modeling parameters ------------------------------------------------------------------------------
@@ -73,17 +73,17 @@ convergence_folder = ../outputs/convergence/
 inversion_output_folder = ../outputs/recoveredModels/    
 
 obs_data_folder = ../inputs/data/        
-obs_data_prefix = picks_data_shot_    
+obs_data_prefix = picks_input_shot_    
 
 #---------------------------------------------------------------------------------------------------
 # Migration parameters 
 #--------------------------------------------------------------------------------------------------- 
 
-mig_aperture_x = 20                         # degrees <float>
-mig_aperture_y = 20                         # degrees <float>
+mig_aperture_x = 45                         # degrees <float>
+mig_aperture_y = 45                         # degrees <float>
 
 input_data_folder = ../inputs/data/        
-input_data_prefix = cubicKirchhoff_input_shot_
+input_data_prefix = seismic_input_shot_
 
 output_image_folder = ../outputs/migratedImages/
 output_table_folder = ../outputs/travelTimeTables/
