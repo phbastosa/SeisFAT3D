@@ -168,7 +168,7 @@ void Elastic_ANI::propagation()
     for (int tId = 0; tId < nt + tlag; tId++)
     {
         compute_pressure<<<nBlocks, nThreads>>>(d_Vx, d_Vy, d_Vz, d_Txx, d_Tyy, d_Tzz, d_Txz, d_Tyz, d_Txy, d_P, d_T, 
-                                                d_C11, d_C12, d_C13, d_C14, d_C15, d_C16, d_C22, d_C23, d_C24, d_C25,d_C26, 
+                                                d_C11, d_C12, d_C13, d_C14, d_C15, d_C16, d_C22, d_C23, d_C24, d_C25, d_C26, 
                                                 d_C33, d_C34, d_C35, d_C36, d_C44, d_C45, d_C46, d_C55, d_C56, d_C66, wavelet, 
                                                 sIdx, sIdy, sIdz, tId, tlag, nt, dx, dy, dz, dt, nxx, nyy, nzz);
         cudaDeviceSynchronize();
