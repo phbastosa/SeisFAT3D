@@ -75,42 +75,6 @@ __global__ void cross_correlation(float * Ts, float * Tr, float * image, float *
 
     if ((i > scale) && (i < nz - scale - 1) && (j > scale) && (j < nx - scale - 1) && (k > scale) && (k < ny - scale - 1))
     {
-        float z = i*dz;
-        float x = j*dx;
-        float y = k*dy;
-
-        float x0 = floorf(x / sdx) * sdx;
-        float y0 = floorf(y / sdx) * sdy;
-        float z0 = floorf(z / sdx) * sdz;
-
-        float x1 = floorf(x / sdx) * sdx + sdx;
-        float y1 = floorf(y / sdy) * sdy + sdy;
-        float z1 = floorf(z / sdz) * sdz + sdz;
-
-        float xd = (x - x0) / (x1 - x0);
-        float yd = (y - y0) / (y1 - y0);
-        float zd = (z - z0) / (z1 - z0);        
-
-        int idz = (int)((float)(i) / scale); 
-        int idx = (int)((float)(j) / scale); 
-        int idy = (int)((float)(k) / scale); 
-
-        for (int pIdx = 0; pIdx < 4; pIdx++)
-        {
-            for (int pIdy = 0; pIdy < 4; pIdy++)
-            {
-                for (int pIdz = 0; pIdz < 4; pIdz++)
-                {    
-                    P[pIdx][pIdy][pIdz] = Ts[(idz + pIdz - 1) + (idx + pIdx - 1)*snz + (idy + pIdy - 1)*snx*snz] + 
-                                          Tr[(idz + pIdz - 1) + (idx + pIdx - 1)*snz + (idy + pIdy - 1)*snx*snz];
-                }
-            }
-        }   
-
-        float T = cubic3d(P, xd, yd, zd);
-
-        int tId = (int)(T / dt);
-
         float sigma_x = tanf(aperture_x * M_PI / 180.0f)*i*dz;        
         float sigma_y = tanf(aperture_y * M_PI / 180.0f)*i*dz;        
 
@@ -119,7 +83,46 @@ __global__ void cross_correlation(float * Ts, float * Tr, float * image, float *
 
         float value = expf(-0.5f*(par_x + par_y));
 
-        if (tId < nt) image[index] += value*seismic[tId + spread*nt];  
+        if (value > 1e-3f)
+        {
+            float z = i*dz;
+            float x = j*dx;
+            float y = k*dy;
+
+            float x0 = floorf(x / sdx) * sdx;
+            float y0 = floorf(y / sdx) * sdy;
+            float z0 = floorf(z / sdx) * sdz;
+
+            float x1 = floorf(x / sdx) * sdx + sdx;
+            float y1 = floorf(y / sdy) * sdy + sdy;
+            float z1 = floorf(z / sdz) * sdz + sdz;
+
+            float xd = (x - x0) / (x1 - x0);
+            float yd = (y - y0) / (y1 - y0);
+            float zd = (z - z0) / (z1 - z0);        
+
+            int idz = (int)((float)(i) / scale); 
+            int idx = (int)((float)(j) / scale); 
+            int idy = (int)((float)(k) / scale); 
+
+            for (int pIdx = 0; pIdx < 4; pIdx++)
+            {
+                for (int pIdy = 0; pIdy < 4; pIdy++)
+                {
+                    for (int pIdz = 0; pIdz < 4; pIdz++)
+                    {    
+                        P[pIdx][pIdy][pIdz] = Ts[(idz + pIdz - 1) + (idx + pIdx - 1)*snz + (idy + pIdy - 1)*snx*snz] + 
+                                              Tr[(idz + pIdz - 1) + (idx + pIdx - 1)*snz + (idy + pIdy - 1)*snx*snz];
+                    }
+                }
+            }   
+            
+            float T = cubic3d(P, xd, yd, zd);
+
+            int tId = (int)(T / dt);
+
+            if (tId < nt) image[index] += value*seismic[tId + spread*nt];
+        }
     }
 }
 
