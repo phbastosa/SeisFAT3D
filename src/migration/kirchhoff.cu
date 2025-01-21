@@ -109,8 +109,6 @@ __global__ void cross_correlation(float * Ts, float * Tr, float * image, float *
 
         float T = cubic3d(P, xd, yd, zd);
 
-        float T = Ts[index] + Tr[index];
-
         int tId = (int)(T / dt);
 
         float sigma_x = tanf(aperture_x * M_PI / 180.0f)*i*dz;        
