@@ -141,7 +141,7 @@ void Eikonal_ANI::forward_solver()
             get_christoffel();
             get_eigen_values();
 
-            S[index] = 1.0f / sqrtf(Gv[1] * Ro[aId]);
+            S[index] = 1.0f / sqrtf(Gv[0] * Ro[aId]);
         }
     }
 
@@ -236,7 +236,7 @@ void Eikonal_ANI::get_eigen_values()
     
     if (Gv[0] < Gv[1]) std::swap(Gv[0],Gv[1]);
     if (Gv[1] < Gv[2]) std::swap(Gv[1],Gv[2]);
-    if (Gv[0] > Gv[1]) std::swap(Gv[0],Gv[1]);    
+    if (Gv[0] < Gv[1]) std::swap(Gv[0],Gv[1]);    
 }
 
 int Eikonal_ANI::voigt_map(int i, int j)
