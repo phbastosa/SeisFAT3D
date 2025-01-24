@@ -45,7 +45,7 @@ for sIdy in range(nsy):
 
         SPS[index, 0] = sx[sIdy, sIdx]
         SPS[index, 1] = sy[sIdy, sIdx] 
-        SPS[index, 2] = 12.5
+        SPS[index, 2] = 250.0
 
         actives_x = slice(sIdx, sIdx + spread_x) 
         actives_y = slice(sIdy*spread_y, sIdy*spread_y + spread_y)

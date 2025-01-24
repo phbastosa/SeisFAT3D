@@ -1,0 +1,59 @@
+#---------------------------------------------------------------------------------------------------
+# Model paramenters --------------------------------------------------------------------------------
+#---------------------------------------------------------------------------------------------------
+
+x_samples = 121                           # <int>  
+y_samples = 81                            # <int>  
+z_samples = 41                            # <int>  
+
+x_spacing = 25.0                          # [m] <float> 
+y_spacing = 25.0                          # [m] <float> 
+z_spacing = 25.0                          # [m] <float> 
+
+vp_model_file = ../inputs/models/migration_test_vp_input_41x121x81_25m.bin   
+vs_model_file = ../inputs/models/migration_test_vs_model_101x301x201_10m.bin   
+ro_model_file = ../inputs/models/migration_test_ro_model_101x301x201_10m.bin   
+
+#---------------------------------------------------------------------------------------------------
+# Geometry parameters ------------------------------------------------------------------------------
+#---------------------------------------------------------------------------------------------------
+
+SPS = ../inputs/geometry/migration_test_SPS.txt              
+RPS = ../inputs/geometry/migration_test_RPS.txt     
+XPS = ../inputs/geometry/migration_test_XPS.txt     
+
+#---------------------------------------------------------------------------------------------------
+# Modeling parameters ------------------------------------------------------------------------------
+#---------------------------------------------------------------------------------------------------
+# [0] - Eikonal ISO
+# [1] - Eikonal VTI
+#
+# [2] - Elastic ISO
+# [3] - Elastic VTI
+# --------------------------------------------------------------------------------------------------
+
+modeling_type = 2 
+
+time_samples = 1001
+time_spacing = 1e-3
+max_frequency = 30.0
+
+boundary_samples = 50
+boundary_damping = 0.0045
+
+modeling_output_folder = ../inputs/data/migration_test_            
+
+#---------------------------------------------------------------------------------------------------
+# Migration parameters 
+#--------------------------------------------------------------------------------------------------- 
+
+image_scale = 2                             # increase for resolution  
+
+mig_aperture_x = 30                         # degrees <float>
+mig_aperture_y = 30                         # degrees <float>
+
+input_data_folder = ../inputs/data/        
+input_data_prefix = migration_test_elastic_iso_nStations200_nSamples1001_shot_ 
+
+output_image_folder = ../outputs/migratedImages/
+output_table_folder = ../outputs/travelTimeTables/

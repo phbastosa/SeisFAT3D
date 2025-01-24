@@ -2,17 +2,17 @@
 # Model paramenters --------------------------------------------------------------------------------
 #---------------------------------------------------------------------------------------------------
 
-x_samples = 301                            # <int>  
-y_samples = 201                            # <int>  
+x_samples = 101                            # <int>  
+y_samples = 101                            # <int>  
 z_samples = 101                            # <int>  
 
 x_spacing = 10.0                           # [m] <float> 
 y_spacing = 10.0                           # [m] <float> 
 z_spacing = 10.0                           # [m] <float> 
 
-vp_model_file = ../inputs/models/model_vp.bin   
-vs_model_file = ../inputs/models/model_vs.bin   
-ro_model_file = ../inputs/models/model_ro.bin
+vp_model_file = ../inputs/models/vp_simple.bin   
+vs_model_file = ../inputs/models/vs_simple.bin   
+ro_model_file = ../inputs/models/ro_simple.bin
 
 Cijkl_folder = ../inputs/models/element_
 
@@ -20,9 +20,9 @@ Cijkl_folder = ../inputs/models/element_
 # Geometry parameters ------------------------------------------------------------------------------
 #---------------------------------------------------------------------------------------------------
 
-SPS = ../inputs/geometry/SPS.txt              
-RPS = ../inputs/geometry/RPS.txt     
-XPS = ../inputs/geometry/XPS.txt     
+SPS = ../inputs/geometry/simple_SPS.txt              
+RPS = ../inputs/geometry/simple_RPS.txt     
+XPS = ../inputs/geometry/simple_XPS.txt     
 
 #---------------------------------------------------------------------------------------------------
 # Modeling parameters ------------------------------------------------------------------------------
@@ -34,9 +34,9 @@ XPS = ../inputs/geometry/XPS.txt
 # [3] - Elastic ANI
 # --------------------------------------------------------------------------------------------------
 
-modeling_type = 0
+modeling_type = 1
 
-time_samples = 3001
+time_samples = 1001
 time_spacing = 1e-3
 max_frequency = 30.0
 
@@ -78,6 +78,8 @@ obs_data_prefix = picks_input_shot_
 #---------------------------------------------------------------------------------------------------
 # Migration parameters 
 #--------------------------------------------------------------------------------------------------- 
+
+image_scale = 2                             # increase for resolution  
 
 mig_aperture_x = 45                         # degrees <float>
 mig_aperture_y = 45                         # degrees <float>

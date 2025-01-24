@@ -171,11 +171,11 @@ case "$1" in
     python3 -B ../tests/migration/generate_models.py
     python3 -B ../tests/migration/generate_geometry.py
 
-    ./../bin/modeling.exe ../tests/migration/parameters.txt
+    ./../bin/modeling.exe ../tests/migration/parameters_obsData.txt
 
     python3 -B ../tests/migration/data_preconditioning.py
 
-    ./../bin/migration.exe ../tests/migration/parameters.txt
+    ./../bin/migration.exe ../tests/migration/parameters_kirchhoff.txt
 
     python3 -B ../tests/migration/generate_figures.py
 
