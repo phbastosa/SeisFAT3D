@@ -216,6 +216,11 @@ void Elastic::forward_solver()
 
     propagation();
 
+    P = new float[volsize]();
+    cudaMemcpy(P, d_Vx, volsize*sizeof(float), cudaMemcpyDeviceToHost);
+    export_binary_float("P.bin", P, volsize);
+    delete[] P;
+
     cudaMemcpy(synthetic_data, seismogram, nt*geometry->spread[srcId]*sizeof(float), cudaMemcpyDeviceToHost);
 }
 
@@ -367,6 +372,7 @@ __global__ void compute_velocity(float * Vx, float * Vy, float * Vz, float * Txx
     int i = (int) (index - j*nzz - k*nxx*nzz); 
 
     if ((index < nxx*nyy*nzz) && (T[index] < (float)(tId + tlag)*dt))
+    // if ((index < nxx*nyy*nzz))
     {
         if((i >= 3) && (i < nzz-4) && (j > 3) && (j < nxx-3) && (k >= 3) && (k < nyy-4)) 
         {

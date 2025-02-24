@@ -60,6 +60,7 @@ __global__ void compute_pressure(float * Vx, float * Vy, float * Vz, float * Txx
     }
 
     if ((index < nxx*nyy*nzz) && (T[index] < (float)(tId + tlag)*dt))
+    // if ((index < nxx*nyy*nzz))
     {
         if((i >= 3) && (i < nzz-4) && (j >= 3) && (j < nxx-4) && (k >= 3) && (k < nyy-4)) 
         {    

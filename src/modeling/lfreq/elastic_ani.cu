@@ -15,151 +15,160 @@ void Elastic_ANI::set_conditions()
     for (int index = 0; index < volsize; index++)
         B[index] = 1.0f / Ro[index];
 
+    cudaMalloc((void**)&(d_B), volsize*sizeof(float));
+    cudaMemcpy(d_B, B, volsize*sizeof(float), cudaMemcpyHostToDevice);
+
     float * Cij = new float[nPoints]();
 
     std::string Cijkl_folder = catch_parameter("Cijkl_folder", parameters);
 
-    C11 = new float[volsize]();
+    float * C11 = new float[volsize]();
     import_binary_float(Cijkl_folder + "C11.bin", Cij, nPoints);
     expand_boundary(Cij, C11);
+    cudaMalloc((void**)&(d_C11), volsize*sizeof(float));
+    cudaMemcpy(d_C11, C11, volsize*sizeof(float), cudaMemcpyHostToDevice);
+    delete[] C11;
 
-    C12 = new float[volsize]();
+    float * C12 = new float[volsize]();
     import_binary_float(Cijkl_folder + "C12.bin", Cij, nPoints);
     expand_boundary(Cij, C12);
+    cudaMalloc((void**)&(d_C12), volsize*sizeof(float));
+    cudaMemcpy(d_C12, C12, volsize*sizeof(float), cudaMemcpyHostToDevice);
+    delete[] C12;
 
-    C13 = new float[volsize]();
+    float * C13 = new float[volsize]();
     import_binary_float(Cijkl_folder + "C13.bin", Cij, nPoints);
     expand_boundary(Cij, C13);
+    cudaMalloc((void**)&(d_C13), volsize*sizeof(float));
+    cudaMemcpy(d_C13, C13, volsize*sizeof(float), cudaMemcpyHostToDevice);
+    delete[] C13;
 
-    C14 = new float[volsize]();
+    float * C14 = new float[volsize]();
     import_binary_float(Cijkl_folder + "C14.bin", Cij, nPoints);
     expand_boundary(Cij, C14);
+    cudaMalloc((void**)&(d_C14), volsize*sizeof(float));
+    cudaMemcpy(d_C14, C14, volsize*sizeof(float), cudaMemcpyHostToDevice);
+    delete[] C14;
 
-    C15 = new float[volsize]();
+    float * C15 = new float[volsize]();
     import_binary_float(Cijkl_folder + "C15.bin", Cij, nPoints);
     expand_boundary(Cij, C15);
+    cudaMalloc((void**)&(d_C15), volsize*sizeof(float));
+    cudaMemcpy(d_C15, C15, volsize*sizeof(float), cudaMemcpyHostToDevice);
+    delete[] C15;
 
-    C16 = new float[volsize]();
+    float * C16 = new float[volsize]();
     import_binary_float(Cijkl_folder + "C16.bin", Cij, nPoints);
     expand_boundary(Cij, C16);
+    cudaMalloc((void**)&(d_C16), volsize*sizeof(float));
+    cudaMemcpy(d_C16, C16, volsize*sizeof(float), cudaMemcpyHostToDevice);
+    delete[] C16;
 
-    C22 = new float[volsize]();
+    float * C22 = new float[volsize]();
     import_binary_float(Cijkl_folder + "C22.bin", Cij, nPoints);
     expand_boundary(Cij, C22);
+    cudaMalloc((void**)&(d_C22), volsize*sizeof(float));
+    cudaMemcpy(d_C22, C22, volsize*sizeof(float), cudaMemcpyHostToDevice);
+    delete[] C22;
 
-    C23 = new float[volsize]();
+    float * C23 = new float[volsize]();
     import_binary_float(Cijkl_folder + "C23.bin", Cij, nPoints);
     expand_boundary(Cij, C23);
+    cudaMalloc((void**)&(d_C23), volsize*sizeof(float));
+    cudaMemcpy(d_C23, C23, volsize*sizeof(float), cudaMemcpyHostToDevice);
+    delete[] C23;
     
-    C24 = new float[volsize]();
+    float * C24 = new float[volsize]();
     import_binary_float(Cijkl_folder + "C24.bin", Cij, nPoints);
     expand_boundary(Cij, C24);
+    cudaMalloc((void**)&(d_C24), volsize*sizeof(float));
+    cudaMemcpy(d_C24, C24, volsize*sizeof(float), cudaMemcpyHostToDevice);
+    delete[] C24;
 
-    C25 = new float[volsize]();
+    float * C25 = new float[volsize]();
     import_binary_float(Cijkl_folder + "C25.bin", Cij, nPoints);
     expand_boundary(Cij, C25);
+    cudaMalloc((void**)&(d_C25), volsize*sizeof(float));
+    cudaMemcpy(d_C25, C25, volsize*sizeof(float), cudaMemcpyHostToDevice);
+    delete[] C25;
 
-    C26 = new float[volsize]();
+    float * C26 = new float[volsize]();
     import_binary_float(Cijkl_folder + "C26.bin", Cij, nPoints);
     expand_boundary(Cij, C26);
+    cudaMalloc((void**)&(d_C26), volsize*sizeof(float));
+    cudaMemcpy(d_C26, C26, volsize*sizeof(float), cudaMemcpyHostToDevice);
+    delete[] C26;
 
-    C33 = new float[volsize]();
+    float * C33 = new float[volsize]();
     import_binary_float(Cijkl_folder + "C33.bin", Cij, nPoints);
     expand_boundary(Cij, C33);
+    cudaMalloc((void**)&(d_C33), volsize*sizeof(float));
+    cudaMemcpy(d_C33, C33, volsize*sizeof(float), cudaMemcpyHostToDevice);
+    delete[] C33;
     
-    C34 = new float[volsize]();
+    float * C34 = new float[volsize]();
     import_binary_float(Cijkl_folder + "C34.bin", Cij, nPoints);
     expand_boundary(Cij, C34);
+    cudaMalloc((void**)&(d_C34), volsize*sizeof(float));
+    cudaMemcpy(d_C34, C34, volsize*sizeof(float), cudaMemcpyHostToDevice);
+    delete[] C34;
 
-    C35 = new float[volsize]();
+    float * C35 = new float[volsize]();
     import_binary_float(Cijkl_folder + "C35.bin", Cij, nPoints);
     expand_boundary(Cij, C35);
+    cudaMalloc((void**)&(d_C35), volsize*sizeof(float));
+    cudaMemcpy(d_C35, C35, volsize*sizeof(float), cudaMemcpyHostToDevice);
+    delete[] C35;
 
-    C36 = new float[volsize]();
+    float * C36 = new float[volsize]();
     import_binary_float(Cijkl_folder + "C36.bin", Cij, nPoints);
     expand_boundary(Cij, C36);
+    cudaMalloc((void**)&(d_C36), volsize*sizeof(float));
+    cudaMemcpy(d_C36, C36, volsize*sizeof(float), cudaMemcpyHostToDevice);
+    delete[] C36;
 
-    C44 = new float[volsize]();
+    float * C44 = new float[volsize]();
     import_binary_float(Cijkl_folder + "C44.bin", Cij, nPoints);
     expand_boundary(Cij, C44);
+    cudaMalloc((void**)&(d_C44), volsize*sizeof(float));
+    cudaMemcpy(d_C44, C44, volsize*sizeof(float), cudaMemcpyHostToDevice);
+    delete[] C44;
 
-    C45 = new float[volsize]();
+    float * C45 = new float[volsize]();
     import_binary_float(Cijkl_folder + "C45.bin", Cij, nPoints);
     expand_boundary(Cij, C45);
+    cudaMalloc((void**)&(d_C45), volsize*sizeof(float));
+    cudaMemcpy(d_C45, C45, volsize*sizeof(float), cudaMemcpyHostToDevice);
+    delete[] C45;
 
-    C46 = new float[volsize]();
+    float * C46 = new float[volsize]();
     import_binary_float(Cijkl_folder + "C46.bin", Cij, nPoints);
     expand_boundary(Cij, C46);
+    cudaMalloc((void**)&(d_C46), volsize*sizeof(float));
+    cudaMemcpy(d_C46, C46, volsize*sizeof(float), cudaMemcpyHostToDevice);
+    delete[] C46;
 
-    C55 = new float[volsize]();
+    float * C55 = new float[volsize]();
     import_binary_float(Cijkl_folder + "C55.bin", Cij, nPoints);
     expand_boundary(Cij, C55);
+    cudaMalloc((void**)&(d_C55), volsize*sizeof(float));
+    cudaMemcpy(d_C55, C55, volsize*sizeof(float), cudaMemcpyHostToDevice);
+    delete[] C55;
 
-    C56 = new float[volsize]();
+    float * C56 = new float[volsize]();
     import_binary_float(Cijkl_folder + "C56.bin", Cij, nPoints);
     expand_boundary(Cij, C56);
+    cudaMalloc((void**)&(d_C56), volsize*sizeof(float));
+    cudaMemcpy(d_C56, C56, volsize*sizeof(float), cudaMemcpyHostToDevice);
+    delete[] C56;
 
-    C66 = new float[volsize]();
+    float * C66 = new float[volsize]();
     import_binary_float(Cijkl_folder + "C66.bin", Cij, nPoints);
     expand_boundary(Cij, C66);
-
-    cudaMalloc((void**)&(d_B), volsize*sizeof(float));
-    cudaMemcpy(d_B, B, volsize*sizeof(float), cudaMemcpyHostToDevice);
-    
-    cudaMalloc((void**)&(d_C11), volsize*sizeof(float));
-    cudaMalloc((void**)&(d_C12), volsize*sizeof(float));
-    cudaMalloc((void**)&(d_C13), volsize*sizeof(float));
-    cudaMalloc((void**)&(d_C14), volsize*sizeof(float));
-    cudaMalloc((void**)&(d_C15), volsize*sizeof(float));
-    cudaMalloc((void**)&(d_C16), volsize*sizeof(float));
-    
-    cudaMalloc((void**)&(d_C22), volsize*sizeof(float));
-    cudaMalloc((void**)&(d_C23), volsize*sizeof(float));
-    cudaMalloc((void**)&(d_C24), volsize*sizeof(float));
-    cudaMalloc((void**)&(d_C25), volsize*sizeof(float));
-    cudaMalloc((void**)&(d_C26), volsize*sizeof(float));
-
-    cudaMalloc((void**)&(d_C33), volsize*sizeof(float));
-    cudaMalloc((void**)&(d_C34), volsize*sizeof(float));
-    cudaMalloc((void**)&(d_C35), volsize*sizeof(float));
-    cudaMalloc((void**)&(d_C36), volsize*sizeof(float));
-
-    cudaMalloc((void**)&(d_C44), volsize*sizeof(float));
-    cudaMalloc((void**)&(d_C45), volsize*sizeof(float));
-    cudaMalloc((void**)&(d_C46), volsize*sizeof(float));
-    
-    cudaMalloc((void**)&(d_C55), volsize*sizeof(float));
-    cudaMalloc((void**)&(d_C56), volsize*sizeof(float));
-    
     cudaMalloc((void**)&(d_C66), volsize*sizeof(float));
-
-    cudaMemcpy(d_C11, C11, volsize*sizeof(float), cudaMemcpyHostToDevice);
-    cudaMemcpy(d_C12, C12, volsize*sizeof(float), cudaMemcpyHostToDevice);
-    cudaMemcpy(d_C13, C13, volsize*sizeof(float), cudaMemcpyHostToDevice);
-    cudaMemcpy(d_C14, C14, volsize*sizeof(float), cudaMemcpyHostToDevice);
-    cudaMemcpy(d_C15, C15, volsize*sizeof(float), cudaMemcpyHostToDevice);
-    cudaMemcpy(d_C16, C16, volsize*sizeof(float), cudaMemcpyHostToDevice);
-
-    cudaMemcpy(d_C22, C22, volsize*sizeof(float), cudaMemcpyHostToDevice);
-    cudaMemcpy(d_C23, C23, volsize*sizeof(float), cudaMemcpyHostToDevice);
-    cudaMemcpy(d_C24, C24, volsize*sizeof(float), cudaMemcpyHostToDevice);
-    cudaMemcpy(d_C25, C25, volsize*sizeof(float), cudaMemcpyHostToDevice);
-    cudaMemcpy(d_C26, C26, volsize*sizeof(float), cudaMemcpyHostToDevice);
-
-    cudaMemcpy(d_C33, C33, volsize*sizeof(float), cudaMemcpyHostToDevice);
-    cudaMemcpy(d_C34, C34, volsize*sizeof(float), cudaMemcpyHostToDevice);
-    cudaMemcpy(d_C35, C35, volsize*sizeof(float), cudaMemcpyHostToDevice);
-    cudaMemcpy(d_C36, C36, volsize*sizeof(float), cudaMemcpyHostToDevice);
-
-    cudaMemcpy(d_C44, C44, volsize*sizeof(float), cudaMemcpyHostToDevice);
-    cudaMemcpy(d_C45, C45, volsize*sizeof(float), cudaMemcpyHostToDevice);
-    cudaMemcpy(d_C46, C46, volsize*sizeof(float), cudaMemcpyHostToDevice);
-
-    cudaMemcpy(d_C55, C55, volsize*sizeof(float), cudaMemcpyHostToDevice);
-    cudaMemcpy(d_C56, C56, volsize*sizeof(float), cudaMemcpyHostToDevice);
-    
     cudaMemcpy(d_C66, C66, volsize*sizeof(float), cudaMemcpyHostToDevice);
-
+    delete[] C66;
+    
     delete[] Cij;
 }
 
@@ -200,6 +209,7 @@ __global__ void compute_pressure(float * Vx, float * Vy, float * Vz, float * Txx
     }
 
     if ((index < nxx*nyy*nzz) && (T[index] < (float)(tId + tlag)*dt))
+    // if ((index < nxx*nyy*nzz))
     {
         if((i >= 3) && (i < nzz-4) && (j >= 3) && (j < nxx-4) && (k >= 3) && (k < nyy-4)) 
         {            

@@ -10,34 +10,6 @@ class Elastic_ANI : public Elastic
 private:
 
     float * B = nullptr;
-
-    float * C11 = nullptr;
-    float * C12 = nullptr;
-    float * C13 = nullptr;
-    float * C14 = nullptr;
-    float * C15 = nullptr;
-    float * C16 = nullptr;
-
-    float * C22 = nullptr;
-    float * C23 = nullptr;
-    float * C24 = nullptr;
-    float * C25 = nullptr;
-    float * C26 = nullptr;
-
-    float * C33 = nullptr;
-    float * C34 = nullptr;
-    float * C35 = nullptr;
-    float * C36 = nullptr;
-
-    float * C44 = nullptr;
-    float * C45 = nullptr;
-    float * C46 = nullptr;
-
-    float * C55 = nullptr;
-    float * C56 = nullptr;
-
-    float * C66 = nullptr;
-
     float * d_B = nullptr;
 
     float * d_C11 = nullptr;
