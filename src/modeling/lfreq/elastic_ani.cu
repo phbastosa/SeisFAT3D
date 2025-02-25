@@ -176,13 +176,10 @@ void Elastic_ANI::propagation()
 {
     for (int tId = 0; tId < nt + tlag; tId++)
     {
-        compute_pressure<<<nBlocks, nThreads>>>(d_Vx, d_Vy, d_Vz, d_Txx, d_Tyy, d_Tzz, d_Txz, d_Tyz, d_Txy, d_P, d_T, 
-                                                d_C11, d_C12, d_C13, d_C14, d_C15, d_C16, d_C22, d_C23, d_C24, d_C25, d_C26, 
-                                                d_C33, d_C34, d_C35, d_C36, d_C44, d_C45, d_C46, d_C55, d_C56, d_C66, wavelet, 
-                                                sIdx, sIdy, sIdz, tId, tlag, nt, dx, dy, dz, dt, nxx, nyy, nzz);
+        compute_velocity_rsg<<<nBlocks, nThreads>>>(d_Vx, d_Vy, d_Vz, d_Txx, d_Tyy, d_Tzz, d_Txz, d_Tyz, d_Txy, d_B, d_T, d1D, d2D, d3D, wavelet, dx, dy, dz, dt, tId, tlag, sIdx, sIdy, sIdz, nxx, nyy, nzz, nb, nt);
         cudaDeviceSynchronize();
 
-        compute_velocity<<<nBlocks, nThreads>>>(d_Vx, d_Vy, d_Vz, d_Txx, d_Tyy, d_Tzz, d_Txz, d_Tyz, d_Txy, d_B, d_T, d1D, d2D, d3D, dx, dy, dz, dt, tId, tlag, nxx, nyy, nzz, nb);
+        compute_pressure_rsg<<<nBlocks, nThreads>>>(d_Vx, d_Vy, d_Vz, d_Txx, d_Tyy, d_Tzz, d_Txz, d_Tyz, d_Txy, d_P, d_T, d_C11, d_C12, d_C13, d_C14, d_C15, d_C16, d_C22, d_C23, d_C24, d_C25, d_C26, d_C33, d_C34, d_C35, d_C36, d_C44, d_C45, d_C46, d_C55, d_C56, d_C66, tId, tlag, dx, dy, dz, dt, nxx, nyy, nzz);
         cudaDeviceSynchronize();
 
         compute_seismogram<<<sBlocks, nThreads>>>(d_P, rIdx, rIdy, rIdz, seismogram, geometry->spread[srcId], tId, tlag, nt, nxx, nzz);     
@@ -190,10 +187,9 @@ void Elastic_ANI::propagation()
     }
 }
 
-__global__ void compute_pressure(float * Vx, float * Vy, float * Vz, float * Txx, float * Tyy, float * Tzz, float * Txz, float * Tyz, float * Txy, float * P, float * T, 
-                                 float * C11, float * C12, float * C13, float * C14, float * C15, float * C16, float * C22, float * C23, float * C24, float * C25, float * C26,  
-                                 float * C33, float * C34, float * C35, float * C36, float * C44, float * C45, float * C46, float * C55, float * C56, float * C66, float * wavelet, 
-                                 int sIdx, int sIdy, int sIdz, int tId, int tlag, int nt, float dx, float dy, float dz, float dt, int nxx, int nyy, int nzz)
+__global__ void compute_velocity_rsg(float * Vx, float * Vy, float * Vz, float * Txx, float * Tyy, float * Tzz, float * Txz, float * Tyz, float * Txy, float * B, float * T,  
+                                     float * damp1D, float * damp2D, float * damp3D, float * wavelet, float dx, float dy, float dz, float dt, int tId, int tlag, int sIdx, 
+                                     int sIdy, int sIdz, int nxx, int nyy, int nzz, int nb, int nt)
 {
     int index = blockIdx.x * blockDim.x + threadIdx.x;
 
@@ -203,285 +199,160 @@ __global__ void compute_pressure(float * Vx, float * Vy, float * Vz, float * Txx
 
     if ((index == 0) && (tId < nt))
     {
-        Txx[sIdz + sIdx*nzz + sIdy*nxx*nzz] += wavelet[tId] / (dx*dy*dz);
-        Tyy[sIdz + sIdx*nzz + sIdy*nxx*nzz] += wavelet[tId] / (dx*dy*dz);
-        Tzz[sIdz + sIdx*nzz + sIdy*nxx*nzz] += wavelet[tId] / (dx*dy*dz);
+        for (int si = -RSGR; si <= RSGR; si++)
+        {
+            for (int sj = -RSGR; sj <= RSGR; sj++)
+            {
+                for (int sk = -RSGR; sk <= RSGR; sk++)
+                {
+                    Txx[(sIdz+si) + (sIdx+sj)*nzz + (sIdy+sk)*nxx*nzz] += COMP*wavelet[tId] / (dx*dy*dz);
+                    Tyy[(sIdz+si) + (sIdx+sj)*nzz + (sIdy+sk)*nxx*nzz] += COMP*wavelet[tId] / (dx*dy*dz);
+                    Tzz[(sIdz+si) + (sIdx+sj)*nzz + (sIdy+sk)*nxx*nzz] += COMP*wavelet[tId] / (dx*dy*dz);                            
+                }
+            }
+        }
     }
 
-    if ((index < nxx*nyy*nzz) && (T[index] < (float)(tId + tlag)*dt))
-    // if ((index < nxx*nyy*nzz))
+    float d1_Txx = 0.0f; float d2_Txx = 0.0f; float d3_Txx = 0.0f; float d4_Txx = 0.0f;
+    float d1_Tyy = 0.0f; float d2_Tyy = 0.0f; float d3_Tyy = 0.0f; float d4_Tyy = 0.0f;
+    float d1_Tzz = 0.0f; float d2_Tzz = 0.0f; float d3_Tzz = 0.0f; float d4_Tzz = 0.0f;
+    float d1_Txy = 0.0f; float d2_Txy = 0.0f; float d3_Txy = 0.0f; float d4_Txy = 0.0f;
+    float d1_Txz = 0.0f; float d2_Txz = 0.0f; float d3_Txz = 0.0f; float d4_Txz = 0.0f;
+    float d1_Tyz = 0.0f; float d2_Tyz = 0.0f; float d3_Tyz = 0.0f; float d4_Tyz = 0.0f;            
+ 
+    float FDM[] = {FDM4, -FDM3, FDM2, -FDM1};
+    
+    if ((T[index] < (float)(tId + tlag)*dt) && (index < nxx*nyy*nzz))
     {
         if((i >= 3) && (i < nzz-4) && (j >= 3) && (j < nxx-4) && (k >= 3) && (k < nyy-4)) 
-        {            
+        {    
+            for (int rsg = 0; rsg < 4; rsg++)
+            {
+                d1_Txx += FDM[rsg]*(Txx[(i+rsg+1) + (j+rsg+1)*nzz + (k+rsg+1)*nxx*nzz] - Txx[(i-rsg) + (j-rsg)*nzz + (k-rsg)*nxx*nzz]);
+                d1_Tyy += FDM[rsg]*(Tyy[(i+rsg+1) + (j+rsg+1)*nzz + (k+rsg+1)*nxx*nzz] - Tyy[(i-rsg) + (j-rsg)*nzz + (k-rsg)*nxx*nzz]);
+                d1_Tzz += FDM[rsg]*(Tzz[(i+rsg+1) + (j+rsg+1)*nzz + (k+rsg+1)*nxx*nzz] - Tzz[(i-rsg) + (j-rsg)*nzz + (k-rsg)*nxx*nzz]);
+                d1_Txy += FDM[rsg]*(Txy[(i+rsg+1) + (j+rsg+1)*nzz + (k+rsg+1)*nxx*nzz] - Txy[(i-rsg) + (j-rsg)*nzz + (k-rsg)*nxx*nzz]);
+                d1_Txz += FDM[rsg]*(Txz[(i+rsg+1) + (j+rsg+1)*nzz + (k+rsg+1)*nxx*nzz] - Txz[(i-rsg) + (j-rsg)*nzz + (k-rsg)*nxx*nzz]);
+                d1_Tyz += FDM[rsg]*(Tyz[(i+rsg+1) + (j+rsg+1)*nzz + (k+rsg+1)*nxx*nzz] - Tyz[(i-rsg) + (j-rsg)*nzz + (k-rsg)*nxx*nzz]);
 
-            float dVx_dx = (FDM1*(Vx[i + (j-3)*nzz + k*nxx*nzz] - Vx[i + (j+4)*nzz + k*nxx*nzz]) +
-                            FDM2*(Vx[i + (j+3)*nzz + k*nxx*nzz] - Vx[i + (j-2)*nzz + k*nxx*nzz]) +
-                            FDM3*(Vx[i + (j-1)*nzz + k*nxx*nzz] - Vx[i + (j+2)*nzz + k*nxx*nzz]) +
-                            FDM4*(Vx[i + (j+1)*nzz + k*nxx*nzz] - Vx[i + j*nzz + k*nxx*nzz])) / dx;
+                d2_Txx += FDM[rsg]*(Txx[(i-rsg) + (j+rsg+1)*nzz + (k+rsg+1)*nxx*nzz] - Txx[(i+rsg+1) + (j-rsg)*nzz + (k-rsg)*nxx*nzz]);
+                d2_Tyy += FDM[rsg]*(Tyy[(i-rsg) + (j+rsg+1)*nzz + (k+rsg+1)*nxx*nzz] - Tyy[(i+rsg+1) + (j-rsg)*nzz + (k-rsg)*nxx*nzz]);
+                d2_Tzz += FDM[rsg]*(Tzz[(i-rsg) + (j+rsg+1)*nzz + (k+rsg+1)*nxx*nzz] - Tzz[(i+rsg+1) + (j-rsg)*nzz + (k-rsg)*nxx*nzz]);
+                d2_Txy += FDM[rsg]*(Txy[(i-rsg) + (j+rsg+1)*nzz + (k+rsg+1)*nxx*nzz] - Txy[(i+rsg+1) + (j-rsg)*nzz + (k-rsg)*nxx*nzz]);
+                d2_Txz += FDM[rsg]*(Txz[(i-rsg) + (j+rsg+1)*nzz + (k+rsg+1)*nxx*nzz] - Txz[(i+rsg+1) + (j-rsg)*nzz + (k-rsg)*nxx*nzz]);
+                d2_Tyz += FDM[rsg]*(Tyz[(i-rsg) + (j+rsg+1)*nzz + (k+rsg+1)*nxx*nzz] - Tyz[(i+rsg+1) + (j-rsg)*nzz + (k-rsg)*nxx*nzz]);
 
-            float dVy_dx = (FDM1*(Vy[i + (j-3)*nzz + k*nxx*nzz] - Vy[i + (j+4)*nzz + k*nxx*nzz]) +
-                            FDM2*(Vy[i + (j+3)*nzz + k*nxx*nzz] - Vy[i + (j-2)*nzz + k*nxx*nzz]) +
-                            FDM3*(Vy[i + (j-1)*nzz + k*nxx*nzz] - Vy[i + (j+2)*nzz + k*nxx*nzz]) +
-                            FDM4*(Vy[i + (j+1)*nzz + k*nxx*nzz] - Vy[i + j*nzz + k*nxx*nzz])) / dx;
+                d3_Txx += FDM[rsg]*(Txx[(i+rsg+1) + (j+rsg+1)*nzz + (k-rsg)*nxx*nzz] - Txx[(i-rsg) + (j-rsg)*nzz + (k+rsg+1)*nxx*nzz]);
+                d3_Tyy += FDM[rsg]*(Tyy[(i+rsg+1) + (j+rsg+1)*nzz + (k-rsg)*nxx*nzz] - Tyy[(i-rsg) + (j-rsg)*nzz + (k+rsg+1)*nxx*nzz]);
+                d3_Tzz += FDM[rsg]*(Tzz[(i+rsg+1) + (j+rsg+1)*nzz + (k-rsg)*nxx*nzz] - Tzz[(i-rsg) + (j-rsg)*nzz + (k+rsg+1)*nxx*nzz]);
+                d3_Txy += FDM[rsg]*(Txy[(i+rsg+1) + (j+rsg+1)*nzz + (k-rsg)*nxx*nzz] - Txy[(i-rsg) + (j-rsg)*nzz + (k+rsg+1)*nxx*nzz]);
+                d3_Txz += FDM[rsg]*(Txz[(i+rsg+1) + (j+rsg+1)*nzz + (k-rsg)*nxx*nzz] - Txz[(i-rsg) + (j-rsg)*nzz + (k+rsg+1)*nxx*nzz]);
+                d3_Tyz += FDM[rsg]*(Tyz[(i+rsg+1) + (j+rsg+1)*nzz + (k-rsg)*nxx*nzz] - Tyz[(i-rsg) + (j-rsg)*nzz + (k+rsg+1)*nxx*nzz]);
 
-            float dVz_dx = (FDM1*(Vz[i + (j-3)*nzz + k*nxx*nzz] - Vz[i + (j+4)*nzz + k*nxx*nzz]) +
-                            FDM2*(Vz[i + (j+3)*nzz + k*nxx*nzz] - Vz[i + (j-2)*nzz + k*nxx*nzz]) +
-                            FDM3*(Vz[i + (j-1)*nzz + k*nxx*nzz] - Vz[i + (j+2)*nzz + k*nxx*nzz]) +
-                            FDM4*(Vz[i + (j+1)*nzz + k*nxx*nzz] - Vz[i + j*nzz + k*nxx*nzz])) / dx;
-
-            float dVx_dy = (FDM1*(Vx[i + j*nzz + (k-3)*nxx*nzz] - Vx[i + j*nzz + (k+4)*nxx*nzz]) +
-                            FDM2*(Vx[i + j*nzz + (k+3)*nxx*nzz] - Vx[i + j*nzz + (k-2)*nxx*nzz]) +
-                            FDM3*(Vx[i + j*nzz + (k-1)*nxx*nzz] - Vx[i + j*nzz + (k+2)*nxx*nzz]) +
-                            FDM4*(Vx[i + j*nzz + (k+1)*nxx*nzz] - Vx[i + j*nzz + k*nxx*nzz])) / dy;
-
-            float dVy_dy = (FDM1*(Vy[i + j*nzz + (k-3)*nxx*nzz] - Vy[i + j*nzz + (k+4)*nxx*nzz]) +
-                            FDM2*(Vy[i + j*nzz + (k+3)*nxx*nzz] - Vy[i + j*nzz + (k-2)*nxx*nzz]) +
-                            FDM3*(Vy[i + j*nzz + (k-1)*nxx*nzz] - Vy[i + j*nzz + (k+2)*nxx*nzz]) +
-                            FDM4*(Vy[i + j*nzz + (k+1)*nxx*nzz] - Vy[i + j*nzz + k*nxx*nzz])) / dy;
-
-            float dVz_dy = (FDM1*(Vz[i + j*nzz + (k-3)*nxx*nzz] - Vz[i + j*nzz + (k+4)*nxx*nzz]) +
-                            FDM2*(Vz[i + j*nzz + (k+3)*nxx*nzz] - Vz[i + j*nzz + (k-2)*nxx*nzz]) +
-                            FDM3*(Vz[i + j*nzz + (k-1)*nxx*nzz] - Vz[i + j*nzz + (k+2)*nxx*nzz]) +
-                            FDM4*(Vz[i + j*nzz + (k+1)*nxx*nzz] - Vz[i + j*nzz + k*nxx*nzz])) / dy;
-
-            float dVx_dz = (FDM1*(Vx[(i-3) + j*nzz + k*nxx*nzz] - Vx[(i+4) + j*nzz + k*nxx*nzz]) +
-                            FDM2*(Vx[(i+3) + j*nzz + k*nxx*nzz] - Vx[(i-2) + j*nzz + k*nxx*nzz]) +
-                            FDM3*(Vx[(i-1) + j*nzz + k*nxx*nzz] - Vx[(i+2) + j*nzz + k*nxx*nzz]) +
-                            FDM4*(Vx[(i+1) + j*nzz + k*nxx*nzz] - Vx[i + j*nzz + k*nxx*nzz])) / dz;
-
-            float dVy_dz = (FDM1*(Vy[(i-3) + j*nzz + k*nxx*nzz] - Vy[(i+4) + j*nzz + k*nxx*nzz]) +
-                            FDM2*(Vy[(i+3) + j*nzz + k*nxx*nzz] - Vy[(i-2) + j*nzz + k*nxx*nzz]) +
-                            FDM3*(Vy[(i-1) + j*nzz + k*nxx*nzz] - Vy[(i+2) + j*nzz + k*nxx*nzz]) +
-                            FDM4*(Vy[(i+1) + j*nzz + k*nxx*nzz] - Vy[i + j*nzz + k*nxx*nzz])) / dz;
-
-            float dVz_dz = (FDM1*(Vz[(i-3) + j*nzz + k*nxx*nzz] - Vz[(i+4) + j*nzz + k*nxx*nzz]) +
-                            FDM2*(Vz[(i+3) + j*nzz + k*nxx*nzz] - Vz[(i-2) + j*nzz + k*nxx*nzz]) +
-                            FDM3*(Vz[(i-1) + j*nzz + k*nxx*nzz] - Vz[(i+2) + j*nzz + k*nxx*nzz]) +
-                            FDM4*(Vz[(i+1) + j*nzz + k*nxx*nzz] - Vz[i + j*nzz + k*nxx*nzz])) / dz;
-
-            Txx[index] += dt*(C11[index]*dVx_dx + C16[index]*dVx_dy + C15[index]*dVx_dz +
-                              C16[index]*dVy_dx + C12[index]*dVy_dy + C14[index]*dVy_dz +
-                              C15[index]*dVz_dx + C14[index]*dVz_dy + C13[index]*dVz_dz);                    
-
-            Tyy[index] += dt*(C12[index]*dVx_dx + C26[index]*dVx_dy + C25[index]*dVx_dz +
-                              C26[index]*dVy_dx + C22[index]*dVy_dy + C24[index]*dVy_dz +
-                              C25[index]*dVz_dx + C24[index]*dVz_dy + C23[index]*dVz_dz);                    
-
-            Tzz[index] += dt*(C13[index]*dVx_dx + C36[index]*dVx_dy + C35[index]*dVx_dz +
-                              C36[index]*dVy_dx + C23[index]*dVy_dy + C34[index]*dVy_dz +
-                              C35[index]*dVz_dx + C34[index]*dVz_dy + C33[index]*dVz_dz);                                
+                d4_Txx += FDM[rsg]*(Txx[(i-rsg) + (j+rsg+1)*nzz + (k-rsg)*nxx*nzz] - Txx[(i+rsg+1) + (j-rsg)*nzz + (k+rsg+1)*nxx*nzz]);
+                d4_Tyy += FDM[rsg]*(Tyy[(i-rsg) + (j+rsg+1)*nzz + (k-rsg)*nxx*nzz] - Tyy[(i+rsg+1) + (j-rsg)*nzz + (k+rsg+1)*nxx*nzz]);
+                d4_Tzz += FDM[rsg]*(Tzz[(i-rsg) + (j+rsg+1)*nzz + (k-rsg)*nxx*nzz] - Tzz[(i+rsg+1) + (j-rsg)*nzz + (k+rsg+1)*nxx*nzz]);
+                d4_Txy += FDM[rsg]*(Txy[(i-rsg) + (j+rsg+1)*nzz + (k-rsg)*nxx*nzz] - Txy[(i+rsg+1) + (j-rsg)*nzz + (k+rsg+1)*nxx*nzz]);
+                d4_Txz += FDM[rsg]*(Txz[(i-rsg) + (j+rsg+1)*nzz + (k-rsg)*nxx*nzz] - Txz[(i+rsg+1) + (j-rsg)*nzz + (k+rsg+1)*nxx*nzz]);
+                d4_Tyz += FDM[rsg]*(Tyz[(i-rsg) + (j+rsg+1)*nzz + (k-rsg)*nxx*nzz] - Tyz[(i+rsg+1) + (j-rsg)*nzz + (k+rsg+1)*nxx*nzz]);
+            }
         }
+    }
 
-        if((i >= 3) && (i < nzz-4) && (j > 3) && (j < nxx-3) && (k > 3) && (k < nyy-3)) 
+    float dTxx_dx = 0.25f*(d1_Txx + d2_Txx + d3_Txx + d4_Txx) / dx;
+    float dTxy_dx = 0.25f*(d1_Txy + d2_Txy + d3_Txy + d4_Txy) / dx;
+    float dTxz_dx = 0.25f*(d1_Txz + d2_Txz + d3_Txz + d4_Txz) / dx;
+
+    float dTxy_dy = 0.25f*(d1_Txy + d2_Txy - d3_Txy - d4_Txy) / dy;
+    float dTyy_dy = 0.25f*(d1_Tyy + d2_Tyy - d3_Tyy - d4_Tyy) / dy;
+    float dTyz_dy = 0.25f*(d1_Tyz + d2_Tyz - d3_Tyz - d4_Tyz) / dy;
+    
+    float dTxz_dz = 0.25f*(d1_Txz - d2_Txz + d3_Txz - d4_Txz) / dz;
+    float dTyz_dz = 0.25f*(d1_Tyz - d2_Tyz + d3_Tyz - d4_Tyz) / dz;
+    float dTzz_dz = 0.25f*(d1_Tzz - d2_Tzz + d3_Tzz - d4_Tzz) / dz;
+
+    Vx[index] += dt*B[index]*(dTxx_dx + dTxy_dy + dTxz_dz); 
+    Vy[index] += dt*B[index]*(dTxy_dx + dTyy_dy + dTyz_dz);
+    Vz[index] += dt*B[index]*(dTxz_dx + dTyz_dy + dTzz_dz);    
+}
+
+__global__ void compute_pressure_rsg(float * Vx, float * Vy, float * Vz, float * Txx, float * Tyy, float * Tzz, float * Txz, float * Tyz, float * Txy, float * P, float * T, 
+                                     float * C11, float * C12, float * C13, float * C14, float * C15, float * C16, float * C22, float * C23, float * C24, float * C25, 
+                                     float * C26, float * C33, float * C34, float * C35, float * C36, float * C44, float * C45, float * C46, float * C55, float * C56, 
+                                     float * C66, int tId, int tlag, float dx, float dy, float dz, float dt, int nxx, int nyy, int nzz)
+{
+    int index = blockIdx.x * blockDim.x + threadIdx.x;
+
+    int k = (int) (index / (nxx*nzz));         
+    int j = (int) (index - k*nxx*nzz) / nzz;   
+    int i = (int) (index - j*nzz - k*nxx*nzz); 
+
+    float d1_Vx = 0.0f; float d2_Vx = 0.0f; float d3_Vx = 0.0f; float d4_Vx = 0.0f;
+    float d1_Vy = 0.0f; float d2_Vy = 0.0f; float d3_Vy = 0.0f; float d4_Vy = 0.0f;
+    float d1_Vz = 0.0f; float d2_Vz = 0.0f; float d3_Vz = 0.0f; float d4_Vz = 0.0f;
+
+    float FDM[] = {FDM4, -FDM3, FDM2, -FDM1};
+
+    if ((T[index] < (float)(tId + tlag)*dt) && (index < nxx*nyy*nzz))
+    {
+        if((i > 3) && (i < nzz-3) && (j > 3) && (j < nxx-3) && (k > 3) && (k < nyy-3)) 
         {
-            float dVx_dx = (FDM1*(Vx[i + (j-4)*nzz + k*nxx*nzz] - Vx[i + (j+3)*nzz + k*nxx*nzz]) +
-                            FDM2*(Vx[i + (j+2)*nzz + k*nxx*nzz] - Vx[i + (j-3)*nzz + k*nxx*nzz]) +
-                            FDM3*(Vx[i + (j-2)*nzz + k*nxx*nzz] - Vx[i + (j+1)*nzz + k*nxx*nzz]) +
-                            FDM4*(Vx[i + j*nzz + k*nxx*nzz]     - Vx[i + (j-1)*nzz + k*nxx*nzz])) / dx;
-
-            float dVy_dx = (FDM1*(Vy[i + (j-4)*nzz + k*nxx*nzz] - Vy[i + (j+3)*nzz + k*nxx*nzz]) +
-                            FDM2*(Vy[i + (j+2)*nzz + k*nxx*nzz] - Vy[i + (j-3)*nzz + k*nxx*nzz]) +
-                            FDM3*(Vy[i + (j-2)*nzz + k*nxx*nzz] - Vy[i + (j+1)*nzz + k*nxx*nzz]) +
-                            FDM4*(Vy[i + j*nzz + k*nxx*nzz]     - Vy[i + (j-1)*nzz + k*nxx*nzz])) / dx;
-
-            float dVz_dx = (FDM1*(Vz[i + (j-4)*nzz + k*nxx*nzz] - Vz[i + (j+3)*nzz + k*nxx*nzz]) +
-                            FDM2*(Vz[i + (j+2)*nzz + k*nxx*nzz] - Vz[i + (j-3)*nzz + k*nxx*nzz]) +
-                            FDM3*(Vz[i + (j-2)*nzz + k*nxx*nzz] - Vz[i + (j+1)*nzz + k*nxx*nzz]) +
-                            FDM4*(Vz[i + j*nzz + k*nxx*nzz] -     Vz[i + (j-1)*nzz + k*nxx*nzz])) / dx;
-
-            float dVx_dy = (FDM1*(Vx[i + j*nzz + (k-4)*nxx*nzz] - Vx[i + j*nzz + (k+3)*nxx*nzz]) +
-                            FDM2*(Vx[i + j*nzz + (k+2)*nxx*nzz] - Vx[i + j*nzz + (k-3)*nxx*nzz]) +
-                            FDM3*(Vx[i + j*nzz + (k-2)*nxx*nzz] - Vx[i + j*nzz + (k+1)*nxx*nzz]) +
-                            FDM4*(Vx[i + j*nzz + k*nxx*nzz]     - Vx[i + j*nzz + (k-1)*nxx*nzz])) / dy;
-
-            float dVy_dy = (FDM1*(Vy[i + j*nzz + (k-4)*nxx*nzz] - Vy[i + j*nzz + (k+3)*nxx*nzz]) +
-                            FDM2*(Vy[i + j*nzz + (k+2)*nxx*nzz] - Vy[i + j*nzz + (k-3)*nxx*nzz]) +
-                            FDM3*(Vy[i + j*nzz + (k-2)*nxx*nzz] - Vy[i + j*nzz + (k+1)*nxx*nzz]) +
-                            FDM4*(Vy[i + j*nzz + k*nxx*nzz]     - Vy[i + j*nzz + (k-1)*nxx*nzz])) / dy;
-
-            float dVz_dy = (FDM1*(Vz[i + j*nzz + (k-4)*nxx*nzz] - Vz[i + j*nzz + (k+3)*nxx*nzz]) +
-                            FDM2*(Vz[i + j*nzz + (k+2)*nxx*nzz] - Vz[i + j*nzz + (k-3)*nxx*nzz]) +
-                            FDM3*(Vz[i + j*nzz + (k-2)*nxx*nzz] - Vz[i + j*nzz + (k+1)*nxx*nzz]) +
-                            FDM4*(Vz[i + j*nzz + k*nxx*nzz]     - Vz[i + j*nzz + (k-1)*nxx*nzz])) / dy;
-
-            float dVx_dz = (FDM1*(Vx[(i-3) + j*nzz + k*nxx*nzz] - Vx[(i+4) + j*nzz + k*nxx*nzz]) +
-                            FDM2*(Vx[(i+3) + j*nzz + k*nxx*nzz] - Vx[(i-2) + j*nzz + k*nxx*nzz]) +
-                            FDM3*(Vx[(i-1) + j*nzz + k*nxx*nzz] - Vx[(i+2) + j*nzz + k*nxx*nzz]) +
-                            FDM4*(Vx[(i+1) + j*nzz + k*nxx*nzz] - Vx[i + j*nzz + k*nxx*nzz])) / dz;
-
-            float dVy_dz = (FDM1*(Vy[(i-3) + j*nzz + k*nxx*nzz] - Vy[(i+4) + j*nzz + k*nxx*nzz]) +
-                            FDM2*(Vy[(i+3) + j*nzz + k*nxx*nzz] - Vy[(i-2) + j*nzz + k*nxx*nzz]) +
-                            FDM3*(Vy[(i-1) + j*nzz + k*nxx*nzz] - Vy[(i+2) + j*nzz + k*nxx*nzz]) +
-                            FDM4*(Vy[(i+1) + j*nzz + k*nxx*nzz] - Vy[i + j*nzz + k*nxx*nzz])) / dz;
-
-            float dVz_dz = (FDM1*(Vz[(i-3) + j*nzz + k*nxx*nzz] - Vz[(i+4) + j*nzz + k*nxx*nzz]) +
-                            FDM2*(Vz[(i+3) + j*nzz + k*nxx*nzz] - Vz[(i-2) + j*nzz + k*nxx*nzz]) +
-                            FDM3*(Vz[(i-1) + j*nzz + k*nxx*nzz] - Vz[(i+2) + j*nzz + k*nxx*nzz]) +
-                            FDM4*(Vz[(i+1) + j*nzz + k*nxx*nzz] - Vz[i + j*nzz + k*nxx*nzz])) / dz;
-            
-            float C16_xy = powf(0.25f*(1.0f/C16[i + (j+1)*nzz + (k+1)*nxx*nzz] + 1.0f/C16[i + (j+1)*nzz + k*nxx*nzz] + 
-                                       1.0f/C16[i + j*nzz + (k+1)*nxx*nzz]     + 1.0f/C16[i + j*nzz + k*nxx*nzz]), -1.0f);
-
-            float C26_xy = powf(0.25f*(1.0f/C26[i + (j+1)*nzz + (k+1)*nxx*nzz] + 1.0f/C26[i + (j+1)*nzz + k*nxx*nzz] + 
-                                       1.0f/C26[i + j*nzz + (k+1)*nxx*nzz]     + 1.0f/C26[i + j*nzz + k*nxx*nzz]), -1.0f);
-
-            float C36_xy = powf(0.25f*(1.0f/C36[i + (j+1)*nzz + (k+1)*nxx*nzz] + 1.0f/C36[i + (j+1)*nzz + k*nxx*nzz] + 
-                                       1.0f/C36[i + j*nzz + (k+1)*nxx*nzz]     + 1.0f/C36[i + j*nzz + k*nxx*nzz]), -1.0f);
-
-            float C46_xy = powf(0.25f*(1.0f/C46[i + (j+1)*nzz + (k+1)*nxx*nzz] + 1.0f/C46[i + (j+1)*nzz + k*nxx*nzz] + 
-                                       1.0f/C46[i + j*nzz + (k+1)*nxx*nzz]     + 1.0f/C46[i + j*nzz + k*nxx*nzz]), -1.0f);
-
-            float C56_xy = powf(0.25f*(1.0f/C56[i + (j+1)*nzz + (k+1)*nxx*nzz] + 1.0f/C56[i + (j+1)*nzz + k*nxx*nzz] + 
-                                       1.0f/C56[i + j*nzz + (k+1)*nxx*nzz]     + 1.0f/C56[i + j*nzz + k*nxx*nzz]), -1.0f);
-
-            float C66_xy = powf(0.25f*(1.0f/C66[i + (j+1)*nzz + (k+1)*nxx*nzz] + 1.0f/C66[i + (j+1)*nzz + k*nxx*nzz] + 
-                                       1.0f/C66[i + j*nzz + (k+1)*nxx*nzz]     + 1.0f/C66[i + j*nzz + k*nxx*nzz]), -1.0f);
-
-            Txy[index] += dt*(C16_xy*dVx_dx + C66_xy*dVx_dy + C56_xy*dVx_dz +
-                              C66_xy*dVy_dx + C26_xy*dVy_dy + C46_xy*dVy_dz +
-                              C56_xy*dVz_dx + C46_xy*dVz_dy + C36_xy*dVz_dz);                    
+            for (int rsg = 0; rsg < 4; rsg++)
+            {       
+                d1_Vx += FDM[rsg]*(Vx[(i+rsg) + (j+rsg)*nzz + (k+rsg)*nxx*nzz] - Vx[(i-rsg-1) + (j-rsg-1)*nzz + (k-rsg-1)*nxx*nzz]);      
+                d1_Vy += FDM[rsg]*(Vy[(i+rsg) + (j+rsg)*nzz + (k+rsg)*nxx*nzz] - Vy[(i-rsg-1) + (j-rsg-1)*nzz + (k-rsg-1)*nxx*nzz]);      
+                d1_Vz += FDM[rsg]*(Vz[(i+rsg) + (j+rsg)*nzz + (k+rsg)*nxx*nzz] - Vz[(i-rsg-1) + (j-rsg-1)*nzz + (k-rsg-1)*nxx*nzz]);      
+    
+                d2_Vx += FDM[rsg]*(Vx[(i-rsg-1) + (j+rsg)*nzz + (k+rsg)*nxx*nzz] - Vx[(i+rsg) + (j-rsg-1)*nzz + (k-rsg-1)*nxx*nzz]);      
+                d2_Vy += FDM[rsg]*(Vy[(i-rsg-1) + (j+rsg)*nzz + (k+rsg)*nxx*nzz] - Vy[(i+rsg) + (j-rsg-1)*nzz + (k-rsg-1)*nxx*nzz]);      
+                d2_Vz += FDM[rsg]*(Vz[(i-rsg-1) + (j+rsg)*nzz + (k+rsg)*nxx*nzz] - Vz[(i+rsg) + (j-rsg-1)*nzz + (k-rsg-1)*nxx*nzz]);      
+    
+                d3_Vx += FDM[rsg]*(Vx[(i+rsg) + (j+rsg)*nzz + (k-rsg-1)*nxx*nzz] - Vx[(i-rsg-1) + (j-rsg-1)*nzz + (k+rsg)*nxx*nzz]);      
+                d3_Vy += FDM[rsg]*(Vy[(i+rsg) + (j+rsg)*nzz + (k-rsg-1)*nxx*nzz] - Vy[(i-rsg-1) + (j-rsg-1)*nzz + (k+rsg)*nxx*nzz]);      
+                d3_Vz += FDM[rsg]*(Vz[(i+rsg) + (j+rsg)*nzz + (k-rsg-1)*nxx*nzz] - Vz[(i-rsg-1) + (j-rsg-1)*nzz + (k+rsg)*nxx*nzz]);      
+    
+                d4_Vx += FDM[rsg]*(Vx[(i-rsg-1) + (j+rsg)*nzz + (k-rsg-1)*nxx*nzz] - Vx[(i+rsg) + (j-rsg-1)*nzz + (k+rsg)*nxx*nzz]);      
+                d4_Vy += FDM[rsg]*(Vy[(i-rsg-1) + (j+rsg)*nzz + (k-rsg-1)*nxx*nzz] - Vy[(i+rsg) + (j-rsg-1)*nzz + (k+rsg)*nxx*nzz]);      
+                d4_Vz += FDM[rsg]*(Vz[(i-rsg-1) + (j+rsg)*nzz + (k-rsg-1)*nxx*nzz] - Vz[(i+rsg) + (j-rsg-1)*nzz + (k+rsg)*nxx*nzz]);                          
+            }
         }
-
-        if((i > 3) && (i < nzz-3) && (j > 3) && (j < nxx-3) && (k >= 3) && (k < nyy-4)) 
-        {
-            float dVx_dx = (FDM1*(Vx[i + (j-4)*nzz + k*nxx*nzz] - Vx[i + (j+3)*nzz + k*nxx*nzz]) +
-                            FDM2*(Vx[i + (j+2)*nzz + k*nxx*nzz] - Vx[i + (j-3)*nzz + k*nxx*nzz]) +
-                            FDM3*(Vx[i + (j-2)*nzz + k*nxx*nzz] - Vx[i + (j+1)*nzz + k*nxx*nzz]) +
-                            FDM4*(Vx[i + j*nzz + k*nxx*nzz]     - Vx[i + (j-1)*nzz + k*nxx*nzz])) / dx;
-
-            float dVy_dx = (FDM1*(Vy[i + (j-4)*nzz + k*nxx*nzz] - Vy[i + (j+3)*nzz + k*nxx*nzz]) +
-                            FDM2*(Vy[i + (j+2)*nzz + k*nxx*nzz] - Vy[i + (j-3)*nzz + k*nxx*nzz]) +
-                            FDM3*(Vy[i + (j-2)*nzz + k*nxx*nzz] - Vy[i + (j+1)*nzz + k*nxx*nzz]) +
-                            FDM4*(Vy[i + j*nzz + k*nxx*nzz]     - Vy[i + (j-1)*nzz + k*nxx*nzz])) / dx;
-
-            float dVz_dx = (FDM1*(Vz[i + (j-4)*nzz + k*nxx*nzz] - Vz[i + (j+3)*nzz + k*nxx*nzz]) +
-                            FDM2*(Vz[i + (j+2)*nzz + k*nxx*nzz] - Vz[i + (j-3)*nzz + k*nxx*nzz]) +
-                            FDM3*(Vz[i + (j-2)*nzz + k*nxx*nzz] - Vz[i + (j+1)*nzz + k*nxx*nzz]) +
-                            FDM4*(Vz[i + j*nzz + k*nxx*nzz]     - Vz[i + (j-1)*nzz + k*nxx*nzz])) / dx;
-
-            float dVx_dy = (FDM1*(Vx[i + j*nzz + (k-3)*nxx*nzz] - Vx[i + j*nzz + (k+4)*nxx*nzz]) +
-                            FDM2*(Vx[i + j*nzz + (k+3)*nxx*nzz] - Vx[i + j*nzz + (k-2)*nxx*nzz]) +
-                            FDM3*(Vx[i + j*nzz + (k-1)*nxx*nzz] - Vx[i + j*nzz + (k+2)*nxx*nzz]) +
-                            FDM4*(Vx[i + j*nzz + (k+1)*nxx*nzz] - Vx[i + j*nzz + k*nxx*nzz])) / dy;
-
-            float dVy_dy = (FDM1*(Vy[i + j*nzz + (k-3)*nxx*nzz] - Vy[i + j*nzz + (k+4)*nxx*nzz]) +
-                            FDM2*(Vy[i + j*nzz + (k+3)*nxx*nzz] - Vy[i + j*nzz + (k-2)*nxx*nzz]) +
-                            FDM3*(Vy[i + j*nzz + (k-1)*nxx*nzz] - Vy[i + j*nzz + (k+2)*nxx*nzz]) +
-                            FDM4*(Vy[i + j*nzz + (k+1)*nxx*nzz] - Vy[i + j*nzz + k*nxx*nzz])) / dy;
-
-            float dVz_dy = (FDM1*(Vz[i + j*nzz + (k-3)*nxx*nzz] - Vz[i + j*nzz + (k+4)*nxx*nzz]) +
-                            FDM2*(Vz[i + j*nzz + (k+3)*nxx*nzz] - Vz[i + j*nzz + (k-2)*nxx*nzz]) +
-                            FDM3*(Vz[i + j*nzz + (k-1)*nxx*nzz] - Vz[i + j*nzz + (k+2)*nxx*nzz]) +
-                            FDM4*(Vz[i + j*nzz + (k+1)*nxx*nzz] - Vz[i + j*nzz + k*nxx*nzz])) / dy;
-
-            float dVx_dz = (FDM1*(Vx[(i-4) + j*nzz + k*nxx*nzz] - Vx[(i+3) + j*nzz + k*nxx*nzz]) +
-                            FDM2*(Vx[(i+2) + j*nzz + k*nxx*nzz] - Vx[(i-3) + j*nzz + k*nxx*nzz]) +
-                            FDM3*(Vx[(i-2) + j*nzz + k*nxx*nzz] - Vx[(i+1) + j*nzz + k*nxx*nzz]) +
-                            FDM4*(Vx[i + j*nzz + k*nxx*nzz]     - Vx[(i-1) + j*nzz + k*nxx*nzz])) / dz;
-
-            float dVy_dz = (FDM1*(Vy[(i+4) + j*nzz + k*nxx*nzz] - Vy[(i+3) + j*nzz + k*nxx*nzz]) +
-                            FDM2*(Vy[(i+2) + j*nzz + k*nxx*nzz] - Vy[(i-3) + j*nzz + k*nxx*nzz]) +
-                            FDM3*(Vy[(i-2) + j*nzz + k*nxx*nzz] - Vy[(i+1) + j*nzz + k*nxx*nzz]) +
-                            FDM4*(Vy[i + j*nzz + k*nxx*nzz]     - Vy[(i-1) + j*nzz + k*nxx*nzz])) / dz;
-
-            float dVz_dz = (FDM1*(Vz[(i-4) + j*nzz + k*nxx*nzz] - Vz[(i+3) + j*nzz + k*nxx*nzz]) +
-                            FDM2*(Vz[(i+2) + j*nzz + k*nxx*nzz] - Vz[(i-3) + j*nzz + k*nxx*nzz]) +
-                            FDM3*(Vz[(i-2) + j*nzz + k*nxx*nzz] - Vz[(i+1) + j*nzz + k*nxx*nzz]) +
-                            FDM4*(Vz[i + j*nzz + k*nxx*nzz]     - Vz[(i-1) + j*nzz + k*nxx*nzz])) / dz;
-
-            float C15_xz = powf(0.25f*(1.0f/C15[(i+1) + (j+1)*nzz + k*nxx*nzz] + 1.0f/C15[i + (j+1)*nzz + k*nxx*nzz] + 
-                                       1.0f/C15[(i+1) + j*nzz + k*nxx*nzz]     + 1.0f/C15[i + j*nzz + k*nxx*nzz]), -1.0f);
-
-            float C25_xz = powf(0.25f*(1.0f/C25[(i+1) + (j+1)*nzz + k*nxx*nzz] + 1.0f/C25[i + (j+1)*nzz + k*nxx*nzz] + 
-                                       1.0f/C25[(i+1) + j*nzz + k*nxx*nzz]     + 1.0f/C25[i + j*nzz + k*nxx*nzz]), -1.0f);
-
-            float C35_xz = powf(0.25f*(1.0f/C35[(i+1) + (j+1)*nzz + k*nxx*nzz] + 1.0f/C35[i + (j+1)*nzz + k*nxx*nzz] + 
-                                       1.0f/C35[(i+1) + j*nzz + k*nxx*nzz]     + 1.0f/C35[i + j*nzz + k*nxx*nzz]), -1.0f);
-
-            float C45_xz = powf(0.25f*(1.0f/C45[(i+1) + (j+1)*nzz + k*nxx*nzz] + 1.0f/C45[i + (j+1)*nzz + k*nxx*nzz] + 
-                                       1.0f/C45[(i+1) + j*nzz + k*nxx*nzz]     + 1.0f/C45[i + j*nzz + k*nxx*nzz]), -1.0f);
-
-            float C55_xz = powf(0.25f*(1.0f/C55[(i+1) + (j+1)*nzz + k*nxx*nzz] + 1.0f/C55[i + (j+1)*nzz + k*nxx*nzz] + 
-                                       1.0f/C55[(i+1) + j*nzz + k*nxx*nzz]     + 1.0f/C55[i + j*nzz + k*nxx*nzz]), -1.0f);
-
-            float C56_xz = powf(0.25f*(1.0f/C56[(i+1) + (j+1)*nzz + k*nxx*nzz] + 1.0f/C56[i + (j+1)*nzz + k*nxx*nzz] + 
-                                       1.0f/C56[(i+1) + j*nzz + k*nxx*nzz]     + 1.0f/C56[i + j*nzz + k*nxx*nzz]), -1.0f);
-
-            Txz[index] += dt*(C15_xz*dVx_dx + C56_xz*dVx_dy + C55_xz*dVx_dz +
-                              C56_xz*dVy_dx + C25_xz*dVy_dy + C45_xz*dVy_dz +
-                              C55_xz*dVz_dx + C45_xz*dVz_dy + C35_xz*dVz_dz);                    
-        }
-
-        if((i > 3) && (i < nzz-3) && (j >= 3) && (j < nxx-4) && (k > 3) && (k < nyy-3)) 
-        {
-            float dVx_dx = (FDM1*(Vx[i + (j-3)*nzz + k*nxx*nzz] - Vx[i + (j+4)*nzz + k*nxx*nzz]) +
-                            FDM2*(Vx[i + (j+3)*nzz + k*nxx*nzz] - Vx[i + (j-2)*nzz + k*nxx*nzz]) +
-                            FDM3*(Vx[i + (j-1)*nzz + k*nxx*nzz] - Vx[i + (j+2)*nzz + k*nxx*nzz]) +
-                            FDM4*(Vx[i + (j+1)*nzz + k*nxx*nzz] - Vx[i + j*nzz + k*nxx*nzz])) / dx;
-
-            float dVy_dx = (FDM1*(Vy[i + (j-3)*nzz + k*nxx*nzz] - Vy[i + (j+4)*nzz + k*nxx*nzz]) +
-                            FDM2*(Vy[i + (j+3)*nzz + k*nxx*nzz] - Vy[i + (j-2)*nzz + k*nxx*nzz]) +
-                            FDM3*(Vy[i + (j-1)*nzz + k*nxx*nzz] - Vy[i + (j+2)*nzz + k*nxx*nzz]) +
-                            FDM4*(Vy[i + (j+1)*nzz + k*nxx*nzz] - Vy[i + j*nzz + k*nxx*nzz])) / dx;
-
-            float dVz_dx = (FDM1*(Vz[i + (j-3)*nzz + k*nxx*nzz] - Vz[i + (j+4)*nzz + k*nxx*nzz]) +
-                            FDM2*(Vz[i + (j+3)*nzz + k*nxx*nzz] - Vz[i + (j-2)*nzz + k*nxx*nzz]) +
-                            FDM3*(Vz[i + (j-1)*nzz + k*nxx*nzz] - Vz[i + (j+2)*nzz + k*nxx*nzz]) +
-                            FDM4*(Vz[i + (j+1)*nzz + k*nxx*nzz] - Vz[i + j*nzz + k*nxx*nzz])) / dx;
-
-            float dVx_dy = (FDM1*(Vx[i + j*nzz + (k-4)*nxx*nzz] - Vx[i + j*nzz + (k+3)*nxx*nzz]) +
-                            FDM2*(Vx[i + j*nzz + (k+2)*nxx*nzz] - Vx[i + j*nzz + (k-3)*nxx*nzz]) +
-                            FDM3*(Vx[i + j*nzz + (k-2)*nxx*nzz] - Vx[i + j*nzz + (k+1)*nxx*nzz]) +
-                            FDM4*(Vx[i + j*nzz + k*nxx*nzz]     - Vx[i + j*nzz + (k-1)*nxx*nzz])) / dy;
-
-            float dVy_dy = (FDM1*(Vy[i + j*nzz + (k-4)*nxx*nzz] - Vy[i + j*nzz + (k+3)*nxx*nzz]) +
-                            FDM2*(Vy[i + j*nzz + (k+2)*nxx*nzz] - Vy[i + j*nzz + (k-3)*nxx*nzz]) +
-                            FDM3*(Vy[i + j*nzz + (k-2)*nxx*nzz] - Vy[i + j*nzz + (k+1)*nxx*nzz]) +
-                            FDM4*(Vy[i + j*nzz + k*nxx*nzz]     - Vy[i + j*nzz + (k-1)*nxx*nzz])) / dy;
-
-            float dVz_dy = (FDM1*(Vz[i + j*nzz + (k-4)*nxx*nzz] - Vz[i + j*nzz + (k+3)*nxx*nzz]) +
-                            FDM2*(Vz[i + j*nzz + (k+2)*nxx*nzz] - Vz[i + j*nzz + (k-3)*nxx*nzz]) +
-                            FDM3*(Vz[i + j*nzz + (k-2)*nxx*nzz] - Vz[i + j*nzz + (k+1)*nxx*nzz]) +
-                            FDM4*(Vz[i + j*nzz + k*nxx*nzz]     - Vz[i + j*nzz + (k-1)*nxx*nzz])) / dy;
-
-            float dVx_dz = (FDM1*(Vx[(i-4) + j*nzz + k*nxx*nzz] - Vx[(i+3) + j*nzz + k*nxx*nzz]) +
-                            FDM2*(Vx[(i+2) + j*nzz + k*nxx*nzz] - Vx[(i-3) + j*nzz + k*nxx*nzz]) +
-                            FDM3*(Vx[(i-2) + j*nzz + k*nxx*nzz] - Vx[(i+1) + j*nzz + k*nxx*nzz]) +
-                            FDM4*(Vx[i + j*nzz + k*nxx*nzz]     - Vx[(i-1) + j*nzz + k*nxx*nzz])) / dz;
-
-            float dVy_dz = (FDM1*(Vy[(i-4) + j*nzz + k*nxx*nzz] - Vy[(i+3) + j*nzz + k*nxx*nzz]) +
-                            FDM2*(Vy[(i+2) + j*nzz + k*nxx*nzz] - Vy[(i-3) + j*nzz + k*nxx*nzz]) +
-                            FDM3*(Vy[(i-2) + j*nzz + k*nxx*nzz] - Vy[(i+1) + j*nzz + k*nxx*nzz]) +
-                            FDM4*(Vy[i + j*nzz + k*nxx*nzz]     - Vy[(i-1) + j*nzz + k*nxx*nzz])) / dz;
-
-            float dVz_dz = (FDM1*(Vz[(i-4) + j*nzz + k*nxx*nzz] - Vz[(i+3) + j*nzz + k*nxx*nzz]) +
-                            FDM2*(Vz[(i+2) + j*nzz + k*nxx*nzz] - Vz[(i-3) + j*nzz + k*nxx*nzz]) +
-                            FDM3*(Vz[(i-2) + j*nzz + k*nxx*nzz] - Vz[(i+1) + j*nzz + k*nxx*nzz]) +
-                            FDM4*(Vz[i + j*nzz + k*nxx*nzz]     - Vz[(i-1) + j*nzz + k*nxx*nzz])) / dz;
-
-            float C14_yz = powf(0.25f*(1.0f/C14[(i+1) + j*nzz + (k+1)*nxx*nzz] + 1.0f/C14[i + j*nzz + (k+1)*nxx*nzz] + 
-                                       1.0f/C14[(i+1) + j*nzz + k*nxx*nzz] +     1.0f/C14[i + j*nzz + k*nxx*nzz]), -1.0f);
-
-            float C24_yz = powf(0.25f*(1.0f/C24[(i+1) + j*nzz + (k+1)*nxx*nzz] + 1.0f/C24[i + j*nzz + (k+1)*nxx*nzz] + 
-                                       1.0f/C24[(i+1) + j*nzz + k*nxx*nzz] +     1.0f/C24[i + j*nzz + k*nxx*nzz]), -1.0f);
-
-            float C34_yz = powf(0.25f*(1.0f/C34[(i+1) + j*nzz + (k+1)*nxx*nzz] + 1.0f/C34[i + j*nzz + (k+1)*nxx*nzz] + 
-                                       1.0f/C34[(i+1) + j*nzz + k*nxx*nzz] +     1.0f/C34[i + j*nzz + k*nxx*nzz]), -1.0f);
-
-            float C44_yz = powf(0.25f*(1.0f/C44[(i+1) + j*nzz + (k+1)*nxx*nzz] + 1.0f/C44[i + j*nzz + (k+1)*nxx*nzz] + 
-                                       1.0f/C44[(i+1) + j*nzz + k*nxx*nzz] +     1.0f/C44[i + j*nzz + k*nxx*nzz]), -1.0f);
-
-            float C45_yz = powf(0.25f*(1.0f/C45[(i+1) + j*nzz + (k+1)*nxx*nzz] + 1.0f/C45[i + j*nzz + (k+1)*nxx*nzz] + 
-                                       1.0f/C45[(i+1) + j*nzz + k*nxx*nzz] +     1.0f/C45[i + j*nzz + k*nxx*nzz]), -1.0f);
-
-            float C46_yz = powf(0.25f*(1.0f/C46[(i+1) + j*nzz + (k+1)*nxx*nzz] + 1.0f/C46[i + j*nzz + (k+1)*nxx*nzz] + 
-                                       1.0f/C46[(i+1) + j*nzz + k*nxx*nzz] +     1.0f/C46[i + j*nzz + k*nxx*nzz]), -1.0f);
-
-            Tyz[index] += dt*(C14_yz*dVx_dx + C46_yz*dVx_dy + C45_yz*dVx_dz +
-                              C46_yz*dVy_dx + C24_yz*dVy_dy + C44_yz*dVy_dz +
-                              C45_yz*dVz_dx + C44_yz*dVz_dy + C34_yz*dVz_dz);                    
-        }
-
+    
+        float dVx_dx = 0.25f*(d1_Vx + d2_Vx + d3_Vx + d4_Vx) / dx;
+        float dVy_dx = 0.25f*(d1_Vy + d2_Vy + d3_Vy + d4_Vy) / dx;
+        float dVz_dx = 0.25f*(d1_Vz + d2_Vz + d3_Vz + d4_Vz) / dx;
+    
+        float dVx_dy = 0.25f*(d1_Vx + d2_Vx - d3_Vx - d4_Vx) / dy;
+        float dVy_dy = 0.25f*(d1_Vy + d2_Vy - d3_Vy - d4_Vy) / dy;
+        float dVz_dy = 0.25f*(d1_Vz + d2_Vz - d3_Vz - d4_Vz) / dy;
+    
+        float dVx_dz = 0.25f*(d1_Vx - d2_Vx + d3_Vx - d4_Vx) / dz;
+        float dVy_dz = 0.25f*(d1_Vy - d2_Vy + d3_Vy - d4_Vy) / dz;
+        float dVz_dz = 0.25f*(d1_Vz - d2_Vz + d3_Vz - d4_Vz) / dz;
+    
+        Txx[index] += dt*(C11[index]*dVx_dx + C16[index]*dVx_dy + C15[index]*dVx_dz +
+                          C16[index]*dVy_dx + C12[index]*dVy_dy + C14[index]*dVy_dz +
+                          C15[index]*dVz_dx + C14[index]*dVz_dy + C13[index]*dVz_dz);                    
+    
+        Tyy[index] += dt*(C12[index]*dVx_dx + C26[index]*dVx_dy + C25[index]*dVx_dz +
+                          C26[index]*dVy_dx + C22[index]*dVy_dy + C24[index]*dVy_dz +
+                          C25[index]*dVz_dx + C24[index]*dVz_dy + C23[index]*dVz_dz);                    
+    
+        Tzz[index] += dt*(C13[index]*dVx_dx + C36[index]*dVx_dy + C35[index]*dVx_dz +
+                          C36[index]*dVy_dx + C23[index]*dVy_dy + C34[index]*dVy_dz +
+                          C35[index]*dVz_dx + C34[index]*dVz_dy + C33[index]*dVz_dz);  
+    
+        Txy[index] += dt*(C16[index]*dVx_dx + C66[index]*dVx_dy + C56[index]*dVx_dz +
+                          C66[index]*dVy_dx + C26[index]*dVy_dy + C46[index]*dVy_dz +
+                          C56[index]*dVz_dx + C46[index]*dVz_dy + C36[index]*dVz_dz);                    
+    
+        Txz[index] += dt*(C15[index]*dVx_dx + C56[index]*dVx_dy + C55[index]*dVx_dz +
+                          C56[index]*dVy_dx + C25[index]*dVy_dy + C45[index]*dVy_dz +
+                          C55[index]*dVz_dx + C45[index]*dVz_dy + C35[index]*dVz_dz);                    
+    
+        Tyz[index] += dt*(C14[index]*dVx_dx + C46[index]*dVx_dy + C45[index]*dVx_dz +
+                          C46[index]*dVy_dx + C24[index]*dVy_dy + C44[index]*dVy_dz +
+                          C45[index]*dVz_dx + C44[index]*dVz_dy + C34[index]*dVz_dz); 
+    
         if ((i > 3) && (i < nzz-4) && (j > 3) && (j < nxx-4) && (k > 3) && (k < nyy-4))
         {
             P[index] = (Txx[index] + Tyy[index] + Tzz[index]) / 3.0f;
