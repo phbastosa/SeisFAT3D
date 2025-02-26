@@ -6,7 +6,6 @@
 # include "../hfreq/eikonal_ani.cuh" 
 
 # define RSGR 3
-# define COMP 1.0f / (6.0f * 6.0f * 6.0f)
 
 class Elastic_ANI : public Elastic
 {

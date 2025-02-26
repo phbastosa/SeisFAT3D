@@ -205,9 +205,11 @@ __global__ void compute_velocity_rsg(float * Vx, float * Vy, float * Vz, float *
             {
                 for (int sk = -RSGR; sk <= RSGR; sk++)
                 {
-                    Txx[(sIdz+si) + (sIdx+sj)*nzz + (sIdy+sk)*nxx*nzz] += COMP*wavelet[tId] / (dx*dy*dz);
-                    Tyy[(sIdz+si) + (sIdx+sj)*nzz + (sIdy+sk)*nxx*nzz] += COMP*wavelet[tId] / (dx*dy*dz);
-                    Tzz[(sIdz+si) + (sIdx+sj)*nzz + (sIdy+sk)*nxx*nzz] += COMP*wavelet[tId] / (dx*dy*dz);                            
+                    float c = 0.07f*expf(-0.5f*(si*si + sj*sj + sk*sk));
+
+                    Txx[(sIdz+si) + (sIdx+sj)*nzz + (sIdy+sk)*nxx*nzz] += c*wavelet[tId] / (dx*dy*dz);
+                    Tyy[(sIdz+si) + (sIdx+sj)*nzz + (sIdy+sk)*nxx*nzz] += c*wavelet[tId] / (dx*dy*dz);
+                    Tzz[(sIdz+si) + (sIdx+sj)*nzz + (sIdy+sk)*nxx*nzz] += c*wavelet[tId] / (dx*dy*dz);                            
                 }
             }
         }
