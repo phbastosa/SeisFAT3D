@@ -10,19 +10,19 @@ x_spacing = 10.0                           # [m] <float>
 y_spacing = 10.0                           # [m] <float> 
 z_spacing = 10.0                           # [m] <float> 
 
-vp_model_file = ../inputs/models/vp_simple.bin   
-vs_model_file = ../inputs/models/vs_simple.bin   
-ro_model_file = ../inputs/models/ro_simple.bin
+vp_model_file = ../inputs/models/anisoTest_vp.bin   
+vs_model_file = ../inputs/models/anisoTest_vs.bin   
+ro_model_file = ../inputs/models/anisoTest_ro.bin
 
-Cijkl_folder = ../inputs/models/element_
+Cijkl_folder = ../inputs/models/anisoTest_
 
 #---------------------------------------------------------------------------------------------------
 # Geometry parameters ------------------------------------------------------------------------------
 #---------------------------------------------------------------------------------------------------
 
-SPS = ../inputs/geometry/simple_SPS.txt              
-RPS = ../inputs/geometry/simple_RPS.txt     
-XPS = ../inputs/geometry/simple_XPS.txt     
+SPS = ../inputs/geometry/anisoTest_SPS.txt              
+RPS = ../inputs/geometry/anisoTest_RPS.txt     
+XPS = ../inputs/geometry/anisoTest_XPS.txt     
 
 #---------------------------------------------------------------------------------------------------
 # Modeling parameters ------------------------------------------------------------------------------
@@ -34,9 +34,9 @@ XPS = ../inputs/geometry/simple_XPS.txt
 # [3] - Elastic ANI
 # --------------------------------------------------------------------------------------------------
 
-modeling_type = 1
+modeling_type = 3
 
-time_samples = 1001
+time_samples = 251
 time_spacing = 1e-3
 max_frequency = 30.0
 

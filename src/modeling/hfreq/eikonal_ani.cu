@@ -133,9 +133,9 @@ void Eikonal_ANI::forward_solver()
 
             float norm = sqrtf(dTx*dTx + dTy*dTy + dTz*dTz);
 
-            p[0] = dTz / norm;
-            p[1] = dTx / norm;
-            p[2] = dTy / norm;
+            p[0] = dTx / norm;
+            p[1] = dTy / norm;
+            p[2] = dTz / norm;
 
             get_stiffness();
             get_christoffel();
