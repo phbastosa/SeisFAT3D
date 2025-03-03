@@ -1,27 +1,27 @@
 import numpy as np
 
-nx = 101
-ny = 101
-nz = 101
+nx = 881
+ny = 481
+nz = 81
 
-dx = 10.0
-dy = 10.0
-dz = 10.0
+dx = 25.0
+dy = 25.0
+dz = 25.0
 
 # Acquisition geometry
 
 nsx = 1
 nsy = 1
 
-nrx = 91 
-nry = 3
+nrx = 3 
+nry = 201
 
 ns = nsx*nsy
 nr = nrx*nry
 
-sx, sy = 500, 500 
-rx, ry = np.meshgrid(np.linspace(50, 950, nrx), 
-                     np.linspace(50, 950, nry))
+sx, sy = 1000, 6000 
+rx, ry = np.meshgrid(np.linspace(15000, 20000, nrx), 
+                     np.linspace( 1000, 11000, nry))
 
 SPS = np.zeros((ns, 3), dtype = float)
 RPS = np.zeros((nr, 3), dtype = float)
@@ -29,10 +29,10 @@ XPS = np.zeros((ns, 3), dtype = int)
 
 SPS[:,0] = np.reshape(sx, [ns], order = "F")
 SPS[:,1] = np.reshape(sy, [ns], order = "F")
-SPS[:,2] = np.zeros(ns) + 0.5*(nz-1)*dz
+SPS[:,2] = np.zeros(ns) 
 
-RPS[:,0] = np.reshape(rx, [nr], order = "C")
-RPS[:,1] = np.reshape(ry, [nr], order = "C")
+RPS[:,0] = np.reshape(rx, [nr], order = "F")
+RPS[:,1] = np.reshape(ry, [nr], order = "F")
 RPS[:,2] = np.zeros(nr)
 
 XPS[:, 0] = np.arange(ns)
@@ -47,24 +47,22 @@ np.savetxt(path_SPS, SPS, fmt = "%.2f", delimiter = ",")
 np.savetxt(path_RPS, RPS, fmt = "%.2f", delimiter = ",")
 np.savetxt(path_XPS, XPS, fmt = "%.0f", delimiter = ",")
 
-offset = np.sqrt((SPS[0,0] - RPS[:,0])**2 + (SPS[0,1] - RPS[:,1])**2)
+vp = np.array([2000, 3000])
+vs = np.array([1180, 1460])
+ro = np.array([2250, 2350])
+z = np.array([1500])
 
-vp = np.array([1800, 1800, 1800])
-vs = np.array([1060, 1060, 1060])
-ro = np.array([2250, 2250, 2250])
-z = np.array([500, 500])
+E1 = np.array([0.0, 0.0])
+E2 = np.array([0.0, 0.0])
+D1 = np.array([0.0, 0.0])
+D2 = np.array([0.0, 0.0])
+D3 = np.array([0.0, 0.0])
+G1 = np.array([0.0, 0.0])
+G2 = np.array([0.0, 0.0])
 
-E1 = np.array([0.1, 0.1, 0.1])
-E2 = np.array([0.1, 0.1, 0.1])
-D1 = np.array([0.1, 0.1, 0.1])
-D2 = np.array([0.1, 0.1, 0.1])
-D3 = np.array([0.1, 0.1, 0.1])
-G1 = np.array([0.1, 0.1, 0.1])
-G2 = np.array([0.1, 0.1, 0.1])
-
-theta_x = np.array([30.0, 30.0, 30.0]) * np.pi/180.0
-theta_y = np.array([60.0, 60.0, 60.0]) * np.pi/180.0
-theta_z = np.array([90.0, 90.0, 90.0]) * np.pi/180.0
+theta_x = np.array([0.0, 0.0]) * np.pi/180.0
+theta_y = np.array([0.0, 0.0]) * np.pi/180.0
+theta_z = np.array([0.0, 0.0]) * np.pi/180.0
 
 Vp = np.zeros((nz, nx, ny))
 Vs = np.zeros((nz, nx, ny))

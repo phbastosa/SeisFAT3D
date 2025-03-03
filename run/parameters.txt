@@ -2,13 +2,13 @@
 # Model paramenters --------------------------------------------------------------------------------
 #---------------------------------------------------------------------------------------------------
 
-x_samples = 101                            # <int>  
-y_samples = 101                            # <int>  
-z_samples = 101                            # <int>  
+x_samples = 881                            # <int>  
+y_samples = 481                            # <int>  
+z_samples = 81                             # <int>  
 
-x_spacing = 10.0                           # [m] <float> 
-y_spacing = 10.0                           # [m] <float> 
-z_spacing = 10.0                           # [m] <float> 
+x_spacing = 25.0                           # [m] <float> 
+y_spacing = 25.0                           # [m] <float> 
+z_spacing = 25.0                           # [m] <float> 
 
 vp_model_file = ../inputs/models/anisoTest_vp.bin   
 vs_model_file = ../inputs/models/anisoTest_vs.bin   
@@ -34,11 +34,11 @@ XPS = ../inputs/geometry/anisoTest_XPS.txt
 # [3] - Elastic ANI
 # --------------------------------------------------------------------------------------------------
 
-modeling_type = 3
+modeling_type = 2
 
-time_samples = 251
-time_spacing = 1e-3
-max_frequency = 30.0
+time_samples = 5001
+time_spacing = 2e-3
+max_frequency = 20.0
 
 boundary_samples = 50
 boundary_damping = 0.0045
