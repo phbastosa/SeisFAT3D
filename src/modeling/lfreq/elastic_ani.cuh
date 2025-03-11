@@ -5,7 +5,7 @@
 
 # include "../hfreq/eikonal_ani.cuh" 
 
-# define RSGR 3
+# define RSGR 1
 
 class Elastic_ANI : public Elastic
 {
@@ -13,6 +13,7 @@ private:
 
     float * B = nullptr;
     float * d_B = nullptr;
+    float * dwc = nullptr;
 
     float * d_C11 = nullptr;
     float * d_C12 = nullptr;
@@ -49,8 +50,8 @@ public:
 };
 
 __global__ void compute_velocity_rsg(float * Vx, float * Vy, float * Vz, float * Txx, float * Tyy, float * Tzz, float * Txz, float * Tyz, float * Txy, float * B, float * T,  
-                                     float * damp1D, float * damp2D, float * damp3D, float * wavelet, float dx, float dy, float dz, float dt, int tId, int tlag, int sIdx, 
-                                     int sIdy, int sIdz, int nxx, int nyy, int nzz, int nb, int nt);
+                                     float * damp1D, float * damp2D, float * damp3D, float * wavelet, float * dwc, float dx, float dy, float dz, float dt, int tId, int tlag, 
+                                     int sIdx, int sIdy, int sIdz, int nxx, int nyy, int nzz, int nb, int nt);
 
 __global__ void compute_pressure_rsg(float * Vx, float * Vy, float * Vz, float * Txx, float * Tyy, float * Tzz, float * Txz, float * Tyz, float * Txy, float * P, float * T, 
                                      float * C11, float * C12, float * C13, float * C14, float * C15, float * C16, float * C22, float * C23, float * C24, float * C25, 

@@ -187,8 +187,6 @@ void Tomography::smooth_volume(float * input, float * output, int nx, int ny, in
     int nPoints = nx * ny * nz;
     int nKernel = smoother_samples * smoother_samples * smoother_samples;
 
-    float pi = 4.0f * atanf(1.0f); 
-
     float * kernel = new float[nKernel]();
 
     # pragma omp parallel for
@@ -213,7 +211,7 @@ void Tomography::smooth_volume(float * input, float * output, int nx, int ny, in
                     
                     float r = sqrtf(x*x + y*y + z*z);
 
-                    kernel[index] = 1.0f / (pi*smoother_stdv) * expf(-((r*r)/(2.0f*smoother_stdv*smoother_stdv)));
+                    kernel[index] = 1.0f / (M_PI*smoother_stdv) * expf(-((r*r)/(2.0f*smoother_stdv*smoother_stdv)));
         
                     sum += kernel[index]; 
                 }

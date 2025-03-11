@@ -9,6 +9,36 @@ void Elastic_ANI::set_conditions()
     eikonal->parameters = parameters;
     eikonal->set_parameters();
 
+    int samples = 2*RSGR+1;
+    int nKernel = samples*samples*samples;
+    float * kernel = new float[nKernel]();
+
+    int index = 0;
+    float sum = 0.0f;
+
+    for (int z = -RSGR; z <= RSGR; z++)
+    {
+        for (int x = -RSGR; x <= RSGR; x++)
+        {
+            for (int y = -RSGR; y <= RSGR; y++)
+            {          
+                float r = sqrtf(x*x + y*y + z*z);
+
+                kernel[index] = 1.0f/sqrtf(2.0f*M_PI)*expf(-0.5f*r*r);
+    
+                sum += kernel[index]; 
+            
+                ++index;
+            }
+        }
+    }
+
+    for (index = 0; index < nKernel; index++) 
+        kernel[index] /= sum;
+
+    cudaMalloc((void**)&(dwc), nKernel*sizeof(float));
+    cudaMemcpy(dwc, kernel, nKernel*sizeof(float), cudaMemcpyHostToDevice);
+    
     B = new float[volsize]();
 
     # pragma omp parallel for
@@ -176,7 +206,7 @@ void Elastic_ANI::propagation()
 {
     for (int tId = 0; tId < nt + tlag; tId++)
     {
-        compute_velocity_rsg<<<nBlocks, nThreads>>>(d_Vx, d_Vy, d_Vz, d_Txx, d_Tyy, d_Tzz, d_Txz, d_Tyz, d_Txy, d_B, d_T, d1D, d2D, d3D, wavelet, dx, dy, dz, dt, tId, tlag, sIdx, sIdy, sIdz, nxx, nyy, nzz, nb, nt);
+        compute_velocity_rsg<<<nBlocks, nThreads>>>(d_Vx, d_Vy, d_Vz, d_Txx, d_Tyy, d_Tzz, d_Txz, d_Tyz, d_Txy, d_B, d_T, d1D, d2D, d3D, wavelet, dwc, dx, dy, dz, dt, tId, tlag, sIdx, sIdy, sIdz, nxx, nyy, nzz, nb, nt);
         cudaDeviceSynchronize();
 
         compute_pressure_rsg<<<nBlocks, nThreads>>>(d_Vx, d_Vy, d_Vz, d_Txx, d_Tyy, d_Tzz, d_Txz, d_Tyz, d_Txy, d_P, d_T, d_C11, d_C12, d_C13, d_C14, d_C15, d_C16, d_C22, d_C23, d_C24, d_C25, d_C26, d_C33, d_C34, d_C35, d_C36, d_C44, d_C45, d_C46, d_C55, d_C56, d_C66, tId, tlag, dx, dy, dz, dt, nxx, nyy, nzz);
@@ -188,8 +218,8 @@ void Elastic_ANI::propagation()
 }
 
 __global__ void compute_velocity_rsg(float * Vx, float * Vy, float * Vz, float * Txx, float * Tyy, float * Tzz, float * Txz, float * Tyz, float * Txy, float * B, float * T,  
-                                     float * damp1D, float * damp2D, float * damp3D, float * wavelet, float dx, float dy, float dz, float dt, int tId, int tlag, int sIdx, 
-                                     int sIdy, int sIdz, int nxx, int nyy, int nzz, int nb, int nt)
+                                     float * damp1D, float * damp2D, float * damp3D, float * wavelet, float * dwc, float dx, float dy, float dz, float dt, int tId, int tlag, 
+                                     int sIdx, int sIdy, int sIdz, int nxx, int nyy, int nzz, int nb, int nt)
 {
     int index = blockIdx.x * blockDim.x + threadIdx.x;
 
@@ -199,17 +229,19 @@ __global__ void compute_velocity_rsg(float * Vx, float * Vy, float * Vz, float *
 
     if ((index == 0) && (tId < nt))
     {
+        int sId = 0;
+
         for (int si = -RSGR; si <= RSGR; si++)
         {
             for (int sj = -RSGR; sj <= RSGR; sj++)
             {
                 for (int sk = -RSGR; sk <= RSGR; sk++)
                 {
-                    float c = 0.069f*expf(-0.5f*(si*si + sj*sj + sk*sk));
-
-                    Txx[(sIdz+si) + (sIdx+sj)*nzz + (sIdy+sk)*nxx*nzz] += c*wavelet[tId] / (dx*dy*dz);
-                    Tyy[(sIdz+si) + (sIdx+sj)*nzz + (sIdy+sk)*nxx*nzz] += c*wavelet[tId] / (dx*dy*dz);
-                    Tzz[(sIdz+si) + (sIdx+sj)*nzz + (sIdy+sk)*nxx*nzz] += c*wavelet[tId] / (dx*dy*dz);                            
+                    Txx[(sIdz+si) + (sIdx+sj)*nzz + (sIdy+sk)*nxx*nzz] += dwc[sId]*wavelet[tId] / (dx*dy*dz);
+                    Tyy[(sIdz+si) + (sIdx+sj)*nzz + (sIdy+sk)*nxx*nzz] += dwc[sId]*wavelet[tId] / (dx*dy*dz);
+                    Tzz[(sIdz+si) + (sIdx+sj)*nzz + (sIdy+sk)*nxx*nzz] += dwc[sId]*wavelet[tId] / (dx*dy*dz);                            
+                    
+                    ++sId;
                 }
             }
         }
@@ -259,23 +291,36 @@ __global__ void compute_velocity_rsg(float * Vx, float * Vy, float * Vz, float *
                 d4_Tyz += FDM[rsg]*(Tyz[(i-rsg) + (j+rsg+1)*nzz + (k-rsg)*nxx*nzz] - Tyz[(i+rsg+1) + (j-rsg)*nzz + (k+rsg+1)*nxx*nzz]);
             }
         }
-    }
-
-    float dTxx_dx = 0.25f*(d1_Txx + d2_Txx + d3_Txx + d4_Txx) / dx;
-    float dTxy_dx = 0.25f*(d1_Txy + d2_Txy + d3_Txy + d4_Txy) / dx;
-    float dTxz_dx = 0.25f*(d1_Txz + d2_Txz + d3_Txz + d4_Txz) / dx;
-
-    float dTxy_dy = 0.25f*(d1_Txy + d2_Txy - d3_Txy - d4_Txy) / dy;
-    float dTyy_dy = 0.25f*(d1_Tyy + d2_Tyy - d3_Tyy - d4_Tyy) / dy;
-    float dTyz_dy = 0.25f*(d1_Tyz + d2_Tyz - d3_Tyz - d4_Tyz) / dy;
     
-    float dTxz_dz = 0.25f*(d1_Txz - d2_Txz + d3_Txz - d4_Txz) / dz;
-    float dTyz_dz = 0.25f*(d1_Tyz - d2_Tyz + d3_Tyz - d4_Tyz) / dz;
-    float dTzz_dz = 0.25f*(d1_Tzz - d2_Tzz + d3_Tzz - d4_Tzz) / dz;
+        float dTxx_dx = 0.25f*(d1_Txx + d2_Txx + d3_Txx + d4_Txx) / dx;
+        float dTxy_dx = 0.25f*(d1_Txy + d2_Txy + d3_Txy + d4_Txy) / dx;
+        float dTxz_dx = 0.25f*(d1_Txz + d2_Txz + d3_Txz + d4_Txz) / dx;
+    
+        float dTxy_dy = 0.25f*(d1_Txy + d2_Txy - d3_Txy - d4_Txy) / dy;
+        float dTyy_dy = 0.25f*(d1_Tyy + d2_Tyy - d3_Tyy - d4_Tyy) / dy;
+        float dTyz_dy = 0.25f*(d1_Tyz + d2_Tyz - d3_Tyz - d4_Tyz) / dy;
+        
+        float dTxz_dz = 0.25f*(d1_Txz - d2_Txz + d3_Txz - d4_Txz) / dz;
+        float dTyz_dz = 0.25f*(d1_Tyz - d2_Tyz + d3_Tyz - d4_Tyz) / dz;
+        float dTzz_dz = 0.25f*(d1_Tzz - d2_Tzz + d3_Tzz - d4_Tzz) / dz;
+    
+        Vx[index] += dt*B[index]*(dTxx_dx + dTxy_dy + dTxz_dz); 
+        Vy[index] += dt*B[index]*(dTxy_dx + dTyy_dy + dTyz_dz);
+        Vz[index] += dt*B[index]*(dTxz_dx + dTyz_dy + dTzz_dz);    
+        
+    	float damper = get_boundary_damper(damp1D, damp2D, damp3D, i, j, k, nxx, nyy, nzz, nb);
 
-    Vx[index] += dt*B[index]*(dTxx_dx + dTxy_dy + dTxz_dz); 
-    Vy[index] += dt*B[index]*(dTxy_dx + dTyy_dy + dTyz_dz);
-    Vz[index] += dt*B[index]*(dTxz_dx + dTyz_dy + dTzz_dz);    
+        Vx[index] *= damper;
+        Vy[index] *= damper;
+        Vz[index] *= damper;
+
+        Txx[index] *= damper;
+        Tyy[index] *= damper;
+        Tzz[index] *= damper;
+        Txz[index] *= damper;
+        Tyz[index] *= damper;
+        Txy[index] *= damper;
+    }
 }
 
 __global__ void compute_pressure_rsg(float * Vx, float * Vy, float * Vz, float * Txx, float * Tyy, float * Tzz, float * Txz, float * Tyz, float * Txy, float * P, float * T, 

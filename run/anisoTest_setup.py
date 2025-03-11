@@ -1,27 +1,27 @@
 import numpy as np
 
-nx = 881
-ny = 481
-nz = 81
+nx = 201
+ny = 201
+nz = 101
 
-dx = 25.0
-dy = 25.0
-dz = 25.0
+dx = 10.0
+dy = 10.0
+dz = 10.0
 
 # Acquisition geometry
 
 nsx = 1
 nsy = 1
 
-nrx = 3 
-nry = 201
+nrx = 4 
+nry = 41
 
 ns = nsx*nsy
 nr = nrx*nry
 
-sx, sy = 1000, 6000 
-rx, ry = np.meshgrid(np.linspace(15000, 20000, nrx), 
-                     np.linspace( 1000, 11000, nry))
+sx, sy = 1000, 1000 
+rx, ry = np.meshgrid(np.linspace(500, 1500, nrx), 
+                     np.linspace( 50, 1950, nry))
 
 SPS = np.zeros((ns, 3), dtype = float)
 RPS = np.zeros((nr, 3), dtype = float)
@@ -50,7 +50,7 @@ np.savetxt(path_XPS, XPS, fmt = "%.0f", delimiter = ",")
 vp = np.array([2000, 3000])
 vs = np.array([1180, 1460])
 ro = np.array([2250, 2350])
-z = np.array([1500])
+z = np.array([800])
 
 E1 = np.array([0.0, 0.0])
 E2 = np.array([0.0, 0.0])
