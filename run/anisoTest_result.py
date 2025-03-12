@@ -4,9 +4,6 @@ import numpy as np
 import matplotlib.pyplot as plt
 import functions as pyf
 
-nrx = 3 
-nry = 201
-
 path_SPS = "../inputs/geometry/anisoTest_SPS.txt"
 path_RPS = "../inputs/geometry/anisoTest_RPS.txt"
 path_XPS = "../inputs/geometry/anisoTest_XPS.txt"
