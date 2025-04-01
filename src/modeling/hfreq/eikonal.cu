@@ -130,8 +130,6 @@ void Eikonal::propagation()
             inner_sweep<<<gs, bs>>>(d_S, d_T, d_sgnt, d_sgnv, sgni, sgnj, sgnk, level, xs, ys, 
                                     xSweepOff, ySweepOff, zSweepOff, nxx, nyy, nzz, dx, dy, dz, 
                                     dx2i, dy2i, dz2i, dz2dx2, dz2dy2, dx2dy2, dsum);
-            
-            cudaDeviceSynchronize();
 	    }
     }
     
