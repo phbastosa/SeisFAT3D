@@ -1,27 +1,27 @@
 import numpy as np
 
-nx = 401
-ny = 241
-nz = 121
+nx = 101
+ny = 101
+nz = 101
 
-dx = 12.5
-dy = 12.5
-dz = 12.5
+dx = 10.0
+dy = 10.0
+dz = 10.0
 
 # Acquisition geometry
 
 nsx = 1
 nsy = 1
 
-nrx = 50
-nry = 30
+nrx = 10
+nry = 10
 
 ns = nsx*nsy
 nr = nrx*nry
 
-sx, sy = 2500, 1500 
-rx, ry = np.meshgrid(np.linspace( 25, 4975, nrx), 
-                     np.linspace( 25, 2975, nry))
+sx, sy = 500, 500 
+rx, ry = np.meshgrid(np.linspace( 25, 975, nrx), 
+                     np.linspace( 25, 975, nry))
 
 SPS = np.zeros((ns, 3), dtype = float)
 RPS = np.zeros((nr, 3), dtype = float)
@@ -33,7 +33,7 @@ SPS[:,2] = np.zeros(ns)
 
 RPS[:,0] = np.reshape(rx, [nr], order = "F")
 RPS[:,1] = np.reshape(ry, [nr], order = "F")
-RPS[:,2] = np.zeros(nr) + 250
+RPS[:,2] = np.zeros(nr) + 200
 
 XPS[:, 0] = np.arange(ns)
 XPS[:, 1] = np.zeros(ns) 
@@ -50,15 +50,15 @@ np.savetxt(path_XPS, XPS, fmt = "%.0f", delimiter = ",")
 vp = np.array([3368, 3794, 4349])
 vs = np.array([1829, 2074, 2571])
 ro = np.array([2500, 2560, 2600])
-z = np.array([750, 500])
+z = np.array([400, 200])
 
-E1 = np.array([0.0, 0.189, 0.0])
-E2 = np.array([0.0, 0.189, 0.0])
-D1 = np.array([0.0, 0.204, 0.0])
-D2 = np.array([0.0, 0.204, 0.0])
-D3 = np.array([0.0, 0.000, 0.0])
-G1 = np.array([0.0, 0.175, 0.0])
-G2 = np.array([0.0, 0.175, 0.0])
+E1 = np.array([0.0, 0.0, 0.0])
+E2 = np.array([0.0, 0.0, 0.0])
+D1 = np.array([0.0, 0.0, 0.0])
+D2 = np.array([0.0, 0.0, 0.0])
+D3 = np.array([0.0, 0.0, 0.0])
+G1 = np.array([0.0, 0.0, 0.0])
+G2 = np.array([0.0, 0.0, 0.0])
 
 theta_x = np.array([0.0, 0.0, 0.0]) * np.pi/180.0
 theta_y = np.array([0.0, 0.0, 0.0]) * np.pi/180.0

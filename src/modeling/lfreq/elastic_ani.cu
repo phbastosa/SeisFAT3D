@@ -57,6 +57,9 @@ void Elastic_ANI::set_conditions()
     import_binary_float(Cijkl_folder + "C11.bin", Cij, nPoints);
     expand_boundary(Cij, C11);
     compress(C11, uC11, volsize, maxC11, minC11, compress_level);    
+    
+    // test compression exporting the model 
+    
     cudaMalloc((void**)&(d_C11), volsize*sizeof(uintc));
     cudaMemcpy(d_C11, uC11, volsize*sizeof(uintc), cudaMemcpyHostToDevice);
     delete[] C11;
