@@ -269,6 +269,7 @@ void Elastic_ANI::propagation()
 {
     for (int tId = 0; tId < nt + tlag; tId++)
     {
+<<<<<<< HEAD
         compute_velocity_rsg<<<nBlocks, nThreads>>>(d_Vx, d_Vy, d_Vz, d_Txx, d_Tyy, d_Tzz, d_Txz, d_Tyz, d_Txy, d_B, d_T, 
                                                     d1D, d2D, d3D, wavelet, dwc, dx, dy, dz, dt, tId, tlag, sIdx, sIdy, 
                                                     sIdz, nxx, nyy, nzz, nb, nt);
@@ -283,6 +284,11 @@ void Elastic_ANI::propagation()
                                                     minC34, maxC34, minC35, maxC35, minC36, maxC36, minC44, maxC44, 
                                                     minC45, maxC45, minC46, maxC46, minC55, maxC55, minC56, maxC56,
                                                     minC66, maxC66);
+=======
+        compute_velocity_rsg<<<nBlocks, nThreads>>>(d_Vx, d_Vy, d_Vz, d_Txx, d_Tyy, d_Tzz, d_Txz, d_Tyz, d_Txy, d_B, d_T, d1D, d2D, d3D, wavelet, dwc, dx, dy, dz, dt, tId, tlag, sIdx, sIdy, sIdz, nxx, nyy, nzz, nb, nt);
+
+        compute_pressure_rsg<<<nBlocks, nThreads>>>(d_Vx, d_Vy, d_Vz, d_Txx, d_Tyy, d_Tzz, d_Txz, d_Tyz, d_Txy, d_P, d_T, d_C11, d_C12, d_C13, d_C14, d_C15, d_C16, d_C22, d_C23, d_C24, d_C25, d_C26, d_C33, d_C34, d_C35, d_C36, d_C44, d_C45, d_C46, d_C55, d_C56, d_C66, tId, tlag, dx, dy, dz, dt, nxx, nyy, nzz);
+>>>>>>> b0e1613577e048fb2ad1900b573c24e644f53e66
 
         compute_seismogram<<<sBlocks, nThreads>>>(d_P, rIdx, rIdy, rIdz, seismogram, geometry->spread[srcId], tId, tlag, nt, nxx, nzz);     
     }

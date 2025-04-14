@@ -34,13 +34,10 @@ void Elastic_ISO::propagation()
     for (int tId = 0; tId < nt + tlag; tId++)
     {
         compute_velocity_ssg<<<nBlocks, nThreads>>>(d_Vx, d_Vy, d_Vz, d_Txx, d_Tyy, d_Tzz, d_Txz, d_Tyz, d_Txy, d_B, d_T, d1D, d2D, d3D, wavelet, dx, dy, dz, dt, tId, tlag, sIdx, sIdy, sIdz, nxx, nyy, nzz, nb, nt);
-        cudaDeviceSynchronize();
 
         compute_pressure_ssg<<<nBlocks, nThreads>>>(d_Vx, d_Vy, d_Vz, d_Txx, d_Tyy, d_Tzz, d_Txz, d_Tyz, d_Txy, d_P, d_M, d_L, d_T, tId, tlag, dx, dy, dz, dt, nxx, nyy, nzz);
-        cudaDeviceSynchronize();
 
         compute_seismogram<<<sBlocks, nThreads>>>(d_P, rIdx, rIdy, rIdz, seismogram, geometry->spread[srcId], tId, tlag, nt, nxx, nzz);     
-        cudaDeviceSynchronize();
     }
 }
 
