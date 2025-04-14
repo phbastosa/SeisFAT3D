@@ -25,6 +25,7 @@ void Eikonal_ISO::set_conditions()
 void Eikonal_ISO::forward_solver()
 {
     initialization();
+
     propagation();
 
     compute_seismogram();

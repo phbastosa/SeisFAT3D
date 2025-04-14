@@ -2,6 +2,8 @@
 
 void Modeling::set_parameters()
 {
+    compress_level = 65535;
+        
     nx = std::stoi(catch_parameter("x_samples", parameters));
     ny = std::stoi(catch_parameter("y_samples", parameters));
     nz = std::stoi(catch_parameter("z_samples", parameters));
@@ -118,4 +120,21 @@ void Modeling::show_information()
                                        ", y = " << geometry->ysrc[geometry->sInd[srcId]] << ") m\n\n";
 
     std::cout << modeling_name << "\n";
+}
+
+void Modeling::compress(float * input, unsigned short int * output, int N, float &max_value, float &min_value, int levels)
+{
+    max_value =-1e20f;
+    min_value = 1e20f;
+    
+    # pragma omp parallel for
+    for (int index = 0; index < N; index++)
+    {
+        min_value = input[index] < min_value ? input[index] : min_value;
+        max_value = input[index] > max_value ? input[index] : max_value;        
+    }
+
+    # pragma omp parallel for
+    for (int index = 0; index < N; index++)
+        output[index] = (unsigned short int)(1 + (int)((input[index] - min_value)*(levels - 1) / (max_value - min_value)));
 }

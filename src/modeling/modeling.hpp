@@ -5,14 +5,21 @@
 
 # include "../geometry/geometry.hpp"
 
+typedef unsigned short int uintc; 
+
 class Modeling
 {
 private:
 
 protected:
+    
+    int compress_level;
 
     virtual void set_boundaries() = 0;
     virtual void set_specifications() = 0;
+
+    void compress(float * input, unsigned short int * output, int N, 
+                  float &max_value, float &min_value, int levels);
 
 public:
 

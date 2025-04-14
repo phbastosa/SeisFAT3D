@@ -5,7 +5,9 @@
 
 # include "../hfreq/eikonal_ani.cuh" 
 
-# define RSGR 1
+# define RSGR 2
+
+# include <sys/resource.h>
 
 class Elastic_ANI : public Elastic
 {
@@ -15,32 +17,32 @@ private:
     float * d_B = nullptr;
     float * dwc = nullptr;
 
-    float * d_C11 = nullptr;
-    float * d_C12 = nullptr;
-    float * d_C13 = nullptr;
-    float * d_C14 = nullptr;
-    float * d_C15 = nullptr;
-    float * d_C16 = nullptr;
+    uintc * d_C11 = nullptr; float maxC11; float minC11;
+    uintc * d_C12 = nullptr; float maxC12; float minC12;
+    uintc * d_C13 = nullptr; float maxC13; float minC13;
+    uintc * d_C14 = nullptr; float maxC14; float minC14;
+    uintc * d_C15 = nullptr; float maxC15; float minC15;
+    uintc * d_C16 = nullptr; float maxC16; float minC16;
 
-    float * d_C22 = nullptr;
-    float * d_C23 = nullptr;
-    float * d_C24 = nullptr;
-    float * d_C25 = nullptr;
-    float * d_C26 = nullptr;
+    uintc * d_C22 = nullptr; float maxC22; float minC22;
+    uintc * d_C23 = nullptr; float maxC23; float minC23;
+    uintc * d_C24 = nullptr; float maxC24; float minC24;
+    uintc * d_C25 = nullptr; float maxC25; float minC25;
+    uintc * d_C26 = nullptr; float maxC26; float minC26;
 
-    float * d_C33 = nullptr;
-    float * d_C34 = nullptr;
-    float * d_C35 = nullptr;
-    float * d_C36 = nullptr;
+    uintc * d_C33 = nullptr; float maxC33; float minC33;
+    uintc * d_C34 = nullptr; float maxC34; float minC34;
+    uintc * d_C35 = nullptr; float maxC35; float minC35;
+    uintc * d_C36 = nullptr; float maxC36; float minC36;
 
-    float * d_C44 = nullptr;
-    float * d_C45 = nullptr;
-    float * d_C46 = nullptr;
+    uintc * d_C44 = nullptr; float maxC44; float minC44;
+    uintc * d_C45 = nullptr; float maxC45; float minC45;
+    uintc * d_C46 = nullptr; float maxC46; float minC46;
 
-    float * d_C55 = nullptr;
-    float * d_C56 = nullptr;
+    uintc * d_C55 = nullptr; float maxC55; float minC55;
+    uintc * d_C56 = nullptr; float maxC56; float minC56;
 
-    float * d_C66 = nullptr;
+    uintc * d_C66 = nullptr; float maxC66; float minC66;
 
     void set_conditions();
 
@@ -54,8 +56,12 @@ __global__ void compute_velocity_rsg(float * Vx, float * Vy, float * Vz, float *
                                      int sIdx, int sIdy, int sIdz, int nxx, int nyy, int nzz, int nb, int nt);
 
 __global__ void compute_pressure_rsg(float * Vx, float * Vy, float * Vz, float * Txx, float * Tyy, float * Tzz, float * Txz, float * Tyz, float * Txy, float * P, float * T, 
-                                     float * C11, float * C12, float * C13, float * C14, float * C15, float * C16, float * C22, float * C23, float * C24, float * C25, 
-                                     float * C26, float * C33, float * C34, float * C35, float * C36, float * C44, float * C45, float * C46, float * C55, float * C56, 
-                                     float * C66, int tId, int tlag, float dx, float dy, float dz, float dt, int nxx, int nyy, int nzz);
+                                     uintc * C11, uintc * C12, uintc * C13, uintc * C14, uintc * C15, uintc * C16, uintc * C22, uintc * C23, uintc * C24, uintc * C25, 
+                                     uintc * C26, uintc * C33, uintc * C34, uintc * C35, uintc * C36, uintc * C44, uintc * C45, uintc * C46, uintc * C55, uintc * C56, 
+                                     uintc * C66, int tId, int tlag, float dx, float dy, float dz, float dt, int nxx, int nyy, int nzz, int compress_level, float minC11, float maxC11, 
+                                     float minC12, float maxC12, float minC13, float maxC13, float minC14, float maxC14, float minC15, float maxC15, float minC16, float maxC16, float minC22, 
+                                     float maxC22, float minC23, float maxC23, float minC24, float maxC24, float minC25, float maxC25, float minC26, float maxC26, float minC33, float maxC33, 
+                                     float minC34, float maxC34, float minC35, float maxC35, float minC36, float maxC36, float minC44, float maxC44, float minC45, float maxC45, float minC46, 
+                                     float maxC46, float minC55, float maxC55, float minC56, float maxC56, float minC66, float maxC66);
 
 # endif

@@ -2,13 +2,13 @@
 # Model paramenters --------------------------------------------------------------------------------
 #---------------------------------------------------------------------------------------------------
 
-x_samples = 201                            # <int>  
-y_samples = 201                            # <int>  
-z_samples = 101                            # <int>  
+x_samples = 401                            # <int>  
+y_samples = 241                            # <int>  
+z_samples = 121                            # <int>  
 
-x_spacing = 10.0                           # [m] <float> 
-y_spacing = 10.0                           # [m] <float> 
-z_spacing = 10.0                           # [m] <float> 
+x_spacing = 12.5                           # [m] <float> 
+y_spacing = 12.5                           # [m] <float> 
+z_spacing = 12.5                           # [m] <float> 
 
 vp_model_file = ../inputs/models/anisoTest_vp.bin   
 vs_model_file = ../inputs/models/anisoTest_vs.bin   
@@ -36,12 +36,12 @@ XPS = ../inputs/geometry/anisoTest_XPS.txt
 
 modeling_type = 3
 
-time_samples = 2001
+time_samples = 1001
 time_spacing = 1e-3
-max_frequency = 45.0
+max_frequency = 50.0
 
-boundary_samples = 50
-boundary_damping = 0.0045
+boundary_samples = 100
+boundary_damping = 0.0015
 
 modeling_output_folder = ../outputs/syntheticData/
 

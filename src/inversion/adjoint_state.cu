@@ -144,8 +144,8 @@ void Adjoint_State::apply_inversion_technique()
         h_adjoint_grad[indb] *= 1.0f / grad_max;
         h_adjoint_comp[indb] *= 1.0f / comp_max;
 
-        float sigma_x = tanf(aperture_x * PI / 180.0f)*i*modeling->dz;
-        float sigma_y = tanf(aperture_y * PI / 180.0f)*i*modeling->dz;
+        float sigma_x = tanf(aperture_x * M_PI / 180.0f)*i*modeling->dz;
+        float sigma_y = tanf(aperture_y * M_PI / 180.0f)*i*modeling->dz;
 
         float par_x = powf((j*modeling->dx - cmp_x)/(sigma_x + 1e-6f), 2.0f);
         float par_y = powf((k*modeling->dy - cmp_y)/(sigma_y + 1e-6f), 2.0f);

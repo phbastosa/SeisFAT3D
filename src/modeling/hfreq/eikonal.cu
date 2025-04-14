@@ -70,11 +70,11 @@ void Eikonal::initialization()
     for (int index = 0; index < volsize; index++) 
         T[index] = 1e6f;
 
-    for (int k = 0; k < 3; k++)
+    for (int k = 0; k < meshDim; k++)
     {
-        for (int j = 0; j < 3; j++)
+        for (int j = 0; j < meshDim; j++)
         {
-            for (int i = 0; i < 3; i++)
+            for (int i = 0; i < meshDim; i++)
             {
                 int yi = sIdy + (k - 1);
                 int xi = sIdx + (j - 1);

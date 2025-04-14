@@ -3,10 +3,10 @@
 
 # include "../modeling.hpp"
 
-# define FDM1     75.0f / 107520.0f 
-# define FDM2   1029.0f / 107520.0f 
-# define FDM3   8575.0f / 107520.0f 
-# define FDM4 128625.0f / 107520.0f 
+# define FDM1 6.97545e-4f 
+# define FDM2 9.57031e-3f 
+# define FDM3 7.97526e-2f 
+# define FDM4 1.19628906f 
 
 class Elastic : public Modeling
 {

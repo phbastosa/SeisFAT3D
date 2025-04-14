@@ -1,25 +1,22 @@
 #!/bin/bash
 
-# Input Output scripts --------------------------------------------------------------------------------
-
-ioFunctions="../src/ioFunctions/ioFunctions.cpp"
-
-# Acquisition geometry scripts ------------------------------------------------------------------------
-
+admin="../src/admin/admin.cpp"
 geometry="../src/geometry/geometry.cpp"
 
 # Seismic modeling scripts ----------------------------------------------------------------------------
 
-modeling="../src/modeling/modeling.cpp"
+folder="../src/modeling"
 
-eikonal="../src/modeling/hfreq/eikonal.cu"
-elastic="../src/modeling/lfreq/elastic.cu"
+modeling="$folder/modeling.cpp"
 
-eikonal_iso="../src/modeling/hfreq/eikonal_iso.cu"
-eikonal_ani="../src/modeling/hfreq/eikonal_ani.cu"
+eikonal="$folder/hfreq/eikonal.cu"
+elastic="$folder/lfreq/elastic.cu"
 
-elastic_iso="../src/modeling/lfreq/elastic_iso.cu"
-elastic_ani="../src/modeling/lfreq/elastic_ani.cu"
+eikonal_iso="$folder/hfreq/eikonal_iso.cu"
+eikonal_ani="$folder/hfreq/eikonal_ani.cu"
+
+elastic_iso="$folder/lfreq/elastic_iso.cu"
+elastic_ani="$folder/lfreq/elastic_ani.cu"
 
 modeling_main="../src/modeling_main.cpp"
 
@@ -29,10 +26,12 @@ modeling_all="$modeling $eikonal $elastic
 
 # Seismic inversion scripts ---------------------------------------------------------------------------
 
-tomography="../src/inversion/tomography.cpp"
+folder="../src/inversion"
 
-least_squares="../src/inversion/least_squares.cpp"
-adjoint_state="../src/inversion/adjoint_state.cu"
+tomography="$folder/tomography.cpp"
+
+least_squares="$folder/least_squares.cpp"
+adjoint_state="$folder/adjoint_state.cu"
 
 inversion_main="../src/inversion_main.cpp"
 
@@ -40,9 +39,11 @@ inversion_all="$tomography $least_squares $adjoint_state"
 
 # Seismic migration scripts ---------------------------------------------------------------------------
 
-kirchhoff="../src/migration/kirchhoff.cu"
+folder="../src/migration"
 
-migration="../src/migration/migration.cpp"
+kirchhoff="$folder/kirchhoff.cu"
+
+migration="$folder/migration.cpp"
 
 migration_main="../src/migration_main.cpp"
 
@@ -50,7 +51,7 @@ migration_all="$migration $kirchhoff"
 
 # Compiler flags --------------------------------------------------------------------------------------
 
-flags="-Xcompiler -fopenmp --std=c++11 --relocatable-device-code=true -lm -O4"
+flags="-Xcompiler -fopenmp --std=c++11 --use_fast_math --relocatable-device-code=true -lm -O4"
 
 # Main dialogue ---------------------------------------------------------------------------------------
 
@@ -93,13 +94,13 @@ case "$1" in
     echo -e "Compiling stand-alone executables!\n"
 
     echo -e "../bin/\033[31mmodeling.exe\033[m" 
-    nvcc $ioFunctions $geometry $modeling_all $modeling_main $flags -o ../bin/modeling.exe
+    nvcc $admin $geometry $modeling_all $modeling_main $flags -o ../bin/modeling.exe
 
     echo -e "../bin/\033[31minversion.exe\033[m" 
-    nvcc $ioFunctions $geometry $modeling_all $inversion_all $inversion_main $flags -o ../bin/inversion.exe
+    nvcc $admin $geometry $modeling_all $inversion_all $inversion_main $flags -o ../bin/inversion.exe
 
     echo -e "../bin/\033[31mmigration.exe\033[m"
-    nvcc $ioFunctions $geometry $modeling_all $migration_all $migration_main $flags -o ../bin/migration.exe
+    nvcc $admin $geometry $modeling_all $migration_all $migration_main $flags -o ../bin/migration.exe
 
 	exit 0
 ;;
@@ -120,6 +121,7 @@ case "$1" in
 -modeling) 
 
     ./../bin/modeling.exe parameters.txt
+    # ./../bin/modeling_nComp.exe parameters.txt
 	
     exit 0
 ;;
@@ -140,44 +142,50 @@ case "$1" in
 
 -test_modeling)
 
-    python3 -B ../tests/modeling/generate_models.py
-    python3 -B ../tests/modeling/generate_geometry.py
+    folder=../tests/modeling
 
-    ./../bin/modeling.exe ../tests/modeling/parameters_eikonal.txt
-    ./../bin/modeling.exe ../tests/modeling/parameters_elastic.txt
+    python3 -B $folder/generate_models.py
+    python3 -B $folder/generate_geometry.py
 
-    python3 -B ../tests/modeling/generate_figures.py
+    ./../bin/modeling.exe $folder/parameters_eikonal.txt
+    ./../bin/modeling.exe $folder/parameters_elastic.txt
+
+    python3 -B $folder/generate_figures.py
 
 	exit 0
 ;;
 
 -test_inversion) 
 
-    python3 -B ../tests/inversion/generate_models.py
-    python3 -B ../tests/inversion/generate_geometry.py
+    folder=../tests/inversion
 
-    ./../bin/modeling.exe ../tests/inversion/parameters_obsData.txt
+    python3 -B $folder/generate_models.py
+    python3 -B $folder/generate_geometry.py
 
-    ./../bin/inversion.exe ../tests/inversion/parameters_least_squares.txt
-    ./../bin/inversion.exe ../tests/inversion/parameters_adjoint_state.txt
+    ./../bin/modeling.exe $folder/parameters_obsData.txt
 
-    python3 -B ../tests/inversion/generate_figures.py
+    ./../bin/inversion.exe $folder/parameters_least_squares.txt
+    ./../bin/inversion.exe $folder/parameters_adjoint_state.txt
+
+    python3 -B $folder/generate_figures.py
 
     exit 0
 ;;
 
 -test_migration)
 
-    python3 -B ../tests/migration/generate_models.py
-    python3 -B ../tests/migration/generate_geometry.py
+    folder=../tests/migration
 
-    ./../bin/modeling.exe ../tests/migration/parameters_obsData.txt
+    python3 -B $folder/generate_models.py
+    python3 -B $folder/generate_geometry.py
 
-    python3 -B ../tests/migration/data_preconditioning.py
+    ./../bin/modeling.exe $folder/parameters_obsData.txt
 
-    ./../bin/migration.exe ../tests/migration/parameters_kirchhoff.txt
+    python3 -B $folder/data_preconditioning.py
 
-    python3 -B ../tests/migration/generate_figures.py
+    ./../bin/migration.exe $folder/parameters_kirchhoff.txt
+
+    python3 -B $folder/generate_figures.py
 
 	exit 0
 ;;
