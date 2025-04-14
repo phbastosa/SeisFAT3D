@@ -181,7 +181,7 @@ void Eikonal_ANI::forward_solver()
 
 void Eikonal_ANI::get_stiffness()
 {
-    float c11 = minC11 + ((float)(C12[aId])*(maxC11 - minC11) - 1) / (compress_level - 1);
+    float c11 = minC11 + ((float)(C11[aId])*(maxC11 - minC11) - 1) / (compress_level - 1);
     float c12 = minC12 + ((float)(C12[aId])*(maxC12 - minC12) - 1) / (compress_level - 1);
     float c13 = minC13 + ((float)(C13[aId])*(maxC13 - minC13) - 1) / (compress_level - 1);
     float c14 = minC14 + ((float)(C14[aId])*(maxC14 - minC14) - 1) / (compress_level - 1);

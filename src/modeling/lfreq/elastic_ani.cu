@@ -56,7 +56,7 @@ void Elastic_ANI::set_conditions()
     auto * uC11 = new uintc[volsize]();
     import_binary_float(Cijkl_folder + "C11.bin", Cij, nPoints);
     expand_boundary(Cij, C11);
-    compress(C11, uC11, nPoints, maxC11, minC11, compress_level);    
+    compress(C11, uC11, volsize, maxC11, minC11, compress_level);    
     cudaMalloc((void**)&(d_C11), volsize*sizeof(uintc));
     cudaMemcpy(d_C11, uC11, volsize*sizeof(uintc), cudaMemcpyHostToDevice);
     delete[] C11;
@@ -66,7 +66,7 @@ void Elastic_ANI::set_conditions()
     auto * uC12 = new uintc[volsize]();
     import_binary_float(Cijkl_folder + "C12.bin", Cij, nPoints);
     expand_boundary(Cij, C12);
-    compress(C12, uC12, nPoints, maxC12, minC12, compress_level);    
+    compress(C12, uC12, volsize, maxC12, minC12, compress_level);    
     cudaMalloc((void**)&(d_C12), volsize*sizeof(uintc));
     cudaMemcpy(d_C12, uC12, volsize*sizeof(uintc), cudaMemcpyHostToDevice);
     delete[] C12;
@@ -76,7 +76,7 @@ void Elastic_ANI::set_conditions()
     auto * uC13 = new uintc[volsize]();
     import_binary_float(Cijkl_folder + "C13.bin", Cij, nPoints);
     expand_boundary(Cij, C13);
-    compress(C13, uC13, nPoints, maxC13, minC13, compress_level);    
+    compress(C13, uC13, volsize, maxC13, minC13, compress_level);    
     cudaMalloc((void**)&(d_C13), volsize*sizeof(uintc));
     cudaMemcpy(d_C13, uC13, volsize*sizeof(uintc), cudaMemcpyHostToDevice);
     delete[] C13;
@@ -86,7 +86,7 @@ void Elastic_ANI::set_conditions()
     auto * uC14 = new uintc[volsize]();
     import_binary_float(Cijkl_folder + "C14.bin", Cij, nPoints);
     expand_boundary(Cij, C14);
-    compress(C14, uC14, nPoints, maxC14, minC14, compress_level);    
+    compress(C14, uC14, volsize, maxC14, minC14, compress_level);    
     cudaMalloc((void**)&(d_C14), volsize*sizeof(uintc));
     cudaMemcpy(d_C14, uC14, volsize*sizeof(uintc), cudaMemcpyHostToDevice);
     delete[] C14;
@@ -96,7 +96,7 @@ void Elastic_ANI::set_conditions()
     auto * uC15 = new uintc[volsize]();
     import_binary_float(Cijkl_folder + "C15.bin", Cij, nPoints);
     expand_boundary(Cij, C15);
-    compress(C15, uC15, nPoints, maxC15, minC15, compress_level);    
+    compress(C15, uC15, volsize, maxC15, minC15, compress_level);    
     cudaMalloc((void**)&(d_C15), volsize*sizeof(uintc));
     cudaMemcpy(d_C15, uC15, volsize*sizeof(uintc), cudaMemcpyHostToDevice);
     delete[] C15;
@@ -106,7 +106,7 @@ void Elastic_ANI::set_conditions()
     auto * uC16 = new uintc[volsize]();
     import_binary_float(Cijkl_folder + "C16.bin", Cij, nPoints);
     expand_boundary(Cij, C16);
-    compress(C16, uC16, nPoints, maxC16, minC16, compress_level);    
+    compress(C16, uC16, volsize, maxC16, minC16, compress_level);    
     cudaMalloc((void**)&(d_C16), volsize*sizeof(uintc));
     cudaMemcpy(d_C16, uC16, volsize*sizeof(uintc), cudaMemcpyHostToDevice);
     delete[] C16;
@@ -116,7 +116,7 @@ void Elastic_ANI::set_conditions()
     auto * uC22 = new uintc[volsize]();
     import_binary_float(Cijkl_folder + "C22.bin", Cij, nPoints);
     expand_boundary(Cij, C22);
-    compress(C22, uC22, nPoints, maxC22, minC22, compress_level);    
+    compress(C22, uC22, volsize, maxC22, minC22, compress_level);    
     cudaMalloc((void**)&(d_C22), volsize*sizeof(uintc));
     cudaMemcpy(d_C22, uC22, volsize*sizeof(uintc), cudaMemcpyHostToDevice);
     delete[] C22;
@@ -126,7 +126,7 @@ void Elastic_ANI::set_conditions()
     auto * uC23 = new uintc[volsize]();
     import_binary_float(Cijkl_folder + "C23.bin", Cij, nPoints);
     expand_boundary(Cij, C23);
-    compress(C23, uC23, nPoints, maxC23, minC23, compress_level);    
+    compress(C23, uC23, volsize, maxC23, minC23, compress_level);    
     cudaMalloc((void**)&(d_C23), volsize*sizeof(uintc));
     cudaMemcpy(d_C23, uC23, volsize*sizeof(uintc), cudaMemcpyHostToDevice);
     delete[] C23;
@@ -136,7 +136,7 @@ void Elastic_ANI::set_conditions()
     auto * uC24 = new uintc[volsize]();
     import_binary_float(Cijkl_folder + "C24.bin", Cij, nPoints);
     expand_boundary(Cij, C24);
-    compress(C24, uC24, nPoints, maxC24, minC24, compress_level);    
+    compress(C24, uC24, volsize, maxC24, minC24, compress_level);    
     cudaMalloc((void**)&(d_C24), volsize*sizeof(uintc));
     cudaMemcpy(d_C24, uC24, volsize*sizeof(uintc), cudaMemcpyHostToDevice);
     delete[] C24;
@@ -146,7 +146,7 @@ void Elastic_ANI::set_conditions()
     auto * uC25 = new uintc[volsize]();
     import_binary_float(Cijkl_folder + "C25.bin", Cij, nPoints);
     expand_boundary(Cij, C25);
-    compress(C25, uC25, nPoints, maxC25, minC25, compress_level);    
+    compress(C25, uC25, volsize, maxC25, minC25, compress_level);    
     cudaMalloc((void**)&(d_C25), volsize*sizeof(uintc));
     cudaMemcpy(d_C25, uC25, volsize*sizeof(uintc), cudaMemcpyHostToDevice);
     delete[] C25;
@@ -156,7 +156,7 @@ void Elastic_ANI::set_conditions()
     auto * uC26 = new uintc[volsize]();
     import_binary_float(Cijkl_folder + "C26.bin", Cij, nPoints);
     expand_boundary(Cij, C26);
-    compress(C26, uC26, nPoints, maxC26, minC26, compress_level);    
+    compress(C26, uC26, volsize, maxC26, minC26, compress_level);    
     cudaMalloc((void**)&(d_C26), volsize*sizeof(uintc));
     cudaMemcpy(d_C26, uC26, volsize*sizeof(uintc), cudaMemcpyHostToDevice);
     delete[] C26;
@@ -166,7 +166,7 @@ void Elastic_ANI::set_conditions()
     auto * uC33 = new uintc[volsize]();
     import_binary_float(Cijkl_folder + "C33.bin", Cij, nPoints);
     expand_boundary(Cij, C33);
-    compress(C33, uC33, nPoints, maxC33, minC33, compress_level);    
+    compress(C33, uC33, volsize, maxC33, minC33, compress_level);    
     cudaMalloc((void**)&(d_C33), volsize*sizeof(uintc));
     cudaMemcpy(d_C33, uC33, volsize*sizeof(uintc), cudaMemcpyHostToDevice);
     delete[] C33;
@@ -176,7 +176,7 @@ void Elastic_ANI::set_conditions()
     auto * uC34 = new uintc[volsize]();
     import_binary_float(Cijkl_folder + "C34.bin", Cij, nPoints);
     expand_boundary(Cij, C34);
-    compress(C34, uC34, nPoints, maxC34, minC34, compress_level);    
+    compress(C34, uC34, volsize, maxC34, minC34, compress_level);    
     cudaMalloc((void**)&(d_C34), volsize*sizeof(uintc));
     cudaMemcpy(d_C34, uC34, volsize*sizeof(uintc), cudaMemcpyHostToDevice);
     delete[] C34;
@@ -186,7 +186,7 @@ void Elastic_ANI::set_conditions()
     auto * uC35 = new uintc[volsize]();
     import_binary_float(Cijkl_folder + "C35.bin", Cij, nPoints);
     expand_boundary(Cij, C35);
-    compress(C35, uC35, nPoints, maxC35, minC35, compress_level);    
+    compress(C35, uC35, volsize, maxC35, minC35, compress_level);    
     cudaMalloc((void**)&(d_C35), volsize*sizeof(uintc));
     cudaMemcpy(d_C35, uC35, volsize*sizeof(uintc), cudaMemcpyHostToDevice);
     delete[] C35;
@@ -196,7 +196,7 @@ void Elastic_ANI::set_conditions()
     auto * uC36 = new uintc[volsize]();
     import_binary_float(Cijkl_folder + "C36.bin", Cij, nPoints);
     expand_boundary(Cij, C36);
-    compress(C36, uC36, nPoints, maxC36, minC36, compress_level);    
+    compress(C36, uC36, volsize, maxC36, minC36, compress_level);    
     cudaMalloc((void**)&(d_C36), volsize*sizeof(uintc));
     cudaMemcpy(d_C36, uC36, volsize*sizeof(uintc), cudaMemcpyHostToDevice);
     delete[] C36;
@@ -206,7 +206,7 @@ void Elastic_ANI::set_conditions()
     auto * uC44 = new uintc[volsize]();
     import_binary_float(Cijkl_folder + "C44.bin", Cij, nPoints);
     expand_boundary(Cij, C44);
-    compress(C44, uC44, nPoints, maxC44, minC44, compress_level);    
+    compress(C44, uC44, volsize, maxC44, minC44, compress_level);    
     cudaMalloc((void**)&(d_C44), volsize*sizeof(uintc));
     cudaMemcpy(d_C44, uC44, volsize*sizeof(uintc), cudaMemcpyHostToDevice);
     delete[] C44;
@@ -216,7 +216,7 @@ void Elastic_ANI::set_conditions()
     auto * uC45 = new uintc[volsize]();
     import_binary_float(Cijkl_folder + "C45.bin", Cij, nPoints);
     expand_boundary(Cij, C45);
-    compress(C45, uC45, nPoints, maxC45, minC45, compress_level);    
+    compress(C45, uC45, volsize, maxC45, minC45, compress_level);    
     cudaMalloc((void**)&(d_C45), volsize*sizeof(uintc));
     cudaMemcpy(d_C45, uC45, volsize*sizeof(uintc), cudaMemcpyHostToDevice);
     delete[] C45;
@@ -226,7 +226,7 @@ void Elastic_ANI::set_conditions()
     auto * uC46 = new uintc[volsize]();
     import_binary_float(Cijkl_folder + "C46.bin", Cij, nPoints);
     expand_boundary(Cij, C46);
-    compress(C46, uC46, nPoints, maxC46, minC46, compress_level);    
+    compress(C46, uC46, volsize, maxC46, minC46, compress_level);    
     cudaMalloc((void**)&(d_C46), volsize*sizeof(uintc));
     cudaMemcpy(d_C46, uC46, volsize*sizeof(uintc), cudaMemcpyHostToDevice);
     delete[] C46;
@@ -236,7 +236,7 @@ void Elastic_ANI::set_conditions()
     auto * uC55 = new uintc[volsize]();
     import_binary_float(Cijkl_folder + "C55.bin", Cij, nPoints);
     expand_boundary(Cij, C55);
-    compress(C55, uC55, nPoints, maxC55, minC55, compress_level);    
+    compress(C55, uC55, volsize, maxC55, minC55, compress_level);    
     cudaMalloc((void**)&(d_C55), volsize*sizeof(uintc));
     cudaMemcpy(d_C55, uC55, volsize*sizeof(uintc), cudaMemcpyHostToDevice);
     delete[] C55;
@@ -246,7 +246,7 @@ void Elastic_ANI::set_conditions()
     auto * uC56 = new uintc[volsize]();
     import_binary_float(Cijkl_folder + "C56.bin", Cij, nPoints);
     expand_boundary(Cij, C56);
-    compress(C56, uC56, nPoints, maxC56, minC56, compress_level);    
+    compress(C56, uC56, volsize, maxC56, minC56, compress_level);    
     cudaMalloc((void**)&(d_C56), volsize*sizeof(uintc));
     cudaMemcpy(d_C56, uC56, volsize*sizeof(uintc), cudaMemcpyHostToDevice);
     delete[] C56;
@@ -256,7 +256,7 @@ void Elastic_ANI::set_conditions()
     auto * uC66 = new uintc[volsize]();
     import_binary_float(Cijkl_folder + "C66.bin", Cij, nPoints);
     expand_boundary(Cij, C66);
-    compress(C66, uC66, nPoints, maxC66, minC66, compress_level);    
+    compress(C66, uC66, volsize, maxC66, minC66, compress_level);    
     cudaMalloc((void**)&(d_C66), volsize*sizeof(uintc));
     cudaMemcpy(d_C66, uC66, volsize*sizeof(uintc), cudaMemcpyHostToDevice);
     delete[] C66;
@@ -451,7 +451,7 @@ __global__ void compute_pressure_rsg(float * Vx, float * Vy, float * Vz, float *
         float dVy_dz = 0.25f*(d1_Vy - d2_Vy + d3_Vy - d4_Vy) / dz;
         float dVz_dz = 0.25f*(d1_Vz - d2_Vz + d3_Vz - d4_Vz) / dz;
 
-        float c11 = minC11 + ((float)(C12[index])*(maxC11 - minC11) - 1) / (compress_level - 1);
+        float c11 = minC11 + ((float)(C11[index])*(maxC11 - minC11) - 1) / (compress_level - 1);
         float c12 = minC12 + ((float)(C12[index])*(maxC12 - minC12) - 1) / (compress_level - 1);
         float c13 = minC13 + ((float)(C13[index])*(maxC13 - minC13) - 1) / (compress_level - 1);
         float c14 = minC14 + ((float)(C14[index])*(maxC14 - minC14) - 1) / (compress_level - 1);

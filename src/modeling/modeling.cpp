@@ -122,7 +122,7 @@ void Modeling::show_information()
     std::cout << modeling_name << "\n";
 }
 
-void Modeling::compress(float * input, unsigned short int * output, int N, float &max_value, float &min_value, int levels)
+void Modeling::compress(float * input, uintc * output, int N, float &max_value, float &min_value, int levels)
 {
     max_value =-1e20f;
     min_value = 1e20f;
@@ -130,11 +130,11 @@ void Modeling::compress(float * input, unsigned short int * output, int N, float
     # pragma omp parallel for
     for (int index = 0; index < N; index++)
     {
-        min_value = input[index] < min_value ? input[index] : min_value;
-        max_value = input[index] > max_value ? input[index] : max_value;        
+        min_value = std::min(input[index], min_value);
+        max_value = std::max(input[index], max_value);        
     }
 
     # pragma omp parallel for
     for (int index = 0; index < N; index++)
-        output[index] = (unsigned short int)(1 + (int)((input[index] - min_value)*(levels - 1) / (max_value - min_value)));
+        output[index] = (uintc)(1 + (int)((input[index] - min_value)*(levels - 1) / (max_value - min_value)));
 }
