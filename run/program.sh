@@ -121,7 +121,6 @@ case "$1" in
 -modeling) 
 
     ./../bin/modeling.exe parameters.txt
-    # ./../bin/modeling_nComp.exe parameters.txt
 	
     exit 0
 ;;

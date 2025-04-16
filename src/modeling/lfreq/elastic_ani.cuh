@@ -7,8 +7,6 @@
 
 # define RSGR 2
 
-# include <sys/resource.h>
-
 class Elastic_ANI : public Elastic
 {
 private:

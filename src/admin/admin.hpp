@@ -10,6 +10,8 @@
 # include <iostream>
 # include <algorithm>
 
+# include <sys/resource.h>
+
 bool str2bool(std::string s);
 
 void import_binary_float(std::string path, float * array, int n);

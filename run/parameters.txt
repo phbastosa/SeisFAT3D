@@ -34,14 +34,14 @@ XPS = ../inputs/geometry/anisoTest_XPS.txt
 # [3] - Elastic ANI
 # --------------------------------------------------------------------------------------------------
 
-modeling_type = 3
+modeling_type = 0
 
-time_samples = 501
+time_samples = 1501
 time_spacing = 1e-3
-max_frequency = 30.0
+max_frequency = 50.0
 
 boundary_samples = 50
-boundary_damping = 0.0045
+boundary_damping = 0.0055
 
 modeling_output_folder = ../outputs/syntheticData/
 
