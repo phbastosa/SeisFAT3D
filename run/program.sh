@@ -51,7 +51,7 @@ migration_all="$migration $kirchhoff"
 
 # Compiler flags --------------------------------------------------------------------------------------
 
-flags="-Xcompiler -fopenmp --std=c++11 --use_fast_math --relocatable-device-code=true -lm -O4"
+flags="-Xcompiler -fopenmp --std=c++11 --use_fast_math --relocatable-device-code=true -lm -O3"
 
 # Main dialogue ---------------------------------------------------------------------------------------
 
