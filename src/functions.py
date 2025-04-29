@@ -217,11 +217,7 @@ def plot_model_3D(model, dh, slices, **kwargs):
             ax.plot(ySlices[k][0], ySlices[k][1], ySlices[k][2], linewidth = 0.5)
             
             if eikonal_defined:
-                if len(np.shape(eikonal)) == 4:
-                    for i in range(len(eikonal)):
-                        ax.contour(eiks[i][k], levels = eikonal_levels, colors = eikonal_colors[i], linestyles = "dashed")
-                else:
-                    ax.contour(eiks[k], levels = 5, linestyles = "dashed")
+                ax.contour(eiks[k], levels = eikonal_levels, colors = eikonal_colors, linestyles = "dashed")
 
             if nodes_defined:
                 ax.plot(xnode[k], ynode[k], "o", markersize = 5, color = "gray")
