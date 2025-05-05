@@ -34,7 +34,10 @@ void Elastic_ANI::set_conditions()
     }
 
     for (index = 0; index < nKernel; index++) 
+    {
         kernel[index] /= sum;
+        kernel[index] *= 1.08f;
+    }
 
     cudaMalloc((void**)&(dwc), nKernel*sizeof(float));
     cudaMemcpy(dwc, kernel, nKernel*sizeof(float), cudaMemcpyHostToDevice);
