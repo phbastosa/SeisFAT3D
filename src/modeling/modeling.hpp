@@ -5,6 +5,8 @@
 
 # include "../geometry/geometry.hpp"
 
+# define COMPRESS 65535
+
 typedef unsigned short int uintc; 
 
 class Modeling
@@ -19,7 +21,7 @@ protected:
     virtual void set_boundaries() = 0;
     virtual void set_specifications() = 0;
 
-    void compression(float * input, uintc * output, int N, float &max_value, float &min_value, int levels);
+    void compression(float * input, uintc * output, int N, float &max_value, float &min_value);
 
 public:
 

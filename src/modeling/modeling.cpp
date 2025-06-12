@@ -2,9 +2,6 @@
 
 void Modeling::set_parameters()
 {
-    compress = 65535.0f;
-    conversion = 1e9;
-        
     nx = std::stoi(catch_parameter("x_samples", parameters));
     ny = std::stoi(catch_parameter("y_samples", parameters));
     nz = std::stoi(catch_parameter("z_samples", parameters));
@@ -123,7 +120,7 @@ void Modeling::show_information()
     std::cout << modeling_name << "\n";
 }
 
-void Modeling::compression(float * input, uintc * output, int N, float &max_value, float &min_value, int levels)
+void Modeling::compression(float * input, uintc * output, int N, float &max_value, float &min_value)
 {
     max_value =-1e20f;
     min_value = 1e20f;
@@ -131,11 +128,11 @@ void Modeling::compression(float * input, uintc * output, int N, float &max_valu
     # pragma omp parallel for
     for (int index = 0; index < N; index++)
     {
-        min_value = std::min(input[index]/conversion, min_value);
-        max_value = std::max(input[index]/conversion, max_value);        
+        min_value = std::min(input[index]*1e-9f, min_value);
+        max_value = std::max(input[index]*1e-9f, max_value);        
     }
 
     # pragma omp parallel for
     for (int index = 0; index < N; index++)
-        output[index] = static_cast<uintc>(1.0f + ((float)(levels) - 1.0f)*(input[index]/conversion - min_value) / (max_value - min_value));
+        output[index] = static_cast<uintc>(1.0f + (COMPRESS - 1)*(input[index]*1e-9f - min_value) / (max_value - min_value));
 }
