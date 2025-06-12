@@ -374,10 +374,21 @@ __global__ void compute_velocity_rsg(float * Vx, float * Vy, float * Vz, float *
         float dTxz_dz = 0.25f*(d1_Txz - d2_Txz + d3_Txz - d4_Txz) / dz;
         float dTyz_dz = 0.25f*(d1_Tyz - d2_Tyz + d3_Tyz - d4_Tyz) / dz;
         float dTzz_dz = 0.25f*(d1_Tzz - d2_Tzz + d3_Tzz - d4_Tzz) / dz;
-    
-        Vx[index] += dt*B[index]*(dTxx_dx + dTxy_dy + dTxz_dz); 
-        Vy[index] += dt*B[index]*(dTxy_dx + dTyy_dy + dTyz_dz);
-        Vz[index] += dt*B[index]*(dTxz_dx + dTyz_dy + dTzz_dz);    
+
+        float B000 = B[i + j*nzz + k*nxx*nzz];
+        float B100 = B[i + (j+1)*nzz + k*nxx*nzz];
+        float B010 = B[i + j*nzz + (k+1)*nxx*nzz];
+        float B001 = B[(i+1) + j*nzz + k*nxx*nzz];
+        float B110 = B[i + (j+1)*nzz + (k+1)*nxx*nzz];
+        float B101 = B[(i+1) + (j+1)*nzz + k*nxx*nzz];
+        float B011 = B[(i+1) + j*nzz + (k+1)*nxx*nzz];
+        float B111 = B[(i+1) + (j+1)*nzz + (k+1)*nxx*nzz];
+
+        float Bxyz = 0.125f*(B000 + B100 + B010 + B001 + B110 + B101 + B011 + B111);
+
+        Vx[index] += dt*Bxyz*(dTxx_dx + dTxy_dy + dTxz_dz); 
+        Vy[index] += dt*Bxyz*(dTxy_dx + dTyy_dy + dTyz_dz);
+        Vz[index] += dt*Bxyz*(dTxz_dx + dTyz_dy + dTzz_dz);    
         
     	float damper = get_boundary_damper(damp1D, damp2D, damp3D, i, j, k, nxx, nyy, nzz, nb);
 
