@@ -9,20 +9,14 @@ folder="../src/modeling"
 
 modeling="$folder/modeling.cpp"
 
-eikonal="$folder/hfreq/eikonal.cu"
-elastic="$folder/lfreq/elastic.cu"
+eikonal="$folder/eikonal.cu"
 
-eikonal_iso="$folder/hfreq/eikonal_iso.cu"
-eikonal_ani="$folder/hfreq/eikonal_ani.cu"
-
-elastic_iso="$folder/lfreq/elastic_iso.cu"
-elastic_ani="$folder/lfreq/elastic_ani.cu"
+eikonal_iso="$folder/eikonal_iso.cu"
+eikonal_ani="$folder/eikonal_ani.cu"
 
 modeling_main="../src/modeling_main.cpp"
 
-modeling_all="$modeling $eikonal $elastic 
-              $eikonal_iso $elastic_iso 
-              $eikonal_ani $elastic_ani"
+modeling_all="$modeling $eikonal $eikonal_iso $eikonal_ani"
 
 # Seismic inversion scripts ---------------------------------------------------------------------------
 
@@ -96,11 +90,11 @@ case "$1" in
     echo -e "../bin/\033[31mmodeling.exe\033[m" 
     nvcc $admin $geometry $modeling_all $modeling_main $flags -o ../bin/modeling.exe
 
-    echo -e "../bin/\033[31minversion.exe\033[m" 
-    nvcc $admin $geometry $modeling_all $inversion_all $inversion_main $flags -o ../bin/inversion.exe
+    # echo -e "../bin/\033[31minversion.exe\033[m" 
+    # nvcc $admin $geometry $modeling_all $inversion_all $inversion_main $flags -o ../bin/inversion.exe
 
-    echo -e "../bin/\033[31mmigration.exe\033[m"
-    nvcc $admin $geometry $modeling_all $migration_all $migration_main $flags -o ../bin/migration.exe
+    # echo -e "../bin/\033[31mmigration.exe\033[m"
+    # nvcc $admin $geometry $modeling_all $migration_all $migration_main $flags -o ../bin/migration.exe
 
 	exit 0
 ;;
@@ -142,12 +136,18 @@ case "$1" in
 -test_modeling)
 
     folder=../tests/modeling
+    parameters=$folder/parameters.txt
 
     python3 -B $folder/generate_models.py
     python3 -B $folder/generate_geometry.py
 
-    ./../bin/modeling.exe $folder/parameters_eikonal.txt
-    ./../bin/modeling.exe $folder/parameters_elastic.txt
+    ./../bin/modeling.exe $parameters
+
+    sed -i "s|modeling_type = 0|modeling_type = 1|g" "$parameters"
+
+    ./../bin/modeling.exe $parameters
+
+    sed -i "s|modeling_type = 1|modeling_type = 0|g" "$parameters"
 
     python3 -B $folder/generate_figures.py
 

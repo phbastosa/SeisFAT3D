@@ -10,9 +10,6 @@ void Modeling::set_parameters()
     dy = std::stof(catch_parameter("y_spacing", parameters));
     dz = std::stof(catch_parameter("z_spacing", parameters));
 
-    nt = std::stoi(catch_parameter("time_samples", parameters));
-    dt = std::stof(catch_parameter("time_spacing", parameters));
-
     data_folder = catch_parameter("modeling_output_folder", parameters);
 
     nPoints = nx*ny*nz;
@@ -42,6 +39,7 @@ void Modeling::set_parameters()
 
 void Modeling::expand_boundary(float * input, float * output)
 {
+    # pragma omp parallel for
     for (int index = 0; index < nPoints; index++)
     {
         int k = (int) (index / (nx*nz));         

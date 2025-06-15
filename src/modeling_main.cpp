@@ -1,8 +1,5 @@
-# include "modeling/hfreq/eikonal_iso.cuh"
-# include "modeling/hfreq/eikonal_ani.cuh"
-
-# include "modeling/lfreq/elastic_iso.cuh"
-# include "modeling/lfreq/elastic_ani.cuh"
+# include "modeling/eikonal_iso.cuh"
+# include "modeling/eikonal_ani.cuh"
 
 int main(int argc, char **argv)
 {
@@ -10,9 +7,6 @@ int main(int argc, char **argv)
     {
         new Eikonal_ISO(),
         new Eikonal_ANI(),
-
-        new Elastic_ISO(),
-        new Elastic_ANI()
     };
 
     auto file = std::string(argv[1]);

@@ -40,6 +40,8 @@ void Eikonal::set_specifications()
     cudaMalloc((void**)&(d_T), volsize*sizeof(float));
     cudaMalloc((void**)&(d_S), volsize*sizeof(float));
 
+    cudaMemcpy(d_S, S, volsize * sizeof(float), cudaMemcpyHostToDevice);    
+
     cudaMalloc((void**)&(d_sgnv), nSweeps*meshDim*sizeof(int));
     cudaMalloc((void**)&(d_sgnt), nSweeps*meshDim*sizeof(int));
 
@@ -62,9 +64,9 @@ void Eikonal::set_boundaries()
 
 void Eikonal::initialization()
 {
-    sIdx = (int)(geometry->xsrc[geometry->sInd[srcId]] / dx) + nb;
-    sIdy = (int)(geometry->ysrc[geometry->sInd[srcId]] / dy) + nb;
-    sIdz = (int)(geometry->zsrc[geometry->sInd[srcId]] / dz) + nb;
+    sIdx = (int)((geometry->xsrc[geometry->sInd[srcId]] + 0.5*dx) / dx) + nb;
+    sIdy = (int)((geometry->ysrc[geometry->sInd[srcId]] + 0.5*dy) / dy) + nb;
+    sIdz = (int)((geometry->zsrc[geometry->sInd[srcId]] + 0.5*dz) / dz) + nb;
 
     # pragma omp parallel for
     for (int index = 0; index < volsize; index++) 
@@ -91,7 +93,6 @@ void Eikonal::initialization()
 
 void Eikonal::propagation()
 {
-    cudaMemcpy(d_S, S, volsize*sizeof(float), cudaMemcpyHostToDevice);
     cudaMemcpy(d_T, T, volsize*sizeof(float), cudaMemcpyHostToDevice);
 
     for (int sweep = 0; sweep < nSweeps; sweep++)

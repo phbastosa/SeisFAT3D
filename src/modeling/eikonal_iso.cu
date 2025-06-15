@@ -2,18 +2,21 @@
 
 void Eikonal_ISO::set_properties()
 {
-    Vp = new float[nPoints]();
+    float * vp = new float[nPoints]();
 
     std::string model_file = catch_parameter("vp_model_file", parameters);
 
-    import_binary_float(model_file, Vp, nPoints);
+    import_binary_float(model_file, vp, nPoints);
 
+    # pragma omp parallel for
     for (int index = 0; index < nPoints; index++)
-        Vp[index] = 1.0f / Vp[index];
+        vp[index] = 1.0f / vp[index];
 
     S = new float[volsize]();
 
-    expand_boundary(Vp, S);
+    expand_boundary(vp, S);
+
+    delete[] vp;
 }
 
 void Eikonal_ISO::set_conditions()

@@ -1,7 +1,7 @@
 # ifndef TOMOGRAPHY_HPP
 # define TOMOGRAPHY_HPP
 
-# include "../modeling/hfreq/eikonal_iso.cuh"
+# include "../modeling/eikonal_iso.cuh"
 
 class Tomography
 {

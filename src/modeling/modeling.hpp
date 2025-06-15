@@ -15,9 +15,6 @@ private:
 
 protected:
     
-    float compress;
-    float conversion;
-
     virtual void set_boundaries() = 0;
     virtual void set_specifications() = 0;
 
@@ -25,16 +22,13 @@ protected:
 
 public:
 
-    float dx, dy, dz, dt;
+    float dx, dy, dz;
     int nxx, nyy, nzz, volsize;
-    int nt, nx, ny, nz, nb, nPoints;
+    int nx, ny, nz, nb, nPoints;
     int srcId, recId, sIdx, sIdy, sIdz;
 
     float * S = nullptr;
     float * T = nullptr;
-    float * Vp = nullptr;
-    float * Vs = nullptr;
-    float * Ro = nullptr;
 
     float * synthetic_data = nullptr;
 
