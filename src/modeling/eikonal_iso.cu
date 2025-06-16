@@ -25,11 +25,9 @@ void Eikonal_ISO::set_conditions()
     modeling_name = "Modeling type: Eikonal isotropic solver";
 }
 
-void Eikonal_ISO::forward_solver()
+void Eikonal_ISO::time_propagation()
 {
     initialization();
-
-    propagation();
-
+    eikonal_solver();
     compute_seismogram();
 }

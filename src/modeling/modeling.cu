@@ -1,13 +1,51 @@
-# include "eikonal.cuh"
+# include "modeling.cuh"
 
-void Eikonal::set_specifications()
+void Modeling::set_parameters()
 {
+    nx = std::stoi(catch_parameter("x_samples", parameters));
+    ny = std::stoi(catch_parameter("y_samples", parameters));
+    nz = std::stoi(catch_parameter("z_samples", parameters));
+
+    dx = std::stof(catch_parameter("x_spacing", parameters));
+    dy = std::stof(catch_parameter("y_spacing", parameters));
+    dz = std::stof(catch_parameter("z_spacing", parameters));
+
+    data_folder = catch_parameter("modeling_output_folder", parameters);
+
+    nPoints = nx*ny*nz;
+
+    geometry = new Geometry();
+
+    geometry->parameters = parameters;
+    geometry->set_parameters();
+
+    max_spread = 0;
+    for (int index = 0; index < geometry->nrel; index++)
+    {   
+        if (max_spread < geometry->spread[index])
+            max_spread = geometry->spread[index]; 
+    }
+
+    seismogram = new float[max_spread]();
+
+    nb = 2;
+    
+    nxx = nx + 2*nb;
+    nyy = ny + 2*nb;
+    nzz = nz + 2*nb;
+
+    volsize = nxx*nyy*nzz;
+
+    nThreads = 256;
+    nBlocks = (int)((volsize + nThreads - 1) / nThreads);
+
     set_properties();    
     set_conditions();    
+    set_eikonal();
+}
 
-    nSweeps = 8;
-    meshDim = 3;
-
+void Modeling::set_eikonal()
+{
     dz2i = 1.0f / (dz*dz);
     dx2i = 1.0f / (dx*dx);
     dy2i = 1.0f / (dy*dy);
@@ -23,16 +61,16 @@ void Eikonal::set_specifications()
     std::vector<std::vector<int>> sgnv = {{1,1,1}, {0,1,1}, {1,1,0}, {0,1,0}, {1,0,1}, {0,0,1}, {1,0,0}, {0,0,0}};
     std::vector<std::vector<int>> sgnt = {{1,1,1}, {-1,1,1}, {1,1,-1}, {-1,1,-1}, {1,-1,1}, {-1,-1,1}, {1,-1,-1}, {-1,-1,-1}};
 
-    int * h_sgnv = new int [nSweeps * meshDim]();
-    int * h_sgnt = new int [nSweeps * meshDim](); 
+    int * h_sgnv = new int [NSWEEPS * MESHDIM]();
+    int * h_sgnt = new int [NSWEEPS * MESHDIM](); 
 
-    for (int index = 0; index < nSweeps * meshDim; index++)
+    for (int index = 0; index < NSWEEPS * MESHDIM; index++)
     {
-        int j = index / nSweeps;
-    	int i = index % nSweeps;				
+        int j = index / NSWEEPS;
+    	int i = index % NSWEEPS;				
 
-	    h_sgnv[i + j * nSweeps] = sgnv[i][j];
-	    h_sgnt[i + j * nSweeps] = sgnt[i][j];
+	    h_sgnv[i + j * NSWEEPS] = sgnv[i][j];
+	    h_sgnt[i + j * NSWEEPS] = sgnt[i][j];
     }
 
     T = new float[volsize]();
@@ -42,64 +80,44 @@ void Eikonal::set_specifications()
 
     cudaMemcpy(d_S, S, volsize * sizeof(float), cudaMemcpyHostToDevice);    
 
-    cudaMalloc((void**)&(d_sgnv), nSweeps*meshDim*sizeof(int));
-    cudaMalloc((void**)&(d_sgnt), nSweeps*meshDim*sizeof(int));
+    cudaMalloc((void**)&(d_sgnv), NSWEEPS*MESHDIM*sizeof(int));
+    cudaMalloc((void**)&(d_sgnt), NSWEEPS*MESHDIM*sizeof(int));
 
-    cudaMemcpy(d_sgnv, h_sgnv, nSweeps*meshDim*sizeof(int), cudaMemcpyHostToDevice);
-    cudaMemcpy(d_sgnt, h_sgnt, nSweeps*meshDim*sizeof(int), cudaMemcpyHostToDevice);
-
-    delete[] h_sgnt;
-    delete[] h_sgnv;
+    cudaMemcpy(d_sgnv, h_sgnv, NSWEEPS*MESHDIM*sizeof(int), cudaMemcpyHostToDevice);
+    cudaMemcpy(d_sgnt, h_sgnt, NSWEEPS*MESHDIM*sizeof(int), cudaMemcpyHostToDevice);
 
     std::vector<std::vector<int>>().swap(sgnv);
     std::vector<std::vector<int>>().swap(sgnt);
 
-    synthetic_data = new float[max_spread]();
+    delete[] h_sgnt;
+    delete[] h_sgnv;
 }
 
-void Eikonal::set_boundaries()
+void Modeling::initialization()
 {
-    nb = 2;    
+    float sx = geometry->xsrc[geometry->sInd[srcId]]; 
+    float sy = geometry->ysrc[geometry->sInd[srcId]]; 
+    float sz = geometry->zsrc[geometry->sInd[srcId]]; 
+
+    sIdx = (int)((sx + 0.5f*dx) / dx) + nb;
+    sIdy = (int)((sy + 0.5f*dy) / dy) + nb;
+    sIdz = (int)((sz + 0.5f*dz) / dz) + nb;
+
+    time_set<<<nBlocks,nThreads>>>(d_T, volsize);
+
+    dim3 grid(1,1,1);
+    dim3 block(MESHDIM,MESHDIM,MESHDIM);
+
+    time_init<<<grid,block>>>(d_T,d_S,sx,sy,sz,dx,dy,dz,sIdx,sIdy,sIdz,nxx,nzz,nb);
 }
 
-void Eikonal::initialization()
+void Modeling::eikonal_solver()
 {
-    sIdx = (int)((geometry->xsrc[geometry->sInd[srcId]] + 0.5*dx) / dx) + nb;
-    sIdy = (int)((geometry->ysrc[geometry->sInd[srcId]] + 0.5*dy) / dy) + nb;
-    sIdz = (int)((geometry->zsrc[geometry->sInd[srcId]] + 0.5*dz) / dz) + nb;
-
-    # pragma omp parallel for
-    for (int index = 0; index < volsize; index++) 
-        T[index] = 1e6f;
-
-    for (int k = 0; k < meshDim; k++)
-    {
-        for (int j = 0; j < meshDim; j++)
-        {
-            for (int i = 0; i < meshDim; i++)
-            {
-                int yi = sIdy + (k - 1);
-                int xi = sIdx + (j - 1);
-                int zi = sIdz + (i - 1);
-
-                T[zi + xi*nzz + yi*nxx*nzz] = S[zi + xi*nzz + yi*nxx*nzz] * 
-                    sqrtf(powf((xi - nb)*dx - geometry->xsrc[geometry->sInd[srcId]], 2.0f) + 
-                          powf((yi - nb)*dz - geometry->ysrc[geometry->sInd[srcId]], 2.0f) +
-                          powf((zi - nb)*dz - geometry->zsrc[geometry->sInd[srcId]], 2.0f));
-            }
-        }
-    }
-}
-
-void Eikonal::propagation()
-{
-    cudaMemcpy(d_T, T, volsize*sizeof(float), cudaMemcpyHostToDevice);
-
-    for (int sweep = 0; sweep < nSweeps; sweep++)
+    for (int sweep = 0; sweep < NSWEEPS; sweep++)
     { 
-	    int start = (sweep == 3 || sweep == 5 || sweep == 6 || sweep == 7) ? total_levels : meshDim;
-	    int end = (start == meshDim) ? total_levels + 1 : meshDim - 1;
-	    int incr = (start == meshDim) ? true : false;
+	    int start = (sweep == 3 || sweep == 5 || sweep == 6 || sweep == 7) ? total_levels : MESHDIM;
+	    int end = (start == MESHDIM) ? total_levels + 1 : MESHDIM - 1;
+	    int incr = (start == MESHDIM) ? true : false;
 
 	    int xSweepOff = (sweep == 3 || sweep == 4) ? nxx : 0;
 	    int ySweepOff = (sweep == 2 || sweep == 5) ? nyy : 0;
@@ -110,38 +128,38 @@ void Eikonal::propagation()
             int xs = max(1, level - (nyy + nzz));	
             int ys = max(1, level - (nxx + nzz));
             
-            int xe = min(nxx, level - (meshDim - 1));
-            int ye = min(nyy, level - (meshDim - 1));	
+            int xe = min(nxx, level - (MESHDIM - 1));
+            int ye = min(nyy, level - (MESHDIM - 1));	
             
             int xr = xe - xs + 1;
             int yr = ye - ys + 1;
 
-            int nThreads = xr * yr;
+            int nThrds = xr * yr;
                 
             dim3 bs(16, 16, 1);
 
-            if (nThreads < 32) { bs.x = xr; bs.y = yr; }  
+            if (nThrds < 32) { bs.x = xr; bs.y = yr; }  
 
             dim3 gs(iDivUp(xr, bs.x), iDivUp(yr , bs.y), 1);
                 
-            int sgni = sweep + 0*nSweeps;
-            int sgnj = sweep + 1*nSweeps;
-            int sgnk = sweep + 2*nSweeps;
+            int sgni = sweep + 0*NSWEEPS;
+            int sgnj = sweep + 1*NSWEEPS;
+            int sgnk = sweep + 2*NSWEEPS;
 
             inner_sweep<<<gs, bs>>>(d_S, d_T, d_sgnt, d_sgnv, sgni, sgnj, sgnk, level, xs, ys, 
                                     xSweepOff, ySweepOff, zSweepOff, nxx, nyy, nzz, dx, dy, dz, 
                                     dx2i, dy2i, dz2i, dz2dx2, dz2dy2, dx2dy2, dsum);
 	    }
     }
-    
-    cudaMemcpy(T, d_T, volsize*sizeof(float), cudaMemcpyDeviceToHost);
 }
 
-void Eikonal::compute_seismogram()
+void Modeling::compute_seismogram()
 {
     int spread = 0;
 
     float P[4][4][4];
+
+    cudaMemcpy(T, d_T, volsize*sizeof(float), cudaMemcpyDeviceToHost);    
 
     for (recId = geometry->iRec[srcId]; recId < geometry->fRec[srcId]; recId++)
     {
@@ -176,22 +194,16 @@ void Eikonal::compute_seismogram()
             }
         }   
 
-        synthetic_data[spread++] = cubic3d(P, xd, yd, zd);
+        seismogram[spread++] = cubic3d(P, xd, yd, zd);
     }
 }
 
-void Eikonal::export_synthetic_data()
-{    
-    std::string data_file = data_folder + modeling_type + "_nStations" + std::to_string(geometry->spread[srcId]) + "_shot_" + std::to_string(geometry->sInd[srcId]+1) + ".bin";
-    export_binary_float(data_file, synthetic_data, geometry->spread[srcId]);    
-}
-
-float Eikonal::cubic1d(float P[4], float dx)
+float Modeling::cubic1d(float P[4], float dx)
 {
     return P[1] + 0.5f*dx*(P[2] - P[0] + dx*(2.0f*P[0] - 5.0f*P[1] + 4.0f*P[2] - P[3] + dx*(3.0f*(P[1] - P[2]) + P[3] - P[0])));
 }
 
-float Eikonal::cubic2d(float P[4][4], float dx, float dy)
+float Modeling::cubic2d(float P[4][4], float dx, float dy)
 {    
     float p[4];
     p[0] = cubic1d(P[0], dy);
@@ -201,7 +213,7 @@ float Eikonal::cubic2d(float P[4][4], float dx, float dy)
     return cubic1d(p, dx);
 }
 
-float Eikonal::cubic3d(float P[4][4][4], float dx, float dy, float dz)
+float Modeling::cubic3d(float P[4][4][4], float dx, float dy, float dz)
 {    
     float p[4];
     p[0] = cubic2d(P[0], dy, dz);
@@ -211,9 +223,138 @@ float Eikonal::cubic3d(float P[4][4][4], float dx, float dy, float dz)
     return cubic1d(p, dx);
 }
 
-int Eikonal::iDivUp(int a, int b) 
+void Modeling::export_seismogram()
+{    
+    std::string data_file = data_folder + modeling_type + "_nStations" + std::to_string(geometry->spread[srcId]) + "_shot_" + std::to_string(geometry->sInd[srcId]+1) + ".bin";
+    export_binary_float(data_file, seismogram, geometry->spread[srcId]);    
+}
+
+void Modeling::expand_boundary(float * input, float * output)
+{
+    # pragma omp parallel for
+    for (int index = 0; index < nPoints; index++)
+    {
+        int k = (int) (index / (nx*nz));         
+        int j = (int) (index - k*nx*nz) / nz;    
+        int i = (int) (index - j*nz - k*nx*nz);  
+
+        output[(i + nb) + (j + nb)*nzz + (k + nb)*nxx*nzz] = input[i + j*nz + k*nx*nz];       
+    }
+
+    for (int k = nb; k < nyy - nb; k++)
+    {   
+        for (int j = nb; j < nxx - nb; j++)
+        {
+            for (int i = 0; i < nb; i++)            
+            {
+                output[i + j*nzz + k*nxx*nzz] = input[0 + (j - nb)*nz + (k - nb)*nx*nz];
+                output[(nzz - i - 1) + j*nzz + k*nxx*nzz] = input[(nz - 1) + (j - nb)*nz + (k - nb)*nx*nz];
+            }
+        }
+    }
+
+    for (int k = 0; k < nyy; k++)
+    {   
+        for (int j = 0; j < nb; j++)
+        {
+            for (int i = 0; i < nzz; i++)
+            {
+                output[i + j*nzz + k*nxx*nzz] = output[i + nb*nzz + k*nxx*nzz];
+                output[i + (nxx - j - 1)*nzz + k*nxx*nzz] = output[i + (nxx - nb - 1)*nzz + k*nxx*nzz];
+            }
+        }
+    }
+
+    for (int k = 0; k < nb; k++)
+    {   
+        for (int j = 0; j < nxx; j++)
+        {
+            for (int i = 0; i < nzz; i++)
+            {
+                output[i + j*nzz + k*nxx*nzz] = output[i + j*nzz + nb*nxx*nzz];
+                output[i + j*nzz + (nyy - k - 1)*nxx*nzz] = output[i + j*nzz + (nyy - nb - 1)*nxx*nzz];
+            }
+        }
+    }
+}
+
+void Modeling::reduce_boundary(float * input, float * output)
+{
+    # pragma omp parallel for
+    for (int index = 0; index < nPoints; index++)
+    {
+        int k = (int) (index / (nx*nz));         
+        int j = (int) (index - k*nx*nz) / nz;    
+        int i = (int) (index - j*nz - k*nx*nz);  
+
+        output[i + j*nz + k*nx*nz] = input[(i + nb) + (j + nb)*nzz + (k + nb)*nxx*nzz];
+    }
+}
+
+void Modeling::show_information()
+{
+    auto clear = system("clear");
+    
+    std::cout << "-------------------------------------------------------------------------------\n";
+    std::cout << "                                 \033[34mSeisFAT3D\033[0;0m\n";
+    std::cout << "-------------------------------------------------------------------------------\n\n";
+
+    std::cout << "Model dimensions: (z = " << (nz - 1)*dz << ", x = " << (nx - 1) * dx <<", y = " << (ny - 1) * dy << ") m\n\n";
+
+    std::cout << "Running shot " << srcId + 1 << " of " << geometry->nrel << " in total\n\n";
+
+    std::cout << "Current shot position: (z = " << geometry->zsrc[geometry->sInd[srcId]] << 
+                                       ", x = " << geometry->xsrc[geometry->sInd[srcId]] << 
+                                       ", y = " << geometry->ysrc[geometry->sInd[srcId]] << ") m\n\n";
+
+    std::cout << modeling_name << "\n";
+}
+
+void Modeling::compression(float * input, uintc * output, int N, float &max_value, float &min_value)
+{
+    max_value =-1e20f;
+    min_value = 1e20f;
+    
+    # pragma omp parallel for
+    for (int index = 0; index < N; index++)
+    {
+        min_value = std::min(input[index], min_value);
+        max_value = std::max(input[index], max_value);        
+    }
+
+    # pragma omp parallel for
+    for (int index = 0; index < N; index++)
+        output[index] = static_cast<uintc>(1.0f + (COMPRESS - 1)*(input[index] - min_value) / (max_value - min_value));
+}
+
+int Modeling::iDivUp(int a, int b) 
 { 
     return ( (a % b) != 0 ) ? (a / b + 1) : (a / b); 
+}
+
+__global__ void time_set(float * T, int volsize)
+{
+    int index = threadIdx.x + blockIdx.x * blockDim.x;
+
+    if (index < volsize) T[index] = 1e6f;
+}
+
+__global__ void time_init(float * T, float * S, float sx, float sy, float sz, float dx, float dy, 
+                          float dz, int sIdx, int sIdy, int sIdz, int nxx, int nzz, int nb)
+{
+    int i = threadIdx.x + blockIdx.x * blockDim.x;
+    int j = threadIdx.y + blockIdx.y * blockDim.y;
+    int k = threadIdx.z + blockIdx.z * blockDim.z;
+
+    int yi = sIdy + (k - 1);
+    int xi = sIdx + (j - 1);
+    int zi = sIdz + (i - 1);
+
+    int index = zi + xi*nzz + yi*nxx*nzz;
+
+    T[index] = S[index] * sqrtf(powf((xi - nb)*dx - sx, 2.0f) + 
+                                powf((yi - nb)*dy - sy, 2.0f) +
+                                powf((zi - nb)*dz - sz, 2.0f));
 }
 
 __global__ void inner_sweep(float * S, float * T, int * sgnt, int * sgnv, int sgni, int sgnj, int sgnk, 

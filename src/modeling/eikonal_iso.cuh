@@ -1,9 +1,9 @@
 # ifndef EIKONAL_ISO_CUH
 # define EIKONAL_ISO_CUH
 
-# include "eikonal.cuh"
+# include "modeling.cuh"
 
-class Eikonal_ISO : public Eikonal
+class Eikonal_ISO : public Modeling
 {
 private:
 
@@ -12,7 +12,7 @@ private:
 
 public:
 
-    void forward_solver();
+    void time_propagation();
 };
 
 # endif

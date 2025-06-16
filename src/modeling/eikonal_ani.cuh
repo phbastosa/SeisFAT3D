@@ -1,13 +1,11 @@
 # ifndef EIKONAL_ANI_CUH
 # define EIKONAL_ANI_CUH
 
-# include "eikonal.cuh"
+# include "modeling.cuh"
 
-class Eikonal_ANI : public Eikonal
+class Eikonal_ANI : public Modeling
 {
 private:
-
-    float * qS = nullptr;
 
     uintc * d_C11 = nullptr; float maxC11; float minC11;
     uintc * d_C12 = nullptr; float maxC12; float minC12;
@@ -41,7 +39,7 @@ private:
  
 public:
 
-    void forward_solver();
+    void time_propagation();
 };
 
 __global__ void get_quasi_slowness(float * T, float * S, float dx, float dy, float dz, int sIdx, int sIdy, int sIdz, int nxx, int nyy, int nzz, int nb, 

@@ -17,9 +17,6 @@ void Eikonal_ANI::set_properties()
 
     expand_boundary(vp, S);
 
-    nThreads = 256;
-    nBlocks = (int)((volsize + nThreads - 1) / nThreads);
-
     qS = new float[volsize]();
 
     # pragma omp parallel for
@@ -251,11 +248,20 @@ void Eikonal_ANI::set_conditions()
     delete[] Cij;
 }
 
-void Eikonal_ANI::forward_solver()
+void Eikonal_ANI::time_propagation()
 {
+    float * TT = new float[nPoints]();
+
     initialization();
-    
-    propagation();
+    eikonal_solver();
+
+    cudaMemcpy(T, d_T, volsize*sizeof(float), cudaMemcpyDeviceToHost);    
+    reduce_boundary(T, TT);
+    export_binary_float("eikonal_before.bin", TT, nPoints);    
+
+    cudaMemcpy(S, d_S, volsize*sizeof(float), cudaMemcpyDeviceToHost);    
+    reduce_boundary(S, TT);
+    export_binary_float("slowness_before.bin", TT, nPoints);    
 
     get_quasi_slowness<<<nBlocks,nThreads>>>(d_T,d_S,dx,dy,dz,sIdx,sIdy,sIdz,nxx,nyy,nzz,nb,d_C11, 
                                              d_C12,d_C13,d_C14,d_C15,d_C16,d_C22,d_C23,d_C24,d_C25, 
@@ -266,14 +272,23 @@ void Eikonal_ANI::forward_solver()
                                              minC33,maxC33,minC34,maxC34,minC35,maxC35,minC36,maxC36,
                                              minC44,maxC44,minC45,maxC45,minC46,maxC46,minC55,maxC55,
                                              minC56,maxC56,minC66,maxC66);
-    
-    initialization();
 
-    propagation();
+    cudaMemcpy(S, d_S, volsize*sizeof(float), cudaMemcpyDeviceToHost);    
+    reduce_boundary(S, TT);
+    export_binary_float("slowness_after.bin", TT, nPoints);    
+                                             
+    initialization();
+    eikonal_solver();
+
+    cudaMemcpy(T, d_T, volsize*sizeof(float), cudaMemcpyDeviceToHost);    
+    reduce_boundary(T, TT);
+    export_binary_float("eikonal_after.bin", TT, nPoints);    
+
+    delete[] TT;
 
     compute_seismogram();
 
-    cudaMemcpy(d_S, qS, volsize * sizeof(float), cudaMemcpyHostToDevice);
+    cudaMemcpy(d_S, S, volsize * sizeof(float), cudaMemcpyHostToDevice);
 }
 
 __global__ void get_quasi_slowness(float * T, float * S, float dx, float dy, float dz, int sIdx, int sIdy, int sIdz, int nxx, int nyy, int nzz, int nb,
@@ -315,32 +330,32 @@ __global__ void get_quasi_slowness(float * T, float * S, float dx, float dy, flo
             p[1] = dTy / norm;
             p[2] = dTz / norm;
             
-            float c11 = (minC11 + (static_cast<float>(C11[index]) - 1.0f) * (maxC11 - minC11) / (COMPRESS - 1))*1e9f;
-            float c12 = (minC12 + (static_cast<float>(C12[index]) - 1.0f) * (maxC12 - minC12) / (COMPRESS - 1))*1e9f;
-            float c13 = (minC13 + (static_cast<float>(C13[index]) - 1.0f) * (maxC13 - minC13) / (COMPRESS - 1))*1e9f;
-            float c14 = (minC14 + (static_cast<float>(C14[index]) - 1.0f) * (maxC14 - minC14) / (COMPRESS - 1))*1e9f;
-            float c15 = (minC15 + (static_cast<float>(C15[index]) - 1.0f) * (maxC15 - minC15) / (COMPRESS - 1))*1e9f;
-            float c16 = (minC16 + (static_cast<float>(C16[index]) - 1.0f) * (maxC16 - minC16) / (COMPRESS - 1))*1e9f;
+            float c11 = (minC11 + (static_cast<float>(C11[index]) - 1.0f) * (maxC11 - minC11) / (COMPRESS - 1));
+            float c12 = (minC12 + (static_cast<float>(C12[index]) - 1.0f) * (maxC12 - minC12) / (COMPRESS - 1));
+            float c13 = (minC13 + (static_cast<float>(C13[index]) - 1.0f) * (maxC13 - minC13) / (COMPRESS - 1));
+            float c14 = (minC14 + (static_cast<float>(C14[index]) - 1.0f) * (maxC14 - minC14) / (COMPRESS - 1));
+            float c15 = (minC15 + (static_cast<float>(C15[index]) - 1.0f) * (maxC15 - minC15) / (COMPRESS - 1));
+            float c16 = (minC16 + (static_cast<float>(C16[index]) - 1.0f) * (maxC16 - minC16) / (COMPRESS - 1));
 
-            float c22 = (minC22 + (static_cast<float>(C22[index]) - 1.0f) * (maxC22 - minC22) / (COMPRESS - 1))*1e9f;
-            float c23 = (minC23 + (static_cast<float>(C23[index]) - 1.0f) * (maxC23 - minC23) / (COMPRESS - 1))*1e9f;
-            float c24 = (minC24 + (static_cast<float>(C24[index]) - 1.0f) * (maxC24 - minC24) / (COMPRESS - 1))*1e9f;
-            float c25 = (minC25 + (static_cast<float>(C25[index]) - 1.0f) * (maxC25 - minC25) / (COMPRESS - 1))*1e9f;
-            float c26 = (minC26 + (static_cast<float>(C26[index]) - 1.0f) * (maxC26 - minC26) / (COMPRESS - 1))*1e9f;
+            float c22 = (minC22 + (static_cast<float>(C22[index]) - 1.0f) * (maxC22 - minC22) / (COMPRESS - 1));
+            float c23 = (minC23 + (static_cast<float>(C23[index]) - 1.0f) * (maxC23 - minC23) / (COMPRESS - 1));
+            float c24 = (minC24 + (static_cast<float>(C24[index]) - 1.0f) * (maxC24 - minC24) / (COMPRESS - 1));
+            float c25 = (minC25 + (static_cast<float>(C25[index]) - 1.0f) * (maxC25 - minC25) / (COMPRESS - 1));
+            float c26 = (minC26 + (static_cast<float>(C26[index]) - 1.0f) * (maxC26 - minC26) / (COMPRESS - 1));
 
-            float c33 = (minC33 + (static_cast<float>(C33[index]) - 1.0f) * (maxC33 - minC33) / (COMPRESS - 1))*1e9f;
-            float c34 = (minC34 + (static_cast<float>(C34[index]) - 1.0f) * (maxC34 - minC34) / (COMPRESS - 1))*1e9f;
-            float c35 = (minC35 + (static_cast<float>(C35[index]) - 1.0f) * (maxC35 - minC35) / (COMPRESS - 1))*1e9f;
-            float c36 = (minC36 + (static_cast<float>(C36[index]) - 1.0f) * (maxC36 - minC36) / (COMPRESS - 1))*1e9f;
+            float c33 = (minC33 + (static_cast<float>(C33[index]) - 1.0f) * (maxC33 - minC33) / (COMPRESS - 1));
+            float c34 = (minC34 + (static_cast<float>(C34[index]) - 1.0f) * (maxC34 - minC34) / (COMPRESS - 1));
+            float c35 = (minC35 + (static_cast<float>(C35[index]) - 1.0f) * (maxC35 - minC35) / (COMPRESS - 1));
+            float c36 = (minC36 + (static_cast<float>(C36[index]) - 1.0f) * (maxC36 - minC36) / (COMPRESS - 1));
 
-            float c44 = (minC44 + (static_cast<float>(C44[index]) - 1.0f) * (maxC44 - minC44) / (COMPRESS - 1))*1e9f;
-            float c45 = (minC45 + (static_cast<float>(C45[index]) - 1.0f) * (maxC45 - minC45) / (COMPRESS - 1))*1e9f;
-            float c46 = (minC46 + (static_cast<float>(C46[index]) - 1.0f) * (maxC46 - minC46) / (COMPRESS - 1))*1e9f;
+            float c44 = (minC44 + (static_cast<float>(C44[index]) - 1.0f) * (maxC44 - minC44) / (COMPRESS - 1));
+            float c45 = (minC45 + (static_cast<float>(C45[index]) - 1.0f) * (maxC45 - minC45) / (COMPRESS - 1));
+            float c46 = (minC46 + (static_cast<float>(C46[index]) - 1.0f) * (maxC46 - minC46) / (COMPRESS - 1));
 
-            float c55 = (minC55 + (static_cast<float>(C55[index]) - 1.0f) * (maxC55 - minC55) / (COMPRESS - 1))*1e9f;
-            float c56 = (minC56 + (static_cast<float>(C56[index]) - 1.0f) * (maxC56 - minC56) / (COMPRESS - 1))*1e9f;
+            float c55 = (minC55 + (static_cast<float>(C55[index]) - 1.0f) * (maxC55 - minC55) / (COMPRESS - 1));
+            float c56 = (minC56 + (static_cast<float>(C56[index]) - 1.0f) * (maxC56 - minC56) / (COMPRESS - 1));
 
-            float c66 = (minC66 + (static_cast<float>(C66[index]) - 1.0f) * (maxC66 - minC66) / (COMPRESS - 1))*1e9f;
+            float c66 = (minC66 + (static_cast<float>(C66[index]) - 1.0f) * (maxC66 - minC66) / (COMPRESS - 1));
 
             C[0+0*v] = c11; C[0+1*v] = c12; C[0+2*v] = c13; C[0+3*v] = c14; C[0+4*v] = c15; C[0+5*v] = c16;
             C[1+0*v] = c12; C[1+1*v] = c22; C[1+2*v] = c23; C[1+3*v] = c24; C[1+4*v] = c25; C[1+5*v] = c26;
@@ -350,7 +365,7 @@ __global__ void get_quasi_slowness(float * T, float * S, float dx, float dy, flo
             C[5+0*v] = c16; C[5+1*v] = c26; C[5+2*v] = c36; C[5+3*v] = c46; C[5+4*v] = c56; C[5+5*v] = c66;
 
             float Ro = c33*S[index]*S[index];    
-
+            
             for (int indp = 0; indp < v*v; indp++)
                 C[indp] = C[indp] / Ro / Ro;
 
