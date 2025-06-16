@@ -44,6 +44,25 @@ void Modeling::set_parameters()
     set_eikonal();
 }
 
+void Modeling::set_properties()
+{
+    float * vp = new float[nPoints]();
+
+    std::string vp_file = catch_parameter("vp_model_file", parameters);
+
+    import_binary_float(vp_file, vp, nPoints);
+
+    # pragma omp parallel for
+    for (int index = 0; index < nPoints; index++)
+        vp[index] = 1.0f / vp[index];
+
+    S = new float[volsize]();
+
+    expand_boundary(vp, S);
+
+    delete[] vp;
+}
+
 void Modeling::set_eikonal()
 {
     dz2i = 1.0f / (dz*dz);

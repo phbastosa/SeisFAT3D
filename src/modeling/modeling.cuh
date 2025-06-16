@@ -15,6 +15,11 @@ typedef unsigned short int uintc;
 class Modeling
 {
 private:
+    
+    void set_eikonal();
+    void set_properties();
+
+    int iDivUp(int a, int b);
 
     float cubic1d(float P[4], float dx);
     float cubic2d(float P[4][4], float dx, float dy);
@@ -35,14 +40,9 @@ protected:
     float * d_T = nullptr;
     float * d_S = nullptr;
 
-    void set_eikonal();
-    
     void compute_seismogram();
 
-    virtual void set_properties() = 0;
     virtual void set_conditions() = 0;
-
-    int iDivUp(int a, int b);
     
     void compression(float * input, uintc * output, int N, float &max_value, float &min_value);
 

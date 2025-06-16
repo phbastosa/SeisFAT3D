@@ -26,7 +26,6 @@ pyf.plot_model_3D(model_vp, dh, slices, shots = path_SPS, scale = 0.4,
                   cblab = "P wave velocity [km/s]", 
                   vmin = 1600, vmax = 2000)
 plt.savefig("modeling_test_vp.png", dpi = 300)
-plt.show()
 
 SPS = np.loadtxt(path_SPS, dtype = float, delimiter = ",")
 RPS = np.loadtxt(path_RPS, dtype = float, delimiter = ",")
@@ -43,11 +42,14 @@ analyticalT = offset / model_vp[0,0,0]
 
 fig, ax = plt.subplots(figsize = (16,6))
   
-ax.plot(eikonal_iso, ".")
-ax.plot(eikonal_ani, ".")
-ax.plot(analyticalT, ".")
+ax.plot(eikonal_iso, ".", label = "Eikonal Isotropic")
+ax.plot(eikonal_ani, ".", label = r"Eikonal Anisotropic $\epsilon = 0.1$")
+ax.plot(analyticalT, ".", label = "Analytical isotropic")
+
+ax.set_ylabel("Time [s]", fontsize = 15)
+ax.set_xlabel("Trace index", fontsize = 15)
+ax.legend(loc = "upper right", fontsize = 15)
 
 ax.invert_yaxis()
 fig.tight_layout()
-    
-plt.show()
+plt.savefig("modeling_test_data.png", dpi = 300)

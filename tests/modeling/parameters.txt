@@ -31,6 +31,6 @@ XPS = ../inputs/geometry/modeling_test_XPS.txt
 # [1] - Eikonal ANI
 # --------------------------------------------------------------------------------------------------
 
-modeling_type = 1
+modeling_type = 0
 
 modeling_output_folder = ../outputs/syntheticData/

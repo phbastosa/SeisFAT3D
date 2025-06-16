@@ -7,7 +7,6 @@ class Eikonal_ISO : public Modeling
 {
 private:
 
-    void set_properties();
     void set_conditions();
 
 public:

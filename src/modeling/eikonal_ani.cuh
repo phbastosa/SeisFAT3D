@@ -34,7 +34,6 @@ private:
 
     uintc * d_C66 = nullptr; float maxC66; float minC66;
 
-    void set_properties();
     void set_conditions();
  
 public:

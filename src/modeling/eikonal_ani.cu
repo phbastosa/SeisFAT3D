@@ -1,30 +1,4 @@
 # include "eikonal_ani.cuh"
-# include <stdio.h>
-
-void Eikonal_ANI::set_properties()
-{
-    float * vp = new float[nPoints]();
-
-    std::string vp_file = catch_parameter("vp_model_file", parameters);
-
-    import_binary_float(vp_file, vp, nPoints);
-
-    # pragma omp parallel for
-    for (int index = 0; index < nPoints; index++)
-        vp[index] = 1.0f / vp[index];
-
-    S = new float[volsize]();
-
-    expand_boundary(vp, S);
-
-    qS = new float[volsize]();
-
-    # pragma omp parallel for
-    for (int index = 0; index < volsize; index++)
-        qS[index] = S[index];
-
-    delete[] vp;
-}
 
 void Eikonal_ANI::set_conditions()
 {
@@ -250,18 +224,8 @@ void Eikonal_ANI::set_conditions()
 
 void Eikonal_ANI::time_propagation()
 {
-    float * TT = new float[nPoints]();
-
     initialization();
     eikonal_solver();
-
-    cudaMemcpy(T, d_T, volsize*sizeof(float), cudaMemcpyDeviceToHost);    
-    reduce_boundary(T, TT);
-    export_binary_float("eikonal_before.bin", TT, nPoints);    
-
-    cudaMemcpy(S, d_S, volsize*sizeof(float), cudaMemcpyDeviceToHost);    
-    reduce_boundary(S, TT);
-    export_binary_float("slowness_before.bin", TT, nPoints);    
 
     get_quasi_slowness<<<nBlocks,nThreads>>>(d_T,d_S,dx,dy,dz,sIdx,sIdy,sIdz,nxx,nyy,nzz,nb,d_C11, 
                                              d_C12,d_C13,d_C14,d_C15,d_C16,d_C22,d_C23,d_C24,d_C25, 
@@ -272,20 +236,9 @@ void Eikonal_ANI::time_propagation()
                                              minC33,maxC33,minC34,maxC34,minC35,maxC35,minC36,maxC36,
                                              minC44,maxC44,minC45,maxC45,minC46,maxC46,minC55,maxC55,
                                              minC56,maxC56,minC66,maxC66);
-
-    cudaMemcpy(S, d_S, volsize*sizeof(float), cudaMemcpyDeviceToHost);    
-    reduce_boundary(S, TT);
-    export_binary_float("slowness_after.bin", TT, nPoints);    
                                              
     initialization();
     eikonal_solver();
-
-    cudaMemcpy(T, d_T, volsize*sizeof(float), cudaMemcpyDeviceToHost);    
-    reduce_boundary(T, TT);
-    export_binary_float("eikonal_after.bin", TT, nPoints);    
-
-    delete[] TT;
-
     compute_seismogram();
 
     cudaMemcpy(d_S, S, volsize * sizeof(float), cudaMemcpyHostToDevice);

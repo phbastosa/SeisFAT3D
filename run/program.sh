@@ -141,13 +141,13 @@ case "$1" in
 
     ./../bin/modeling.exe $parameters
 
-    # sed -i "s|modeling_type = 0|modeling_type = 1|g" "$parameters"
+    sed -i "s|modeling_type = 0|modeling_type = 1|g" "$parameters"
 
-    # ./../bin/modeling.exe $parameters
+    ./../bin/modeling.exe $parameters
 
-    # sed -i "s|modeling_type = 1|modeling_type = 0|g" "$parameters"
+    sed -i "s|modeling_type = 1|modeling_type = 0|g" "$parameters"
 
-    # python3 -B $folder/generate_figures.py
+    python3 -B $folder/generate_figures.py
 
 	exit 0
 ;;
