@@ -11,8 +11,6 @@ y_spacing = 10.0                           # [m] <float>
 z_spacing = 10.0                           # [m] <float> 
 
 vp_model_file = ../inputs/models/anisoTest_vp.bin   
-vs_model_file = ../inputs/models/anisoTest_vs.bin   
-ro_model_file = ../inputs/models/anisoTest_ro.bin
 
 Cijkl_folder = ../inputs/models/anisoTest_
 
@@ -58,10 +56,6 @@ max_iteration = 5                           # <int>
 
 tk_order = 2                                # least-squares : Tikhonov order <int>
 tk_param = 1e4                              # least-squares : Tikhonov parameter <float>
-
-adam_rate = 1e-3                            # adjoint-state : optimizer learning rate <float>
-inv_aperture_x = 75                         # adjoint-state : x aperture angle [degrees] <float>
-inv_aperture_y = 75                         # adjoint-state : y aperture angle [degrees] <float>
 
 smooth_per_iteration = true                 # <bool>
 gaussian_filter_stdv = 2.0                  # <float>

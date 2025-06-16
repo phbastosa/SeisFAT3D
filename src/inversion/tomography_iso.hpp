@@ -1,9 +1,9 @@
-# ifndef LEAST_SQUARES_HPP
-# define LEAST_SQUARES_HPP
+# ifndef TOMOGRAPHY_ISO_HPP
+# define TOMOGRAPHY_ISO_HPP
 
-# include "tomography.hpp"
+# include "inversion.hpp"
 
-class Least_Squares : public Tomography
+class Tomography_ISO : public Inversion
 {
 private:
 

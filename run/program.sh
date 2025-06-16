@@ -155,16 +155,46 @@ case "$1" in
 -test_inversion) 
 
     folder=../tests/inversion
+    parameters=$folder/parameters.txt
 
     python3 -B $folder/generate_models.py
     python3 -B $folder/generate_geometry.py
 
-    ./../bin/modeling.exe $folder/parameters_obsData.txt
+    # ./../bin/modeling.exe $parameters
 
-    ./../bin/inversion.exe $folder/parameters_least_squares.txt
-    ./../bin/inversion.exe $folder/parameters_adjoint_state.txt
+    # sed -i "s|modeling_type = 0|modeling_type = 1|g" "$parameters"
 
-    python3 -B $folder/generate_figures.py
+    # ./../bin/modeling.exe $parameters
+
+    # sed -i "s|modeling_type = 1|modeling_type = 0|g" "$parameters"
+
+    vp_true="vp_model_file = ../inputs/models/inversion_test_vp.bin"
+    vp_init="vp_model_file = ../inputs/models/inversion_test_bg.bin"
+
+    data_iso="obs_data_prefix = inversion_test_eikonal_iso_nStations1506_shot_"
+    conv_iso="../outputs/convergence/inversion_test_iso_"
+    result_iso="../outputs/recoveredModels/inversion_test_iso_"
+
+    sed -i "s|$vp_true|$vp_init|g" "$parameters"
+
+    # ./../bin/inversion.exe $parameters
+
+    data_ani="obs_data_prefix = inversion_test_eikonal_ani_nStations1506_shot_"
+    conv_ani="../outputs/convergence/inversion_test_ani_"
+    result_ani="../outputs/recoveredModels/inversion_test_ani_"
+
+    sed -i "s|$data_iso|$data_ani|g" "$parameters"
+    sed -i "s|$conv_iso|$conv_ani|g" "$parameters"
+    sed -i "s|$result_iso|$result_ani|g" "$parameters"
+
+    # ./../bin/inversion.exe $parameters
+
+    sed -i "s|$vp_init|$vp_true|g" "$parameters"
+    sed -i "s|$data_ani|$data_iso|g" "$parameters"
+    sed -i "s|$conv_ani|$conv_iso|g" "$parameters"
+    sed -i "s|$result_ani|$result_iso|g" "$parameters"
+
+    # python3 -B $folder/generate_figures.py
 
     exit 0
 ;;

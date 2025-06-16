@@ -1,9 +1,9 @@
-# ifndef TOMOGRAPHY_HPP
-# define TOMOGRAPHY_HPP
+# ifndef INVERSION_HPP
+# define INVERSION_HPP
 
-# include "../modeling/eikonal_iso.cuh"
+# include "../modeling/modeling.cuh"
 
-class Tomography
+class Inversion
 {
 protected:
 
@@ -19,6 +19,8 @@ protected:
 
     float * perturbation = nullptr;
 
+    Modeling * modeling;
+
     std::vector<float> residuo;
 
     std::string inversion_name;
@@ -28,8 +30,6 @@ protected:
     std::string obs_data_prefix;
     std::string convergence_map_folder;
     std::string estimated_model_folder;
-
-    Modeling * modeling;
 
     void set_forward_modeling();
     void set_inversion_elements();

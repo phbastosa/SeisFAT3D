@@ -11,8 +11,6 @@ y_spacing = 50.0                           # [m] <float>
 z_spacing = 50.0                           # [m] <float> 
 
 vp_model_file = ../inputs/models/modeling_test_vp.bin   
-vs_model_file = ../inputs/models/modeling_test_vs.bin   
-ro_model_file = ../inputs/models/modeling_test_ro.bin
 
 Cijkl_folder = ../inputs/models/modeling_test_
 

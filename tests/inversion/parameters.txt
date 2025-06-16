@@ -10,9 +10,9 @@ x_spacing = 100.0                         # [m] <float>
 y_spacing = 100.0                         # [m] <float> 
 z_spacing = 100.0                         # [m] <float> 
 
-vp_model_file = ../inputs/models/inversion_test_init_model_51x201x201_100m.bin
-vs_model_file = ../inputs/models/inversion_test_init_model_51x201x201_100m.bin   
-rho_model_file = ../inputs/models/inversion_test_init_model_51x201x201_100m.bin 
+vp_model_file = ../inputs/models/inversion_test_vp.bin   
+
+Cijkl_folder = ../inputs/models/inversion_test_
 
 #---------------------------------------------------------------------------------------------------
 # Geometry parameters ------------------------------------------------------------------------------
@@ -31,32 +31,21 @@ XPS = ../inputs/geometry/inversion_test_XPS.txt
 
 modeling_type = 0 
 
-time_samples = 1001
-time_spacing = 1e-3
-max_frequency = 30.0
-
-boundary_samples = 100
-boundary_damping = 0.0025
-
-modeling_output_folder = ../outputs/syntheticData/            
+modeling_output_folder = ../inputs/data/inversion_test_            
 
 #---------------------------------------------------------------------------------------------------
 # Inversion parameters 
 #---------------------------------------------------------------------------------------------------
-#   [0] - Least-squares first-arrival tomography 
-#   [1] - Adjoint-state first-arrival tomography
+#   [0] - Tomography ISO
+#   [1] - Tomography ANI
 #---------------------------------------------------------------------------------------------------
 
-inversion_type = 1                          # <int> 
+inversion_type = 0                          # <int> 
 
 max_iteration = 5                           # <int>
 
-tk_order = 2                                # least-squares : Tikhonov order <int>
-tk_param = 1e4                              # least-squares : Tikhonov parameter <float>
-
-adam_rate = 5e-3                            # adjoint-state : optimizer learning rate <float>
-inv_aperture_x = 75                         # adjoint-state : x aperture angle [degrees] <float>
-inv_aperture_y = 75                         # adjoint-state : y aperture angle [degrees] <float>
+tk_order = 2                                # Tikhonov order <int>
+tk_param = 1e4                              # Tikhonov parameter <float>
 
 smooth_per_iteration = true                 # <bool>
 gaussian_filter_stdv = 2.0                  # <float>
@@ -64,8 +53,8 @@ gaussian_filter_samples = 5                 # [odd number] <int>
 
 export_model_per_iteration = false          # <bool>
 
-convergence_folder = ../outputs/convergence/inversion_test_         
-inversion_output_folder = ../outputs/recoveredModels/inversion_test_    
+convergence_folder = ../outputs/convergence/inversion_test_iso_         
+inversion_output_folder = ../outputs/recoveredModels/inversion_test_iso_    
 
 obs_data_folder = ../inputs/data/        
 obs_data_prefix = inversion_test_eikonal_iso_nStations1506_shot_   
