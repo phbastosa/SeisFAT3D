@@ -44,7 +44,7 @@ protected:
 
     virtual void set_conditions() = 0;
     
-    void compression(float * input, uintc * output, int N, float &max_value, float &min_value);
+    void compression(float * input, uintc * output, int volsize, float &max_value, float &min_value);
 
 public:
 

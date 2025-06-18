@@ -15,7 +15,6 @@ void Modeling::set_parameters()
     nPoints = nx*ny*nz;
 
     geometry = new Geometry();
-
     geometry->parameters = parameters;
     geometry->set_parameters();
 
@@ -28,7 +27,7 @@ void Modeling::set_parameters()
 
     seismogram = new float[max_spread]();
 
-    nb = 2;
+    nb = 3;
     
     nxx = nx + 2*nb;
     nyy = ny + 2*nb;
@@ -186,21 +185,21 @@ void Modeling::compute_seismogram()
         float y = geometry->yrec[recId];
         float z = geometry->zrec[recId];
 
-        float x0 = floorf(x / dx) * dx;
-        float y0 = floorf(y / dy) * dy;
-        float z0 = floorf(z / dz) * dz;
+        float x0 = floorf((x + 0.5f*dx) / dx) * dx;
+        float y0 = floorf((y + 0.5f*dy) / dy) * dy;
+        float z0 = floorf((z + 0.5f*dz) / dz) * dz;
 
-        float x1 = floorf(x / dx) * dx + dx;
-        float y1 = floorf(y / dy) * dy + dy;
-        float z1 = floorf(z / dz) * dz + dz;
+        float x1 = floorf((x + 0.5f*dx) / dx) * dx + dx;
+        float y1 = floorf((y + 0.5f*dy) / dy) * dy + dy;
+        float z1 = floorf((z + 0.5f*dz) / dz) * dz + dz;
 
         float xd = (x - x0) / (x1 - x0);
         float yd = (y - y0) / (y1 - y0);
         float zd = (z - z0) / (z1 - z0);
 
-        int i = (int)(z / dz) + nb; 
-        int j = (int)(x / dx) + nb;   
-        int k = (int)(y / dy) + nb;         
+        int i = (int)((z + 0.5f*dz) / dz) + nb; 
+        int j = (int)((x + 0.5f*dx) / dx) + nb;   
+        int k = (int)((y + 0.5f*dy) / dy) + nb;         
 
         for (int pIdx = 0; pIdx < 4; pIdx++)
         {
@@ -329,20 +328,20 @@ void Modeling::show_information()
     std::cout << modeling_name << "\n";
 }
 
-void Modeling::compression(float * input, uintc * output, int N, float &max_value, float &min_value)
+void Modeling::compression(float * input, uintc * output, int volsize, float &max_value, float &min_value)
 {
     max_value =-1e20f;
     min_value = 1e20f;
     
     # pragma omp parallel for
-    for (int index = 0; index < N; index++)
+    for (int index = 0; index < volsize; index++)
     {
         min_value = std::min(input[index], min_value);
         max_value = std::max(input[index], max_value);        
     }
 
     # pragma omp parallel for
-    for (int index = 0; index < N; index++)
+    for (int index = 0; index < volsize; index++)
         output[index] = static_cast<uintc>(1.0f + (COMPRESS - 1)*(input[index] - min_value) / (max_value - min_value));
 }
 
