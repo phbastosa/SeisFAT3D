@@ -28,7 +28,6 @@ private:
 protected:
 
     int total_levels;
-    int nSweeps, meshDim;
     int nThreads, nBlocks;
 
     float dx2i, dy2i, dz2i, dsum;
@@ -36,11 +35,6 @@ protected:
 
     int * d_sgnv = nullptr;
     int * d_sgnt = nullptr;
-
-    float * d_T = nullptr;
-    float * d_S = nullptr;
-
-    void compute_seismogram();
 
     virtual void set_conditions() = 0;
     
@@ -56,6 +50,9 @@ public:
     float * S = nullptr;
     float * T = nullptr;
 
+    float * d_T = nullptr;
+    float * d_S = nullptr;
+
     float * seismogram = nullptr;
 
     int max_spread;
@@ -69,7 +66,11 @@ public:
     void set_parameters();
     void initialization();
     void eikonal_solver();
+    void set_shot_point();
     void show_information();    
+    void compute_seismogram();
+
+    void copy_slowness_to_device();
 
     void expand_boundary(float * input, float * output);
     void reduce_boundary(float * input, float * output);

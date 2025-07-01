@@ -99,7 +99,7 @@ void Modeling::set_eikonal()
     cudaMalloc((void**)&(d_sgnv), NSWEEPS*MESHDIM*sizeof(int));
     cudaMalloc((void**)&(d_sgnt), NSWEEPS*MESHDIM*sizeof(int));
 
-    cudaMemcpy(d_S, S, volsize * sizeof(float), cudaMemcpyHostToDevice);    
+    copy_slowness_to_device();    
 
     cudaMemcpy(d_sgnv, h_sgnv, NSWEEPS*MESHDIM*sizeof(int), cudaMemcpyHostToDevice);
     cudaMemcpy(d_sgnt, h_sgnt, NSWEEPS*MESHDIM*sizeof(int), cudaMemcpyHostToDevice);
@@ -111,12 +111,15 @@ void Modeling::set_eikonal()
     delete[] h_sgnv;
 }
 
+void Modeling::set_shot_point()
+{
+    sx = geometry->xsrc[geometry->sInd[srcId]]; 
+    sz = geometry->zsrc[geometry->sInd[srcId]]; 
+    sz = geometry->zsrc[geometry->sInd[srcId]]; 
+}
+
 void Modeling::initialization()
 {
-    float sx = geometry->xsrc[geometry->sInd[srcId]]; 
-    float sy = geometry->ysrc[geometry->sInd[srcId]]; 
-    float sz = geometry->zsrc[geometry->sInd[srcId]]; 
-
     sIdx = (int)((sx + 0.5f*dx) / dx) + nb;
     sIdy = (int)((sy + 0.5f*dy) / dy) + nb;
     sIdz = (int)((sz + 0.5f*dz) / dz) + nb;
@@ -242,7 +245,9 @@ float Modeling::cubic3d(float P[4][4][4], float dx, float dy, float dz)
 }
 
 void Modeling::export_seismogram()
-{    
+{   
+    compute_seismogram();
+         
     std::string data_file = data_folder + modeling_type + "_nStations" + std::to_string(geometry->spread[srcId]) + "_shot_" + std::to_string(geometry->sInd[srcId]+1) + ".bin";
     export_binary_float(data_file, seismogram, geometry->spread[srcId]);    
 }
@@ -348,6 +353,11 @@ void Modeling::compression(float * input, uintc * output, int volsize, float &ma
 int Modeling::iDivUp(int a, int b) 
 { 
     return ( (a % b) != 0 ) ? (a / b + 1) : (a / b); 
+}
+
+void Modeling::copy_slowness_to_device()
+{
+    cudaMemcpy(d_S, S, matsize * sizeof(float), cudaMemcpyHostToDevice);
 }
 
 __global__ void time_set(float * T, int volsize)

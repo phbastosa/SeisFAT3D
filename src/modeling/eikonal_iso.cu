@@ -10,5 +10,4 @@ void Eikonal_ISO::time_propagation()
 {
     initialization();
     eikonal_solver();
-    compute_seismogram();
 }

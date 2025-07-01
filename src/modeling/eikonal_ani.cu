@@ -239,9 +239,8 @@ void Eikonal_ANI::time_propagation()
                                              
     initialization();
     eikonal_solver();
-    compute_seismogram();
 
-    cudaMemcpy(d_S, S, volsize * sizeof(float), cudaMemcpyHostToDevice);
+    copy_slowness_to_device();
 }
 
 __global__ void get_quasi_slowness(float * T, float * S, float dx, float dy, float dz, int sIdx, int sIdy, int sIdz, int nxx, int nyy, int nzz, int nb,
