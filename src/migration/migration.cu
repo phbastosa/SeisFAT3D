@@ -2,11 +2,10 @@
 
 void Migration::set_parameters()
 {
-    modeling = new Eikonal_ISO();
-    modeling->parameters = parameters;
-    modeling->set_parameters();
+    nt = std::stoi(catch_parameter("time_samples", parameters));
+    dt = std::stof(catch_parameter("time_spacing", parameters));
 
-    scale = std::stof(catch_parameter("image_scale", parameters));
+    max_offset = std::stof(catch_parameter("max_offset", parameters));    
 
     aperture_x = std::stof(catch_parameter("mig_aperture_x", parameters));
     aperture_y = std::stof(catch_parameter("mig_aperture_y", parameters));
@@ -17,24 +16,21 @@ void Migration::set_parameters()
     output_image_folder = catch_parameter("output_image_folder", parameters);
     output_table_folder = catch_parameter("output_table_folder", parameters);
 
-    Ts = new float[modeling->nPoints]();
-    Tr = new float[modeling->nPoints]();
+    set_modeling_type();
+    
+    modeling->parameters = parameters;
+    modeling->set_parameters();
 
-    nx = (int)(scale*(modeling->nx - 1)) + 1;
-    ny = (int)(scale*(modeling->ny - 1)) + 1;
-    nz = (int)(scale*(modeling->nz - 1)) + 1;
+    f_image = new float[modeling->nPoints]();
+    h_image = new float[modeling->volsize]();
+    h_seismic = new float[nt*modeling->max_spread]();
 
-    dx = modeling->dx/scale;
-    dy = modeling->dy/scale;
-    dz = modeling->dz/scale;
+    cudaMalloc((void**)&(d_Tr), modeling->volsize*sizeof(float));
+    cudaMalloc((void**)&(d_image), modeling->volsize*sizeof(float));
+    cudaMalloc((void**)&(d_seismic), nt*modeling->max_spread*sizeof(float));
 
-    nPoints = nx*ny*nz;
-
-    image = new float[nPoints]();
-
-    seismic = new float[modeling->nt*modeling->max_spread]();
-
-    set_specifications();
+    nThreads = 256;
+    nBlocks = (int)((modeling->volsize + nThreads - 1) / nThreads);
 }
 
 void Migration::read_seismic_data()
@@ -42,58 +38,35 @@ void Migration::read_seismic_data()
     std::string data_path = input_data_folder + input_data_prefix + std::to_string(modeling->geometry->sInd[modeling->srcId]+1) + ".bin";
 
     import_binary_float(data_path, seismic, modeling->nt*modeling->geometry->spread[modeling->srcId]);
+
+    cudaMemcpy(d_seismic, h_seismic, nt*modeling->geometry->spread[modeling->srcId]*sizeof(float), cudaMemcpyHostToDevice);
 }
 
 void Migration::image_building()
 {
-    get_receiver_traveltimes();
-
+    get_receiver_eikonal();
     run_cross_correlation();
 }
 
-void Migration::get_receiver_traveltimes()
+void Migration::get_receiver_eikonal()
 {
     for (modeling->recId = 0; modeling->recId < modeling->geometry->nrec; modeling->recId++)
     {
+        set_receiver_point();
+
         show_information();
 
-        initialization();
-
-        modeling->propagation();
-
-        export_receiver_traveltimes();
+        modeling->time_propagation();
+        
+        export_receiver_eikonal();
     }
 }
 
-void Migration::initialization()
+void Migration::set_receiver_point()
 {
-    float rIdx = (int)(modeling->geometry->xrec[modeling->recId] / modeling->dx) + modeling->nb;
-    float rIdy = (int)(modeling->geometry->yrec[modeling->recId] / modeling->dy) + modeling->nb;
-    float rIdz = (int)(modeling->geometry->zrec[modeling->recId] / modeling->dz) + modeling->nb;
-
-    # pragma omp parallel for
-    for (int index = 0; index < modeling->volsize; index++) 
-        modeling->T[index] = 1e6f;
-
-    for (int k = 0; k < 3; k++)
-    {
-        for (int j = 0; j < 3; j++)
-        {
-            for (int i = 0; i < 3; i++)
-            {
-                int yi = rIdy + (k - 1);
-                int xi = rIdx + (j - 1);
-                int zi = rIdz + (i - 1);
-
-                int index = zi + xi*modeling->nzz + yi*modeling->nxx*modeling->nzz; 
-
-                modeling->T[index] = modeling->S[index] * 
-                    sqrtf(powf((xi - modeling->nb)*modeling->dx - modeling->geometry->xrec[modeling->recId], 2.0f) + 
-                          powf((yi - modeling->nb)*modeling->dy - modeling->geometry->yrec[modeling->recId], 2.0f) +
-                          powf((zi - modeling->nb)*modeling->dz - modeling->geometry->zrec[modeling->recId], 2.0f));
-            }
-        }
-    }
+    modeling->sx = modeling->geometry->xrec[modeling->recId];
+    modeling->sy = modeling->geometry->yrec[modeling->recId];
+    modeling->sz = modeling->geometry->zrec[modeling->recId];
 }
 
 void Migration::show_information()
@@ -117,13 +90,85 @@ void Migration::show_information()
     std::cout << "Kirchhoff Depth Migration: computing receiver travel time volumes\n";
 }
 
-void Migration::export_receiver_traveltimes()
+void Migration::export_receiver_eikonal()
 {
-    modeling->reduce_boundary(modeling->T, Tr);
+    cudaMemcpy(modeling->T, modeling->d_T, modeling->volsize*sizeof(float), cudaMemcpyDeviceToHost);
+
     export_binary_float(output_table_folder + "traveltimes_receiver_" + std::to_string(modeling->recId+1) + ".bin", Tr, modeling->nPoints);    
+}
+
+void Migration::run_cross_correlation()
+{
+    cudaMemset(d_image, 0.0f, modeling->nPoints*sizeof(float));
+
+    for (modeling->srcId = 0; modeling->srcId < modeling->geometry->nrel; modeling->srcId++)
+    {
+        modeling->set_shot_point();
+        modeling->show_information();
+        modeling->time_propagation();
+
+        std::cout << "\nKirchhoff depth migration: computing image matrix\n";
+
+        read_seismic_data();
+
+        int spread = 0;
+        
+        for (modeling->recId = modeling->geometry->iRec[modeling->srcId]; modeling->recId < modeling->geometry->fRec[modeling->srcId]; modeling->recId++)
+        {
+            float rx = modeling->geometry->xrec[modeling->recId];
+            float ry = modeling->geometry->yrec[modeling->recId];
+
+            float offset = sqrtf(powf(modeling->sx - rx, 2.0f) + powf(modeling->sy - ry, 2.0f));
+
+            float cmp_x = sx + 0.5f*(rx - modeling->sx);
+            float cmp_y = sy + 0.5f*(ry - modeling->sy);
+
+            if (offset < max_offset)
+            {
+                import_binary_float(output_table_folder + "eikonal_receiver_" + std::to_string(modeling->recId+1) + ".bin", modeling->T, modeling->volsize);
+            
+                cudaMemcpy(d_Tr, Tr, modeling->nPoints*sizeof(float), cudaMemcpyHostToDevice);
+
+                cross_correlation<<<nBlocks, nThreads>>>(d_Ts, d_Tr, d_image, d_seismic, aperture_x, aperture_y, cmp_x, cmp_y, spread, 
+                                                        nx, ny, nz, dx, dy, dz, modeling->nx, modeling->ny, modeling->nz, modeling->dx, 
+                                                        modeling->dy, modeling->dz, scale, modeling->nt, modeling->dt);
+            }
+
+            ++spread;
+        }
+    }
 }
 
 void Migration::export_outputs()
 {
     export_binary_float(output_image_folder + "kirchhoff_result_" + std::to_string(nz) + "x" + std::to_string(nx) + "x" + std::to_string(ny) + ".bin", image, nPoints);
 }
+
+__global__ void cross_correlation(float * Ts, float * Tr, float * image, float * seismic, float aperture_x, float aperture_y, 
+                                  float cmp_x, float cmp_y, int spread, int nx, int ny, int nz, float dx, float dy, float dz, 
+                                  int snx, int sny, int snz, float sdx, float sdy, float sdz, float scale, int nt, float dt)
+{
+    int index = blockIdx.x * blockDim.x + threadIdx.x;
+
+    int k = (int) (index / (nx*nz));         
+    int j = (int) (index - k*nx*nz) / nz;   
+    int i = (int) (index - j*nz - k*nx*nz); 
+
+    if ((i > scale) && (i < nz - scale - 1) && (j > scale) && (j < nx - scale - 1) && (k > scale) && (k < ny - scale - 1))
+    {
+        float sigma_x = tanf(aperture_x * M_PI / 180.0f)*i*dz;        
+        float sigma_y = tanf(aperture_y * M_PI / 180.0f)*i*dz;        
+
+        float par_x = powf((j*dx - cmp_x) / (sigma_x + 1e-6f), 2.0f);
+        float par_y = powf((k*dy - cmp_y) / (sigma_y + 1e-6f), 2.0f);
+
+        float value = expf(-0.5f*(par_x + par_y));
+
+        float T = Ts[index] + Tr[index]; 
+    
+        int tId = (int)(T / dt);
+
+        if (tId < nt) image[index] += value * seismic[tId + spread*nt];
+    }
+}    
+
