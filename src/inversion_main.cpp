@@ -1,12 +1,12 @@
-# include "inversion/least_squares.hpp"
-# include "inversion/adjoint_state.cuh"
+# include "../src/inversion/tomography_iso.hpp"
+# include "../src/inversion/tomography_ani.hpp"
 
 int main(int argc, char **argv)
 {
-    std::vector<Tomography *> inversion = 
+    std::vector<Inversion *> inversion = 
     {
-        new Least_Squares(), 
-        new Adjoint_State(), 
+        new Tomography_ISO(), 
+        new Tomography_ANI() 
     }; 
     
     auto file = std::string(argv[1]);

@@ -4,267 +4,440 @@ void Inversion::set_parameters()
 {
     max_iteration = std::stoi(catch_parameter("max_iteration", parameters));
 
+    tk_order = std::stoi(catch_parameter("tk_order", parameters));
+    tk_param = std::stof(catch_parameter("tk_param", parameters));
+
     obs_data_folder = catch_parameter("obs_data_folder", parameters);
     obs_data_prefix = catch_parameter("obs_data_prefix", parameters);
 
-    smooth_model_per_iteration = str2bool(catch_parameter("smooth_per_iteration", parameters));
-    smoother_samples = std::stoi(catch_parameter("gaussian_filter_samples", parameters));
     smoother_stdv = std::stoi(catch_parameter("gaussian_filter_stdv", parameters));
+    smoother_samples = std::stoi(catch_parameter("gaussian_filter_samples", parameters));
     
     convergence_map_folder = catch_parameter("convergence_folder", parameters);
     estimated_model_folder = catch_parameter("inversion_output_folder", parameters);
 
-    write_model_per_iteration = str2bool(catch_parameter("export_model_per_iteration", parameters));
+    smooth_model_per_iteration = str2bool(catch_parameter("smooth_per_iteration", parameters));
 
-    set_forward_modeling();
-    set_inversion_elements();
-    set_specifications();
-} 
+    set_modeling_type();
 
-// void Tomography::set_forward_modeling()
-// {
-//     modeling = new Eikonal_ISO();
-//     modeling->parameters = parameters;
-//     modeling->set_parameters();
-// }
+    n_model = modeling->nPoints;
 
-// void Tomography::set_inversion_elements()
-// {    
-//     n_data = 0;
-//     for (int shot = 0; shot < modeling->geometry->nrel; shot++)
-//         n_data += modeling->geometry->spread[shot];
+    x = new float[n_model]();
+}
 
-//     dcal = new float[n_data]();
-//     dobs = new float[n_data]();
+void Inversion::import_obsData()
+{
+    n_data = modeling->max_spread * modeling->geometry->nrel;
 
-//     perturbation = new float[modeling->nPoints]();
-// }
+    dcal = new float[n_data]();
+    dobs = new float[n_data]();
 
-// void Tomography::import_obsData()
-// {
-//     for (modeling->srcId = 0; modeling->srcId < modeling->geometry->nrel; modeling->srcId++)
-//     {
-//         float * data = new float[modeling->geometry->spread[modeling->srcId]]();
+    for (modeling->srcId = 0; modeling->srcId < modeling->geometry->nrel; modeling->srcId++)
+    {
+        float * data = new float[modeling->geometry->spread[modeling->srcId]]();
 
-//         std::string path = obs_data_folder + obs_data_prefix + std::to_string(modeling->geometry->sInd[modeling->srcId]+1) + ".bin";
+        std::string path = obs_data_folder + obs_data_prefix + std::to_string(modeling->geometry->sInd[modeling->srcId]+1) + ".bin";
 
-//         import_binary_float(path, data, modeling->geometry->spread[modeling->srcId]);
+        import_binary_float(path, data, modeling->geometry->spread[modeling->srcId]);
 
-//         int skipped = modeling->srcId * modeling->geometry->spread[modeling->srcId];    
+        int skipped = modeling->srcId * modeling->geometry->spread[modeling->srcId];    
         
-//         for (int i = 0; i < modeling->geometry->spread[modeling->srcId]; i++) 
-//             dobs[i + skipped] = data[i];
+        for (int i = 0; i < modeling->geometry->spread[modeling->srcId]; i++) 
+            dobs[i + skipped] = data[i];
 
-//         delete[] data;
-//     }
-// }
+        delete[] data;
+    }
+}
 
-// void Tomography::forward_modeling()
-// {
-//     for (modeling->srcId = 0; modeling->srcId < modeling->geometry->nrel; modeling->srcId++)
-//     {
-//         show_information();
-
-//         modeling->forward_solver();
-
-//         concatenate_data();
+void Inversion::forward_modeling()
+{
+    for (modeling->srcId = 0; modeling->srcId < modeling->geometry->nrel; modeling->srcId++)
+    {
+        modeling->set_shot_point();
         
-//         if (iteration != max_iteration)
-//             apply_inversion_technique();
-//     }
-// }
+        show_information();
 
-// void Tomography::show_information()
-// {
-//     modeling->show_information();    
+        modeling->time_propagation();
+        
+        concatenate_data();
+        
+        if (iteration != max_iteration)
+            gradient_ray_tracing();
+    }
+}
+
+void Inversion::show_information()
+{
+    modeling->show_information();    
     
-//     std::cout << "\nInversion type: " << inversion_method << "\n\n";
+    std::cout << "\nInversion type: " << inversion_method << "\n\n";
 
-//     if (iteration == max_iteration) 
-//         std::cout << "-------- Checking final residuo --------\n\n";
-//     else
-//     {    
-//         std::cout << "-------- Computing iteration " << iteration + 1 << " of " << max_iteration << " --------\n\n";
+    if (iteration == max_iteration) 
+        std::cout << "-------- Checking final residuo --------\n\n";
+    else
+    {    
+        std::cout << "-------- Computing iteration " << iteration + 1 << " of " << max_iteration << " --------\n\n";
 
-//         if (iteration > 0) std::cout << "Previous residuo: " << residuo.back() << "\n\n";   
-//     }
-// }
+        if (iteration > 0) std::cout << "Previous residuo: " << residuo.back() << "\n\n";   
+    }
+}
 
-// void Tomography::concatenate_data()
-// {
-//     int skipped = modeling->srcId * modeling->geometry->spread[modeling->srcId];
+void Inversion::concatenate_data()
+{
+    modeling->compute_seismogram();
 
-//     for (int i = 0; i < modeling->geometry->spread[modeling->srcId]; i++) 
-//         dcal[i + skipped] = modeling->synthetic_data[i];    
-// }
+    int skipped = modeling->srcId * modeling->geometry->spread[modeling->srcId];
 
-// void Tomography::check_convergence()
-// {
-//     float square_difference = 0.0f;
+    for (int i = 0; i < modeling->geometry->spread[modeling->srcId]; i++) 
+        dcal[i + skipped] = modeling->seismogram[i];    
+}
 
-//     for (int i = 0; i < n_data; i++)
-//         square_difference += powf(dobs[i] - dcal[i], 2.0f);
+void Inversion::gradient_ray_tracing()
+{
+    int sIdx = (int)((modeling->sx + 0.5f*modeling->dx) / modeling->dx);
+    int sIdy = (int)((modeling->sy + 0.5f*modeling->dy) / modeling->dy);
+    int sIdz = (int)((modeling->sz + 0.5f*modeling->dz) / modeling->dz);
 
-//     residuo.push_back(sqrtf(square_difference));
+    int sId = sIdz + sIdx*modeling->nz + sIdy*modeling->nx*modeling->nz; 
 
-//     if ((iteration >= max_iteration))
-//     {
-//         std::cout << "Final residuo: "<< residuo.back() <<"\n";
-//         converged = true;
-//     }
-//     else
-//     {
-//         iteration += 1;
-//         converged = false;
-//     }
-// }
+    float rayStep = 0.2f*modeling->dz;
 
-// void Tomography::model_update()
-// {
-//     if (smooth_model_per_iteration)
-//     {
-//         int aux_nx = modeling->nx + 2*smoother_samples;
-//         int aux_ny = modeling->ny + 2*smoother_samples;
-//         int aux_nz = modeling->nz + 2*smoother_samples;
+    std::vector<int> ray_index; 
 
-//         int aux_nPoints = aux_nx*aux_ny*aux_nz;
+    for (int ray_id = modeling->geometry->iRec[modeling->srcId]; ray_id < modeling->geometry->fRec[modeling->srcId]; ray_id++)
+    {
+        float xi = modeling->geometry->xrec[ray_id];        
+        float yi = modeling->geometry->yrec[ray_id];        
+        float zi = modeling->geometry->zrec[ray_id];
 
-//         float * dm_aux = new float[aux_nPoints]();
-//         float * dm_smooth = new float[aux_nPoints]();
+        if ((sz == zi) && (sx == xi) && (sy == zi)) continue;        
 
-//         # pragma omp parallel for
-//         for (int index = 0; index < modeling->nPoints; index++)
-//         {
-//             int k = (int) (index / (modeling->nx*modeling->nz));         
-//             int j = (int) (index - k*modeling->nx*modeling->nz) / modeling->nz;   
-//             int i = (int) (index - j*modeling->nz - k*modeling->nx*modeling->nz); 
+        while (true)
+        {
+            float dTz = (modeling->T[(i+1) + j*modeling->nzz + k*modeling->nxx*modeling->nzz] - modeling->T[(i-1) + j*modeling->nzz + k*modeling->nxx*modeling->nzz]) / (2.0f*modeling->dz);    
+            float dTx = (modeling->T[i + (j+1)*modeling->nzz + k*modeling->nxx*modeling->nzz] - modeling->T[i + (j-1)*modeling->nzz + k*modeling->nxx*modeling->nzz]) / (2.0f*modeling->dx);    
+            float dTy = (modeling->T[i + j*modeling->nzz + (k+1)*modeling->nxx*modeling->nzz] - modeling->T[i + j*modeling->nzz + (k-1)*modeling->nxx*modeling->nzz]) / (2.0f*modeling->dy);    
 
-//             int ind_filt = (i + smoother_samples) + (j + smoother_samples)*aux_nz + (k + smoother_samples)*aux_nx*aux_nz;
+            float norm = sqrtf(dTx*dTx + dTy*dTy + dTz*dTz);
 
-//             dm_aux[ind_filt] = perturbation[i + j*modeling->nz + k*modeling->nx*modeling->nz];
-//         }
+            xi -= rayStep*dTx / norm;   
+            yi -= rayStep*dTy / norm;   
+            zi -= rayStep*dTz / norm;    
 
-//         smooth_volume(dm_aux, dm_smooth, aux_nx, aux_ny, aux_nz);
+            int km = (int)((yi + 0.5f*modeling->dy) / modeling->dy); 
+            int jm = (int)((xi + 0.5f*modeling->dx) / modeling->dx); 
+            int im = (int)((zi + 0.5f*modeling->dz) / modeling->dz); 
+            
+            int index = im + jm*modeling->nz + km*modeling->nx*modeling->nz;
+            
+            ray_index.push_back(index);
 
-//         # pragma omp parallel for    
-//         for (int index = 0; index < modeling->nPoints; index++)
-//         {
-//             int k = (int) (index / (modeling->nx*modeling->nz));         
-//             int j = (int) (index - k*modeling->nx*modeling->nz) / modeling->nz;   
-//             int i = (int) (index - j*modeling->nz - k*modeling->nx*modeling->nz); 
+            if (ray_index.back() == sId) break;
+        }
+   
+        float final_distance = sqrtf(powf(zi - modeling->sz, 2.0f) + 
+                                     powf(xi - modeling->sx, 2.0f) + 
+                                     powf(yi - modeling->sy, 2.0f));
 
-//             int ind_filt = (i + smoother_samples) + (j + smoother_samples)*aux_nz + (k + smoother_samples)*aux_nx*aux_nz;
+        std::sort(ray_index.begin(), ray_index.end());
 
-//             perturbation[i + j*modeling->nz + k*modeling->nx*modeling->nz] = dm_smooth[ind_filt];
-//         }
+        int current_voxel_index = ray_index[0];
+        float distance_per_voxel = rayStep;
+
+        for (int index = 0; index < ray_index.size(); index++)
+        {
+            if (ray_index[index] == current_voxel_index)
+            {
+                distance_per_voxel += rayStep;
+            }
+            else
+            {
+                vG.push_back(distance_per_voxel);
+                jG.push_back(current_voxel_index);
+                iG.push_back(ray_id + modeling->srcId * modeling->max_spread);
+
+                if (current_voxel_index == sId) vG.back() = final_distance;
+
+                distance_per_voxel = rayStep;
+                current_voxel_index = ray_index[index];    
+            }
+        }
+
+        if (current_voxel_index == sId)
+        {
+            vG.push_back(final_distance);
+            jG.push_back(current_voxel_index);
+            iG.push_back(ray_id + modeling->srcId * modeling->max_spread);
+        }
+        else 
+        {
+            vG.push_back(distance_per_voxel);
+            jG.push_back(current_voxel_index);
+            iG.push_back(ray_id + modeling->srcId * modeling->max_spread);
+        }
+
+        std::vector<int>().swap(ray_index);
+    }
+}
+
+void Inversion::check_convergence()
+{
+    set_objective_function();
+
+    if ((iteration >= max_iteration))
+    {
+        std::cout << "Final residuo: "<< residuo.back() <<"\n";
+        converged = true;
+    }
+    else
+    {
+        iteration += 1;
+        converged = false;
+    }
+}
+
+void Inversion::optimization()
+{
+    set_sensitivity_matrix();
     
-//         delete[] dm_aux;
-//         delete[] dm_smooth;
-//     }   
+    set_regularization();
     
-//     for (int index = 0; index < modeling->nPoints; index++)
-//     {
-//         int k = (int) (index / (modeling->nx*modeling->nz));         
-//         int j = (int) (index - k*modeling->nx*modeling->nz) / modeling->nz;   
-//         int i = (int) (index - j*modeling->nz - k*modeling->nx*modeling->nz); 
+    solve_linear_system_lscg();
 
-//         int indb = (i + modeling->nb) + (j + modeling->nb)*modeling->nzz + (k + modeling->nb)*modeling->nxx*modeling->nzz;
+    delete[] iA;
+    delete[] jA;
+    delete[] vA;
+    delete[] B;
+}
 
-//         modeling->S[indb] += perturbation[index];
-//         modeling->Vp[index] = 1.0f / modeling->S[indb];
-//     }
+void Inversion::solve_linear_system_lscg()
+{
+    float a, b, qTq, rTr, rd;
+    int cg_max_iteration = 10;
 
-//     if (write_model_per_iteration)
-//     {
-//         std::string model_iteration_path = estimated_model_folder + inversion_name + "model_iteration_" + std::to_string(iteration) + "_" + std::to_string(modeling->nz) + "x" + std::to_string(modeling->nx) + "x" + std::to_string(modeling->ny) + ".bin";
+    float * s = new float[N]();
+    float * q = new float[N]();
+    float * r = new float[M]();
+    float * p = new float[M]();
 
-//         export_binary_float(model_iteration_path, modeling->Vp, modeling->nPoints);
-//     }
-// }
+    for (int i = 0; i < N; i++) 
+        s[i] = B[i]; 
 
-// void Tomography::smooth_volume(float * input, float * output, int nx, int ny, int nz)
-// {
-//     int nPoints = nx * ny * nz;
-//     int nKernel = smoother_samples * smoother_samples * smoother_samples;
+    for (int i = 0; i < NNZ; i++) 
+        r[jA[i]] += vA[i] * s[iA[i]];        
 
-//     float * kernel = new float[nKernel]();
+    for (int i = 0; i < M; i++) 
+    {
+        p[i] = r[i]; 
+        x[i] = 0.0f;
+    }
 
-//     # pragma omp parallel for
-//     for (int i = 0; i < nPoints; i++) 
-//         output[i] = input[i];
+    for (int i = 0; i < NNZ; i++) 
+        q[iA[i]] += vA[i] * p[jA[i]];        
 
-//     int mid = (int)(smoother_samples / 2); 
+    for (int i = 0; i < cg_max_iteration; i++)
+    {
+        qTq = 0.0f;
+        for (int k = 0; k < N; k++)           
+            qTq += q[k] * q[k];               
 
-//     kernel[mid + mid*smoother_samples + mid*smoother_samples*smoother_samples] = 1.0f;
+        rTr = 0.0f;
+        for (int k = 0; k < M; k++)           
+            rTr += r[k] * r[k];                
 
-//     if (smoother_stdv != 0.0f)
-//     {
-//         float sum = 0.0f;
+        a = rTr / qTq;                                            
 
-//         for (int y = -mid; y <= mid; y++)
-//         {
-//             for (int x = -mid; x <= mid; x++)
-//             {
-//                 for (int z = -mid; z <= mid; z++)
-//                 {          
-//                     int index = (z + mid) + (x + mid)*smoother_samples + (y + mid)*smoother_samples*smoother_samples; 
+        for (int k = 0; k < M; k++)           
+            x[k] += a * p[k];                 
+
+        for (int k = 0; k < N; k++)             
+            s[k] -= a * q[k];                  
+
+        rd = 0.0f;
+        for (int k = 0; k < M; k++)            
+            rd += r[k] * r[k];                
+
+        for (int k = 0; k < M; k++)            
+            r[k] = 0.0f;                      
+        
+        for (int k = 0; k < NNZ; k++)          
+            r[jA[k]] += vA[k] * s[iA[k]];         
+
+        rTr = 0.0f;                
+        for (int k = 0; k < M; k++)           
+            rTr += r[k] * r[k];               
+
+        b = rTr / rd;                         
+
+        for (int k = 0; k < M; k++)          
+            p[k] = r[k] + b * p[k];            
+
+        for (int k = 0; k < N; k++) 
+            q[k] = 0.0f;                      
+
+        for (int k = 0; k < NNZ; k++) 
+            q[iA[k]] += vA[k] * p[jA[k]];      
+    }
+
+    delete[] s;
+    delete[] q;
+    delete[] r;
+    delete[] p;
+}
+
+void Inversion::model_update()
+{
+    if (smooth_model_per_iteration)
+    {
+        int aux_nx = modeling->nx + 2*smoother_samples;
+        int aux_ny = modeling->ny + 2*smoother_samples;
+        int aux_nz = modeling->nz + 2*smoother_samples;
+
+        int aux_nPoints = aux_nx*aux_ny*aux_nz;
+
+        float * dm_aux = new float[aux_nPoints]();
+        float * dm_smooth = new float[aux_nPoints]();
+
+        # pragma omp parallel for
+        for (int index = 0; index < modeling->nPoints; index++)
+        {
+            int k = (int) (index / (modeling->nx*modeling->nz));         
+            int j = (int) (index - k*modeling->nx*modeling->nz) / modeling->nz;   
+            int i = (int) (index - j*modeling->nz - k*modeling->nx*modeling->nz); 
+
+            int ind_filt = (i + smoother_samples) + (j + smoother_samples)*aux_nz + (k + smoother_samples)*aux_nx*aux_nz;
+
+            dm_aux[ind_filt] = perturbation[i + j*modeling->nz + k*modeling->nx*modeling->nz];
+        }
+
+        smooth_volume(dm_aux, dm_smooth, aux_nx, aux_ny, aux_nz);
+
+        # pragma omp parallel for    
+        for (int index = 0; index < modeling->nPoints; index++)
+        {
+            int k = (int) (index / (modeling->nx*modeling->nz));         
+            int j = (int) (index - k*modeling->nx*modeling->nz) / modeling->nz;   
+            int i = (int) (index - j*modeling->nz - k*modeling->nx*modeling->nz); 
+
+            int ind_filt = (i + smoother_samples) + (j + smoother_samples)*aux_nz + (k + smoother_samples)*aux_nx*aux_nz;
+
+            perturbation[i + j*modeling->nz + k*modeling->nx*modeling->nz] = dm_smooth[ind_filt];
+        }
+    
+        delete[] dm_aux;
+        delete[] dm_smooth;
+    }   
+    
+    for (int index = 0; index < modeling->nPoints; index++)
+    {
+        int k = (int) (index / (modeling->nx*modeling->nz));         
+        int j = (int) (index - k*modeling->nx*modeling->nz) / modeling->nz;   
+        int i = (int) (index - j*modeling->nz - k*modeling->nx*modeling->nz); 
+
+        int indb = (i + modeling->nb) + (j + modeling->nb)*modeling->nzz + (k + modeling->nb)*modeling->nxx*modeling->nzz;
+
+        modeling->S[indb] += perturbation[index];
+        modeling->Vp[index] = 1.0f / modeling->S[indb];
+    }
+
+    if (write_model_per_iteration)
+    {
+        std::string model_iteration_path = estimated_model_folder + inversion_name + "model_iteration_" + std::to_string(iteration) + "_" + std::to_string(modeling->nz) + "x" + std::to_string(modeling->nx) + "x" + std::to_string(modeling->ny) + ".bin";
+
+        export_binary_float(model_iteration_path, modeling->Vp, modeling->nPoints);
+    }
+}
+
+void Inversion::smooth_volume(float * input, float * output, int nx, int ny, int nz)
+{
+    int nPoints = nx * ny * nz;
+    int nKernel = smoother_samples * smoother_samples * smoother_samples;
+
+    float * kernel = new float[nKernel]();
+
+    # pragma omp parallel for
+    for (int i = 0; i < nPoints; i++) 
+        output[i] = input[i];
+
+    int mid = (int)(smoother_samples / 2); 
+
+    kernel[mid + mid*smoother_samples + mid*smoother_samples*smoother_samples] = 1.0f;
+
+    if (smoother_stdv != 0.0f)
+    {
+        float sum = 0.0f;
+
+        for (int y = -mid; y <= mid; y++)
+        {
+            for (int x = -mid; x <= mid; x++)
+            {
+                for (int z = -mid; z <= mid; z++)
+                {          
+                    int index = (z + mid) + (x + mid)*smoother_samples + (y + mid)*smoother_samples*smoother_samples; 
                     
-//                     float r = sqrtf(x*x + y*y + z*z);
+                    float r = sqrtf(x*x + y*y + z*z);
 
-//                     kernel[index] = 1.0f / (M_PI*smoother_stdv) * expf(-((r*r)/(2.0f*smoother_stdv*smoother_stdv)));
+                    kernel[index] = 1.0f / (M_PI*smoother_stdv) * expf(-((r*r)/(2.0f*smoother_stdv*smoother_stdv)));
         
-//                     sum += kernel[index]; 
-//                 }
-//             }
-//         }
+                    sum += kernel[index]; 
+                }
+            }
+        }
 
-//         for (int i = 0; i < nKernel; i++) 
-//             kernel[i] /= sum;
-//     }
+        for (int i = 0; i < nKernel; i++) 
+            kernel[i] /= sum;
+    }
         
-//     for (int k = mid; k < ny - mid; k++)
-//     {   
-//         for (int j = mid; j < nx - mid; j++)
-//         {
-//             for (int i = mid; i < nz - mid; i++)
-//             {       
-//                 float accum = 0.0f;
+    for (int k = mid; k < ny - mid; k++)
+    {   
+        for (int j = mid; j < nx - mid; j++)
+        {
+            for (int i = mid; i < nz - mid; i++)
+            {       
+                float accum = 0.0f;
                 
-//                 for (int yk = 0; yk < smoother_samples; yk++)
-//                 {      
-//                     for (int xk = 0; xk < smoother_samples; xk++)
-//                     {      
-//                         for (int zk = 0; zk < smoother_samples; zk++)
-//                         {   
-//                             int index = zk + xk*smoother_samples + yk*smoother_samples*smoother_samples;   
-//                             int partial = (i - mid + zk) + (j - mid + xk)*nz + (k - mid + yk)*nx*nz; 
+                for (int yk = 0; yk < smoother_samples; yk++)
+                {      
+                    for (int xk = 0; xk < smoother_samples; xk++)
+                    {      
+                        for (int zk = 0; zk < smoother_samples; zk++)
+                        {   
+                            int index = zk + xk*smoother_samples + yk*smoother_samples*smoother_samples;   
+                            int partial = (i - mid + zk) + (j - mid + xk)*nz + (k - mid + yk)*nx*nz; 
 
-//                             accum += input[partial] * kernel[index];
-//                         }        
-//                     }
-//                 }
+                            accum += input[partial] * kernel[index];
+                        }        
+                    }
+                }
                 
-//                 output[i + j*nz + k*nx*nz] = accum;
-//             }
-//         }   
-//     }
+                output[i + j*nz + k*nx*nz] = accum;
+            }
+        }   
+    }
 
-//     delete[] kernel;
-// }
+    delete[] kernel;
+}
 
-// void Tomography::export_results()
-// {    
-//     std::string estimated_model_path = estimated_model_folder + inversion_name + "final_model_" + std::to_string(modeling->nz) + "x" + std::to_string(modeling->nx) + "x" + std::to_string(modeling->ny) + ".bin";
-//     std::string convergence_map_path = convergence_map_folder + inversion_name + "convergence_" + std::to_string(iteration) + "_iterations.txt"; 
+void Inversion::export_results()
+{    
+    std::string estimated_model_path = estimated_model_folder + inversion_name + "_final_model_" + std::to_string(modeling->nz) + "x" + std::to_string(modeling->nx) + ".bin";
+    std::string convergence_map_path = convergence_map_folder + inversion_name + "_convergence_" + std::to_string(iteration) + "_iterations.txt"; 
 
-//     export_binary_float(estimated_model_path, modeling->Vp, modeling->nPoints);
+    float * Vp = new float[modeling->nPoints]();
+    modeling->reduce_boundary(modeling->S, Vp);
 
-//     std::ofstream resFile(convergence_map_path, std::ios::out);
+    # pragma omp parallel for
+    for (int index = 0; index < modeling->nPoints; index++)
+        Vp[index] = 1.0f / Vp[index];
+
+    export_binary_float(estimated_model_path, Vp, modeling->nPoints);
+
+    std::ofstream resFile(convergence_map_path, std::ios::out);
     
-//     for (int r = 0; r < residuo.size(); r++) 
-//         resFile << residuo[r] << "\n";
+    for (int r = 0; r < residuo.size(); r++) 
+        resFile << residuo[r] << "\n";
 
-//     resFile.close();
+    resFile.close();
 
-//     std::cout << "Text file \033[34m" << convergence_map_path << "\033[0;0m was successfully written." << std::endl;
-// }
+    std::cout << "Text file \033[34m" << convergence_map_path << "\033[0;0m was successfully written." << std::endl;
+}

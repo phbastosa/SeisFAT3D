@@ -27,19 +27,9 @@ XPS = ../inputs/geometry/anisoTest_XPS.txt
 #---------------------------------------------------------------------------------------------------
 # [0] - Eikonal ISO
 # [1] - Eikonal ANI
-#
-# [2] - Elastic ISO
-# [3] - Elastic ANI
 # --------------------------------------------------------------------------------------------------
 
 modeling_type = 0
-
-time_samples = 1501
-time_spacing = 1e-3
-max_frequency = 50.0
-
-boundary_samples = 50
-boundary_damping = 0.0055
 
 modeling_output_folder = ../outputs/syntheticData/
 
@@ -61,8 +51,6 @@ smooth_per_iteration = true                 # <bool>
 gaussian_filter_stdv = 2.0                  # <float>
 gaussian_filter_samples = 5                 # [odd number] <int> 
 
-export_model_per_iteration = false          # <bool>
-
 convergence_folder = ../outputs/convergence/         
 inversion_output_folder = ../outputs/recoveredModels/    
 
@@ -75,8 +63,13 @@ obs_data_prefix = picks_input_shot_
 
 image_scale = 2                             # increase for resolution  
 
+max_offset = 4000                           # [m] <float>
+
 mig_aperture_x = 45                         # degrees <float>
 mig_aperture_y = 45                         # degrees <float>
+
+time_samples = 10001                        # <int>
+time_spacing = 5e-4                         # <float>
 
 input_data_folder = ../inputs/data/        
 input_data_prefix = seismic_input_shot_

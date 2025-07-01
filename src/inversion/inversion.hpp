@@ -1,46 +1,69 @@
 # ifndef INVERSION_HPP
 # define INVERSION_HPP
 
-# include "../modeling/modeling.cuh"
+# include "../modeling/eikonal_iso.cuh"
+# include "../modeling/eikonal_ani.cuh"
 
 class Inversion
 {
-protected:
+private:
 
-    int n_data, n_model, max_iteration;
+    int iteration;
+    int max_iteration;
+    int smoother_samples;
 
-    bool write_model_per_iteration;
-    bool smooth_model_per_iteration;
-    int iteration, smoother_samples;
     float smoother_stdv;
-
-    float * dcal = nullptr;
-    float * dobs = nullptr;
-
-    float * perturbation = nullptr;
-
-    Modeling * modeling;
-
-    std::vector<float> residuo;
-
-    std::string inversion_name;
-    std::string inversion_method;
 
     std::string obs_data_folder;
     std::string obs_data_prefix;
     std::string convergence_map_folder;
     std::string estimated_model_folder;
 
-    void set_forward_modeling();
-    void set_inversion_elements();
+    bool write_model_per_iteration;
+    bool smooth_model_per_iteration;
 
     void show_information();
     void concatenate_data();
+    void gradient_ray_tracing();
 
-    virtual void set_specifications() = 0;
-    virtual void apply_inversion_technique() = 0;
+    void solve_linear_system_lscg();
 
-    void smooth_volume(float * input, float * output, int nx, int ny, int nz);
+    void smooth_matrix(float * input, float * output, int nx, int nz);
+
+protected:
+
+    int n_data;
+    int n_model;
+
+    int tk_order;
+    float tk_param;
+
+    float * dcal = nullptr;
+    float * dobs = nullptr;
+
+    int M, N, NNZ;
+
+    int * iA = nullptr;
+    int * jA = nullptr;
+    float * vA = nullptr;
+    float * B = nullptr;
+    float * x = nullptr; 
+
+    std::vector< int > iG;
+    std::vector< int > jG;
+    std::vector<float> vG;
+
+    Modeling * modeling = nullptr;
+
+    std::vector<float> residuo;
+
+    std::string inversion_name;
+    std::string inversion_method;
+
+    virtual void set_modeling_type() = 0;
+    virtual void set_objective_function() = 0;
+    virtual void set_sensitivity_matrix() = 0;
+    virtual void set_regularization() = 0;
 
 public:
     
@@ -54,8 +77,7 @@ public:
     void forward_modeling();
     void check_convergence();
 
-    virtual void optimization() = 0;
-    
+    void optimization();
     void model_update();
 
     void export_results();
