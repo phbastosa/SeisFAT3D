@@ -2,25 +2,25 @@
 # Model paramenters --------------------------------------------------------------------------------
 #---------------------------------------------------------------------------------------------------
 
-x_samples = 101                            # <int>  
-y_samples = 101                            # <int>  
-z_samples = 101                            # <int>  
+x_samples = 201                            # <int>  
+y_samples = 201                            # <int>  
+z_samples = 51                             # <int>  
 
-x_spacing = 10.0                           # [m] <float> 
-y_spacing = 10.0                           # [m] <float> 
-z_spacing = 10.0                           # [m] <float> 
+x_spacing = 100.0                          # [m] <float> 
+y_spacing = 100.0                          # [m] <float> 
+z_spacing = 100.0                          # [m] <float> 
 
-vp_model_file = ../inputs/models/anisoTest_vp.bin   
+vp_model_file = ../inputs/models/anisoTomo_vp.bin   
 
-Cijkl_folder = ../inputs/models/anisoTest_
+Cijkl_folder = ../inputs/models/anisoTomo_
 
 #---------------------------------------------------------------------------------------------------
 # Geometry parameters ------------------------------------------------------------------------------
 #---------------------------------------------------------------------------------------------------
 
-SPS = ../inputs/geometry/anisoTest_SPS.txt              
-RPS = ../inputs/geometry/anisoTest_RPS.txt     
-XPS = ../inputs/geometry/anisoTest_XPS.txt     
+SPS = ../inputs/geometry/anisoTomo_SPS.txt              
+RPS = ../inputs/geometry/anisoTomo_RPS.txt     
+XPS = ../inputs/geometry/anisoTomo_XPS.txt     
 
 #---------------------------------------------------------------------------------------------------
 # Modeling parameters ------------------------------------------------------------------------------
@@ -29,23 +29,23 @@ XPS = ../inputs/geometry/anisoTest_XPS.txt
 # [1] - Eikonal ANI
 # --------------------------------------------------------------------------------------------------
 
-modeling_type = 0
+modeling_type = 1
 
-modeling_output_folder = ../outputs/syntheticData/
+modeling_output_folder = ../inputs/data/
 
 #---------------------------------------------------------------------------------------------------
 # Inversion parameters 
 #---------------------------------------------------------------------------------------------------
-#   [0] - Least-squares first-arrival tomography 
-#   [1] - Adjoint-state first-arrival tomography
+#   [0] - Tomography ISO
+#   [1] - Tomography ANI
 #---------------------------------------------------------------------------------------------------
 
-inversion_type = 1                          # <int> 
+inversion_type = 0                          # <int> 
 
 max_iteration = 5                           # <int>
 
-tk_order = 2                                # least-squares : Tikhonov order <int>
-tk_param = 1e4                              # least-squares : Tikhonov parameter <float>
+tk_order = 2                                # Tikhonov order <int>
+tk_param = 1e4                              # Tikhonov parameter <float>
 
 smooth_per_iteration = true                 # <bool>
 gaussian_filter_stdv = 2.0                  # <float>
@@ -55,7 +55,7 @@ convergence_folder = ../outputs/convergence/
 inversion_output_folder = ../outputs/recoveredModels/    
 
 obs_data_folder = ../inputs/data/        
-obs_data_prefix = picks_input_shot_    
+obs_data_prefix = eikonal_ani_nStations1506_shot_   
 
 #---------------------------------------------------------------------------------------------------
 # Migration parameters 
