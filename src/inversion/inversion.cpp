@@ -34,15 +34,15 @@ void Inversion::import_obsData()
 
     for (modeling->srcId = 0; modeling->srcId < modeling->geometry->nrel; modeling->srcId++)
     {
-        float * data = new float[modeling->geometry->spread[modeling->srcId]]();
+        float * data = new float[modeling->max_spread]();
 
         std::string path = obs_data_folder + obs_data_prefix + std::to_string(modeling->geometry->sInd[modeling->srcId]+1) + ".bin";
 
-        import_binary_float(path, data, modeling->geometry->spread[modeling->srcId]);
+        import_binary_float(path, data, modeling->max_spread);
 
-        int skipped = modeling->srcId * modeling->geometry->spread[modeling->srcId];    
+        int skipped = modeling->srcId * modeling->max_spread;    
         
-        for (int i = 0; i < modeling->geometry->spread[modeling->srcId]; i++) 
+        for (int i = 0; i < modeling->max_spread; i++) 
             dobs[i + skipped] = data[i];
 
         delete[] data;
@@ -86,9 +86,9 @@ void Inversion::concatenate_data()
 {
     modeling->compute_seismogram();
 
-    int skipped = modeling->srcId * modeling->geometry->spread[modeling->srcId];
+    int skipped = modeling->srcId * modeling->max_spread;
 
-    for (int i = 0; i < modeling->geometry->spread[modeling->srcId]; i++) 
+    for (int i = 0; i < modeling->max_spread; i++) 
         dcal[i + skipped] = modeling->seismogram[i];    
 }
 
@@ -110,13 +110,17 @@ void Inversion::gradient_ray_tracing()
         float yi = modeling->geometry->yrec[ray_id];        
         float zi = modeling->geometry->zrec[ray_id];
 
-        if ((sz == zi) && (sx == xi) && (sy == zi)) continue;        
+        if ((modeling->sz == zi) && (modeling->sx == xi) && (modeling->sy == zi)) continue;        
 
         while (true)
         {
-            float dTz = (modeling->T[(i+1) + j*modeling->nzz + k*modeling->nxx*modeling->nzz] - modeling->T[(i-1) + j*modeling->nzz + k*modeling->nxx*modeling->nzz]) / (2.0f*modeling->dz);    
-            float dTx = (modeling->T[i + (j+1)*modeling->nzz + k*modeling->nxx*modeling->nzz] - modeling->T[i + (j-1)*modeling->nzz + k*modeling->nxx*modeling->nzz]) / (2.0f*modeling->dx);    
-            float dTy = (modeling->T[i + j*modeling->nzz + (k+1)*modeling->nxx*modeling->nzz] - modeling->T[i + j*modeling->nzz + (k-1)*modeling->nxx*modeling->nzz]) / (2.0f*modeling->dy);    
+            int k = (int)((yi + 0.5f*modeling->dy) / modeling->dy) + modeling->nb; 
+            int j = (int)((xi + 0.5f*modeling->dx) / modeling->dx) + modeling->nb; 
+            int i = (int)((zi + 0.5f*modeling->dz) / modeling->dz) + modeling->nb; 
+
+            float dTz = 0.5f*(modeling->T[(i+1) + j*modeling->nzz + k*modeling->nxx*modeling->nzz] - modeling->T[(i-1) + j*modeling->nzz + k*modeling->nxx*modeling->nzz]) / modeling->dz;    
+            float dTx = 0.5f*(modeling->T[i + (j+1)*modeling->nzz + k*modeling->nxx*modeling->nzz] - modeling->T[i + (j-1)*modeling->nzz + k*modeling->nxx*modeling->nzz]) / modeling->dx;    
+            float dTy = 0.5f*(modeling->T[i + j*modeling->nzz + (k+1)*modeling->nxx*modeling->nzz] - modeling->T[i + j*modeling->nzz + (k-1)*modeling->nxx*modeling->nzz]) / modeling->dy;    
 
             float norm = sqrtf(dTx*dTx + dTy*dTy + dTz*dTz);
 
@@ -129,7 +133,7 @@ void Inversion::gradient_ray_tracing()
             int im = (int)((zi + 0.5f*modeling->dz) / modeling->dz); 
             
             int index = im + jm*modeling->nz + km*modeling->nx*modeling->nz;
-            
+
             ray_index.push_back(index);
 
             if (ray_index.back() == sId) break;
@@ -307,7 +311,7 @@ void Inversion::model_update()
 
             int ind_filt = (i + smoother_samples) + (j + smoother_samples)*aux_nz + (k + smoother_samples)*aux_nx*aux_nz;
 
-            dm_aux[ind_filt] = perturbation[i + j*modeling->nz + k*modeling->nx*modeling->nz];
+            dm_aux[ind_filt] = x[i + j*modeling->nz + k*modeling->nx*modeling->nz];
         }
 
         smooth_volume(dm_aux, dm_smooth, aux_nx, aux_ny, aux_nz);
@@ -321,7 +325,7 @@ void Inversion::model_update()
 
             int ind_filt = (i + smoother_samples) + (j + smoother_samples)*aux_nz + (k + smoother_samples)*aux_nx*aux_nz;
 
-            perturbation[i + j*modeling->nz + k*modeling->nx*modeling->nz] = dm_smooth[ind_filt];
+            x[i + j*modeling->nz + k*modeling->nx*modeling->nz] = dm_smooth[ind_filt];
         }
     
         delete[] dm_aux;
@@ -336,16 +340,10 @@ void Inversion::model_update()
 
         int indb = (i + modeling->nb) + (j + modeling->nb)*modeling->nzz + (k + modeling->nb)*modeling->nxx*modeling->nzz;
 
-        modeling->S[indb] += perturbation[index];
-        modeling->Vp[index] = 1.0f / modeling->S[indb];
+        modeling->S[indb] += x[index];
     }
 
-    if (write_model_per_iteration)
-    {
-        std::string model_iteration_path = estimated_model_folder + inversion_name + "model_iteration_" + std::to_string(iteration) + "_" + std::to_string(modeling->nz) + "x" + std::to_string(modeling->nx) + "x" + std::to_string(modeling->ny) + ".bin";
-
-        export_binary_float(model_iteration_path, modeling->Vp, modeling->nPoints);
-    }
+    modeling->copy_slowness_to_device();
 }
 
 void Inversion::smooth_volume(float * input, float * output, int nx, int ny, int nz)
@@ -420,7 +418,7 @@ void Inversion::smooth_volume(float * input, float * output, int nx, int ny, int
 
 void Inversion::export_results()
 {    
-    std::string estimated_model_path = estimated_model_folder + inversion_name + "_final_model_" + std::to_string(modeling->nz) + "x" + std::to_string(modeling->nx) + ".bin";
+    std::string estimated_model_path = estimated_model_folder + inversion_name + "_final_model_" + std::to_string(modeling->nz) + "x" + std::to_string(modeling->nx) + "x" + std::to_string(modeling->ny) + ".bin";
     std::string convergence_map_path = convergence_map_folder + inversion_name + "_convergence_" + std::to_string(iteration) + "_iterations.txt"; 
 
     float * Vp = new float[modeling->nPoints]();

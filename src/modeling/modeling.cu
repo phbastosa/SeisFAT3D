@@ -114,7 +114,7 @@ void Modeling::set_eikonal()
 void Modeling::set_shot_point()
 {
     sx = geometry->xsrc[geometry->sInd[srcId]]; 
-    sz = geometry->zsrc[geometry->sInd[srcId]]; 
+    sy = geometry->ysrc[geometry->sInd[srcId]]; 
     sz = geometry->zsrc[geometry->sInd[srcId]]; 
 }
 
@@ -188,21 +188,21 @@ void Modeling::compute_seismogram()
         float y = geometry->yrec[recId];
         float z = geometry->zrec[recId];
 
-        float x0 = floorf((x + 0.5f*dx) / dx) * dx;
-        float y0 = floorf((y + 0.5f*dy) / dy) * dy;
-        float z0 = floorf((z + 0.5f*dz) / dz) * dz;
+        float x0 = floorf(x / dx) * dx;
+        float y0 = floorf(y / dy) * dy;
+        float z0 = floorf(z / dz) * dz;
 
-        float x1 = floorf((x + 0.5f*dx) / dx) * dx + dx;
-        float y1 = floorf((y + 0.5f*dy) / dy) * dy + dy;
-        float z1 = floorf((z + 0.5f*dz) / dz) * dz + dz;
+        float x1 = floorf(x / dx) * dx + dx;
+        float y1 = floorf(y / dy) * dy + dy;
+        float z1 = floorf(z / dz) * dz + dz;
 
         float xd = (x - x0) / (x1 - x0);
         float yd = (y - y0) / (y1 - y0);
         float zd = (z - z0) / (z1 - z0);
 
-        int i = (int)((z + 0.5f*dz) / dz) + nb; 
-        int j = (int)((x + 0.5f*dx) / dx) + nb;   
-        int k = (int)((y + 0.5f*dy) / dy) + nb;         
+        int i = (int)(z / dz) + nb; 
+        int j = (int)(x / dx) + nb;   
+        int k = (int)(y / dy) + nb;         
 
         for (int pIdx = 0; pIdx < 4; pIdx++)
         {
@@ -357,7 +357,7 @@ int Modeling::iDivUp(int a, int b)
 
 void Modeling::copy_slowness_to_device()
 {
-    cudaMemcpy(d_S, S, matsize * sizeof(float), cudaMemcpyHostToDevice);
+    cudaMemcpy(d_S, S, volsize * sizeof(float), cudaMemcpyHostToDevice);
 }
 
 __global__ void time_set(float * T, int volsize)

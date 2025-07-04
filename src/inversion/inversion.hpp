@@ -28,7 +28,7 @@ private:
 
     void solve_linear_system_lscg();
 
-    void smooth_matrix(float * input, float * output, int nx, int nz);
+    void smooth_volume(float * input, float * output, int nx, int ny, int nz);
 
 protected:
 

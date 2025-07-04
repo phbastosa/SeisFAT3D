@@ -47,6 +47,8 @@ public:
     int nx, ny, nz, nb, nPoints;
     int srcId, recId, sIdx, sIdy, sIdz;
 
+    float sx, sy, sz;
+
     float * S = nullptr;
     float * T = nullptr;
 
