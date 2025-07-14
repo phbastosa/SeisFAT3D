@@ -44,8 +44,8 @@ dvp = np.array([500, -500, -500, 500])
 dvs = np.array([300, -300, -300, 300])
 dro = np.array([ 50,  -50,  -50,  50])
 
-dE1 = np.array([ 0.1,  0,  0,  0])
-dE2 = np.array([ 0.1,  0,  0,  0])
+dE1 = np.array([ 0.0,  0,  0,  0])
+dE2 = np.array([ 0.0,  0,  0,  0])
 
 dD1 = np.array([ 0,  0,  0,  0])
 dD2 = np.array([ 0,  0,  0,  0])

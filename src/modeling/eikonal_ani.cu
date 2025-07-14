@@ -1,225 +1,53 @@
 # include "eikonal_ani.cuh"
 
+void Eikonal_ANI::set_stiffness_element(std::string element, uintc * dCij, float &max, float &min)
+{   
+    std::string Cijkl_folder = catch_parameter("Cijkl_folder", parameters);
+
+    auto * Cij = new float[volsize]();
+    auto * uCij = new uintc[volsize]();
+    auto * Caux = new float[nPoints]();
+    import_binary_float(Cijkl_folder + element + ".bin", Caux, nPoints);
+    expand_boundary(Caux, Cij);
+    compression(Cij, uCij, volsize, max, min);        
+    cudaMalloc((void**)&(dCij), volsize*sizeof(uintc));
+    cudaMemcpy(dCij, uCij, volsize*sizeof(uintc), cudaMemcpyHostToDevice);
+    delete[] Cij;
+    delete[] uCij;
+    delete[] Caux;
+}
+
 void Eikonal_ANI::set_conditions()
 {
     modeling_type = "eikonal_ani";
     modeling_name = "Modeling type: Anisotropic eikonal solver";
 
-    auto * Cij = new float[nPoints]();
+    set_stiffness_element("C11", d_C11, maxC11, minC11);
+    set_stiffness_element("C12", d_C12, maxC12, minC12);
+    set_stiffness_element("C13", d_C13, maxC13, minC13);
+    set_stiffness_element("C14", d_C14, maxC14, minC14);
+    set_stiffness_element("C15", d_C15, maxC15, minC15);
+    set_stiffness_element("C16", d_C16, maxC16, minC16);
 
-    std::string Cijkl_folder = catch_parameter("Cijkl_folder", parameters);
+    set_stiffness_element("C22", d_C22, maxC22, minC22);
+    set_stiffness_element("C23", d_C23, maxC23, minC23);
+    set_stiffness_element("C24", d_C24, maxC24, minC24);
+    set_stiffness_element("C25", d_C25, maxC25, minC25);
+    set_stiffness_element("C26", d_C26, maxC26, minC26);
 
-    auto * C11 = new float[volsize]();
-    auto * uC11 = new uintc[volsize]();
-    import_binary_float(Cijkl_folder + "C11.bin", Cij, nPoints);
-    expand_boundary(Cij, C11);
-    compression(C11, uC11, volsize, maxC11, minC11);        
-    cudaMalloc((void**)&(d_C11), volsize*sizeof(uintc));
-    cudaMemcpy(d_C11, uC11, volsize*sizeof(uintc), cudaMemcpyHostToDevice);
-    delete[] C11;
-    delete[] uC11;
+    set_stiffness_element("C33", d_C33, maxC33, minC33);
+    set_stiffness_element("C34", d_C34, maxC34, minC34);
+    set_stiffness_element("C35", d_C35, maxC35, minC35);
+    set_stiffness_element("C36", d_C36, maxC36, minC36);
 
-    auto * C12 = new float[volsize]();
-    auto * uC12 = new uintc[volsize]();
-    import_binary_float(Cijkl_folder + "C12.bin", Cij, nPoints);
-    expand_boundary(Cij, C12);
-    compression(C12, uC12, volsize, maxC12, minC12);        
-    cudaMalloc((void**)&(d_C12), volsize*sizeof(uintc));
-    cudaMemcpy(d_C12, uC12, volsize*sizeof(uintc), cudaMemcpyHostToDevice);
-    delete[] C12;
-    delete[] uC12;
+    set_stiffness_element("C44", d_C44, maxC44, minC44);
+    set_stiffness_element("C45", d_C45, maxC45, minC45);
+    set_stiffness_element("C46", d_C46, maxC46, minC46);
 
-    auto * C13 = new float[volsize]();
-    auto * uC13 = new uintc[volsize]();
-    import_binary_float(Cijkl_folder + "C13.bin", Cij, nPoints);
-    expand_boundary(Cij, C13);
-    compression(C13, uC13, volsize, maxC13, minC13);    
-    cudaMalloc((void**)&(d_C13), volsize*sizeof(uintc));
-    cudaMemcpy(d_C13, uC13, volsize*sizeof(uintc), cudaMemcpyHostToDevice);
-    delete[] C13;
-    delete[] uC13;
+    set_stiffness_element("C55", d_C55, maxC55, minC55);
+    set_stiffness_element("C56", d_C56, maxC56, minC56);
 
-    auto * C14 = new float[volsize]();
-    auto * uC14 = new uintc[volsize]();
-    import_binary_float(Cijkl_folder + "C14.bin", Cij, nPoints);
-    expand_boundary(Cij, C14);
-    compression(C14, uC14, volsize, maxC14, minC14);    
-    cudaMalloc((void**)&(d_C14), volsize*sizeof(uintc));
-    cudaMemcpy(d_C14, uC14, volsize*sizeof(uintc), cudaMemcpyHostToDevice);
-    delete[] C14;
-    delete[] uC14;
-
-    auto * C15 = new float[volsize]();
-    auto * uC15 = new uintc[volsize]();
-    import_binary_float(Cijkl_folder + "C15.bin", Cij, nPoints);
-    expand_boundary(Cij, C15);
-    compression(C15, uC15, volsize, maxC15, minC15);    
-    cudaMalloc((void**)&(d_C15), volsize*sizeof(uintc));
-    cudaMemcpy(d_C15, uC15, volsize*sizeof(uintc), cudaMemcpyHostToDevice);
-    delete[] C15;
-    delete[] uC15;
-
-    auto * C16 = new float[volsize]();
-    auto * uC16 = new uintc[volsize]();
-    import_binary_float(Cijkl_folder + "C16.bin", Cij, nPoints);
-    expand_boundary(Cij, C16);
-    compression(C16, uC16, volsize, maxC16, minC16);    
-    cudaMalloc((void**)&(d_C16), volsize*sizeof(uintc));
-    cudaMemcpy(d_C16, uC16, volsize*sizeof(uintc), cudaMemcpyHostToDevice);
-    delete[] C16;
-    delete[] uC16;
-
-    auto * C22 = new float[volsize]();
-    auto * uC22 = new uintc[volsize]();
-    import_binary_float(Cijkl_folder + "C22.bin", Cij, nPoints);
-    expand_boundary(Cij, C22);
-    compression(C22, uC22, volsize, maxC22, minC22);    
-    cudaMalloc((void**)&(d_C22), volsize*sizeof(uintc));
-    cudaMemcpy(d_C22, uC22, volsize*sizeof(uintc), cudaMemcpyHostToDevice);
-    delete[] C22;
-    delete[] uC22;
-
-    auto * C23 = new float[volsize]();
-    auto * uC23 = new uintc[volsize]();
-    import_binary_float(Cijkl_folder + "C23.bin", Cij, nPoints);
-    expand_boundary(Cij, C23);
-    compression(C23, uC23, volsize, maxC23, minC23);    
-    cudaMalloc((void**)&(d_C23), volsize*sizeof(uintc));
-    cudaMemcpy(d_C23, uC23, volsize*sizeof(uintc), cudaMemcpyHostToDevice);
-    delete[] C23;
-    delete[] uC23;
-    
-    auto * C24 = new float[volsize]();
-    auto * uC24 = new uintc[volsize]();
-    import_binary_float(Cijkl_folder + "C24.bin", Cij, nPoints);
-    expand_boundary(Cij, C24);
-    compression(C24, uC24, volsize, maxC24, minC24);    
-    cudaMalloc((void**)&(d_C24), volsize*sizeof(uintc));
-    cudaMemcpy(d_C24, uC24, volsize*sizeof(uintc), cudaMemcpyHostToDevice);
-    delete[] C24;
-    delete[] uC24;
-
-    auto * C25 = new float[volsize]();
-    auto * uC25 = new uintc[volsize]();
-    import_binary_float(Cijkl_folder + "C25.bin", Cij, nPoints);
-    expand_boundary(Cij, C25);
-    compression(C25, uC25, volsize, maxC25, minC25);    
-    cudaMalloc((void**)&(d_C25), volsize*sizeof(uintc));
-    cudaMemcpy(d_C25, uC25, volsize*sizeof(uintc), cudaMemcpyHostToDevice);
-    delete[] C25;
-    delete[] uC25;
-
-    auto * C26 = new float[volsize]();
-    auto * uC26 = new uintc[volsize]();
-    import_binary_float(Cijkl_folder + "C26.bin", Cij, nPoints);
-    expand_boundary(Cij, C26);
-    compression(C26, uC26, volsize, maxC26, minC26);    
-    cudaMalloc((void**)&(d_C26), volsize*sizeof(uintc));
-    cudaMemcpy(d_C26, uC26, volsize*sizeof(uintc), cudaMemcpyHostToDevice);
-    delete[] C26;
-    delete[] uC26;
-
-    auto * C33 = new float[volsize]();
-    auto * uC33 = new uintc[volsize]();
-    import_binary_float(Cijkl_folder + "C33.bin", Cij, nPoints);
-    expand_boundary(Cij, C33);
-    compression(C33, uC33, volsize, maxC33, minC33);    
-    cudaMalloc((void**)&(d_C33), volsize*sizeof(uintc));
-    cudaMemcpy(d_C33, uC33, volsize*sizeof(uintc), cudaMemcpyHostToDevice);
-    delete[] C33;
-    delete[] uC33;
-    
-    auto * C34 = new float[volsize]();
-    auto * uC34 = new uintc[volsize]();
-    import_binary_float(Cijkl_folder + "C34.bin", Cij, nPoints);
-    expand_boundary(Cij, C34);
-    compression(C34, uC34, volsize, maxC34, minC34);    
-    cudaMalloc((void**)&(d_C34), volsize*sizeof(uintc));
-    cudaMemcpy(d_C34, uC34, volsize*sizeof(uintc), cudaMemcpyHostToDevice);
-    delete[] C34;
-    delete[] uC34;
-
-    auto * C35 = new float[volsize]();
-    auto * uC35 = new uintc[volsize]();
-    import_binary_float(Cijkl_folder + "C35.bin", Cij, nPoints);
-    expand_boundary(Cij, C35);
-    compression(C35, uC35, volsize, maxC35, minC35);    
-    cudaMalloc((void**)&(d_C35), volsize*sizeof(uintc));
-    cudaMemcpy(d_C35, uC35, volsize*sizeof(uintc), cudaMemcpyHostToDevice);
-    delete[] C35;
-    delete[] uC35;
-
-    auto * C36 = new float[volsize]();
-    auto * uC36 = new uintc[volsize]();
-    import_binary_float(Cijkl_folder + "C36.bin", Cij, nPoints);
-    expand_boundary(Cij, C36);
-    compression(C36, uC36, volsize, maxC36, minC36);    
-    cudaMalloc((void**)&(d_C36), volsize*sizeof(uintc));
-    cudaMemcpy(d_C36, uC36, volsize*sizeof(uintc), cudaMemcpyHostToDevice);
-    delete[] C36;
-    delete[] uC36;
-
-    auto * C44 = new float[volsize]();
-    auto * uC44 = new uintc[volsize]();
-    import_binary_float(Cijkl_folder + "C44.bin", Cij, nPoints);
-    expand_boundary(Cij, C44);
-    compression(C44, uC44, volsize, maxC44, minC44);    
-    cudaMalloc((void**)&(d_C44), volsize*sizeof(uintc));
-    cudaMemcpy(d_C44, uC44, volsize*sizeof(uintc), cudaMemcpyHostToDevice);
-    delete[] C44;
-    delete[] uC44;
-
-    auto * C45 = new float[volsize]();
-    auto * uC45 = new uintc[volsize]();
-    import_binary_float(Cijkl_folder + "C45.bin", Cij, nPoints);
-    expand_boundary(Cij, C45);
-    compression(C45, uC45, volsize, maxC45, minC45);    
-    cudaMalloc((void**)&(d_C45), volsize*sizeof(uintc));
-    cudaMemcpy(d_C45, uC45, volsize*sizeof(uintc), cudaMemcpyHostToDevice);
-    delete[] C45;
-    delete[] uC45;
-
-    auto * C46 = new float[volsize]();
-    auto * uC46 = new uintc[volsize]();
-    import_binary_float(Cijkl_folder + "C46.bin", Cij, nPoints);
-    expand_boundary(Cij, C46);
-    compression(C46, uC46, volsize, maxC46, minC46);    
-    cudaMalloc((void**)&(d_C46), volsize*sizeof(uintc));
-    cudaMemcpy(d_C46, uC46, volsize*sizeof(uintc), cudaMemcpyHostToDevice);
-    delete[] C46;
-    delete[] uC46;
-
-    auto * C55 = new float[volsize]();
-    auto * uC55 = new uintc[volsize]();
-    import_binary_float(Cijkl_folder + "C55.bin", Cij, nPoints);
-    expand_boundary(Cij, C55);
-    compression(C55, uC55, volsize, maxC55, minC55);    
-    cudaMalloc((void**)&(d_C55), volsize*sizeof(uintc));
-    cudaMemcpy(d_C55, uC55, volsize*sizeof(uintc), cudaMemcpyHostToDevice);
-    delete[] C55;
-    delete[] uC55;
-
-    auto * C56 = new float[volsize]();
-    auto * uC56 = new uintc[volsize]();
-    import_binary_float(Cijkl_folder + "C56.bin", Cij, nPoints);
-    expand_boundary(Cij, C56);
-    compression(C56, uC56, volsize, maxC56, minC56);    
-    cudaMalloc((void**)&(d_C56), volsize*sizeof(uintc));
-    cudaMemcpy(d_C56, uC56, volsize*sizeof(uintc), cudaMemcpyHostToDevice);
-    delete[] C56;
-    delete[] uC56;
-
-    auto * C66 = new float[volsize]();
-    auto * uC66 = new uintc[volsize]();
-    import_binary_float(Cijkl_folder + "C66.bin", Cij, nPoints);
-    expand_boundary(Cij, C66);
-    compression(C66, uC66, volsize, maxC66, minC66);    
-    cudaMalloc((void**)&(d_C66), volsize*sizeof(uintc));
-    cudaMemcpy(d_C66, uC66, volsize*sizeof(uintc), cudaMemcpyHostToDevice);
-    delete[] C66;
-    delete[] uC66;
-
-    delete[] Cij;
+    set_stiffness_element("C66", d_C66, maxC66, minC66);
 }
 
 void Eikonal_ANI::time_propagation()
@@ -241,6 +69,20 @@ void Eikonal_ANI::time_propagation()
     eikonal_solver();
 
     copy_slowness_to_device();
+}
+
+void Eikonal_ANI::get_stiffness_VTI(float * E, float * D)
+{
+ 
+
+
+}
+
+void Eikonal_ANI::set_stiffness_VTI(float * E, float * D)
+{
+
+
+    
 }
 
 __global__ void get_quasi_slowness(float * T, float * S, float dx, float dy, float dz, int sIdx, int sIdy, int sIdz, int nxx, int nyy, int nzz, int nb,

@@ -39,6 +39,11 @@ private:
 public:
 
     void time_propagation();
+
+    void set_stiffness_VTI(float * E, float * D);
+    void get_stiffness_VTI(float * E, float * D);
+
+    void set_stiffness_element(std::string element, uintc * dCij, float &max, float &min);
 };
 
 __global__ void get_quasi_slowness(float * T, float * S, float dx, float dy, float dz, int sIdx, int sIdy, int sIdz, int nxx, int nyy, int nzz, int nb, 

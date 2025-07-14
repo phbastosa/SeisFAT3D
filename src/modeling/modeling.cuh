@@ -33,6 +33,9 @@ protected:
     float dx2i, dy2i, dz2i, dsum;
     float dz2dx2, dz2dy2, dx2dy2;
 
+    float * d_T = nullptr;
+    float * d_S = nullptr;
+
     int * d_sgnv = nullptr;
     int * d_sgnt = nullptr;
 
@@ -51,9 +54,6 @@ public:
 
     float * S = nullptr;
     float * T = nullptr;
-
-    float * d_T = nullptr;
-    float * d_S = nullptr;
 
     float * seismogram = nullptr;
 

@@ -19,15 +19,12 @@ void Inversion::set_parameters()
     smooth_model_per_iteration = str2bool(catch_parameter("smooth_per_iteration", parameters));
 
     set_modeling_type();
-
-    n_model = modeling->nPoints;
-
-    x = new float[n_model]();
 }
 
 void Inversion::import_obsData()
 {
     n_data = modeling->max_spread * modeling->geometry->nrel;
+    n_model = modeling->nPoints;
 
     dcal = new float[n_data]();
     dobs = new float[n_data]();
@@ -47,6 +44,9 @@ void Inversion::import_obsData()
 
         delete[] data;
     }
+
+    W = new float[n_data]();
+    R = new float[n_model]();
 }
 
 void Inversion::forward_modeling()
@@ -186,7 +186,12 @@ void Inversion::gradient_ray_tracing()
 
 void Inversion::check_convergence()
 {
-    set_objective_function();
+    float square_difference = 0.0f;
+    
+    for (int i = 0; i < n_data; i++)
+        square_difference += powf(dobs[i] - dcal[i], 2.0f);
+    
+    residuo.push_back(sqrtf(square_difference));
 
     if ((iteration >= max_iteration))
     {
@@ -202,16 +207,66 @@ void Inversion::check_convergence()
 
 void Inversion::optimization()
 {
-    set_sensitivity_matrix();
-    
-    set_regularization();
-    
-    solve_linear_system_lscg();
+    set_regularization_matrix();
 
-    delete[] iA;
-    delete[] jA;
-    delete[] vA;
-    delete[] B;
+    set_sensitivity_matrix();
+        
+    solve_linear_system_lscg();
+}
+
+void Inversion::set_regularization_matrix()
+{
+    int elements = tk_order + 1;
+		
+    int n = n_model - tk_order;
+    int nnz = (tk_order + 1) * (n_model - tk_order);	
+    
+    iR = new int[nnz]();
+    jR = new int[nnz]();
+    vR = new float[nnz]();
+
+    if (tk_order <= 0)
+    {
+	    for (int index = 0; index < nnz; index++)
+        {
+            iR[index] = index;
+	        jR[index] = index;
+	        vR[index] = 1.0f;
+	    }
+    } 
+    else
+    {
+        int * df = new int[elements]();	
+        int * df1 = new int[elements + 1]();
+        int * df2 = new int[elements + 1]();
+        
+        df[0] = -1; df[1] = 1;
+        
+        for (int index = 1; index < tk_order; index++)
+        {
+            for (int k = 0; k < elements; k++)
+            {
+                df2[k] = df[k];
+                df1[k + 1] = df[k];
+
+                df[k] = df1[k] - df2[k]; 
+            }		 
+        }
+        
+        for (int index = 0; index < n; index++)
+        {
+            for (int k = 0; k < elements; k++)
+            {
+                iR[elements*index + k] = index;	
+                jR[elements*index + k] = index + k;
+                vR[elements*index + k] = df[k];
+            }	
+        }
+
+        delete[] df;
+        delete[] df1;
+        delete[] df2;
+    }
 }
 
 void Inversion::solve_linear_system_lscg()
@@ -283,13 +338,21 @@ void Inversion::solve_linear_system_lscg()
             q[iA[k]] += vA[k] * p[jA[k]];      
     }
 
+    get_parameter_variation();
+
     delete[] s;
     delete[] q;
     delete[] r;
     delete[] p;
+
+    delete[] iA;
+    delete[] jA;
+    delete[] vA;
+    delete[] B;
+    delete[] x;
 }
 
-void Inversion::model_update()
+void Inversion::model_smoothing(float * model)
 {
     if (smooth_model_per_iteration)
     {
@@ -298,10 +361,7 @@ void Inversion::model_update()
         int aux_nz = modeling->nz + 2*smoother_samples;
 
         int aux_nPoints = aux_nx*aux_ny*aux_nz;
-
-        float * dm_aux = new float[aux_nPoints]();
-        float * dm_smooth = new float[aux_nPoints]();
-
+    
         # pragma omp parallel for
         for (int index = 0; index < modeling->nPoints; index++)
         {
@@ -311,11 +371,11 @@ void Inversion::model_update()
 
             int ind_filt = (i + smoother_samples) + (j + smoother_samples)*aux_nz + (k + smoother_samples)*aux_nx*aux_nz;
 
-            dm_aux[ind_filt] = x[i + j*modeling->nz + k*modeling->nx*modeling->nz];
+            dm_aux[ind_filt] = model[i + j*modeling->nz + k*modeling->nx*modeling->nz];
         }
-
+    
         smooth_volume(dm_aux, dm_smooth, aux_nx, aux_ny, aux_nz);
-
+    
         # pragma omp parallel for    
         for (int index = 0; index < modeling->nPoints; index++)
         {
@@ -325,26 +385,13 @@ void Inversion::model_update()
 
             int ind_filt = (i + smoother_samples) + (j + smoother_samples)*aux_nz + (k + smoother_samples)*aux_nx*aux_nz;
 
-            x[i + j*modeling->nz + k*modeling->nx*modeling->nz] = dm_smooth[ind_filt];
+            model[i + j*modeling->nz + k*modeling->nx*modeling->nz] = dm_smooth[ind_filt];
         }
-    
+      
         delete[] dm_aux;
         delete[] dm_smooth;
-    }   
-    
-    for (int index = 0; index < modeling->nPoints; index++)
-    {
-        int k = (int) (index / (modeling->nx*modeling->nz));         
-        int j = (int) (index - k*modeling->nx*modeling->nz) / modeling->nz;   
-        int i = (int) (index - j*modeling->nz - k*modeling->nx*modeling->nz); 
-
-        int indb = (i + modeling->nb) + (j + modeling->nb)*modeling->nzz + (k + modeling->nb)*modeling->nxx*modeling->nzz;
-
-        modeling->S[indb] += x[index];
     }
-
-    modeling->copy_slowness_to_device();
-}
+}        
 
 void Inversion::smooth_volume(float * input, float * output, int nx, int ny, int nz)
 {
@@ -419,16 +466,8 @@ void Inversion::smooth_volume(float * input, float * output, int nx, int ny, int
 void Inversion::export_results()
 {    
     std::string estimated_model_path = estimated_model_folder + inversion_name + "_final_model_" + std::to_string(modeling->nz) + "x" + std::to_string(modeling->nx) + "x" + std::to_string(modeling->ny) + ".bin";
-    std::string convergence_map_path = convergence_map_folder + inversion_name + "_convergence_" + std::to_string(iteration) + "_iterations.txt"; 
 
-    float * Vp = new float[modeling->nPoints]();
-    modeling->reduce_boundary(modeling->S, Vp);
-
-    # pragma omp parallel for
-    for (int index = 0; index < modeling->nPoints; index++)
-        Vp[index] = 1.0f / Vp[index];
-
-    export_binary_float(estimated_model_path, Vp, modeling->nPoints);
+    export_estimated_models();
 
     std::ofstream resFile(convergence_map_path, std::ios::out);
     
