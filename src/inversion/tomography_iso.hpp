@@ -5,10 +5,16 @@
 
 class Tomography_ISO : public Inversion
 {
+private:
+
     void set_modeling_type();
-    void set_objective_function();
     void set_sensitivity_matrix();
-    void set_regularization();
+    void get_parameter_variation();
+    void export_estimated_models();    
+
+public:
+
+    void model_update();
 };
 
 # endif

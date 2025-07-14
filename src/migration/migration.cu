@@ -92,9 +92,9 @@ void Migration::show_information()
 
 void Migration::export_receiver_eikonal()
 {
-    cudaMemcpy(modeling->T, modeling->d_T, modeling->volsize*sizeof(float), cudaMemcpyDeviceToHost);
+    copy_eikonalT_to_host();
 
-    export_binary_float(output_table_folder + "traveltimes_receiver_" + std::to_string(modeling->recId+1) + ".bin", Tr, modeling->nPoints);    
+    export_binary_float(output_table_folder + "traveltimes_receiver_" + std::to_string(modeling->recId+1) + ".bin", modeling->T, modeling->nPoints);    
 }
 
 void Migration::run_cross_correlation()
@@ -127,7 +127,7 @@ void Migration::run_cross_correlation()
             {
                 import_binary_float(output_table_folder + "eikonal_receiver_" + std::to_string(modeling->recId+1) + ".bin", modeling->T, modeling->volsize);
             
-                cudaMemcpy(d_Tr, Tr, modeling->nPoints*sizeof(float), cudaMemcpyHostToDevice);
+                cudaMemcpy(d_Tr, modeling->T, modeling->volsize*sizeof(float), cudaMemcpyHostToDevice);
 
                 cross_correlation<<<nBlocks, nThreads>>>(d_Ts, d_Tr, d_image, d_seismic, aperture_x, aperture_y, cmp_x, cmp_y, spread, 
                                                         nx, ny, nz, dx, dy, dz, modeling->nx, modeling->ny, modeling->nz, modeling->dx, 

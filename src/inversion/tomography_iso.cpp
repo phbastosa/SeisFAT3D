@@ -8,107 +8,101 @@ void Tomography_ISO::set_modeling_type()
 
     inversion_name = "tomography_iso";
     inversion_method = "Isotropic First-Arrival Tomography";
-}
 
-void Tomography_ISO::set_objective_function()
-{
-    float square_difference = 0.0f;
-    
-    for (int i = 0; i < n_data; i++)
-        square_difference += powf(dobs[i] - dcal[i], 2.0f);
-    
-    residuo.push_back(sqrtf(square_difference));
+    dS = new float[modeling->nPoints]();
 }
 
 void Tomography_ISO::set_sensitivity_matrix()
 {
+    int nnz = (tk_order + 1) * (n_model - tk_order);                    
+
+    int gsize = vG.size();
+
     M = n_model;                                  
-    N = n_data + n_model - tk_order;                    
-    NNZ = vG.size() + (tk_order + 1) * (M - tk_order);
+    N = n_data + (n_model - tk_order);                    
+    NNZ = gsize + nnz;
 
     iA = new int[NNZ]();
     jA = new int[NNZ]();
     vA = new float[NNZ]();
 
     B = new float[N]();
+    x = new float[M]();
+    
+    for (int index = 0; index < n_data; index++)
+        W[index] = 0.0f;    
+
+    for (int index = 0; index < n_model; index++)
+        R[index] = 0.0f;    
+
+    for (int index = 0; index < gsize; index++)
+    {
+        W[iG[index]] += vG[index];
+        R[jG[index]] += vG[index];
+    }   
 
     for (int index = 0; index < n_data; index++) 
-        B[index] = dobs[index] - dcal[index];
+        B[index] = (dobs[index] - dcal[index]) * powf(1.0f/W[index], 2.0f);
 
-    for (int index = 0; index < vG.size(); index++)
+    for (int index = 0; index < gsize; index++)
     {
         iA[index] = iG[index];
         jA[index] = jG[index];
-        vA[index] = vG[index];
+        vA[index] = vG[index] * powf(1.0f/W[iG[index]], 2.0f);
+    }
+
+    for (int index = 0; index < nnz; index++)
+    {
+        iA[index] = iR[index] + n_data;
+        jA[index] = jR[index];
+        vA[index] = vR[index] * R[jR[index]]*tk_param*tk_param;  
     }
 
     std::vector< int >().swap(iG);
     std::vector< int >().swap(jG);
     std::vector<float>().swap(vG);        
+
+    delete[] iR;
+    delete[] jR;
+    delete[] vR;
 }
 
-void Tomography_ISO::set_regularization()
+void Tomography_ISO::get_parameter_variation()
 {
-    int elements = tk_order + 1;
-		
-    int n = n_model - tk_order;
-    int nnz = elements * n;	
+    #pragma omp parallel for
+    for (int index = 0; index < modeling->nPoints; index++)
+        dS[index] = x[index];
+}
+
+void Tomography_ISO::model_update()
+{
+    model_smoothing(dS);
+
+    # pragma omp parallel for
+    for (int index = 0; index < modeling->nPoints; index++)
+    {
+        int k = (int) (index / (modeling->nx*modeling->nz));         
+        int j = (int) (index - k*modeling->nx*modeling->nz) / modeling->nz;   
+        int i = (int) (index - j*modeling->nz - k*modeling->nx*modeling->nz); 
+
+        int indb = (i + modeling->nb) + (j + modeling->nb)*modeling->nzz;
+
+        # pragma omp atomic
+        modeling->S[indb] += dS[index];
+    }
+
+    modeling->copy_slowness_to_device();
+}
+
+void Tomography_ISO::export_estimated_models()
+{
+    float * Vp = new float[modeling->nPoints]();
+    modeling->reduce_boundary(modeling->S, Vp);
     
-    int * iL = new int[nnz]();
-    int * jL = new int[nnz]();
-    float * vL = new float[nnz]();
+    # pragma omp parallel for
+    for (int index = 0; index < modeling->nPoints; index++)
+        Vp[index] = 1.0f / Vp[index];
 
-    if (tk_order <= 0)
-    {
-	    for (int index = 0; index < nnz; index++)
-        {
-            iL[index] = index;
-	        jL[index] = index;
-	        vL[index] = 1.0f;
-	    }
-    } 
-    else
-    {
-        int * df = new int[elements]();	
-        int * df1 = new int[elements + 1]();
-        int * df2 = new int[elements + 1]();
-        
-        df[0] = -1; df[1] = 1;
-        
-        for (int index = 1; index < tk_order; index++)
-        {
-            for (int k = 0; k < elements; k++)
-            {
-                df2[k] = df[k];
-                df1[k + 1] = df[k];
-
-                df[k] = df1[k] - df2[k]; 
-            }		 
-        }
-        
-        for (int index = 0; index < n; index++)
-        {
-            for (int k = 0; k < elements; k++)
-            {
-                iL[elements*index + k] = index;	
-                jL[elements*index + k] = index + k;
-                vL[elements*index + k] = df[k];
-            }	
-        }
-
-        delete[] df;
-        delete[] df1;
-        delete[] df2;
-    }
-
-    for (int index = NNZ - nnz; index < NNZ; index++) 
-    {
-        iA[index] = n_data + iL[index - (NNZ - nnz)];
-        jA[index] = jL[index - (NNZ - nnz)];
-        vA[index] = tk_param * vL[index - (NNZ - nnz)];        
-    }
-
-    delete[] iL;
-    delete[] jL;
-    delete[] vL;
+    std::string estimated_vp_path = estimated_model_folder + inversion_name + "_final_model_vp_" + std::to_string(modeling->nz) + "x" + std::to_string(modeling->nx) + ".bin";
+    export_binary_float(estimated_vp_path, Vp, modeling->nPoints);
 }

@@ -72,6 +72,7 @@ public:
     void show_information();    
     void compute_seismogram();
 
+    void copy_eikonal_to_host();
     void copy_slowness_to_device();
 
     void expand_boundary(float * input, float * output);
