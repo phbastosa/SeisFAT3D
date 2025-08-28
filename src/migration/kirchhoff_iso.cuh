@@ -1,5 +1,3 @@
-# ifndef KIRCHHOFF_CUH
-# define KIRCHHOFF_CUH
 # ifndef KIRCHHOFF_ISO_CUH
 # define KIRCHHOFF_ISO_CUH
 

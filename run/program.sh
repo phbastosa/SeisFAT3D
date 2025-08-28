@@ -84,8 +84,8 @@ case "$1" in
     # echo -e "../bin/\033[31minversion.exe\033[m" 
     # nvcc $admin $geometry $modeling_all $inversion_all $inversion_main $flags -o ../bin/inversion.exe
 
-    # echo -e "../bin/\033[31mmigration.exe\033[m"
-    # nvcc $admin $geometry $modeling_all $migration_all $migration_main $flags -o ../bin/migration.exe
+    echo -e "../bin/\033[31mmigration.exe\033[m"
+    nvcc $admin $geometry $modeling_all $migration_all $migration_main $flags -o ../bin/migration.exe
 
 	exit 0
 ;;
@@ -96,11 +96,11 @@ case "$1" in
     rm ../inputs/data/*.bin
     rm ../inputs/geometry/*.txt
     rm ../inputs/models/*.bin
-    rm ../outputs/convergence/*.txt
-    rm ../outputs/migratedImages/*.bin
-    rm ../outputs/recoveredModels/*.bin
-    rm ../outputs/syntheticData/*.bin
-    rm ../outputs/travelTimeTables/*.bin
+    rm ../outputs/residuo/*.txt
+    rm ../outputs/seismic/*.bin
+    rm ../outputs/models/*.bin
+    rm ../outputs/data/*.bin
+    rm ../outputs/times/*.bin
 ;;
 
 -modeling) 
@@ -169,11 +169,11 @@ case "$1" in
     prefix=../tests/migration
     parameters=$prefix/parameters.txt
 
-    python3 -B $prefix/generate_models.py $parameters
-    python3 -B $prefix/generate_geometry.py $parameters
-    python3 -B $prefix/generate_input_data.py $parameters
+    # python3 -B $prefix/generate_models.py $parameters
+    # python3 -B $prefix/generate_geometry.py $parameters
+    # python3 -B $prefix/generate_input_data.py $parameters
 
-    ./../bin/migration.exe $parameters
+    # ./../bin/migration.exe $parameters
 
     python3 -B $prefix/generate_figures.py $parameters
 

@@ -1,4 +1,4 @@
-# include "migration.hpp"
+# include "migration.cuh"
 
 void Migration::set_parameters()
 {
@@ -37,7 +37,7 @@ void Migration::read_seismic_data()
 {
     std::string data_path = input_data_folder + input_data_prefix + std::to_string(modeling->geometry->sInd[modeling->srcId]+1) + ".bin";
 
-    import_binary_float(data_path, seismic, modeling->nt*modeling->geometry->spread[modeling->srcId]);
+    import_binary_float(data_path, h_seismic, nt*modeling->geometry->spread[modeling->srcId]);
 
     cudaMemcpy(d_seismic, h_seismic, nt*modeling->geometry->spread[modeling->srcId]*sizeof(float), cudaMemcpyHostToDevice);
 }
@@ -92,24 +92,24 @@ void Migration::show_information()
 
 void Migration::export_receiver_eikonal()
 {
-    copy_eikonalT_to_host();
+    cudaMemcpy(modeling->T, modeling->d_T, modeling->volsize*sizeof(float), cudaMemcpyDeviceToHost);
 
-    export_binary_float(output_table_folder + "traveltimes_receiver_" + std::to_string(modeling->recId+1) + ".bin", modeling->T, modeling->nPoints);    
+    export_binary_float(output_table_folder + "eikonal_receiver_" + std::to_string(modeling->recId+1) + ".bin", modeling->T, modeling->nPoints);    
 }
 
 void Migration::run_cross_correlation()
 {
-    cudaMemset(d_image, 0.0f, modeling->nPoints*sizeof(float));
+    cudaMemset(d_image, 0.0f, modeling->volsize*sizeof(float));
 
     for (modeling->srcId = 0; modeling->srcId < modeling->geometry->nrel; modeling->srcId++)
     {
+        read_seismic_data();
+
         modeling->set_shot_point();
         modeling->show_information();
         modeling->time_propagation();
 
         std::cout << "\nKirchhoff depth migration: computing image matrix\n";
-
-        read_seismic_data();
 
         int spread = 0;
         
@@ -120,8 +120,8 @@ void Migration::run_cross_correlation()
 
             float offset = sqrtf(powf(modeling->sx - rx, 2.0f) + powf(modeling->sy - ry, 2.0f));
 
-            float cmp_x = sx + 0.5f*(rx - modeling->sx);
-            float cmp_y = sy + 0.5f*(ry - modeling->sy);
+            float cmp_x = modeling->sx + 0.5f*(rx - modeling->sx);
+            float cmp_y = modeling->sy + 0.5f*(ry - modeling->sy);
 
             if (offset < max_offset)
             {
@@ -129,9 +129,8 @@ void Migration::run_cross_correlation()
             
                 cudaMemcpy(d_Tr, modeling->T, modeling->volsize*sizeof(float), cudaMemcpyHostToDevice);
 
-                cross_correlation<<<nBlocks, nThreads>>>(d_Ts, d_Tr, d_image, d_seismic, aperture_x, aperture_y, cmp_x, cmp_y, spread, 
-                                                        nx, ny, nz, dx, dy, dz, modeling->nx, modeling->ny, modeling->nz, modeling->dx, 
-                                                        modeling->dy, modeling->dz, scale, modeling->nt, modeling->dt);
+                cross_correlation<<<nBlocks, nThreads>>>(modeling->d_T, d_Tr, d_image, d_seismic, aperture_x, aperture_y, cmp_x, cmp_y, spread, modeling->nxx, 
+                                                         modeling->nyy, modeling->nzz, modeling->nb, modeling->dx, modeling->dy, modeling->dz, nt, dt);
             }
 
             ++spread;
@@ -141,26 +140,27 @@ void Migration::run_cross_correlation()
 
 void Migration::export_outputs()
 {
-    export_binary_float(output_image_folder + "kirchhoff_result_" + std::to_string(nz) + "x" + std::to_string(nx) + "x" + std::to_string(ny) + ".bin", image, nPoints);
+    cudaMemcpy(h_image, d_image, modeling->volsize*sizeof(float), cudaMemcpyDeviceToHost);
+    modeling->reduce_boundary(h_image, f_image);
+    export_binary_float(output_image_folder + "kirchhoff_result_" + std::to_string(modeling->nz) + "x" + std::to_string(modeling->nx) + "x" + std::to_string(modeling->ny) + ".bin", f_image, modeling->nPoints);
 }
 
-__global__ void cross_correlation(float * Ts, float * Tr, float * image, float * seismic, float aperture_x, float aperture_y, 
-                                  float cmp_x, float cmp_y, int spread, int nx, int ny, int nz, float dx, float dy, float dz, 
-                                  int snx, int sny, int snz, float sdx, float sdy, float sdz, float scale, int nt, float dt)
+__global__ void cross_correlation(float * Ts, float * Tr, float * image, float * seismic, float aperture_x, float aperture_y, float cmp_x, 
+                                  float cmp_y, int spread, int nxx, int nyy, int nzz, int nb, float dx, float dy, float dz, int nt, float dt)
 {
     int index = blockIdx.x * blockDim.x + threadIdx.x;
 
-    int k = (int) (index / (nx*nz));         
-    int j = (int) (index - k*nx*nz) / nz;   
-    int i = (int) (index - j*nz - k*nx*nz); 
+    int k = (int) (index / (nxx*nzz));         
+    int j = (int) (index - k*nxx*nzz) / nzz;   
+    int i = (int) (index - j*nzz - k*nxx*nzz); 
 
-    if ((i > scale) && (i < nz - scale - 1) && (j > scale) && (j < nx - scale - 1) && (k > scale) && (k < ny - scale - 1))
+    if ((i > nb) && (i < nzz-nb) && (j > nb) && (j < nxx-nb) && (k > nb) && (k < nyy-nb))
     {
-        float sigma_x = tanf(aperture_x * M_PI / 180.0f)*i*dz;        
-        float sigma_y = tanf(aperture_y * M_PI / 180.0f)*i*dz;        
+        float sigma_x = tanf(aperture_x * M_PI / 180.0f)*(i-nb)*dz;        
+        float sigma_y = tanf(aperture_y * M_PI / 180.0f)*(i-nb)*dz;        
 
-        float par_x = powf((j*dx - cmp_x) / (sigma_x + 1e-6f), 2.0f);
-        float par_y = powf((k*dy - cmp_y) / (sigma_y + 1e-6f), 2.0f);
+        float par_x = powf(((j-nb)*dx - cmp_x) / (sigma_x + 1e-6f), 2.0f);
+        float par_y = powf(((k-nb)*dy - cmp_y) / (sigma_y + 1e-6f), 2.0f);
 
         float value = expf(-0.5f*(par_x + par_y));
 

@@ -355,11 +355,6 @@ int Modeling::iDivUp(int a, int b)
     return ( (a % b) != 0 ) ? (a / b + 1) : (a / b); 
 }
 
-void Modeling::copy_eikonal_to_host()
-{
-    cudaMemcpy(T, d_T, volsize*sizeof(float), cudaMemcpyDeviceToHost);
-}
-
 void Modeling::copy_slowness_to_device()
 {
     cudaMemcpy(d_S, S, volsize * sizeof(float), cudaMemcpyHostToDevice);
