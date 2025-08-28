@@ -24,11 +24,11 @@ modeling_all="$modeling $eikonal_iso $eikonal_ani"
 inversion="../src/inversion/inversion.cpp"
 
 tomography_iso="../src/inversion/tomography_iso.cpp"
-tomography_ani="../src/inversion/tomography_ani.cpp"
+tomography_vti="../src/inversion/tomography_vti.cpp"
 
 inversion_main="../src/inversion_main.cpp"
 
-inversion_all="$inversion $tomography_iso $tomography_ani"
+inversion_all="$inversion $tomography_iso $tomography_vti"
 
 # Seismic migration scripts ---------------------------------------------------------------------------
 
@@ -122,6 +122,62 @@ case "$1" in
     ./../bin/migration.exe parameters.txt
 	
     exit 0
+;;
+
+
+-test_modeling)
+
+    prefix=../tests/modeling
+    parameters=$prefix/parameters.txt
+
+    python3 -B $prefix/generate_models.py $parameters
+    python3 -B $prefix/generate_geometry.py $parameters
+
+    ./../bin/modeling.exe $parameters
+
+    python3 -B $prefix/generate_figures.py $parameters
+
+	exit 0
+;;
+
+-test_inversion) 
+
+    prefix=../tests/inversion
+    parameters=$prefix/parameters.txt
+
+    python3 -B $prefix/generate_models.py $parameters
+    python3 -B $prefix/generate_geometry.py $parameters
+
+    true_model="model_file = ../inputs/models/inversion_test_true_vp.bin"
+    init_model="model_file = ../inputs/models/inversion_test_init_vp.bin"
+
+    ./../bin/modeling.exe $parameters
+
+    sed -i "s|$true_model|$init_model|g" "$parameters"    
+    
+    ./../bin/inversion.exe $parameters
+
+    sed -i "s|$init_model|$true_model|g" "$parameters"
+
+    python3 -B $prefix/generate_figures.py $parameters
+
+    exit 0
+;;
+
+-test_migration)
+
+    prefix=../tests/migration
+    parameters=$prefix/parameters.txt
+
+    python3 -B $prefix/generate_models.py $parameters
+    python3 -B $prefix/generate_geometry.py $parameters
+    python3 -B $prefix/generate_input_data.py $parameters
+
+    ./../bin/migration.exe $parameters
+
+    python3 -B $prefix/generate_figures.py $parameters
+
+	exit 0
 ;;
 
 * ) 
