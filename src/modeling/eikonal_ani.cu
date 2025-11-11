@@ -71,20 +71,6 @@ void Eikonal_ANI::time_propagation()
     copy_slowness_to_device();
 }
 
-void Eikonal_ANI::get_stiffness_VTI(float * E, float * D)
-{
- 
-
-
-}
-
-void Eikonal_ANI::set_stiffness_VTI(float * E, float * D)
-{
-
-
-    
-}
-
 __global__ void get_quasi_slowness(float * T, float * S, float dx, float dy, float dz, int sIdx, int sIdy, int sIdz, int nxx, int nyy, int nzz, int nb,
                                    uintc * C11, uintc * C12, uintc * C13, uintc * C14, uintc * C15, uintc * C16, uintc * C22, uintc * C23, uintc * C24, uintc * C25, 
                                    uintc * C26, uintc * C33, uintc * C34, uintc * C35, uintc * C36, uintc * C44, uintc * C45, uintc * C46, uintc * C55, uintc * C56, 

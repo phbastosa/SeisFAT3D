@@ -1,5 +1,17 @@
 # include "admin.hpp"
 
+int nextpow2(int n) 
+{
+    if (n == 0) return 1;
+    n--;
+    n |= n >> 1;
+    n |= n >> 2;
+    n |= n >> 4;
+    n |= n >> 8;
+    n |= n >> 16;
+    return n + 1;
+}
+
 bool str2bool(std::string s)
 {
     bool b;
@@ -97,4 +109,11 @@ std::vector<std::string> split(std::string s, char delimiter)
         tokens.push_back(token);
    
     return tokens;
+}
+
+std::string format1Decimal(float x) 
+{
+    std::ostringstream oss;
+    oss << std::fixed << std::setprecision(1) << x;
+    return oss.str();
 }

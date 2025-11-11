@@ -2,25 +2,25 @@
 # Model paramenters --------------------------------------------------------------------------------
 #---------------------------------------------------------------------------------------------------
 
-x_samples = 201                            # <int>  
-y_samples = 201                            # <int>  
-z_samples = 51                             # <int>  
+x_samples = 361                            # <int>  
+y_samples = 241                            # <int>  
+z_samples = 161                            # <int>  
 
-x_spacing = 100.0                          # [m] <float> 
-y_spacing = 100.0                          # [m] <float> 
-z_spacing = 100.0                          # [m] <float> 
+x_spacing = 12.5                           # [m] <float> 
+y_spacing = 12.5                           # [m] <float> 
+z_spacing = 12.5                           # [m] <float> 
 
-vp_model_file = ../inputs/models/anisoTomo_vp.bin   
+vp_model_file = ../../FWI3D/inputs/models/kdm_test_vp.bin   
 
-Cijkl_folder = ../inputs/models/anisoTomo_
+Cijkl_folder = ../../FWI3D/inputs/models/kdm_test_
 
 #---------------------------------------------------------------------------------------------------
 # Geometry parameters ------------------------------------------------------------------------------
 #---------------------------------------------------------------------------------------------------
 
-SPS = ../inputs/geometry/anisoTomo_SPS.txt              
-RPS = ../inputs/geometry/anisoTomo_RPS.txt     
-XPS = ../inputs/geometry/anisoTomo_XPS.txt     
+SPS = ../../FWI3D/inputs/geometry/kdm_test_SPS.txt              
+RPS = ../../FWI3D/inputs/geometry/kdm_test_RPS.txt     
+XPS = ../../FWI3D/inputs/geometry/kdm_test_XPS.txt     
 
 #---------------------------------------------------------------------------------------------------
 # Modeling parameters ------------------------------------------------------------------------------
@@ -37,42 +37,52 @@ modeling_output_folder = ../inputs/data/
 # Inversion parameters 
 #---------------------------------------------------------------------------------------------------
 #   [0] - Tomography ISO
-#   [1] - Tomography ANI
+#   [1] - Tomography VTI
+#   [2] - Tomography ORT
 #---------------------------------------------------------------------------------------------------
 
-inversion_type = 0                          # <int> 
-
-max_iteration = 5                           # <int>
+inv_type = 0                                # <int> 
 
 tk_order = 2                                # Tikhonov order <int>
-tk_param = 1e4                              # Tikhonov parameter <float>
+tk_param = 1e-3                             # Tikhonov parameter <float>
+
+inv_max_it = 5                              # <int>
 
 smooth_per_iteration = true                 # <bool>
-gaussian_filter_stdv = 2.0                  # <float>
-gaussian_filter_samples = 5                 # [odd number] <int> 
+gaussian_filter_stdv = 5.0                  # <float>
+gaussian_filter_samples = 11                # [odd number] <int> 
 
-convergence_folder = ../outputs/convergence/         
-inversion_output_folder = ../outputs/recoveredModels/    
+inv_residuo_folder = ../outputs/residuo/         
+inv_output_folder = ../outputs/models/    
 
-obs_data_folder = ../inputs/data/        
-obs_data_prefix = eikonal_ani_nStations1506_shot_   
+inv_data_folder = ../inputs/data/        
+inv_data_prefix = test_data_shot_  
 
 #---------------------------------------------------------------------------------------------------
 # Migration parameters 
 #--------------------------------------------------------------------------------------------------- 
+# [0] - Image Domain Kirchhoff Depth Migration
+# [1] - Angle Domain Kirchhoff Depth Migration
+# [2] - Image Domain LS-Kirchhoff Depth Migration
+# [3] - Angle Domain LS-Kirchhoff Depth Migration
+#---------------------------------------------------------------------------------------------------
 
-image_scale = 2                             # increase for resolution  
+mig_type = 0                                # <int>
 
-max_offset = 4000                           # [m] <float>
+anisotropy = false                          # <bool>
 
-mig_aperture_x = 45                         # degrees <float>
-mig_aperture_y = 45                         # degrees <float>
+time_samples = 4001                         # <int>
+time_spacing = 1e-3                         # [s] <float>
+max_frequency = 30.0                        # [Hz] <float>
 
-time_samples = 10001                        # <int>
-time_spacing = 5e-4                         # <float>
+mig_max_angle = 60                          # [°] <float>
+mig_angle_spacing = 5                       # [°] <float>
 
-input_data_folder = ../inputs/data/        
-input_data_prefix = seismic_input_shot_
+mig_max_iteration = 10                      # <int> 
 
-output_image_folder = ../outputs/migratedImages/
-output_table_folder = ../outputs/travelTimeTables/
+mig_data_folder = ../inputs/data/        
+mig_data_prefix = seismogram_input_shot_  
+
+mig_tables_folder = ../outputs/tables/
+mig_images_folder = ../outputs/seismic/
+mig_residuo_folder = ../outputs/residuo/ 
