@@ -2,9 +2,9 @@
 
 void LSKDM::kirchhoff_depth_migration()
 {
-    // set_src_travel_times();
-    // set_rec_travel_times();
-    // prepare_convolution();
+    set_src_travel_times();
+    set_rec_travel_times();
+    prepare_convolution();
 
     // set_src_domain();
 

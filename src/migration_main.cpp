@@ -20,18 +20,18 @@ int main(int argc, char **argv)
 
     migration[type]->set_parameters();
 
-    migration[type]->dot_product_test();
+    //migration[type]->dot_product_test();
 
-    //auto ti = std::chrono::system_clock::now();
+    auto ti = std::chrono::system_clock::now();
 
-    //migration[type]->kirchhoff_depth_migration();
+    migration[type]->kirchhoff_depth_migration();
 
-    //auto tf = std::chrono::system_clock::now();
+    auto tf = std::chrono::system_clock::now();
 
-    //migration[type]->export_outputs();
+    migration[type]->export_outputs();
 
-    //std::chrono::duration<double> elapsed_seconds = tf - ti;
-    //std::cout << "\nRun time: " << elapsed_seconds.count() << " s." << std::endl;
+    std::chrono::duration<double> elapsed_seconds = tf - ti;
+    std::cout << "\nRun time: " << elapsed_seconds.count() << " s." << std::endl;
     
     return 0;
 }

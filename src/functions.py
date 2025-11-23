@@ -302,7 +302,7 @@ def plot_model_3D(model, dh, slices, **kwargs):
                 ax.contour(eiks[k], levels = eikonal_levels, colors = eikonal_colors, linestyles = "dashed")
 
             if nodes_defined:
-                ax.plot(xnode[k], ynode[k], "o", markersize = 5, color = "blue")
+                ax.plot(xnode[k], ynode[k], "o", markersize = 1, color = "gray")
             
             if shots_defined:
                 ax.plot(xshot[k], yshot[k], "*", markersize = 5, color = "green")

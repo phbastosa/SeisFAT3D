@@ -4,9 +4,9 @@ void ADKDM::set_migration()
 {
     domain = "Angle Domain";
     migType = "ADKDM";
-    m_samples = modeling->nz*nang*nCMP;
+    m_samples = old_nz*nCMP*nang;
 
-    output_path = images_folder + migType + "_result_" + std::to_string(modeling->nz) + "x" + std::to_string(nCMP) + "x" + std::to_string(nang) + ".bin";
+    output_path = images_folder + migType + "_result_" + std::to_string(old_nz) + "x" + std::to_string(nCMPy) + "x" + std::to_string(nCMPx) + "x" + std::to_string(nang) + ".bin";
 }
 
 void ADKDM::perform_forward()

@@ -8,6 +8,8 @@
 # define NSWEEPS 8
 # define MESHDIM 3
 
+# define NTHREADS 256
+
 # define COMPRESS 65535
 
 typedef unsigned short int uintc; 
@@ -16,27 +18,19 @@ class Modeling
 {
 private:
     
-    void set_eikonal();
     void set_properties();
 
     int iDivUp(int a, int b);
 
-    float cubic1d(float P[4], float dx);
-    float cubic2d(float P[4][4], float dx, float dy);
-    float cubic3d(float P[4][4][4], float dx, float dy, float dz);
-
 protected:
 
     int total_levels;
-    int nThreads, nBlocks;
 
     float dx2i, dy2i, dz2i, dsum;
     float dz2dx2, dz2dy2, dx2dy2;
 
     int * d_sgnv = nullptr;
     int * d_sgnt = nullptr;
-
-    virtual void set_conditions() = 0;
     
     void compression(float * input, uintc * output, int volsize, float &max_value, float &min_value);
 
@@ -46,6 +40,7 @@ public:
     int nxx, nyy, nzz, volsize;
     int nx, ny, nz, nb, nPoints;
     int srcId, recId, sIdx, sIdy, sIdz;
+    int nBlocks;
 
     float sx, sy, sz;
 
@@ -57,13 +52,18 @@ public:
 
     float * seismogram = nullptr;
 
-    int max_spread;
     Geometry * geometry;
     
     std::string parameters;
     std::string data_folder;
     std::string modeling_type;
     std::string modeling_name;
+    std::string Cijkl_folder;
+
+    void set_eikonal();
+    void set_geometry();
+
+    virtual void set_conditions() = 0;
 
     void set_parameters();
     void initialization();

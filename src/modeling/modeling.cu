@@ -12,20 +12,9 @@ void Modeling::set_parameters()
 
     data_folder = catch_parameter("modeling_output_folder", parameters);
 
+    Cijkl_folder = catch_parameter("Cijkl_folder", parameters);
+
     nPoints = nx*ny*nz;
-
-    geometry = new Geometry();
-    geometry->parameters = parameters;
-    geometry->set_parameters();
-
-    max_spread = 0;
-    for (int index = 0; index < geometry->nrel; index++)
-    {   
-        if (max_spread < geometry->spread[index])
-            max_spread = geometry->spread[index]; 
-    }
-
-    seismogram = new float[max_spread]();
 
     nb = 3;
     
@@ -35,12 +24,21 @@ void Modeling::set_parameters()
 
     volsize = nxx*nyy*nzz;
 
-    nThreads = 256;
-    nBlocks = (int)((volsize + nThreads - 1) / nThreads);
+    nBlocks = (int)((volsize + NTHREADS - 1) / NTHREADS);
 
+    set_geometry();
     set_properties();    
     set_conditions();    
     set_eikonal();
+}
+
+void Modeling::set_geometry()
+{
+    geometry = new Geometry();
+    geometry->parameters = parameters;
+    geometry->set_parameters();
+
+    seismogram = new float[geometry->nrec]();
 }
 
 void Modeling::set_properties()
@@ -124,7 +122,7 @@ void Modeling::initialization()
     sIdy = (int)((sy + 0.5f*dy) / dy) + nb;
     sIdz = (int)((sz + 0.5f*dz) / dz) + nb;
 
-    time_set<<<nBlocks,nThreads>>>(d_T, volsize);
+    time_set<<<nBlocks,NTHREADS>>>(d_T, volsize);
 
     dim3 grid(1,1,1);
     dim3 block(MESHDIM,MESHDIM,MESHDIM);
@@ -217,31 +215,6 @@ void Modeling::compute_seismogram()
 
         seismogram[spread++] = cubic3d(P, xd, yd, zd);
     }
-}
-
-float Modeling::cubic1d(float P[4], float dx)
-{
-    return P[1] + 0.5f*dx*(P[2] - P[0] + dx*(2.0f*P[0] - 5.0f*P[1] + 4.0f*P[2] - P[3] + dx*(3.0f*(P[1] - P[2]) + P[3] - P[0])));
-}
-
-float Modeling::cubic2d(float P[4][4], float dx, float dy)
-{    
-    float p[4];
-    p[0] = cubic1d(P[0], dy);
-    p[1] = cubic1d(P[1], dy);
-    p[2] = cubic1d(P[2], dy);
-    p[3] = cubic1d(P[3], dy);    
-    return cubic1d(p, dx);
-}
-
-float Modeling::cubic3d(float P[4][4][4], float dx, float dy, float dz)
-{    
-    float p[4];
-    p[0] = cubic2d(P[0], dy, dz);
-    p[1] = cubic2d(P[1], dy, dz);
-    p[2] = cubic2d(P[2], dy, dz);
-    p[3] = cubic2d(P[3], dy, dz);
-    return cubic1d(p, dx);
 }
 
 void Modeling::export_seismogram()

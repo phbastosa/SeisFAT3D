@@ -84,8 +84,8 @@ case "$1" in
 
     echo -e "Compiling stand-alone executables!\n"
 
-    # echo -e "../bin/\033[31mmodeling.exe\033[m" 
-    # nvcc $admin $geometry $modeling_all $modeling_main $flags -o ../bin/modeling.exe
+    echo -e "../bin/\033[31mmodeling.exe\033[m" 
+    nvcc $admin $geometry $modeling_all $modeling_main $flags -o ../bin/modeling.exe
 
     # echo -e "../bin/\033[31minversion.exe\033[m" 
     # nvcc $admin $geometry $modeling_all $inversion_all $inversion_main $flags -o ../bin/inversion.exe
@@ -107,7 +107,6 @@ case "$1" in
     rm ../outputs/seismic/*.bin
     rm ../outputs/models/*.bin
     rm ../outputs/data/*.bin
-    rm ../outputs/times/*.bin
     rm ../outputs/tables/*.bin
 ;;
 

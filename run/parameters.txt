@@ -2,13 +2,13 @@
 # Model paramenters --------------------------------------------------------------------------------
 #---------------------------------------------------------------------------------------------------
 
-x_samples = 361                            # <int>  
-y_samples = 241                            # <int>  
-z_samples = 161                            # <int>  
+x_samples = 201                            # <int>  
+y_samples = 201                            # <int>  
+z_samples = 61                             # <int>  
 
-x_spacing = 12.5                           # [m] <float> 
-y_spacing = 12.5                           # [m] <float> 
-z_spacing = 12.5                           # [m] <float> 
+x_spacing = 25.0                           # [m] <float> 
+y_spacing = 25.0                           # [m] <float> 
+z_spacing = 25.0                           # [m] <float> 
 
 vp_model_file = ../../FWI3D/inputs/models/kdm_test_vp.bin   
 
@@ -31,7 +31,7 @@ XPS = ../../FWI3D/inputs/geometry/kdm_test_XPS.txt
 
 modeling_type = 0
 
-modeling_output_folder = ../inputs/data/
+modeling_output_folder = ../outputs/data/
 
 #---------------------------------------------------------------------------------------------------
 # Inversion parameters 
@@ -69,18 +69,24 @@ inv_data_prefix = test_data_shot_
 
 mig_type = 0                                # <int>
 
+cubic_dx = 100.0                            # [m] <float>
+cubic_dy = 100.0                            # [m] <float>
+cubic_dz = 100.0                            # [m] <float>
+
 anisotropy = false                          # <bool>
 
 time_samples = 4001                         # <int>
 time_spacing = 1e-3                         # [s] <float>
-max_frequency = 30.0                        # [Hz] <float>
+max_frequency = 20.0                        # [Hz] <float>
 
 mig_max_angle = 60                          # [°] <float>
 mig_angle_spacing = 5                       # [°] <float>
 
+mig_max_offset = 2000                       # [m] <float>
+
 mig_max_iteration = 10                      # <int> 
 
-mig_data_folder = ../inputs/data/        
+mig_data_folder = ../../FWI3D/inputs/data/        
 mig_data_prefix = seismogram_input_shot_  
 
 mig_tables_folder = ../outputs/tables/
