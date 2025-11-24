@@ -18,8 +18,8 @@ protected:
     float old_dx, old_dy, old_dz;
     float new_dx, new_dy, new_dz;
 
-    int cmpId, nCMP, nCMPx, nCMPy;
-    int nt, nang, nw, nfft, max_it;
+    int cmpId, nCMP, nCMPx, nCMPy, nang;
+    int nt, nw, nfft, max_it, nfreq;
     int nBlocks, d_samples, m_samples; 
 
     float ds, dr, dt, da, dCMP;
@@ -27,6 +27,8 @@ protected:
     float maxCMPy, maxCMPx;
     float fmax, max_angle;
     float max_offset;
+    float CMPx, CMPy;
+    float aperture;
 
     bool anisotropy;
     
@@ -120,11 +122,13 @@ public:
 
 __global__ void image_domain_forward_kernel(float * S, float * Ts, float * Tr, float * data, float * model, float dt, int nt, 
                                             float old_dx, float old_dy, float old_dz, float new_dx, float new_dy, float new_dz, 
-                                            int old_nx, int old_ny, int old_nz, int new_nxx, int new_nyy, int new_nzz, int nb);
+                                            int old_nx, int old_ny, int old_nz, int new_nxx, int new_nyy, int new_nzz, int nb,
+                                            float aperture, float cmpx, float cmpy);
 
 __global__ void image_domain_adjoint_kernel(float * S, float * Ts, float * Tr, float * data, float * model, float dt, int nt, 
                                             float old_dx, float old_dy, float old_dz, float new_dx, float new_dy, float new_dz, 
-                                            int old_nx, int old_ny, int old_nz, int new_nxx, int new_nyy, int new_nzz, int nb);
+                                            int old_nx, int old_ny, int old_nz, int new_nxx, int new_nyy, int new_nzz, int nb,
+                                            float aperture, float cmpx, float cmpy);
 
 __global__ void angle_domain_forward_kernel(float * S, float * Ts, float * Tr, float * data, float * model, float dx, float dz, float dt, float da, int nxx, int nzz, int nt, int na, int nb, int cmpId);
 __global__ void angle_domain_adjoint_kernel(float * S, float * Ts, float * Tr, float * data, float * model, float dx, float dz, float dt, float da, int nxx, int nzz, int nt, int na, int nb, int cmpId);

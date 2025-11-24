@@ -2,8 +2,8 @@
 
 void KDM::kirchhoff_depth_migration()
 {
-    set_src_travel_times();
-    set_rec_travel_times();
+    //set_src_travel_times();
+    //set_rec_travel_times();
     prepare_convolution();
 
     set_src_domain();
@@ -32,18 +32,17 @@ void KDM::kirchhoff_depth_migration()
             float rx = modeling->geometry->xrec[modeling->recId];
             float ry = modeling->geometry->yrec[modeling->recId];
 
-            float offset_x = fabsf(sx - rx);
-            float offset_y = fabsf(sy - ry);
+            float offset = sqrtf((sx - rx)*(sx - rx) + (sy - ry)*(sy - ry));
 
-            // float CMPx = 0.5f*(sx + rx);
-            // float CMPy = 0.5f*(sy + ry);
+            CMPx = 0.5f*(sx + rx);
+            CMPy = 0.5f*(sy + ry);
 
             // int cmpIdx = (int)((CMPx - minCMPx) / dCMP);
             // int cmpIdy = (int)((CMPy - minCMPy) / dCMP);
 
             // int cmpId = cmpIdy + cmpIdx*nCMPy;
 
-            if ((offset_x < max_offset) && (offset_y < max_offset))
+            if (offset < max_offset) 
             {
                 import_binary_float(tables_folder + "eikonal_rec_" + std::to_string(modeling->recId+1) + ".bin", h_Tr, modeling->volsize);
                 cudaMemcpy(d_Tr, h_Tr, modeling->volsize*sizeof(float), cudaMemcpyHostToDevice);

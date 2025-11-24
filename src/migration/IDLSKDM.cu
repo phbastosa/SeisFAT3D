@@ -12,23 +12,27 @@ void IDLSKDM::set_migration()
 void IDLSKDM::perform_forward()
 {
     image_domain_forward_kernel<<<nBlocks,NTHREADS>>>(modeling->d_S, d_Ts, d_Tr, d_data, d_model, dt, nt, old_dx, old_dy, old_dz, new_dx, new_dy, 
-                                                      new_dz, old_nx, old_ny, old_nz, modeling->nxx, modeling->nyy, modeling->nzz, modeling->nb);
+                                                      new_dz, old_nx, old_ny, old_nz, modeling->nxx, modeling->nyy, modeling->nzz, modeling->nb,
+                                                      aperture, CMPx, CMPy);
 }
 
 void IDLSKDM::perform_adjoint()
 {
     image_domain_adjoint_kernel<<<nBlocks,NTHREADS>>>(modeling->d_S, d_Ts, d_Tr, d_data, d_model, dt, nt, old_dx, old_dy, old_dz, new_dx, new_dy, 
-                                                      new_dz, old_nx, old_ny, old_nz, modeling->nxx, modeling->nyy, modeling->nzz, modeling->nb);
+                                                      new_dz, old_nx, old_ny, old_nz, modeling->nxx, modeling->nyy, modeling->nzz, modeling->nb,
+                                                      aperture, CMPx, CMPy);
 }
 
 void IDLSKDM::perform_adjoint_gradient()
 {
     image_domain_adjoint_kernel<<<nBlocks,NTHREADS>>>(modeling->d_S, d_Ts, d_Tr, d_data, d_gradient, dt, nt, old_dx, old_dy, old_dz, new_dx, new_dy, 
-                                                      new_dz, old_nx, old_ny, old_nz, modeling->nxx, modeling->nyy, modeling->nzz, modeling->nb);
+                                                      new_dz, old_nx, old_ny, old_nz, modeling->nxx, modeling->nyy, modeling->nzz, modeling->nb,
+                                                      aperture, CMPx, CMPy);
 }
 
 void IDLSKDM::perform_forward_direction()
 {
     image_domain_forward_kernel<<<nBlocks,NTHREADS>>>(modeling->d_S, d_Ts, d_Tr, d_data, d_direction, dt, nt, old_dx, old_dy, old_dz, new_dx, new_dy, 
-                                                      new_dz, old_nx, old_ny, old_nz, modeling->nxx, modeling->nyy, modeling->nzz, modeling->nb);    
+                                                      new_dz, old_nx, old_ny, old_nz, modeling->nxx, modeling->nyy, modeling->nzz, modeling->nb, 
+                                                      aperture, CMPx, CMPy);    
 }

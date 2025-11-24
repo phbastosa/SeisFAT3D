@@ -79,6 +79,8 @@ time_samples = 4001                         # <int>
 time_spacing = 1e-3                         # [s] <float>
 max_frequency = 20.0                        # [Hz] <float>
 
+mig_aperture = 30                           # [°] <float>
+
 mig_max_angle = 60                          # [°] <float>
 mig_angle_spacing = 5                       # [°] <float>
 

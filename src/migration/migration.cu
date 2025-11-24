@@ -12,6 +12,8 @@ void Migration::set_parameters()
 
     fmax = std::stof(catch_parameter("max_frequency", parameters));
 
+    aperture = std::stof(catch_parameter("mig_aperture", parameters));
+
     max_offset = std::stof(catch_parameter("mig_max_offset", parameters));
 
     input_data_folder = catch_parameter("mig_data_folder", parameters);
@@ -389,22 +391,23 @@ void Migration::show_information()
 
 void Migration::prepare_convolution()
 {
-    nfft = nextpow2(nt);
+    nfft = nextpow2(nt + nw - 1);
+    nfreq = nfft/2 + 1;
 
     time_trace = (double *) fftw_malloc(nfft*sizeof(double));
     time_wavelet = (double *) fftw_malloc(nfft*sizeof(double));
 
-    freq_trace = (fftw_complex *) fftw_malloc(nfft*sizeof(fftw_complex));
-    freq_wavelet = (fftw_complex *) fftw_malloc(nfft*sizeof(fftw_complex));
+    freq_trace = (fftw_complex *) fftw_malloc(nfreq*sizeof(fftw_complex));
+    freq_wavelet = (fftw_complex *) fftw_malloc(nfreq*sizeof(fftw_complex));
 
-    trace_forward_plan = fftw_plan_dft_r2c_1d(nt, time_trace, freq_trace, FFTW_ESTIMATE);
-    trace_inverse_plan = fftw_plan_dft_c2r_1d(nt, freq_trace, time_trace, FFTW_ESTIMATE);
-    wavelet_forward_plan = fftw_plan_dft_r2c_1d(nt, time_wavelet, freq_wavelet, FFTW_ESTIMATE);
+    trace_forward_plan = fftw_plan_dft_r2c_1d(nfft, time_trace, freq_trace, FFTW_ESTIMATE);
+    trace_inverse_plan = fftw_plan_dft_c2r_1d(nfft, freq_trace, time_trace, FFTW_ESTIMATE);
+    wavelet_forward_plan = fftw_plan_dft_r2c_1d(nfft, time_wavelet, freq_wavelet, FFTW_ESTIMATE);
 
     for (int tId = 0; tId < nfft; tId++)
     {
         time_trace[tId] = 0.0;
-        time_wavelet[tId] = (tId < nw) ? wavelet[tId] : 0.0;
+        time_wavelet[tId] = (tId < nw) ? (double)wavelet[tId] : 0.0;
     }
 
     fftw_execute(wavelet_forward_plan);
@@ -412,15 +415,20 @@ void Migration::prepare_convolution()
 
 void Migration::adjoint_convolution()
 {
-    for (int tId = 0; tId < nt; tId++)
+    for (int tId = 0; tId < nfft; tId++)
     {
-        time_trace[tId] = (double)h_data[tId];
-        h_data[tId] = 0.0f;
+        if (tId < nt)
+        {
+            time_trace[tId] = (double)h_data[tId];
+            h_data[tId] = 0.0f;
+        }
+        else 
+            time_trace[tId] = 0.0;    
     }
     
     fftw_execute(trace_forward_plan);
 
-    for (int fId = 0; fId < nfft; fId++)
+    for (int fId = 0; fId < nfreq; fId++)
     {
         double a_re = freq_trace[fId][0];
         double a_im = freq_trace[fId][1];
@@ -435,7 +443,7 @@ void Migration::adjoint_convolution()
     fftw_execute(trace_inverse_plan);
 
     for (int tId = nw/2; tId < nt; tId++)
-        h_data[tId] = (float)time_trace[tId - nw/2] / nfft;
+        h_data[tId] = (float)(time_trace[tId - nw/2 - 1]) / (float)(nfft);
 }
 
 void Migration::forward_convolution()
@@ -448,7 +456,7 @@ void Migration::forward_convolution()
 
     fftw_execute(trace_forward_plan);
 
-    for (int fId = 0; fId < nfft; fId++)
+    for (int fId = 0; fId < nfreq; fId++)
     {
         double a_re = freq_trace[fId][0];
         double a_im = freq_trace[fId][1];
@@ -463,7 +471,7 @@ void Migration::forward_convolution()
     fftw_execute(trace_inverse_plan);
 
     for (int tId = 0; tId < nt; tId++)
-        h_data[tId] = (float)time_trace[tId + nw/2] / nfft;
+        h_data[tId] = (float)(time_trace[tId]) / (float)(nfft);
 }
 
 void Migration::dot_product_test()
@@ -584,7 +592,8 @@ void Migration::dot_product_test()
 
 __global__ void image_domain_adjoint_kernel(float * S, float * Ts, float * Tr, float * data, float * model, float dt, int nt, 
                                             float old_dx, float old_dy, float old_dz, float new_dx, float new_dy, float new_dz, 
-                                            int old_nx, int old_ny, int old_nz, int new_nxx, int new_nyy, int new_nzz, int nb)
+                                            int old_nx, int old_ny, int old_nz, int new_nxx, int new_nyy, int new_nzz, int nb,
+                                            float aperture, float cmpx, float cmpy)
 {
     int index = blockIdx.x * blockDim.x + threadIdx.x;
 
@@ -755,7 +764,14 @@ __global__ void image_domain_adjoint_kernel(float * S, float * Ts, float * Tr, f
 
             float scale_const = 1.0f / (2.0f * M_PI);
 
-            float weights = scale_const * Jterm * obliquity * G * R;            
+            float sigma = tanf(aperture * M_PI / 180.0f)*z;        
+
+            float par_x = powf((x - cmpx) / (sigma + EPS), 2.0f);
+            float par_y = powf((y - cmpy) / (sigma + EPS), 2.0f);
+
+            float taper = expf(-0.5f*(par_x + par_y));
+
+            float weights = scale_const * Jterm * obliquity * G * R * taper;            
     
             atomicAdd(&model[index], weights * data[tId]);
         }
@@ -764,7 +780,8 @@ __global__ void image_domain_adjoint_kernel(float * S, float * Ts, float * Tr, f
 
 __global__ void image_domain_forward_kernel(float * S, float * Ts, float * Tr, float * data, float * model, float dt, int nt, 
                                             float old_dx, float old_dy, float old_dz, float new_dx, float new_dy, float new_dz, 
-                                            int old_nx, int old_ny, int old_nz, int new_nxx, int new_nyy, int new_nzz, int nb)
+                                            int old_nx, int old_ny, int old_nz, int new_nxx, int new_nyy, int new_nzz, int nb,
+                                            float aperture, float cmpx, float cmpy)
 {
     // int index = blockIdx.x * blockDim.x + threadIdx.x;
 
