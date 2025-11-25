@@ -18,8 +18,9 @@ protected:
     float old_dx, old_dy, old_dz;
     float new_dx, new_dy, new_dz;
 
-    int cmpId, nCMP, nCMPx, nCMPy, nang;
-    int nt, nw, nfft, max_it, nfreq;
+    int nfreq;
+    int cmpId, nCMP, nCMPx, nCMPy;
+    int nt, nw, nfft, max_it, nang;
     int nBlocks, d_samples, m_samples; 
 
     float ds, dr, dt, da, dCMP;
@@ -120,18 +121,18 @@ public:
     virtual void export_outputs() = 0;
 };
 
-__global__ void image_domain_forward_kernel(float * S, float * Ts, float * Tr, float * data, float * model, float dt, int nt, 
-                                            float old_dx, float old_dy, float old_dz, float new_dx, float new_dy, float new_dz, 
-                                            int old_nx, int old_ny, int old_nz, int new_nxx, int new_nyy, int new_nzz, int nb,
-                                            float aperture, float cmpx, float cmpy);
-
 __global__ void image_domain_adjoint_kernel(float * S, float * Ts, float * Tr, float * data, float * model, float dt, int nt, 
                                             float old_dx, float old_dy, float old_dz, float new_dx, float new_dy, float new_dz, 
                                             int old_nx, int old_ny, int old_nz, int new_nxx, int new_nyy, int new_nzz, int nb,
                                             float aperture, float cmpx, float cmpy);
 
-__global__ void angle_domain_forward_kernel(float * S, float * Ts, float * Tr, float * data, float * model, float dx, float dz, float dt, float da, int nxx, int nzz, int nt, int na, int nb, int cmpId);
+__global__ void image_domain_forward_kernel(float * S, float * Ts, float * Tr, float * data, float * model, float dt, int nt, 
+                                            float old_dx, float old_dy, float old_dz, float new_dx, float new_dy, float new_dz, 
+                                            int old_nx, int old_ny, int old_nz, int new_nxx, int new_nyy, int new_nzz, int nb,
+                                            float aperture, float cmpx, float cmpy);
+
 __global__ void angle_domain_adjoint_kernel(float * S, float * Ts, float * Tr, float * data, float * model, float dx, float dz, float dt, float da, int nxx, int nzz, int nt, int na, int nb, int cmpId);
+__global__ void angle_domain_forward_kernel(float * S, float * Ts, float * Tr, float * data, float * model, float dx, float dz, float dt, float da, int nxx, int nzz, int nt, int na, int nb, int cmpId);
 
 __device__ float d_cubic1d(float P[4], float dx);
 __device__ float d_cubic2d(float P[4][4], float dx, float dy);

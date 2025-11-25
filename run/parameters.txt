@@ -84,7 +84,7 @@ mig_aperture = 30                           # [°] <float>
 mig_max_angle = 60                          # [°] <float>
 mig_angle_spacing = 5                       # [°] <float>
 
-mig_max_offset = 2000                       # [m] <float>
+mig_max_offset = 1000                       # [m] <float>
 
 mig_max_iteration = 10                      # <int> 
 

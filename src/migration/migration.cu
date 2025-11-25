@@ -442,16 +442,21 @@ void Migration::adjoint_convolution()
 
     fftw_execute(trace_inverse_plan);
 
-    for (int tId = nw/2; tId < nt; tId++)
-        h_data[tId] = (float)(time_trace[tId - nw/2 - 1]) / (float)(nfft);
+    for (int tId = nw/2 + nw/5; tId < nt; tId++)
+        h_data[tId] = (float)(time_trace[tId - nw/2 - nw/5]);
 }
 
 void Migration::forward_convolution()
 {
-    for (int tId = 0; tId < nt; tId++)
+    for (int tId = 0; tId < nfft; tId++)
     {
-        time_trace[tId] = (double)h_data[tId];
-        h_data[tId] = 0.0f;
+        if (tId < nt)
+        {
+            time_trace[tId] = (double)h_data[tId];
+            h_data[tId] = 0.0f;
+        }
+        else 
+            time_trace[tId] = 0.0;    
     }
 
     fftw_execute(trace_forward_plan);
@@ -471,7 +476,7 @@ void Migration::forward_convolution()
     fftw_execute(trace_inverse_plan);
 
     for (int tId = 0; tId < nt; tId++)
-        h_data[tId] = (float)(time_trace[tId]) / (float)(nfft);
+        h_data[tId] = (float)(time_trace[tId + nw/2 + nw/5]);
 }
 
 void Migration::dot_product_test()
@@ -750,7 +755,7 @@ __global__ void image_domain_adjoint_kernel(float * S, float * Ts, float * Tr, f
             float cos_s = fabs(ux_s*nx_norm + uy_s*ny_norm + uz_s*nz_norm);
             float cos_r = fabs(ux_s*nx_norm + uy_s*ny_norm + uz_s*nz_norm);
             
-            float obliquity = sqrt(cos_s * cos_r + EPS);
+            float obliquity = sqrt(max(0.0f, cos_s) * max(0.0f, cos_r));
 
             float R_s = max(cubic_Ts / cubic_S, EPS);
             float R_r = max(cubic_Tr / cubic_S, EPS);
@@ -759,7 +764,7 @@ __global__ void image_domain_adjoint_kernel(float * S, float * Ts, float * Tr, f
 
             float theta_s = acosf(min(1.0f,max(-1.0f, ux_s*nx_norm + uy_s*ny_norm + uz_s*nz_norm)));
             float theta_r = acosf(min(1.0f,max(-1.0f, ux_r*nx_norm + uy_r*ny_norm + uz_r*nz_norm)));
-            float theta = 0.5*(theta_s + theta_r);
+            float theta = 0.5f*(theta_s + theta_r);
             float R = 1.0f + 0.2f*cosf(theta); 
 
             float scale_const = 1.0f / (2.0f * M_PI);
@@ -783,70 +788,187 @@ __global__ void image_domain_forward_kernel(float * S, float * Ts, float * Tr, f
                                             int old_nx, int old_ny, int old_nz, int new_nxx, int new_nyy, int new_nzz, int nb,
                                             float aperture, float cmpx, float cmpy)
 {
-    // int index = blockIdx.x * blockDim.x + threadIdx.x;
+    int index = blockIdx.x * blockDim.x + threadIdx.x;
 
-    // int i = (int)(index % nzz);
-    // int j = (int)(index / nzz);
+    int k = (int) (index / (old_nx*old_nz));         
+    int j = (int) (index - k*old_nx*old_nz) / old_nz;    
+    int i = (int) (index - j*old_nz - k*old_nx*old_nz);  
 
-    // if ((i > nb) && (i < nzz-nb) && (j > nb) && (j < nxx-nb))
-    // {
-    //     float T = Ts[index] + Tr[index]; 
-    //     int tId = __float2int_rd(T / dt);
+    float z = __int2float_rd(i)*old_dz;
+    float x = __int2float_rd(j)*old_dx;
+    float y = __int2float_rd(k)*old_dy;
 
-    //     int nz = (nzz - 2*nb);
-
-    //     if (tId < nt) 
-    //     {
-    //         float dTs_dx = 0.5f*(Ts[i + (j+1)*nzz] - Ts[i + (j-1)*nzz]) / dx;
-    //         float dTs_dz = 0.5f*(Ts[(i+1) + j*nzz] - Ts[(i-1) + j*nzz]) / dz;
-
-    //         float d2Ts_dx2 = (Ts[i + (j+1)*nzz] - 2.0f*Ts[index] + Ts[i + (j-1)*nzz]) / (dx*dx); 
-    //         float d2Ts_dz2 = (Ts[(i+1) + j*nzz] - 2.0f*Ts[index] + Ts[(i-1) + j*nzz]) / (dz*dz);
-           
-    //         float d2Ts_dxdz = (Ts[(i+1) + (j+1)*nzz] - Ts[(i-1) + (j+1)*nzz] - Ts[(i+1) + (j-1)*nzz] + Ts[(i-1) + (j-1)*nzz]) / (4.0f*dx*dz);
-
-    //         float dTr_dx = 0.5f*(Tr[i + (j+1)*nzz] - Tr[i + (j-1)*nzz]) / dx;
-    //         float dTr_dz = 0.5f*(Tr[(i+1) + j*nzz] - Tr[(i-1) + j*nzz]) / dz;
-
-    //         float d2Tr_dx2 = (Tr[i + (j+1)*nzz] - 2.0f*Tr[index] + Tr[i + (j-1)*nzz]) / (dx*dx); 
-    //         float d2Tr_dz2 = (Tr[(i+1) + j*nzz] - 2.0f*Tr[index] + Tr[(i-1) + j*nzz]) / (dz*dz);
-           
-    //         float d2Tr_dxdz = (Tr[(i+1) + (j+1)*nzz] - Tr[(i-1) + (j+1)*nzz] - Tr[(i+1) + (j-1)*nzz] + Tr[(i-1) + (j-1)*nzz]) / (4.0f*dx*dz);
-
-    //         float norm_Ts = sqrtf(dTs_dx*dTs_dx + dTs_dz*dTs_dz) + EPS;
-    //         float norm_Tr = sqrtf(dTr_dx*dTr_dx + dTr_dz*dTr_dz) + EPS;
-            
-    //         float ux_s = dTs_dx / norm_Ts; float uz_s = dTs_dz / norm_Ts;            
-    //         float ux_r = dTr_dx / norm_Tr; float uz_r = dTr_dz / norm_Tr;            
-
-    //         float nx_norm = 0.0f, nz_norm = -1.0f; 
-    //         float cos_s = fabs(ux_s*nx_norm + uz_s*nz_norm);
-    //         float cos_r = fabs(ux_r*nx_norm + uz_r*nz_norm);
-
-    //         float a = d2Ts_dx2  + d2Tr_dx2;
-    //         float b = d2Ts_dxdz + d2Tr_dxdz;
-    //         float c = d2Ts_dz2  + d2Tr_dz2;
-
-    //         float detH = a*c - b*b;
-
-    //         float J = 1.0f / sqrtf(fabsf(detH) + EPS); 
-
-    //         float R_s = max(Ts[index] / S[index], EPS);
-    //         float R_r = max(Tr[index] / S[index], EPS);
-
-    //         float G = 1.0f / sqrt(R_s * R_r);
-
-    //         float theta = acosf(min(1.0f, max(-1.0f, ux_s*nx_norm + uz_s*nz_norm)));
-
-    //         float R = 1.0f + 0.2f*cos(theta);
-
-    //         float weights = 1.0f / (2.0f * M_PI) * sqrt(max(0.0f, cos_s) * max(0.0f, cos_r)) * G * J * R;            
-            
-    //         int mId = (i - nb) + (j - nb)*nz;
+    float z0 = __float2int_rd(z / new_dz) * new_dz;
+    float x0 = __float2int_rd(x / new_dx) * new_dx;
+    float y0 = __float2int_rd(y / new_dy) * new_dy;
     
-    //         atomicAdd(&data[tId], weights * model[mId]);
-    //     }
-    // }    
+    float z1 = __float2int_rd(z / new_dz) * new_dz + new_dz;
+    float x1 = __float2int_rd(x / new_dx) * new_dx + new_dx;
+    float y1 = __float2int_rd(y / new_dy) * new_dy + new_dy;
+
+    float zd = (z - z0) / (z1 - z0);
+    float xd = (x - x0) / (x1 - x0);
+    float yd = (y - y0) / (y1 - y0);
+
+    int new_i = __float2int_rd(z / new_dz) + nb; 
+    int new_j = __float2int_rd(x / new_dx) + nb;   
+    int new_k = __float2int_rd(y / new_dy) + nb;         
+
+    const int n = 4;
+
+    float cS[n][n][n];
+    float cTs[n][n][n]; 
+    float cTr[n][n][n]; 
+    
+    if ((new_i >= nb) && (new_i < new_nzz-nb) && 
+        (new_j >= nb) && (new_j < new_nxx-nb) && 
+        (new_k >= nb) && (new_k < new_nyy-nb))
+    {
+        for (int pIdx = 0; pIdx < n; pIdx++)
+        {
+            for (int pIdy = 0; pIdy < n; pIdy++)
+            {
+                for (int pIdz = 0; pIdz < n; pIdz++)
+                {
+                    int targetId = (new_i+pIdz-1) + (new_j+pIdx-1)*new_nzz + (new_k+pIdy-1)*new_nxx*new_nzz; 
+
+                    cS[pIdx][pIdy][pIdz] = S[targetId];
+                    cTs[pIdx][pIdy][pIdz] = Ts[targetId];
+                    cTr[pIdx][pIdy][pIdz] = Tr[targetId];
+                }
+            }
+        }
+
+        float cubic_S = d_cubic3d(cS, xd, yd, zd);
+        float cubic_Ts = d_cubic3d(cTs, xd, yd, zd);
+        float cubic_Tr = d_cubic3d(cTr, xd, yd, zd);
+                    
+        float T = cubic_Ts + cubic_Tr; 
+        int tId = __float2int_rd(T / dt);
+
+        if (tId < nt) 
+        {
+            float dTs_dz = 0.5f*(Ts[(new_i+1) + new_j*new_nzz + new_k*new_nxx*new_nzz] - 
+                                 Ts[(new_i-1) + new_j*new_nzz + new_k*new_nxx*new_nzz]) / new_dz;            
+
+            float dTs_dx = 0.5f*(Ts[new_i + (new_j+1)*new_nzz + new_k*new_nxx*new_nzz] - 
+                                 Ts[new_i + (new_j-1)*new_nzz + new_k*new_nxx*new_nzz]) / new_dx;
+
+            float dTs_dy = 0.5f*(Ts[new_i + new_j*new_nzz + (new_k+1)*new_nxx*new_nzz] - 
+                                 Ts[new_i + new_j*new_nzz + (new_k-1)*new_nxx*new_nzz]) / new_dy;
+
+            float d2Ts_dz2 = (Ts[(new_i+1) + new_j*new_nzz + new_k*new_nxx*new_nzz] - 
+                         2.0f*Ts[new_i + new_j*new_nzz + new_k*new_nxx*new_nzz] + 
+                              Ts[(new_i-1) + new_j*new_nzz + new_k*new_nxx*new_nzz]) / (new_dz*new_dz); 
+
+            float d2Ts_dx2 = (Ts[new_i + (new_j+1)*new_nzz + new_k*new_nxx*new_nzz] - 
+                         2.0f*Ts[new_i + new_j*new_nzz + new_k*new_nxx*new_nzz] + 
+                              Ts[new_i + (new_j-1)*new_nzz + new_k*new_nxx*new_nzz]) / (new_dx*new_dx); 
+                              
+            float d2Ts_dy2 = (Ts[new_i + new_j*new_nzz + (new_k+1)*new_nxx*new_nzz] - 
+                         2.0f*Ts[new_i + new_j*new_nzz + new_k*new_nxx*new_nzz] + 
+                              Ts[new_i + new_j*new_nzz + (new_k-1)*new_nxx*new_nzz]) / (new_dy*new_dy); 
+           
+            float d2Ts_dxdz = (Ts[(new_i+1) + (new_j+1)*new_nzz + new_k*new_nxx*new_nzz] - 
+                               Ts[(new_i-1) + (new_j+1)*new_nzz + new_k*new_nxx*new_nzz] - 
+                               Ts[(new_i+1) + (new_j-1)*new_nzz + new_k*new_nxx*new_nzz] + 
+                               Ts[(new_i-1) + (new_j-1)*new_nzz + new_k*new_nxx*new_nzz]) / (4.0f*new_dx*new_dz);
+
+            float d2Ts_dydz = (Ts[(new_i+1) + new_j*new_nzz + (new_k+1)*new_nxx*new_nzz] - 
+                               Ts[(new_i+1) + new_j*new_nzz + (new_k-1)*new_nxx*new_nzz] - 
+                               Ts[(new_i-1) + new_j*new_nzz + (new_k+1)*new_nxx*new_nzz] + 
+                               Ts[(new_i-1) + new_j*new_nzz + (new_k-1)*new_nxx*new_nzz]) / (4.0f*new_dy*new_dz);
+
+            float d2Ts_dxdy = (Ts[new_i + (new_j+1)*new_nzz + (new_k+1)*new_nxx*new_nzz] - 
+                               Ts[new_i + (new_j+1)*new_nzz + (new_k-1)*new_nxx*new_nzz] - 
+                               Ts[new_i + (new_j-1)*new_nzz + (new_k+1)*new_nxx*new_nzz] + 
+                               Ts[new_i + (new_j-1)*new_nzz + (new_k-1)*new_nxx*new_nzz]) / (4.0f*new_dx*new_dy);
+
+            float dTr_dz = 0.5f*(Tr[(new_i+1) + new_j*new_nzz + new_k*new_nxx*new_nzz] - 
+                                 Tr[(new_i-1) + new_j*new_nzz + new_k*new_nxx*new_nzz]) / new_dz;            
+
+            float dTr_dx = 0.5f*(Tr[new_i + (new_j+1)*new_nzz + new_k*new_nxx*new_nzz] - 
+                                 Tr[new_i + (new_j-1)*new_nzz + new_k*new_nxx*new_nzz]) / new_dx;
+
+            float dTr_dy = 0.5f*(Tr[new_i + new_j*new_nzz + (new_k+1)*new_nxx*new_nzz] - 
+                                 Tr[new_i + new_j*new_nzz + (new_k-1)*new_nxx*new_nzz]) / new_dy;
+
+            float d2Tr_dz2 = (Tr[(new_i+1) + new_j*new_nzz + new_k*new_nxx*new_nzz] - 
+                         2.0f*Tr[new_i + new_j*new_nzz + new_k*new_nxx*new_nzz] + 
+                              Tr[(new_i-1) + new_j*new_nzz + new_k*new_nxx*new_nzz]) / (new_dz*new_dz); 
+
+            float d2Tr_dx2 = (Tr[new_i + (new_j+1)*new_nzz + new_k*new_nxx*new_nzz] - 
+                         2.0f*Tr[new_i + new_j*new_nzz + new_k*new_nxx*new_nzz] + 
+                              Tr[new_i + (new_j-1)*new_nzz + new_k*new_nxx*new_nzz]) / (new_dx*new_dx); 
+                              
+            float d2Tr_dy2 = (Tr[new_i + new_j*new_nzz + (new_k+1)*new_nxx*new_nzz] - 
+                         2.0f*Tr[new_i + new_j*new_nzz + new_k*new_nxx*new_nzz] + 
+                              Tr[new_i + new_j*new_nzz + (new_k-1)*new_nxx*new_nzz]) / (new_dz*new_dz); 
+           
+            float d2Tr_dxdz = (Tr[(new_i+1) + (new_j+1)*new_nzz + new_k*new_nxx*new_nzz] - 
+                               Tr[(new_i-1) + (new_j+1)*new_nzz + new_k*new_nxx*new_nzz] - 
+                               Tr[(new_i+1) + (new_j-1)*new_nzz + new_k*new_nxx*new_nzz] + 
+                               Tr[(new_i-1) + (new_j-1)*new_nzz + new_k*new_nxx*new_nzz]) / (4.0f*new_dx*new_dz);
+
+            float d2Tr_dydz = (Tr[(new_i+1) + new_j*new_nzz + (new_k+1)*new_nxx*new_nzz] - 
+                               Tr[(new_i+1) + new_j*new_nzz + (new_k-1)*new_nxx*new_nzz] - 
+                               Tr[(new_i-1) + new_j*new_nzz + (new_k+1)*new_nxx*new_nzz] + 
+                               Tr[(new_i-1) + new_j*new_nzz + (new_k-1)*new_nxx*new_nzz]) / (4.0f*new_dy*new_dz);
+
+            float d2Tr_dxdy = (Tr[new_i + (new_j+1)*new_nzz + (new_k+1)*new_nxx*new_nzz] - 
+                               Tr[new_i + (new_j+1)*new_nzz + (new_k-1)*new_nxx*new_nzz] - 
+                               Tr[new_i + (new_j-1)*new_nzz + (new_k+1)*new_nxx*new_nzz] + 
+                               Tr[new_i + (new_j-1)*new_nzz + (new_k-1)*new_nxx*new_nzz]) / (4.0f*new_dx*new_dy);
+  
+            float detHs = d2Ts_dx2*(d2Ts_dy2*d2Ts_dz2 - d2Ts_dydz*d2Ts_dydz)
+                       - d2Ts_dxdy*(d2Ts_dxdy*d2Ts_dz2 - d2Ts_dydz*d2Ts_dxdz)
+                       + d2Ts_dxdz*(d2Ts_dxdy*d2Ts_dydz - d2Ts_dy2*d2Ts_dxdz);
+
+            float detHr = d2Tr_dx2*(d2Tr_dy2*d2Tr_dz2 - d2Tr_dydz*d2Tr_dydz)
+                       - d2Tr_dxdy*(d2Tr_dxdy*d2Tr_dz2 - d2Tr_dydz*d2Tr_dxdz)
+                       + d2Tr_dxdz*(d2Tr_dxdy*d2Tr_dydz - d2Tr_dy2*d2Tr_dxdz);
+
+            float norm_Ts = sqrtf(dTs_dx*dTs_dx + dTs_dy*dTs_dy + dTs_dz*dTs_dz) + EPS;
+            float norm_Tr = sqrtf(dTr_dx*dTr_dx + dTr_dy*dTr_dy + dTr_dz*dTr_dz) + EPS;
+
+            detHs = fabsf(detHs) + EPS;
+            detHr = fabsf(detHr) + EPS;
+
+            float Jterm = sqrtf(detHs * detHr) * cubic_S / (norm_Ts * norm_Tr);    
+            
+            float ux_s = dTs_dx / norm_Ts; float uy_s = dTs_dy / norm_Ts; float uz_s = dTs_dz / norm_Ts;            
+            float ux_r = dTr_dx / norm_Tr; float uy_r = dTr_dy / norm_Tr; float uz_r = dTr_dz / norm_Tr;            
+
+            float nx_norm = 0.0f, ny_norm = 0.0f, nz_norm = -1.0f; 
+            float cos_s = fabs(ux_s*nx_norm + uy_s*ny_norm + uz_s*nz_norm);
+            float cos_r = fabs(ux_s*nx_norm + uy_s*ny_norm + uz_s*nz_norm);
+            
+            float obliquity = sqrt(max(0.0f, cos_s) * max(0.0f, cos_r));
+
+            float R_s = max(cubic_Ts / cubic_S, EPS);
+            float R_r = max(cubic_Tr / cubic_S, EPS);
+
+            float G = 1.0f / sqrt(R_s * R_r);
+
+            float theta_s = acosf(min(1.0f,max(-1.0f, ux_s*nx_norm + uy_s*ny_norm + uz_s*nz_norm)));
+            float theta_r = acosf(min(1.0f,max(-1.0f, ux_r*nx_norm + uy_r*ny_norm + uz_r*nz_norm)));
+            float theta = 0.5f*(theta_s + theta_r);
+            float R = 1.0f + 0.2f*cosf(theta); 
+
+            float scale_const = 1.0f / (2.0f * M_PI);
+
+            float sigma = tanf(aperture * M_PI / 180.0f)*z;        
+
+            float par_x = powf((x - cmpx) / (sigma + EPS), 2.0f);
+            float par_y = powf((y - cmpy) / (sigma + EPS), 2.0f);
+
+            float taper = expf(-0.5f*(par_x + par_y));
+
+            float weights = scale_const * Jterm * obliquity * G * R * taper;            
+    
+            atomicAdd(&data[tId], weights * model[index]);
+        }
+    }    
 }
 
 __global__ void angle_domain_adjoint_kernel(float * S, float * Ts, float * Tr, float * data, float * model, float dx, float dz, float dt, float da, int nxx, int nzz, int nt, int na, int nb, int cmpId)
@@ -998,8 +1120,6 @@ __global__ void angle_domain_forward_kernel(float * S, float * Ts, float * Tr, f
         }
     }   
 }
-
-// Device functions of cubic interpolation
 
 __device__ float d_cubic1d(float P[4], float dx)
 {

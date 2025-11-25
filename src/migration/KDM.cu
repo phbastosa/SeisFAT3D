@@ -27,23 +27,23 @@ void KDM::kirchhoff_depth_migration()
         float sx = modeling->geometry->xsrc[modeling->srcId];
         float sy = modeling->geometry->ysrc[modeling->srcId];
 
-        for (modeling->recId = modeling->geometry->iRec[modeling->srcId]; modeling->recId < modeling->geometry->fRec[modeling->srcId]; modeling->recId++)
+        for (modeling->recId = 0; modeling->recId < modeling->geometry->nrec; modeling->recId++)
         {            
             float rx = modeling->geometry->xrec[modeling->recId];
             float ry = modeling->geometry->yrec[modeling->recId];
 
             float offset = sqrtf((sx - rx)*(sx - rx) + (sy - ry)*(sy - ry));
 
-            CMPx = 0.5f*(sx + rx);
-            CMPy = 0.5f*(sy + ry);
-
-            // int cmpIdx = (int)((CMPx - minCMPx) / dCMP);
-            // int cmpIdy = (int)((CMPy - minCMPy) / dCMP);
-
-            // int cmpId = cmpIdy + cmpIdx*nCMPy;
-
             if (offset < max_offset) 
             {
+                CMPx = 0.5f*(sx + rx);
+                CMPy = 0.5f*(sy + ry);
+
+                // int cmpIdx = (int)((CMPx - minCMPx) / dCMP);
+                // int cmpIdy = (int)((CMPy - minCMPy) / dCMP);
+
+                // int cmpId = cmpIdy + cmpIdx*nCMPy;
+
                 import_binary_float(tables_folder + "eikonal_rec_" + std::to_string(modeling->recId+1) + ".bin", h_Tr, modeling->volsize);
                 cudaMemcpy(d_Tr, h_Tr, modeling->volsize*sizeof(float), cudaMemcpyHostToDevice);
 

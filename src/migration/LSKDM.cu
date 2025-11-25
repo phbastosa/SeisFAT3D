@@ -2,151 +2,119 @@
 
 void LSKDM::kirchhoff_depth_migration()
 {
-    set_src_travel_times();
-    set_rec_travel_times();
+    //set_src_travel_times();
+    //set_rec_travel_times();
     prepare_convolution();
 
-    // set_src_domain();
+    set_src_domain();
 
-    // initialization();
+    initialization();
 
-    // while (true)
-    // {
-    //     compute_gradient();        
-    //     compute_residuals();
+    while (true)
+    {
+        compute_gradient();        
+        compute_residuals();
 
-    //     if (converged) break;
+        if (converged) break;
 
-    //     compute_direction();
-    //     compute_stepLength();
+        compute_direction();
+        compute_stepLength();
 
-    //     update_model();
-    // }
+        update_model();
+    }
 }
 
 void LSKDM::initialization()
 {
-    // h_gradient = new float[m_samples]();
-    // h_direction = new float[m_samples]();
-    // gradient_old = new float[m_samples]();
+    h_gradient = new float[m_samples]();
+    h_direction = new float[m_samples]();
+    gradient_old = new float[m_samples]();
 
-    // cudaMalloc((void**)&(d_gradient), m_samples*sizeof(float));    
-    // cudaMalloc((void**)&(d_direction), m_samples*sizeof(float));
-
-    // iteration = 0;
-
-    // cudaMemset(d_model, 0.0f, m_samples*sizeof(float));
-
-    // for (modeling->srcId = 0; modeling->srcId < modeling->geometry->nsrc; modeling->srcId++)
-    // {     
-    //     std::string data_path = input_data_folder + input_data_prefix + std::to_string(modeling->srcId+1) + ".bin";
-    //     import_binary_float(data_path, seismic, nt*modeling->max_spread);
-
-    //     import_binary_float(tables_folder + "eikonal_src_" + std::to_string(modeling->srcId+1) + ".bin", h_Ts, modeling->matsize);
-    //     cudaMemcpy(d_Ts, h_Ts, modeling->matsize*sizeof(float), cudaMemcpyHostToDevice);
-
-    //     set_current_src();
-
-    //     current_operation = domain + " LS-Migration: Computing Initial Model";
-
-    //     show_information();
-    //     show_iteration_info();
-
-    //     int spreadId = 0;
-        
-    //     for (modeling->recId = modeling->geometry->iRec[modeling->srcId]; modeling->recId < modeling->geometry->fRec[modeling->srcId]; modeling->recId++)
-    //     {
-    //         cmpId = spreadId + 2.0f*(ds/dr)*modeling->srcId;                              
-            
-    //         import_binary_float(tables_folder + "eikonal_rec_" + std::to_string(modeling->recId+1) + ".bin", h_Tr, modeling->matsize);
-    //         cudaMemcpy(d_Tr, h_Tr, modeling->matsize*sizeof(float), cudaMemcpyHostToDevice);
-
-    //         for (int tId = 0; tId < nt; tId++)
-    //             h_data[tId] = seismic[tId + spreadId*nt];
-            
-    //         adjoint_convolution();
-            
-    //         cudaMemcpy(d_data, h_data, nt * sizeof(float), cudaMemcpyHostToDevice);
-
-    //         perform_adjoint();
-
-    //         ++spreadId;
-    //     }
-    // }
+    cudaMalloc((void**)&(d_gradient), m_samples*sizeof(float));    
+    cudaMalloc((void**)&(d_direction), m_samples*sizeof(float));
     
-    // cudaMemcpy(h_model, d_model, m_samples*sizeof(float), cudaMemcpyDeviceToHost);
+    iteration = 0;
+
+    cudaMemset(d_model, 0.0f, m_samples*sizeof(float));
 }
 
 void LSKDM::compute_gradient()
 {
-    // cudaMemset(d_gradient, 0.0f, m_samples*sizeof(float));
-    // cudaMemcpy(d_model, h_model, m_samples*sizeof(float), cudaMemcpyHostToDevice);
+    cudaMemset(d_gradient, 0.0f, m_samples*sizeof(float));
+    cudaMemcpy(d_model, h_model, m_samples*sizeof(float), cudaMemcpyHostToDevice);
 
-    // if (iteration == max_it) ++iteration;
+    if (iteration == max_it) ++iteration;
 
-    // residuals = 0.0f;
+    residuals = 0.0f;
 
-    // for (modeling->srcId = 0; modeling->srcId < modeling->geometry->nsrc; modeling->srcId++)
-    // {     
-    //     std::string data_path = input_data_folder + input_data_prefix + std::to_string(modeling->srcId+1) + ".bin";
-    //     import_binary_float(data_path, seismic, nt*modeling->max_spread);
+    for (modeling->srcId = 0; modeling->srcId < modeling->geometry->nsrc; modeling->srcId++)
+    {     
+        std::string data_path = input_data_folder + input_data_prefix + std::to_string(modeling->srcId+1) + ".bin";
+        import_binary_float(data_path, seismic, nt*modeling->geometry->nrec);
 
-    //     import_binary_float(tables_folder + "eikonal_src_" + std::to_string(modeling->srcId+1) + ".bin", h_Ts, modeling->matsize);
-    //     cudaMemcpy(d_Ts, h_Ts, modeling->matsize*sizeof(float), cudaMemcpyHostToDevice);
+        import_binary_float(tables_folder + "eikonal_src_" + std::to_string(modeling->srcId+1) + ".bin", h_Ts, modeling->volsize);
+        cudaMemcpy(d_Ts, h_Ts, modeling->volsize*sizeof(float), cudaMemcpyHostToDevice);
 
-    //     set_current_src();
+        set_current_src();
 
-    //     current_operation = domain + " LS-Migration: Computing Gradient";
+        current_operation = domain + " LS-Migration: Computing Gradient";
 
-    //     show_information();
-    //     show_iteration_info();
+        show_information();
+        show_iteration_info();
 
-    //     int spreadId = 0;
-        
-    //     for (modeling->recId = modeling->geometry->iRec[modeling->srcId]; modeling->recId < modeling->geometry->fRec[modeling->srcId]; modeling->recId++)
-    //     {
-    //         cmpId = spreadId + 2.0f*(ds/dr)*modeling->srcId;                              
-
-    //         import_binary_float(tables_folder + "eikonal_rec_" + std::to_string(modeling->recId+1) + ".bin", h_Tr, modeling->matsize);
-    //         cudaMemcpy(d_Tr, h_Tr, modeling->matsize*sizeof(float), cudaMemcpyHostToDevice);
-
-    //         cudaMemset(d_data, 0.0f, nt * sizeof(float));
-
-    //         perform_forward();
-
-    //         cudaMemcpy(h_data, d_data, nt * sizeof(float), cudaMemcpyDeviceToHost);
-
-    //         forward_convolution();
-
-    //         for (int tId = 0; tId < nt; tId++)
-    //         {                
-    //             h_data[tId] -= seismic[tId + spreadId*nt];
+        float sx = modeling->geometry->xsrc[modeling->srcId];
+        float sy = modeling->geometry->ysrc[modeling->srcId];
                 
-    //             residuals += h_data[tId]*h_data[tId];
-    //         }
-            
-    //         adjoint_convolution();
-            
-    //         cudaMemcpy(d_data, h_data, nt * sizeof(float), cudaMemcpyHostToDevice);
-            
-    //         perform_adjoint_gradient();
+        for (modeling->recId = 0; modeling->recId < modeling->geometry->nrec; modeling->recId++)
+        {
+            float rx = modeling->geometry->xrec[modeling->recId];
+            float ry = modeling->geometry->yrec[modeling->recId];
 
-    //         ++spreadId;
-    //     }
-    // }
+            float offset_x = fabsf(sx - rx);
+            float offset_y = fabsf(sy - ry);
 
-    // if (iteration == max_it) --iteration;
+            if ((offset_x < max_offset) && (offset_y < max_offset)) 
+            {
+                CMPx = 0.5f*(sx + rx);
+                CMPy = 0.5f*(sy + ry);
+
+                // int cmpIdx = (int)((CMPx - minCMPx) / dCMP);
+                // int cmpIdy = (int)((CMPy - minCMPy) / dCMP);
+
+                // int cmpId = cmpIdy + cmpIdx*nCMPy;
+
+                import_binary_float(tables_folder + "eikonal_rec_" + std::to_string(modeling->recId+1) + ".bin", h_Tr, modeling->volsize);
+                cudaMemcpy(d_Tr, h_Tr, modeling->volsize*sizeof(float), cudaMemcpyHostToDevice);
+
+                cudaMemset(d_data, 0.0f, nt * sizeof(float));
+
+                perform_forward();
+
+                cudaMemcpy(h_data, d_data, nt * sizeof(float), cudaMemcpyDeviceToHost);
+
+                forward_convolution();
+
+                for (int tId = 0; tId < nt; tId++)
+                {
+                    float dobs = seismic[tId + modeling->recId*nt];
+
+                    h_data[tId] = (fabsf(dobs) > EPS) ? dobs - h_data[tId] : 0.0f;
+                    
+                    residuals += h_data[tId]*h_data[tId];
+                }
+
+                adjoint_convolution();
+            
+                cudaMemcpy(d_data, h_data, nt * sizeof(float), cudaMemcpyHostToDevice);
+            
+                perform_adjoint_gradient();
+            }
+        }
+    }
+
+    if (iteration == max_it) --iteration;
     
-    // cudaMemcpy(h_gradient, d_gradient, m_samples*sizeof(float), cudaMemcpyDeviceToHost);
-
-    // float grad_norm = 0.0f;
-    // for (int index = 0; index < m_samples; index++)
-    //     grad_norm += h_gradient[index]*h_gradient[index];
-
-    // grad_norm = sqrtf(grad_norm);
-
-    // for (int index = 0; index < m_samples; index++)
-    //     h_gradient[index] /= grad_norm;
+    cudaMemcpy(h_gradient, d_gradient, m_samples*sizeof(float), cudaMemcpyDeviceToHost);
 }
 
 void LSKDM::compute_residuals()
@@ -162,95 +130,102 @@ void LSKDM::compute_residuals()
 
 void LSKDM::compute_direction()
 {   
-    // float beta_num = 0.0f;
-    // float beta_den = 0.0f;
+    beta_num = 0.0f;
+    beta_den = 0.0f;
 
-    // for (int index = 0; index < m_samples; index++)
-    // {
-    //     beta_num += (h_gradient[index] - gradient_old[index])*h_gradient[index]; 
-    //     beta_den += gradient_old[index]*gradient_old[index];
-    // }
+    alpha_num = 0.0f;
+    alpha_den = 0.0f;
 
-    // beta = beta_num / (beta_den + EPS);
+    // omp
+    for (int index = 0; index < m_samples; index++)
+    {
+        beta_num += h_gradient[index]*h_gradient[index]; 
+        beta_den += gradient_old[index]*gradient_old[index];
+    }
 
-    // for (int index = 0; index < m_samples; index++)
-    //     h_direction[index] = beta*h_direction[index] - h_gradient[index];
+    beta = beta_num / (beta_den + EPS);
+
+    // omp
+    for (int index = 0; index < m_samples; index++)
+    {
+        h_direction[index] = beta*h_direction[index] - h_gradient[index];
+
+        alpha_num += h_direction[index]*h_gradient[index];
+    }
 }
 
 void LSKDM::compute_stepLength()
 {
-    // cudaMemcpy(d_model, h_model, m_samples*sizeof(float), cudaMemcpyHostToDevice);
-    // cudaMemcpy(d_direction, h_direction, m_samples*sizeof(float), cudaMemcpyHostToDevice);
+    cudaMemcpy(d_model, h_model, m_samples*sizeof(float), cudaMemcpyHostToDevice);
+    cudaMemcpy(d_direction, h_direction, m_samples*sizeof(float), cudaMemcpyHostToDevice);
 
-    // alpha = 0.0f;
+    alpha = 0.0f;
 
-    // float alpha_num = 0.0f;
-    // float alpha_den = 0.0f;
+    for (modeling->srcId = 0; modeling->srcId < modeling->geometry->nsrc; modeling->srcId++)
+    {     
+        std::string data_path = input_data_folder + input_data_prefix + std::to_string(modeling->srcId+1) + ".bin";
+        import_binary_float(data_path, seismic, nt*modeling->geometry->nrec);
 
-    // for (modeling->srcId = 0; modeling->srcId < modeling->geometry->nsrc; modeling->srcId++)
-    // {     
-    //     std::string data_path = input_data_folder + input_data_prefix + std::to_string(modeling->srcId+1) + ".bin";
-    //     import_binary_float(data_path, seismic, nt*modeling->max_spread);
+        import_binary_float(tables_folder + "eikonal_src_" + std::to_string(modeling->srcId+1) + ".bin", h_Ts, modeling->volsize);
+        cudaMemcpy(d_Ts, h_Ts, modeling->volsize*sizeof(float), cudaMemcpyHostToDevice);
 
-    //     import_binary_float(tables_folder + "eikonal_src_" + std::to_string(modeling->srcId+1) + ".bin", h_Ts, modeling->matsize);
-    //     cudaMemcpy(d_Ts, h_Ts, modeling->matsize*sizeof(float), cudaMemcpyHostToDevice);
+        set_current_src();
 
-    //     set_current_src();
+        current_operation = domain + " LS-Migration: Computing Step Length";
 
-    //     current_operation = domain + " LS-Migration: Computing Step Length";
-
-    //     show_information();
-    //     show_iteration_info();
+        show_information();
+        show_iteration_info();
         
-    //     int spreadId = 0;
+        float sx = modeling->geometry->xsrc[modeling->srcId];
+        float sy = modeling->geometry->ysrc[modeling->srcId];
         
-    //     for (modeling->recId = modeling->geometry->iRec[modeling->srcId]; modeling->recId < modeling->geometry->fRec[modeling->srcId]; modeling->recId++)
-    //     {
-    //         cmpId = spreadId + 2.0f*(ds/dr)*modeling->srcId;                              
+        for (modeling->recId = 0; modeling->recId < modeling->geometry->nrec; modeling->recId++)
+        {
+            float rx = modeling->geometry->xrec[modeling->recId];
+            float ry = modeling->geometry->yrec[modeling->recId];
 
-    //         import_binary_float(tables_folder + "eikonal_rec_" + std::to_string(modeling->recId+1) + ".bin", h_Tr, modeling->matsize);
-    //         cudaMemcpy(d_Tr, h_Tr, modeling->matsize*sizeof(float), cudaMemcpyHostToDevice);
+            float offset_x = fabsf(sx - rx);
+            float offset_y = fabsf(sy - ry);
 
-    //         cudaMemset(d_data, 0.0f, nt * sizeof(float));
+            if ((offset_x < max_offset) && (offset_y < max_offset)) 
+            {
+                CMPx = 0.5f*(sx + rx);
+                CMPy = 0.5f*(sy + ry);
 
-    //         perform_forward();
+                // int cmpIdx = (int)((CMPx - minCMPx) / dCMP);
+                // int cmpIdy = (int)((CMPy - minCMPy) / dCMP);
 
-    //         cudaMemcpy(h_data, d_data, nt * sizeof(float), cudaMemcpyDeviceToHost);
+                // int cmpId = cmpIdy + cmpIdx*nCMPy;
 
-    //         forward_convolution();
+                import_binary_float(tables_folder + "eikonal_rec_" + std::to_string(modeling->recId+1) + ".bin", h_Tr, modeling->volsize);
+                cudaMemcpy(d_Tr, h_Tr, modeling->volsize*sizeof(float), cudaMemcpyHostToDevice);
 
-    //         for (int tId = 0; tId < nt; tId++)
-    //             seismic[tId + spreadId*nt] = seismic[tId + spreadId*nt] - h_data[tId];
+                cudaMemset(d_data, 0.0f, nt * sizeof(float));
+
+                perform_forward_direction();
             
-    //         cudaMemset(d_data, 0.0f, nt * sizeof(float));
+                cudaMemcpy(h_data, d_data, nt * sizeof(float), cudaMemcpyDeviceToHost);
 
-    //         perform_forward_direction();
+                forward_convolution();
             
-    //         cudaMemcpy(h_data, d_data, nt * sizeof(float), cudaMemcpyDeviceToHost);
-
-    //         forward_convolution();
-            
-    //         for (int tId = 0; tId < nt; tId++)
-    //         {
-    //             alpha_num += seismic[tId + spreadId*nt]*h_data[tId];
-    //             alpha_den += h_data[tId]*h_data[tId];
-    //         }    
-            
-    //         ++spreadId;
-    //     }
-    // }
+                for (int tId = 0; tId < nt; tId++)
+                    alpha_den += h_data[tId]*h_data[tId];
+            }            
+        }
+    }
     
-    // alpha = alpha_num / (alpha_den + EPS);
+    alpha = alpha_num / (alpha_den + EPS);
 }
 
 void LSKDM::update_model()
-{
-    // for (int index = 0; index < m_samples; index++)
-    // {
-    //     h_model[index] = h_model[index] + alpha*h_direction[index];
-        
-    //     gradient_old[index] = h_gradient[index];
-    // }   
+{   
+    // omp
+    for (int index = 0; index < m_samples; index++)
+    {
+        h_model[index] = h_model[index] + alpha*h_direction[index];
+       
+        gradient_old[index] = h_gradient[index];
+    }   
 }
 
 void LSKDM::show_iteration_info()

@@ -13,7 +13,10 @@ private:
 
     std::vector<float> residuo;
 
-    float alpha, beta, residuals;
+    float residuals;
+
+    float beta, beta_num, beta_den;
+    float alpha, alpha_num, alpha_den;
     
     void update_model();
     void initialization();
