@@ -78,8 +78,7 @@ protected:
     std::string input_data_prefix;
     
     std::string tables_folder;
-    std::string images_folder;
-    std::string gathers_folder;
+    std::string seismic_folder;
     std::string residuo_folder;
 
     void set_interpolation();
@@ -114,7 +113,7 @@ public:
 
     void set_parameters();
 
-    void dot_product_test();
+    //void dot_product_test();
 
     virtual void kirchhoff_depth_migration() = 0;
 

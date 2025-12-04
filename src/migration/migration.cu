@@ -20,8 +20,7 @@ void Migration::set_parameters()
     input_data_prefix = catch_parameter("mig_data_prefix", parameters);
     
     tables_folder = catch_parameter("mig_tables_folder", parameters);
-    images_folder = catch_parameter("mig_images_folder", parameters);
-    gathers_folder = catch_parameter("mig_gathers_folder", parameters);
+    seismic_folder = catch_parameter("mig_images_folder", parameters);
 
     anisotropy = str2bool(catch_parameter("anisotropy", parameters));
 
@@ -133,24 +132,21 @@ void Migration::set_anisotropy()
 
 void Migration::set_slowness()
 {
-    float * v = new float[old_nPoints]();
-    float * s = new float[new_nPoints]();
+    float * old_s = new float[old_nPoints]();
+    float * new_s = new float[new_nPoints]();
 
-    std::string vp_file = catch_parameter("vp_model_file", parameters);
+    std::string slowness_file = catch_parameter("slowness_file", parameters);
 
-    import_binary_float(vp_file, v, old_nPoints);
+    import_binary_float(slowness_file, old_s, old_nPoints);
 
-    for (int index = 0; index < old_nPoints; index++)
-        v[index] = 1.0f / v[index];
-
-    perform_cubic(v, s);
+    perform_cubic(old_s, new_s);
 
     modeling->S = new float[modeling->volsize]();
 
-    modeling->expand_boundary(s, modeling->S);
+    modeling->expand_boundary(new_s, modeling->S);
 
-    delete[] v;
-    delete[] s;
+    delete[] old_s;
+    delete[] new_s;
 }
 
 void Migration::perform_cubic(float * input, float * output)
@@ -479,121 +475,121 @@ void Migration::forward_convolution()
         h_data[tId] = (float)(time_trace[tId + nw/2 + nw/5]);
 }
 
-void Migration::dot_product_test()
-{
-    set_src_travel_times();
-    set_rec_travel_times();
-    prepare_convolution();
+// void Migration::dot_product_test()
+// {
+//     set_src_travel_times();
+//     set_rec_travel_times();
+//     prepare_convolution();
 
-    d_samples = nt*modeling->geometry->nrec*modeling->geometry->nsrc;
+//     d_samples = nt*modeling->geometry->nrec*modeling->geometry->nsrc;
     
-    auto trash = system("clear");
-    std::cout << "Computing dot product test!\n\n";
+//     auto trash = system("clear");
+//     std::cout << "Computing dot product test!\n\n";
 
-    // d1 = new float[d_samples]();
-    // d2 = new float[d_samples]();
+//     // d1 = new float[d_samples]();
+//     // d2 = new float[d_samples]();
 
-    // m1 = new float[m_samples]();
-    // m2 = new float[m_samples]();
+//     // m1 = new float[m_samples]();
+//     // m2 = new float[m_samples]();
 
-    // int minValue =-100;
-    // int maxValue = 100;
+//     // int minValue =-100;
+//     // int maxValue = 100;
 
-    // std::mt19937 prng(std::random_device{}());
-    // std::uniform_int_distribution<int> dist(minValue, maxValue);
+//     // std::mt19937 prng(std::random_device{}());
+//     // std::uniform_int_distribution<int> dist(minValue, maxValue);
 
-    // for (int mId = 0; mId < m_samples; mId++)
-    //     m1[mId] = dist(prng);
+//     // for (int mId = 0; mId < m_samples; mId++)
+//     //     m1[mId] = dist(prng);
 
-    // for (int dId = 0; dId < d_samples; dId++)
-    //     d2[dId] = dist(prng);
+//     // for (int dId = 0; dId < d_samples; dId++)
+//     //     d2[dId] = dist(prng);
     
-    // cudaMemcpy(d_model, m1, m_samples*sizeof(float), cudaMemcpyHostToDevice);
+//     // cudaMemcpy(d_model, m1, m_samples*sizeof(float), cudaMemcpyHostToDevice);
 
-    // for (modeling->srcId = 0; modeling->srcId < modeling->geometry->nsrc; modeling->srcId++)
-    // {     
-    //     import_binary_float(tables_folder + "eikonal_src_" + std::to_string(modeling->srcId+1) + ".bin", h_Ts, modeling->matsize);
-    //     cudaMemcpy(d_Ts, h_Ts, modeling->matsize*sizeof(float), cudaMemcpyHostToDevice);
+//     // for (modeling->srcId = 0; modeling->srcId < modeling->geometry->nsrc; modeling->srcId++)
+//     // {     
+//     //     import_binary_float(tables_folder + "eikonal_src_" + std::to_string(modeling->srcId+1) + ".bin", h_Ts, modeling->matsize);
+//     //     cudaMemcpy(d_Ts, h_Ts, modeling->matsize*sizeof(float), cudaMemcpyHostToDevice);
         
-    //     int spreadId = 0;
+//     //     int spreadId = 0;
         
-    //     for (modeling->recId = modeling->geometry->iRec[modeling->srcId]; modeling->recId < modeling->geometry->fRec[modeling->srcId]; modeling->recId++)
-    //     {
-    //         cmpId = spreadId + 2.0f*(ds/dr)*modeling->srcId;                              
-    //         cmp = 0.5f*(modeling->geometry->xsrc[modeling->srcId] + 
-    //                     modeling->geometry->xrec[modeling->recId]);
+//     //     for (modeling->recId = modeling->geometry->iRec[modeling->srcId]; modeling->recId < modeling->geometry->fRec[modeling->srcId]; modeling->recId++)
+//     //     {
+//     //         cmpId = spreadId + 2.0f*(ds/dr)*modeling->srcId;                              
+//     //         cmp = 0.5f*(modeling->geometry->xsrc[modeling->srcId] + 
+//     //                     modeling->geometry->xrec[modeling->recId]);
 
-    //         import_binary_float(tables_folder + "eikonal_rec_" + std::to_string(modeling->recId+1) + ".bin", h_Tr, modeling->matsize);
-    //         cudaMemcpy(d_Tr, h_Tr, modeling->matsize*sizeof(float), cudaMemcpyHostToDevice);
+//     //         import_binary_float(tables_folder + "eikonal_rec_" + std::to_string(modeling->recId+1) + ".bin", h_Tr, modeling->matsize);
+//     //         cudaMemcpy(d_Tr, h_Tr, modeling->matsize*sizeof(float), cudaMemcpyHostToDevice);
 
-    //         cudaMemset(d_data, 0.0f, nt * sizeof(float));
+//     //         cudaMemset(d_data, 0.0f, nt * sizeof(float));
 
-    //         perform_forward();
+//     //         perform_forward();
 
-    //         cudaMemcpy(h_data, d_data, nt * sizeof(float), cudaMemcpyDeviceToHost);
+//     //         cudaMemcpy(h_data, d_data, nt * sizeof(float), cudaMemcpyDeviceToHost);
 
-    //         forward_convolution();
+//     //         forward_convolution();
 
-    //         for (int tId = 0; tId < nt; tId++)
-    //         {
-    //             int index = tId + spreadId*nt + modeling->srcId*modeling->max_spread*nt;
+//     //         for (int tId = 0; tId < nt; tId++)
+//     //         {
+//     //             int index = tId + spreadId*nt + modeling->srcId*modeling->max_spread*nt;
                 
-    //             d1[index] = h_data[tId];    
-    //         }                
+//     //             d1[index] = h_data[tId];    
+//     //         }                
         
-    //         ++spreadId;
-    //     }
-    // }
+//     //         ++spreadId;
+//     //     }
+//     // }
 
-    // cudaMemset(d_model, 0.0f, m_samples*sizeof(float));
+//     // cudaMemset(d_model, 0.0f, m_samples*sizeof(float));
 
-    // for (modeling->srcId = 0; modeling->srcId < modeling->geometry->nsrc; modeling->srcId++)
-    // { 
-    //     modeling->sx = modeling->geometry->xsrc[modeling->srcId];
+//     // for (modeling->srcId = 0; modeling->srcId < modeling->geometry->nsrc; modeling->srcId++)
+//     // { 
+//     //     modeling->sx = modeling->geometry->xsrc[modeling->srcId];
 
-    //     import_binary_float(tables_folder + "eikonal_src_" + std::to_string(modeling->srcId+1) + ".bin", h_Ts, modeling->matsize);
-    //     cudaMemcpy(d_Ts, h_Ts, modeling->matsize*sizeof(float), cudaMemcpyHostToDevice);
+//     //     import_binary_float(tables_folder + "eikonal_src_" + std::to_string(modeling->srcId+1) + ".bin", h_Ts, modeling->matsize);
+//     //     cudaMemcpy(d_Ts, h_Ts, modeling->matsize*sizeof(float), cudaMemcpyHostToDevice);
 
-    //     int spreadId = 0;
+//     //     int spreadId = 0;
         
-    //     for (modeling->recId = modeling->geometry->iRec[modeling->srcId]; modeling->recId < modeling->geometry->fRec[modeling->srcId]; modeling->recId++)
-    //     {
-    //         cmp = 0.5f*(modeling->sx + modeling->geometry->xrec[modeling->recId]);
-    //         cmpId = spreadId + 2.0f*(ds/dr)*modeling->srcId;                              
+//     //     for (modeling->recId = modeling->geometry->iRec[modeling->srcId]; modeling->recId < modeling->geometry->fRec[modeling->srcId]; modeling->recId++)
+//     //     {
+//     //         cmp = 0.5f*(modeling->sx + modeling->geometry->xrec[modeling->recId]);
+//     //         cmpId = spreadId + 2.0f*(ds/dr)*modeling->srcId;                              
 
-    //         import_binary_float(tables_folder + "eikonal_rec_" + std::to_string(modeling->recId+1) + ".bin", h_Tr, modeling->matsize);
-    //         cudaMemcpy(d_Tr, h_Tr, modeling->matsize*sizeof(float), cudaMemcpyHostToDevice);
+//     //         import_binary_float(tables_folder + "eikonal_rec_" + std::to_string(modeling->recId+1) + ".bin", h_Tr, modeling->matsize);
+//     //         cudaMemcpy(d_Tr, h_Tr, modeling->matsize*sizeof(float), cudaMemcpyHostToDevice);
 
-    //         for (int tId = 0; tId < nt; tId++)
-    //             h_data[tId] = d2[tId + spreadId*nt + modeling->srcId*modeling->max_spread*nt];
+//     //         for (int tId = 0; tId < nt; tId++)
+//     //             h_data[tId] = d2[tId + spreadId*nt + modeling->srcId*modeling->max_spread*nt];
 
-    //         adjoint_convolution();
+//     //         adjoint_convolution();
 
-    //         cudaMemcpy(d_data, h_data, nt * sizeof(float), cudaMemcpyHostToDevice);
+//     //         cudaMemcpy(d_data, h_data, nt * sizeof(float), cudaMemcpyHostToDevice);
             
-    //         perform_adjoint();
+//     //         perform_adjoint();
 
-    //         ++spreadId;
-    //     }
-    // }
+//     //         ++spreadId;
+//     //     }
+//     // }
 
-    // cudaMemcpy(m2, d_model, m_samples*sizeof(float), cudaMemcpyDeviceToHost);        
+//     // cudaMemcpy(m2, d_model, m_samples*sizeof(float), cudaMemcpyDeviceToHost);        
 
-    // double dot_m = 0.0;
-    // double dot_d = 0.0;
+//     // double dot_m = 0.0;
+//     // double dot_d = 0.0;
 
-    // for (int mId = 0; mId < m_samples; mId++)
-    //     dot_m += m1[mId]*m2[mId];
+//     // for (int mId = 0; mId < m_samples; mId++)
+//     //     dot_m += m1[mId]*m2[mId];
     
-    // for (int dId = 0; dId < d_samples; dId++)
-    //     dot_d += d1[dId]*d2[dId];
+//     // for (int dId = 0; dId < d_samples; dId++)
+//     //     dot_d += d1[dId]*d2[dId];
 
-    // double r = (dot_d - dot_m) / (dot_d + dot_m);
+//     // double r = (dot_d - dot_m) / (dot_d + dot_m);
     
-    // std::cout << "<m1, m2> = " << dot_m << std::endl;
-    // std::cout << "<d1, d2> = " << dot_d << std::endl; 
-    // std::cout << "residuo = " << r << std::endl;
-}
+//     // std::cout << "<m1, m2> = " << dot_m << std::endl;
+//     // std::cout << "<d1, d2> = " << dot_d << std::endl; 
+//     // std::cout << "residuo = " << r << std::endl;
+// }
 
 __global__ void image_domain_adjoint_kernel(float * S, float * Ts, float * Tr, float * data, float * model, float dt, int nt, 
                                             float old_dx, float old_dy, float old_dz, float new_dx, float new_dy, float new_dz, 
@@ -771,8 +767,8 @@ __global__ void image_domain_adjoint_kernel(float * S, float * Ts, float * Tr, f
 
             float sigma = tanf(aperture * M_PI / 180.0f)*z;        
 
-            float par_x = powf((x - cmpx) / (sigma + EPS), 2.0f);
-            float par_y = powf((y - cmpy) / (sigma + EPS), 2.0f);
+            float par_x = ((x - cmpx) / (sigma + EPS))*((x - cmpx) / (sigma + EPS));
+            float par_y = ((y - cmpy) / (sigma + EPS))*((y - cmpy) / (sigma + EPS));
 
             float taper = expf(-0.5f*(par_x + par_y));
 
@@ -973,152 +969,14 @@ __global__ void image_domain_forward_kernel(float * S, float * Ts, float * Tr, f
 
 __global__ void angle_domain_adjoint_kernel(float * S, float * Ts, float * Tr, float * data, float * model, float dx, float dz, float dt, float da, int nxx, int nzz, int nt, int na, int nb, int cmpId)
 {
-    int index = blockIdx.x * blockDim.x + threadIdx.x;
 
-    int i = (int)(index % nzz);
-    int j = (int)(index / nzz);
 
-    if ((i > nb) && (i < nzz-nb) && (j > nb) && (j < nxx-nb))
-    {
-        float T = Ts[index] + Tr[index]; 
-        
-        int tId = __float2int_rd(T / dt);
-
-        int nz = (nzz - 2*nb);
-        
-        if (tId < nt) 
-        {
-            float dTs_dx = 0.5f*(Ts[i + (j+1)*nzz] - Ts[i + (j-1)*nzz]) / dx;
-            float dTs_dz = 0.5f*(Ts[(i+1) + j*nzz] - Ts[(i-1) + j*nzz]) / dz;
-
-            float d2Ts_dx2 = (Ts[i + (j+1)*nzz] - 2.0f*Ts[index] + Ts[i + (j-1)*nzz]) / (dx*dx); 
-            float d2Ts_dz2 = (Ts[(i+1) + j*nzz] - 2.0f*Ts[index] + Ts[(i-1) + j*nzz]) / (dz*dz);
-           
-            float d2Ts_dxdz = (Ts[(i+1) + (j+1)*nzz] - Ts[(i-1) + (j+1)*nzz] - Ts[(i+1) + (j-1)*nzz] + Ts[(i-1) + (j-1)*nzz]) / (4.0f*dx*dz);
-
-            float dTr_dx = 0.5f*(Tr[i + (j+1)*nzz] - Tr[i + (j-1)*nzz]) / dx;
-            float dTr_dz = 0.5f*(Tr[(i+1) + j*nzz] - Tr[(i-1) + j*nzz]) / dz;
-
-            float d2Tr_dx2 = (Tr[i + (j+1)*nzz] - 2.0f*Tr[index] + Tr[i + (j-1)*nzz]) / (dx*dx); 
-            float d2Tr_dz2 = (Tr[(i+1) + j*nzz] - 2.0f*Tr[index] + Tr[(i-1) + j*nzz]) / (dz*dz);
-           
-            float d2Tr_dxdz = (Tr[(i+1) + (j+1)*nzz] - Tr[(i-1) + (j+1)*nzz] - Tr[(i+1) + (j-1)*nzz] + Tr[(i-1) + (j-1)*nzz]) / (4.0f*dx*dz);
-
-            float norm_Ts = sqrtf(dTs_dx*dTs_dx + dTs_dz*dTs_dz) + EPS;
-            float norm_Tr = sqrtf(dTr_dx*dTr_dx + dTr_dz*dTr_dz) + EPS;
-            
-            float ux_s = dTs_dx / norm_Ts; float uz_s = dTs_dz / norm_Ts;            
-            float ux_r = dTr_dx / norm_Tr; float uz_r = dTr_dz / norm_Tr;            
-
-            float nx_norm = 0.0f, nz_norm = -1.0f; 
-            float cos_s = fabs(ux_s*nx_norm + uz_s*nz_norm);
-            float cos_r = fabs(ux_r*nx_norm + uz_r*nz_norm);
-
-            float a = d2Ts_dx2  + d2Tr_dx2;
-            float b = d2Ts_dxdz + d2Tr_dxdz;
-            float c = d2Ts_dz2  + d2Tr_dz2;
-
-            float detH = a*c - b*b;
-
-            float J = 1.0f / sqrtf(fabsf(detH) + EPS); 
-
-            float R_s = max(Ts[index] / S[index], EPS);
-            float R_r = max(Tr[index] / S[index], EPS);
-
-            float G = 1.0f / sqrt(R_s * R_r);
-
-            float theta = acosf(min(1.0f, max(-1.0f, ux_s*nx_norm + uz_s*nz_norm)));
-
-            float R = 1.0f + 0.2f*cos(theta);
-
-            float weights = 1.0f / (2.0f * M_PI) * sqrt(max(0.0f, cos_s) * max(0.0f, cos_r)) * G * J * R;            
-
-            float reflection_angle = 0.5f*acos((dTs_dx*dTr_dx + dTs_dz*dTr_dz) / (norm_Ts * norm_Tr));
-
-            float ang = 180.0f*reflection_angle / M_PI;
-            int aId = __float2int_rd(ang / da);  
-
-            int mId = (i - nb) + aId*nz + cmpId*na*nz;
-            
-            if ((aId >= 0) && (aId < na))             
-                atomicAdd(&model[mId], weights * data[tId]);
-        }
-    }   
 }
 
 __global__ void angle_domain_forward_kernel(float * S, float * Ts, float * Tr, float * data, float * model, float dx, float dz, float dt, float da, int nxx, int nzz, int nt, int na, int nb, int cmpId)
 {
-    int index = blockIdx.x * blockDim.x + threadIdx.x;
 
-    int i = (int)(index % nzz);
-    int j = (int)(index / nzz);
 
-    if ((i > nb) && (i < nzz-nb) && (j > nb) && (j < nxx-nb))
-    {
-        float T = Ts[index] + Tr[index]; 
-        
-        int tId = __float2int_rd(T / dt);
-
-        int nz = (nzz - 2*nb);
-        
-        if (tId < nt) 
-        {
-            float dTs_dx = 0.5f*(Ts[i + (j+1)*nzz] - Ts[i + (j-1)*nzz]) / dx;
-            float dTs_dz = 0.5f*(Ts[(i+1) + j*nzz] - Ts[(i-1) + j*nzz]) / dz;
-
-            float d2Ts_dx2 = (Ts[i + (j+1)*nzz] - 2.0f*Ts[index] + Ts[i + (j-1)*nzz]) / (dx*dx); 
-            float d2Ts_dz2 = (Ts[(i+1) + j*nzz] - 2.0f*Ts[index] + Ts[(i-1) + j*nzz]) / (dz*dz);
-           
-            float d2Ts_dxdz = (Ts[(i+1) + (j+1)*nzz] - Ts[(i-1) + (j+1)*nzz] - Ts[(i+1) + (j-1)*nzz] + Ts[(i-1) + (j-1)*nzz]) / (4.0f*dx*dz);
-
-            float dTr_dx = 0.5f*(Tr[i + (j+1)*nzz] - Tr[i + (j-1)*nzz]) / dx;
-            float dTr_dz = 0.5f*(Tr[(i+1) + j*nzz] - Tr[(i-1) + j*nzz]) / dz;
-
-            float d2Tr_dx2 = (Tr[i + (j+1)*nzz] - 2.0f*Tr[index] + Tr[i + (j-1)*nzz]) / (dx*dx); 
-            float d2Tr_dz2 = (Tr[(i+1) + j*nzz] - 2.0f*Tr[index] + Tr[(i-1) + j*nzz]) / (dz*dz);
-           
-            float d2Tr_dxdz = (Tr[(i+1) + (j+1)*nzz] - Tr[(i-1) + (j+1)*nzz] - Tr[(i+1) + (j-1)*nzz] + Tr[(i-1) + (j-1)*nzz]) / (4.0f*dx*dz);
-
-            float norm_Ts = sqrtf(dTs_dx*dTs_dx + dTs_dz*dTs_dz) + EPS;
-            float norm_Tr = sqrtf(dTr_dx*dTr_dx + dTr_dz*dTr_dz) + EPS;
-            
-            float ux_s = dTs_dx / norm_Ts; float uz_s = dTs_dz / norm_Ts;            
-            float ux_r = dTr_dx / norm_Tr; float uz_r = dTr_dz / norm_Tr;            
-
-            float nx_norm = 0.0f, nz_norm = -1.0f; 
-            float cos_s = fabs(ux_s*nx_norm + uz_s*nz_norm);
-            float cos_r = fabs(ux_r*nx_norm + uz_r*nz_norm);
-
-            float a = d2Ts_dx2  + d2Tr_dx2;
-            float b = d2Ts_dxdz + d2Tr_dxdz;
-            float c = d2Ts_dz2  + d2Tr_dz2;
-
-            float detH = a*c - b*b;
-
-            float J = 1.0f / sqrtf(fabsf(detH) + EPS); 
-
-            float R_s = max(Ts[index] / S[index], EPS);
-            float R_r = max(Tr[index] / S[index], EPS);
-
-            float G = 1.0f / sqrt(R_s * R_r);
-
-            float theta = acosf(min(1.0f, max(-1.0f, ux_s*nx_norm + uz_s*nz_norm)));
-
-            float R = 1.0f + 0.2f*cos(theta);
-
-            float weights = 1.0f / (2.0f * M_PI) * sqrt(max(0.0f, cos_s) * max(0.0f, cos_r)) * G * J * R;            
-
-            float reflection_angle = 0.5f*acos((dTs_dx*dTr_dx + dTs_dz*dTr_dz) / (norm_Ts * norm_Tr));
-
-            float ang = 180.0f*reflection_angle / M_PI;
-            int aId = __float2int_rd(ang / da);  
-
-            int mId = (i - nb) + aId*nz + cmpId*na*nz;
-            
-            if ((aId >= 0) && (aId < na))             
-                atomicAdd(&data[tId], weights * model[mId]);
-        }
-    }   
 }
 
 __device__ float d_cubic1d(float P[4], float dx)

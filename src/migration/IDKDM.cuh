@@ -6,7 +6,6 @@
 class IDKDM : public KDM
 {
     void set_migration();
-
     void perform_forward();
     void perform_adjoint();
 };

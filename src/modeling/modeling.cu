@@ -111,9 +111,9 @@ void Modeling::set_eikonal()
 
 void Modeling::set_shot_point()
 {
-    sx = geometry->xsrc[geometry->sInd[srcId]]; 
-    sy = geometry->ysrc[geometry->sInd[srcId]]; 
-    sz = geometry->zsrc[geometry->sInd[srcId]]; 
+    sx = geometry->xsrc[srcId]; 
+    sy = geometry->ysrc[srcId]; 
+    sz = geometry->zsrc[srcId]; 
 }
 
 void Modeling::initialization()
@@ -174,13 +174,11 @@ void Modeling::eikonal_solver()
 
 void Modeling::compute_seismogram()
 {
-    int spread = 0;
-
     float P[4][4][4];
 
     cudaMemcpy(T, d_T, volsize*sizeof(float), cudaMemcpyDeviceToHost);    
 
-    for (recId = geometry->iRec[srcId]; recId < geometry->fRec[srcId]; recId++)
+    for (recId = 0; recId < geometry->nrec; recId++)
     {
         float x = geometry->xrec[recId];
         float y = geometry->yrec[recId];
@@ -213,7 +211,7 @@ void Modeling::compute_seismogram()
             }
         }   
 
-        seismogram[spread++] = cubic3d(P, xd, yd, zd);
+        seismogram[recId] = cubic3d(P, xd, yd, zd);
     }
 }
 
@@ -221,8 +219,8 @@ void Modeling::export_seismogram()
 {   
     compute_seismogram();
          
-    std::string data_file = data_folder + modeling_type + "_nStations" + std::to_string(geometry->spread[srcId]) + "_shot_" + std::to_string(geometry->sInd[srcId]+1) + ".bin";
-    export_binary_float(data_file, seismogram, geometry->spread[srcId]);    
+    std::string data_file = data_folder + modeling_type + "_nStations" + std::to_string(geometry->nrec) + "_shot_" + std::to_string(srcId+1) + ".bin";
+    export_binary_float(data_file, seismogram, geometry->nrec);    
 }
 
 void Modeling::expand_boundary(float * input, float * output)
@@ -297,11 +295,11 @@ void Modeling::show_information()
 
     std::cout << "Model dimensions: (z = " << (nz - 1)*dz << ", x = " << (nx - 1) * dx <<", y = " << (ny - 1) * dy << ") m\n\n";
 
-    std::cout << "Running shot " << srcId + 1 << " of " << geometry->nrel << " in total\n\n";
+    std::cout << "Running shot " << srcId + 1 << " of " << geometry->nsrc << " in total\n\n";
 
-    std::cout << "Current shot position: (z = " << geometry->zsrc[geometry->sInd[srcId]] << 
-                                       ", x = " << geometry->xsrc[geometry->sInd[srcId]] << 
-                                       ", y = " << geometry->ysrc[geometry->sInd[srcId]] << ") m\n\n";
+    std::cout << "Current shot position: (z = " << geometry->zsrc[srcId] << 
+                                       ", x = " << geometry->xsrc[srcId] << 
+                                       ", y = " << geometry->ysrc[srcId] << ") m\n\n";
 
     std::cout << modeling_name << "\n";
 }

@@ -63,8 +63,6 @@ public:
     void set_eikonal();
     void set_geometry();
 
-    virtual void set_conditions() = 0;
-
     void set_parameters();
     void initialization();
     void eikonal_solver();
@@ -77,6 +75,7 @@ public:
     void expand_boundary(float * input, float * output);
     void reduce_boundary(float * input, float * output);
     
+    virtual void set_conditions() = 0;
     virtual void time_propagation() = 0;
 
     void export_seismogram();

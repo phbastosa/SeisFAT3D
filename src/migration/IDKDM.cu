@@ -6,7 +6,7 @@ void IDKDM::set_migration()
     migType = "IDKDM";
     m_samples = old_nPoints;
 
-    output_path = images_folder + migType + "_result_" + std::to_string(old_nz) + "x" + std::to_string(old_nx) + "x" + std::to_string(old_ny) + ".bin";
+    output_path = seismic_folder + migType + "_result_" + std::to_string(old_nz) + "x" + std::to_string(old_nx) + "x" + std::to_string(old_ny) + ".bin";
 }
 
 void IDKDM::perform_adjoint()

@@ -5,12 +5,9 @@
 
 class Eikonal_ISO : public Modeling
 {
-private:
-
-    void set_conditions();
-
 public:
 
+    void set_conditions();
     void time_propagation();
 };
 

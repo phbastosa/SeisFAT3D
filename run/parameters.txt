@@ -4,23 +4,22 @@
 
 x_samples = 201                            # <int>  
 y_samples = 201                            # <int>  
-z_samples = 61                             # <int>  
+z_samples = 81                             # <int>  
 
 x_spacing = 25.0                           # [m] <float> 
 y_spacing = 25.0                           # [m] <float> 
 z_spacing = 25.0                           # [m] <float> 
 
-vp_model_file = ../../FWI3D/inputs/models/kdm_test_vp.bin   
+slowness_file = ../../EikoStagTriX3D/inputs/models/EikoStagTriX3D_slowness.bin   
 
-Cijkl_folder = ../../FWI3D/inputs/models/kdm_test_
+Cijkl_folder = ../../EikoStagTriX3D/inputs/models/EikoStagTriX3D_
 
 #---------------------------------------------------------------------------------------------------
 # Geometry parameters ------------------------------------------------------------------------------
 #---------------------------------------------------------------------------------------------------
 
-SPS = ../../FWI3D/inputs/geometry/kdm_test_SPS.txt              
-RPS = ../../FWI3D/inputs/geometry/kdm_test_RPS.txt     
-XPS = ../../FWI3D/inputs/geometry/kdm_test_XPS.txt     
+SPS = ../../EikoStagTriX3D/inputs/geometry/EikoStagTriX3D_SPS.txt              
+RPS = ../../EikoStagTriX3D/inputs/geometry/EikoStagTriX3D_RPS.txt     
 
 #---------------------------------------------------------------------------------------------------
 # Modeling parameters ------------------------------------------------------------------------------
@@ -75,7 +74,7 @@ cubic_dz = 100.0                            # [m] <float>
 
 anisotropy = false                          # <bool>
 
-time_samples = 4001                         # <int>
+time_samples = 3001                         # <int>
 time_spacing = 1e-3                         # [s] <float>
 max_frequency = 20.0                        # [Hz] <float>
 
@@ -88,7 +87,7 @@ mig_max_offset = 1000                       # [m] <float>
 
 mig_max_iteration = 10                      # <int> 
 
-mig_data_folder = ../../FWI3D/inputs/data/        
+mig_data_folder = ../../EikoStagTriX3D/outputs/seismograms/       
 mig_data_prefix = seismogram_input_shot_  
 
 mig_tables_folder = ../outputs/tables/

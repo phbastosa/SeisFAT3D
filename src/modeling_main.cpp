@@ -18,7 +18,7 @@ int main(int argc, char **argv)
 
     auto ti = std::chrono::system_clock::now();
 
-    for (int shot = 0; shot < modeling[type]->geometry->nrel; shot++)
+    for (int shot = 0; shot < modeling[type]->geometry->nsrc; shot++)
     {
         modeling[type]->srcId = shot;
 

@@ -34,13 +34,12 @@ private:
 
     uintc * d_C66 = nullptr; float maxC66; float minC66;
 
-    void set_conditions();
- 
+    void set_stiffness_element(std::string element, uintc * dCij, float &max, float &min);
+    
 public:
 
+    void set_conditions();
     void time_propagation();
-
-    void set_stiffness_element(std::string element, uintc * dCij, float &max, float &min);
 };
 
 __global__ void get_quasi_slowness(float * T, float * S, float dx, float dy, float dz, int sIdx, int sIdy, int sIdz, int nxx, int nyy, int nzz, int nb, 

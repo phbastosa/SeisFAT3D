@@ -9,13 +9,6 @@ public:
 
     int nsrc;
     int nrec;
-    int nrel;
-
-    int * sInd = nullptr;
-    int * iRec = nullptr;
-    int * fRec = nullptr;
-
-    int * spread = nullptr;
 
     float * xsrc = nullptr;
     float * ysrc = nullptr;
