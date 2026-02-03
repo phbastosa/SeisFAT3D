@@ -53,18 +53,18 @@ void Eikonal_ANI::time_propagation()
     initialization();
     eikonal_solver();
 
-    get_quasi_slowness<<<nBlocks,NTHREADS>>>(d_T,d_S,dx,dy,dz,sIdx,sIdy,sIdz,nxx,nyy,nzz,nb,d_C11, 
-                                             d_C12,d_C13,d_C14,d_C15,d_C16,d_C22,d_C23,d_C24,d_C25, 
-                                             d_C26,d_C33,d_C34,d_C35,d_C36,d_C44,d_C45,d_C46,d_C55, 
-                                             d_C56,d_C66,minC11,maxC11,minC12,maxC12,minC13,maxC13,
-                                             minC14,maxC14,minC15,maxC15,minC16,maxC16,minC22,maxC22,
-                                             minC23,maxC23,minC24,maxC24,minC25,maxC25,minC26,maxC26,
-                                             minC33,maxC33,minC34,maxC34,minC35,maxC35,minC36,maxC36,
-                                             minC44,maxC44,minC45,maxC45,minC46,maxC46,minC55,maxC55,
-                                             minC56,maxC56,minC66,maxC66);
+    // get_quasi_slowness<<<nBlocks,NTHREADS>>>(d_T,d_S,dx,dy,dz,sIdx,sIdy,sIdz,nxx,nyy,nzz,nb,d_C11, 
+    //                                          d_C12,d_C13,d_C14,d_C15,d_C16,d_C22,d_C23,d_C24,d_C25, 
+    //                                          d_C26,d_C33,d_C34,d_C35,d_C36,d_C44,d_C45,d_C46,d_C55, 
+    //                                          d_C56,d_C66,minC11,maxC11,minC12,maxC12,minC13,maxC13,
+    //                                          minC14,maxC14,minC15,maxC15,minC16,maxC16,minC22,maxC22,
+    //                                          minC23,maxC23,minC24,maxC24,minC25,maxC25,minC26,maxC26,
+    //                                          minC33,maxC33,minC34,maxC34,minC35,maxC35,minC36,maxC36,
+    //                                          minC44,maxC44,minC45,maxC45,minC46,maxC46,minC55,maxC55,
+    //                                          minC56,maxC56,minC66,maxC66);
                                              
-    initialization();
-    eikonal_solver();
+    // initialization();
+    // eikonal_solver();
 
     copy_slowness_to_device();
 }

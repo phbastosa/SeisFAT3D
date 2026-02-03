@@ -49,7 +49,7 @@ migration_all="$migration $KDM $LSKDM $IDKDM $IDLSKDM $ADKDM $ADLSKDM"
 
 # Compiler flags --------------------------------------------------------------------------------------
 
-flags="-Xcompiler -fopenmp -lfftw3 --std=c++11 --relocatable-device-code=true -lm -O3"
+flags="-Xcompiler -fopenmp -lfftw3 --std=c++11 --use_fast_math --relocatable-device-code=true -lm -O3"
 
 # Main dialogue ---------------------------------------------------------------------------------------
 
@@ -90,8 +90,8 @@ case "$1" in
     # echo -e "../bin/\033[31minversion.exe\033[m" 
     # nvcc $admin $geometry $modeling_all $inversion_all $inversion_main $flags -o ../bin/inversion.exe
 
-    echo -e "../bin/\033[31mmigration.exe\033[m"
-    nvcc $admin $geometry $modeling_all $migration_all $migration_main $flags -o ../bin/migration.exe
+    # echo -e "../bin/\033[31mmigration.exe\033[m"
+    # nvcc $admin $geometry $modeling_all $migration_all $migration_main $flags -o ../bin/migration.exe
 
 	exit 0
 ;;

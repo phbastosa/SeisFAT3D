@@ -36,81 +36,63 @@ def get_analytical_refractions(v, z, x):
     
     return refracted_waves
 
-def get_analytical_time_reflections(v, z, x):
+def analytical_orthorhombic_solver(vp, ep1, ep2, dl1, dl2, dl3, tilt, azmt, sx, sy, sz, time):
 
-    Tint = 2.0 * z * v[:-1]
-    Vrms = np.zeros(len(z))
+    spacing = np.pi/100
 
-    reflections = np.zeros((len(z), len(x)))
-    for i in range(len(z)):
-        Vrms[i] = np.sqrt(np.sum(v[:i+1]**2 * Tint[:i+1]) / np.sum(Tint[:i+1]))
-        reflections[i] = np.sqrt(x**2 + 4.0*np.sum(z[:i+1])**2) / Vrms[i]
+    angles = np.arange(0, 2.0*np.pi + spacing, spacing)
 
-    return reflections 
+    c = np.cos(-tilt); s = np.sin(-tilt)
+    Rtilt = np.array([[c,0,s], [0,1,0], [-s,0,c]])
 
-def get_analytical_amps_reflections(vp, ro, z):
-    
-    reflectivity = np.zeros(len(z))    
-    reflectivity = (vp[1:]*ro[1:] - vp[:-1]*ro[:-1]) / (vp[1:]*ro[1:] + vp[:-1]*ro[:-1])
+    c = np.cos(-azmt); s = np.sin(-azmt)
+    Razmt = np.array([[c,-s,0], [s,c,0], [0,0,1]])
+        
+    R = Rtilt @ Razmt           
 
-    reflections = np.zeros_like(reflectivity)
-    transmission = np.zeros_like(reflectivity)
+    qVp_xy = np.zeros_like(angles)
+    qVp_xz = np.zeros_like(angles)
+    qVp_yz = np.zeros_like(angles)
 
-    reflections[0] = reflectivity[0]
-    transmission[0] = 1.0 - reflectivity[0]
+    for k, angle in enumerate(angles):
 
-    for i in range(1, len(reflectivity)):
-        reflections[i] = transmission[i-1]*reflectivity[i]
-        transmission[i] = transmission[i-1]*(1.0 - reflectivity[i])
+        p_xy = np.array([np.cos(angle), np.sin(angle), 0])
+        p_xz = np.array([np.cos(angle), 0, np.sin(angle)])
+        p_yz = np.array([0, np.cos(angle), np.sin(angle)])
 
-        for j in range(i,0,-1):
-            reflections[i] *= 1.0 - reflectivity[i - j]
+        p_xy = R @ p_xy
+        p_xz = R @ p_xz
+        p_yz = R @ p_yz
 
-    return reflections
+        theta_xy = np.arccos(p_xy[-1] / np.linalg.norm(p_xy))
+        theta_xz = np.arccos(p_xz[-1] / np.linalg.norm(p_xz))
+        theta_yz = np.arccos(p_yz[-1] / np.linalg.norm(p_yz))
 
-def get_ricker_wavelet(nt, dt, fmax):
-    fc = fmax / (3.0*np.sqrt(np.pi))
-    arg = np.pi*((np.arange(nt) - 0.5*nt)*dt*fc*np.pi)**2
-    return (1.0 - 2.0*arg)*np.exp(-arg)
+        phi_xy = np.arctan2(p_xy[1], p_xy[0])
+        phi_xz = np.arctan2(p_xz[1], p_xz[0])
+        phi_yz = np.arctan2(p_yz[1], p_yz[0])
 
-def compute_stiffness(vp, vs, ro, ep, dl, tht):
-    
-    SI = 1e9
+        dl_xy = dl1*np.sin(phi_xy)**2 + dl2*np.cos(phi_xy)**2
+        dl_xz = dl1*np.sin(phi_xz)**2 + dl2*np.cos(phi_xz)**2
+        dl_yz = dl1*np.sin(phi_yz)**2 + dl2*np.cos(phi_yz)**2
 
-    C = np.zeros((3,3))
-    M = np.zeros((3,3))
+        ep_xy = ep1*np.sin(phi_xy)**4 + ep2*np.cos(phi_xy)**4 + (2*ep2 + dl3)*np.sin(phi_xy)**2*np.cos(phi_xy)**2
+        ep_xz = ep1*np.sin(phi_xz)**4 + ep2*np.cos(phi_xz)**4 + (2*ep2 + dl3)*np.sin(phi_xz)**2*np.cos(phi_xz)**2
+        ep_yz = ep1*np.sin(phi_yz)**4 + ep2*np.cos(phi_yz)**4 + (2*ep2 + dl3)*np.sin(phi_yz)**2*np.cos(phi_yz)**2
 
-    c11 = 0; c13 = 0; c15 = 0
-    c33 = 0; c35 = 0; c55 = 0
+        qVp_xy[k] = vp*(1.0 + dl_xy*np.sin(theta_xy)**2*np.cos(theta_xy)**2 + ep_xy*np.sin(theta_xy)**4)
+        qVp_xz[k] = vp*(1.0 + dl_xz*np.sin(theta_xz)**2*np.cos(theta_xz)**2 + ep_xz*np.sin(theta_xz)**4)
+        qVp_yz[k] = vp*(1.0 + dl_yz*np.sin(theta_yz)**2*np.cos(theta_yz)**2 + ep_yz*np.sin(theta_yz)**4)
 
-    SI = 1e9
+    x_xy = time*qVp_xy*np.cos(angles) + sx    
+    x_xz = time*qVp_xz*np.cos(angles) + sx   
+    y_yz = time*qVp_yz*np.cos(angles) + sy    
 
-    c33 = ro*vp**2 / SI
-    c55 = ro*vs**2 / SI
+    y_xy = time*qVp_xy*np.sin(angles) + sy    
+    z_xz = time*qVp_xz*np.sin(angles) + sz    
+    z_yz = time*qVp_yz*np.sin(angles) + sz    
 
-    c11 = c33*(1.0 + 2.0*ep)
-
-    c13 = np.sqrt((c33 - c55)**2 + 2.0*dl*c33*(c33 - c55)) - c55
-
-    C[0,0] = c11; C[0,1] = c13; C[0,2] = c15  
-    C[1,0] = c13; C[1,1] = c33; C[1,2] = c35  
-    C[2,0] = c15; C[2,1] = c35; C[2,2] = c55     
-
-    tht = np.radians(tht)
-
-    c = np.cos(tht)
-    s = np.sin(tht)
-
-    sin2 = np.sin(2.0*tht)
-    cos2 = np.cos(2.0*tht)
-
-    M = np.array([[     c**2,     s**2, sin2],
-                  [     s**2,     c**2,-sin2],
-                  [-0.5*sin2, 0.5*sin2, cos2]])
-    
-    Cr = (M @ C @ M.T) * SI
-
-    return Cr
+    return x_xy, y_xy, x_xz, z_xz, y_yz, z_yz
 
 def plot_model_3D(model, dh, slices, **kwargs):
 
@@ -302,7 +284,7 @@ def plot_model_3D(model, dh, slices, **kwargs):
                 ax.contour(eiks[k], levels = eikonal_levels, colors = eikonal_colors, linestyles = "dashed")
 
             if nodes_defined:
-                ax.plot(xnode[k], ynode[k], "o", markersize = 1, color = "gray")
+                ax.plot(xnode[k], ynode[k], "o", markersize = 5, color = "blue")
             
             if shots_defined:
                 ax.plot(xshot[k], yshot[k], "*", markersize = 5, color = "green")
@@ -322,4 +304,4 @@ def plot_model_3D(model, dh, slices, **kwargs):
             if yInvert[k]:
                 ax.invert_yaxis()
     
-    return None    
+    return None

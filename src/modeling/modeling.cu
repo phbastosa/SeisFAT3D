@@ -10,7 +10,7 @@ void Modeling::set_parameters()
     dy = std::stof(catch_parameter("y_spacing", parameters));
     dz = std::stof(catch_parameter("z_spacing", parameters));
 
-    data_folder = catch_parameter("modeling_output_folder", parameters);
+    data_folder = catch_parameter("mod_output_folder", parameters);
 
     Cijkl_folder = catch_parameter("Cijkl_folder", parameters);
 

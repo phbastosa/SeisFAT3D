@@ -4,22 +4,22 @@
 
 x_samples = 201                            # <int>  
 y_samples = 201                            # <int>  
-z_samples = 81                             # <int>  
+z_samples = 51                             # <int>  
 
-x_spacing = 25.0                           # [m] <float> 
-y_spacing = 25.0                           # [m] <float> 
-z_spacing = 25.0                           # [m] <float> 
+x_spacing = 100.0                          # [m] <float> 
+y_spacing = 100.0                          # [m] <float> 
+z_spacing = 100.0                          # [m] <float> 
 
-slowness_file = ../../EikoStagTriX3D/inputs/models/EikoStagTriX3D_slowness.bin   
+vp_model_file = ../inputs/models/anisoTomo_vp_true.bin   
 
-Cijkl_folder = ../../EikoStagTriX3D/inputs/models/EikoStagTriX3D_
+Cijkl_folder = ../inputs/models/anisoTomo_
 
 #---------------------------------------------------------------------------------------------------
 # Geometry parameters ------------------------------------------------------------------------------
 #---------------------------------------------------------------------------------------------------
 
-SPS = ../../EikoStagTriX3D/inputs/geometry/EikoStagTriX3D_SPS.txt              
-RPS = ../../EikoStagTriX3D/inputs/geometry/EikoStagTriX3D_RPS.txt     
+SPS = ../inputs/geometry/anisoTomo_SPS.txt              
+RPS = ../inputs/geometry/anisoTomo_RPS.txt     
 
 #---------------------------------------------------------------------------------------------------
 # Modeling parameters ------------------------------------------------------------------------------
@@ -28,9 +28,9 @@ RPS = ../../EikoStagTriX3D/inputs/geometry/EikoStagTriX3D_RPS.txt
 # [1] - Eikonal ANI
 # --------------------------------------------------------------------------------------------------
 
-modeling_type = 0
+mod_type = 1
 
-modeling_output_folder = ../outputs/data/
+mod_output_folder = ../inputs/data/obs_
 
 #---------------------------------------------------------------------------------------------------
 # Inversion parameters 
