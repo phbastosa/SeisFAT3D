@@ -2,11 +2,11 @@ import numpy as np
 
 # Geometry configurations ------------------------------------------------------------------
 
-xc = 10000
-yc = 10000
-ds = 100.0
+xc = 1e4 
+yc = 1e4
+ds = 1e2
 
-offsets = [7000, 8000, 9000]
+offsets = [7e3, 8e3, 9e3]
 
 sx = np.array([])
 sy = np.array([])
@@ -172,10 +172,8 @@ c44 = c45 = c46 = 0
 c55 = c56 = 0
 c66 = 0
 
-SI = 1e9
-
-C33 = ro*vp**2 / SI
-C55 = ro*vs**2 / SI
+C33 = ro*vp**2 
+C55 = ro*vs**2 
 
 C11 = C33*(1.0 + 2.0*E2)
 C22 = C33*(1.0 + 2.0*E1)
@@ -232,7 +230,7 @@ for circles in points:
         M[3,4] = pbx*pcz + pbz*pcx; M[4,4] = paz*pcx + pax*pcz; M[5,4] = paz*pbx + pax*pbz
         M[3,5] = pby*pcx + pbx*pcy; M[4,5] = pax*pcy + pay*pcx; M[5,5] = pax*pby + pay*pbx
 
-        Cr = (M @ C @ M.T) * SI
+        Cr = M @ C @ M.T
 
         C11[i,j,k] = Cr[0,0]; C12[i,j,k] = Cr[0,1]; C13[i,j,k] = Cr[0,2]; C14[i,j,k] = Cr[0,3]
         C15[i,j,k] = Cr[0,4]; C16[i,j,k] = Cr[0,5]; C22[i,j,k] = Cr[1,1]; C23[i,j,k] = Cr[1,2]
