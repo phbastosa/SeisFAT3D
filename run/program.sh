@@ -24,8 +24,6 @@ modeling_all="$modeling $eikonal_iso $eikonal_ani"
 inversion="../src/inversion/inversion.cpp"
 
 tomography_iso="../src/inversion/tomography_iso.cpp"
-tomography_vti="../src/inversion/tomography_vti.cpp"
-tomography_ort="../src/inversion/tomography_ort.cpp"
 
 inversion_main="../src/inversion_main.cpp"
 
