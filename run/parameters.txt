@@ -10,7 +10,7 @@ x_spacing = 100.0                          # [m] <float>
 y_spacing = 100.0                          # [m] <float> 
 z_spacing = 100.0                          # [m] <float> 
 
-vp_model_file = ../inputs/models/anisoTomo_vp_true.bin   
+vp_model_file = ../inputs/models/anisoTomo_vp_init.bin   
 
 Cijkl_folder = ../inputs/models/anisoTomo_
 
@@ -28,9 +28,9 @@ RPS = ../inputs/geometry/anisoTomo_RPS.txt
 # [1] - Eikonal ANI
 # --------------------------------------------------------------------------------------------------
 
-mod_type = 1
+mod_type = 0
 
-mod_output_folder = ../inputs/data/obs_
+mod_output_folder = ../inputs/data/cal_
 
 #---------------------------------------------------------------------------------------------------
 # Inversion parameters 
@@ -43,7 +43,7 @@ mod_output_folder = ../inputs/data/obs_
 inv_type = 0                                # <int> 
 
 tk_order = 2                                # Tikhonov order <int>
-tk_param = 1e-3                             # Tikhonov parameter <float>
+tk_param = 1e-5                             # Tikhonov parameter <float>
 
 inv_max_it = 5                              # <int>
 
@@ -51,11 +51,11 @@ smooth_per_iteration = true                 # <bool>
 gaussian_filter_stdv = 5.0                  # <float>
 gaussian_filter_samples = 11                # [odd number] <int> 
 
-inv_residuo_folder = ../outputs/residuo/         
-inv_output_folder = ../outputs/models/    
+inv_residuo_folder = ../outputs/residuo/base_         
+inv_output_folder = ../outputs/models/base_    
 
 inv_data_folder = ../inputs/data/        
-inv_data_prefix = test_data_shot_  
+inv_data_prefix = obs_eikonal_iso_nStations1506_shot_  
 
 #---------------------------------------------------------------------------------------------------
 # Migration parameters 

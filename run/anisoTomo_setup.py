@@ -91,17 +91,17 @@ dvs = np.array([300, -300, -300, 300])
 dro = np.array([ 50,  -50,  -50,  50])
 
 dE1 = np.array([0.0, 0.0, 0.0, 0.0])
-dE2 = np.array([0.0, 0.0, 0.0, 0.0])
+dE2 = np.array([0.2, 0.0, 0.0, 0.0])
 
 dD1 = np.array([0.0, 0.0, 0.0, 0.0])
-dD2 = np.array([0.0, 0.0, 0.0, 0.0])
-dD3 = np.array([0.0, 0.0, 0.0, 0.0])
+dD2 = np.array([0.1, 0.0, 0.0, 0.0])
+dD3 = np.array([0.1, 0.0, 0.0, 0.0])
 
 dG1 = np.array([0.0, 0.0, 0.0, 0.0])
 dG2 = np.array([0.0, 0.0, 0.0, 0.0])
 
-ddip = np.deg2rad(np.array([0.0, 0.0, 0.0, 0.0]))
-dazm = np.deg2rad(np.array([0.0, 0.0, 0.0, 0.0]))
+ddip = np.deg2rad(np.array([15.0, 0.0, 0.0, 0.0]))
+dazm = np.deg2rad(np.array([30.0, 0.0, 0.0, 0.0]))
 
 circle_centers = np.array([[3000, 8000, 8000],
                            [3000, 8000, 12000],

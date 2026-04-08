@@ -2,19 +2,19 @@
 
 void Inversion::set_parameters()
 {
-    max_iteration = std::stoi(catch_parameter("max_iteration", parameters));
+    max_iteration = std::stoi(catch_parameter("inv_max_it", parameters));
 
     tk_order = std::stoi(catch_parameter("tk_order", parameters));
     tk_param = std::stof(catch_parameter("tk_param", parameters));
 
-    obs_data_folder = catch_parameter("obs_data_folder", parameters);
-    obs_data_prefix = catch_parameter("obs_data_prefix", parameters);
+    obs_data_folder = catch_parameter("inv_data_folder", parameters);
+    obs_data_prefix = catch_parameter("inv_data_prefix", parameters);
 
     smoother_stdv = std::stoi(catch_parameter("gaussian_filter_stdv", parameters));
     smoother_samples = std::stoi(catch_parameter("gaussian_filter_samples", parameters));
     
-    convergence_map_folder = catch_parameter("convergence_folder", parameters);
-    estimated_model_folder = catch_parameter("inversion_output_folder", parameters);
+    convergence_map_folder = catch_parameter("inv_residuo_folder", parameters);
+    estimated_model_folder = catch_parameter("inv_output_folder", parameters);
 
     smooth_model_per_iteration = str2bool(catch_parameter("smooth_per_iteration", parameters));
 
@@ -23,23 +23,23 @@ void Inversion::set_parameters()
 
 void Inversion::import_obsData()
 {
-    n_data = modeling->max_spread * modeling->geometry->nrel;
+    n_data = modeling->geometry->nsrc * modeling->geometry->nrec;
     n_model = modeling->nPoints;
 
     dcal = new float[n_data]();
     dobs = new float[n_data]();
 
-    for (modeling->srcId = 0; modeling->srcId < modeling->geometry->nrel; modeling->srcId++)
+    for (modeling->srcId = 0; modeling->srcId < modeling->geometry->nsrc; modeling->srcId++)
     {
-        float * data = new float[modeling->max_spread]();
+        float * data = new float[modeling->geometry->nrec]();
 
-        std::string path = obs_data_folder + obs_data_prefix + std::to_string(modeling->geometry->sInd[modeling->srcId]+1) + ".bin";
+        std::string path = obs_data_folder + obs_data_prefix + std::to_string(modeling->srcId+1) + ".bin";
 
-        import_binary_float(path, data, modeling->max_spread);
+        import_binary_float(path, data, modeling->geometry->nrec);
 
-        int skipped = modeling->srcId * modeling->max_spread;    
+        int skipped = modeling->srcId * modeling->geometry->nrec;    
         
-        for (int i = 0; i < modeling->max_spread; i++) 
+        for (int i = 0; i < modeling->geometry->nrec; i++) 
             dobs[i + skipped] = data[i];
 
         delete[] data;
@@ -51,7 +51,7 @@ void Inversion::import_obsData()
 
 void Inversion::forward_modeling()
 {
-    for (modeling->srcId = 0; modeling->srcId < modeling->geometry->nrel; modeling->srcId++)
+    for (modeling->srcId = 0; modeling->srcId < modeling->geometry->nsrc; modeling->srcId++)
     {
         modeling->set_shot_point();
         
@@ -86,9 +86,9 @@ void Inversion::concatenate_data()
 {
     modeling->compute_seismogram();
 
-    int skipped = modeling->srcId * modeling->max_spread;
+    int skipped = modeling->srcId * modeling->geometry->nrec;
 
-    for (int i = 0; i < modeling->max_spread; i++) 
+    for (int i = 0; i < modeling->geometry->nrec; i++) 
         dcal[i + skipped] = modeling->seismogram[i];    
 }
 
@@ -104,7 +104,7 @@ void Inversion::gradient_ray_tracing()
 
     std::vector<int> ray_index; 
 
-    for (int ray_id = modeling->geometry->iRec[modeling->srcId]; ray_id < modeling->geometry->fRec[modeling->srcId]; ray_id++)
+    for (int ray_id = 0; ray_id < modeling->geometry->nrec; ray_id++)
     {
         float xi = modeling->geometry->xrec[ray_id];        
         float yi = modeling->geometry->yrec[ray_id];        
@@ -158,7 +158,7 @@ void Inversion::gradient_ray_tracing()
             {
                 vG.push_back(distance_per_voxel);
                 jG.push_back(current_voxel_index);
-                iG.push_back(ray_id + modeling->srcId * modeling->max_spread);
+                iG.push_back(ray_id + modeling->srcId * modeling->geometry->nrec);
 
                 if (current_voxel_index == sId) vG.back() = final_distance;
 
@@ -171,13 +171,13 @@ void Inversion::gradient_ray_tracing()
         {
             vG.push_back(final_distance);
             jG.push_back(current_voxel_index);
-            iG.push_back(ray_id + modeling->srcId * modeling->max_spread);
+            iG.push_back(ray_id + modeling->srcId * modeling->geometry->nrec);
         }
         else 
         {
             vG.push_back(distance_per_voxel);
             jG.push_back(current_voxel_index);
-            iG.push_back(ray_id + modeling->srcId * modeling->max_spread);
+            iG.push_back(ray_id + modeling->srcId * modeling->geometry->nrec);
         }
 
         std::vector<int>().swap(ray_index);
@@ -362,6 +362,9 @@ void Inversion::model_smoothing(float * model)
 
         int aux_nPoints = aux_nx*aux_ny*aux_nz;
     
+        float * dm_aux = new float[aux_nPoints]();
+        float * dm_smooth = new float[aux_nPoints]();
+
         # pragma omp parallel for
         for (int index = 0; index < modeling->nPoints; index++)
         {
@@ -465,7 +468,7 @@ void Inversion::smooth_volume(float * input, float * output, int nx, int ny, int
 
 void Inversion::export_results()
 {    
-    std::string estimated_model_path = estimated_model_folder + inversion_name + "_final_model_" + std::to_string(modeling->nz) + "x" + std::to_string(modeling->nx) + "x" + std::to_string(modeling->ny) + ".bin";
+    std::string convergence_map_path = convergence_map_folder + inversion_name + "_convergence_" + std::to_string(iteration) + "_iterations.txt"; 
 
     export_estimated_models();
 

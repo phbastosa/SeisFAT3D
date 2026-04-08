@@ -85,7 +85,9 @@ void Tomography_ISO::model_update()
         int j = (int) (index - k*modeling->nx*modeling->nz) / modeling->nz;   
         int i = (int) (index - j*modeling->nz - k*modeling->nx*modeling->nz); 
 
-        int indb = (i + modeling->nb) + (j + modeling->nb)*modeling->nzz;
+        int indb = (i + modeling->nb) + 
+                   (j + modeling->nb)*modeling->nzz + 
+                   (k + modeling->nb)*modeling->nxx*modeling->nzz;
 
         # pragma omp atomic
         modeling->S[indb] += dS[index];
