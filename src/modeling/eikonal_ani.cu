@@ -170,11 +170,7 @@ __global__ void get_quasi_slowness(float * T, float * S, float dx, float dy, flo
                                    float minC35, float maxC35, float minC36, float maxC36, float minC44, float maxC44, float minC45, float maxC45, float minC46, 
                                    float maxC46, float minC55, float maxC55, float minC56, float maxC56, float minC66, float maxC66)
 {
-    int index = blockIdx.x * blockDim.x + threadIdx.x;
-
-    int k = (int) (index / (nxx*nzz));         
-    int j = (int) (index - k*nxx*nzz) / nzz;    
-    int i = (int) (index - j*nzz - k*nxx*nzz);  
+    const float EPS = 1e-12f;
 
     const int n = 3;
     const int v = 6;
@@ -182,131 +178,120 @@ __global__ void get_quasi_slowness(float * T, float * S, float dx, float dy, flo
     float p[n];
     float C[v*v];
     float G[n*n];
-    float Gv[n];
 
-    int voigt_map[n][n] = {{0, 5, 4}, {5, 1, 3}, {4, 3, 2}};
+    int index = blockIdx.x * blockDim.x + threadIdx.x;
 
-    if ((i >= nb) && (i < nzz-nb) && (j >= nb) && (j < nxx-nb) && (k >= nb) && (k < nyy-nb))
+    int k = index / (nxx * nzz);
+    int j = (index - k * nxx * nzz) / nzz;
+    int i = index - j * nzz - k * nxx * nzz;
+
+    if (i < nb || i >= nzz - nb ||
+        j < nb || j >= nxx - nb ||
+        k < nb || k >= nyy - nb)
+        return;
+
+    if (i == sIdz && j == sIdx && k == sIdy)
+        return;
+
+    float dTz = 0.5f*(T[(i+1) + j*nzz + k*nxx*nzz] - T[(i-1) + j*nzz + k*nxx*nzz]) / dz;
+    float dTx = 0.5f*(T[i + (j+1)*nzz + k*nxx*nzz] - T[i + (j-1)*nzz + k*nxx*nzz]) / dx;
+    float dTy = 0.5f*(T[i + j*nzz + (k+1)*nxx*nzz] - T[i + j*nzz + (k-1)*nxx*nzz]) / dy;
+
+    float norm = sqrtf(dTx*dTx + dTy*dTy + dTz*dTz) + EPS;
+
+    p[0] = dTx / norm;
+    p[1] = dTy / norm;
+    p[2] = dTz / norm;
+
+    auto decode = [&](uintc v, float vmin, float vmax) {
+        return vmin + (float(v) - 1.0f) * (vmax - vmin) / (COMPRESS - 1);
+    };
+
+    float c11 = decode(C11[index], minC11, maxC11); float c23 = decode(C23[index], minC23, maxC23); float c36 = decode(C36[index], minC36, maxC36); 
+    float c12 = decode(C12[index], minC12, maxC12); float c24 = decode(C24[index], minC24, maxC24); float c44 = decode(C44[index], minC44, maxC44); 
+    float c13 = decode(C13[index], minC13, maxC13); float c25 = decode(C25[index], minC25, maxC25); float c45 = decode(C45[index], minC45, maxC45); 
+    float c14 = decode(C14[index], minC14, maxC14); float c26 = decode(C26[index], minC26, maxC26); float c46 = decode(C46[index], minC46, maxC46); 
+    float c15 = decode(C15[index], minC15, maxC15); float c33 = decode(C33[index], minC33, maxC33); float c55 = decode(C55[index], minC55, maxC55); 
+    float c16 = decode(C16[index], minC16, maxC16); float c34 = decode(C34[index], minC34, maxC34); float c56 = decode(C56[index], minC56, maxC56); 
+    float c22 = decode(C22[index], minC22, maxC22); float c35 = decode(C35[index], minC35, maxC35); float c66 = decode(C66[index], minC66, maxC66); 
+    
+    float s_val = S[index];
+    float Ro = c33*s_val*s_val;
+
+    const int voigt_map[n][n] = {{0, 5, 4}, {5, 1, 3}, {4, 3, 2}};
+
+    C[0+0*v] = c11; C[0+1*v] = c12; C[0+2*v] = c13; C[0+3*v] = c14; C[0+4*v] = c15; C[0+5*v] = c16;
+    C[1+0*v] = c12; C[1+1*v] = c22; C[1+2*v] = c23; C[1+3*v] = c24; C[1+4*v] = c25; C[1+5*v] = c26;
+    C[2+0*v] = c13; C[2+1*v] = c23; C[2+2*v] = c33; C[2+3*v] = c34; C[2+4*v] = c35; C[2+5*v] = c36;
+    C[3+0*v] = c14; C[3+1*v] = c24; C[3+2*v] = c34; C[3+3*v] = c44; C[3+4*v] = c45; C[3+5*v] = c46;
+    C[4+0*v] = c15; C[4+1*v] = c25; C[4+2*v] = c35; C[4+3*v] = c45; C[4+4*v] = c55; C[4+5*v] = c56;
+    C[5+0*v] = c16; C[5+1*v] = c26; C[5+2*v] = c36; C[5+3*v] = c46; C[5+4*v] = c56; C[5+5*v] = c66;
+
+    for (int indp = 0; indp < v*v; indp++)
+        C[indp] = C[indp] / Ro / Ro;
+
+    for (int indp = 0; indp < n*n; indp++) 
+        G[indp] = 0.0f; 
+
+    for (int ip = 0; ip < n; ip++) 
     {
-        if (!((i == sIdz) && (j == sIdx) && (k == sIdy)))    
+        for (int jp = 0; jp < n; jp++) 
         {
-            float dTz = 0.5f*(T[(i+1) + j*nzz + k*nxx*nzz] - T[(i-1) + j*nzz + k*nxx*nzz]) / dz;
-            float dTx = 0.5f*(T[i + (j+1)*nzz + k*nxx*nzz] - T[i + (j-1)*nzz + k*nxx*nzz]) / dx;
-            float dTy = 0.5f*(T[i + j*nzz + (k+1)*nxx*nzz] - T[i + j*nzz + (k-1)*nxx*nzz]) / dy;
-
-            float norm = sqrtf(dTx*dTx + dTy*dTy + dTz*dTz);
-
-            p[0] = dTx / norm;
-            p[1] = dTy / norm;
-            p[2] = dTz / norm;
-            
-            float c11 = (minC11 + (static_cast<float>(C11[index]) - 1.0f) * (maxC11 - minC11) / (COMPRESS - 1));
-            float c12 = (minC12 + (static_cast<float>(C12[index]) - 1.0f) * (maxC12 - minC12) / (COMPRESS - 1));
-            float c13 = (minC13 + (static_cast<float>(C13[index]) - 1.0f) * (maxC13 - minC13) / (COMPRESS - 1));
-            float c14 = (minC14 + (static_cast<float>(C14[index]) - 1.0f) * (maxC14 - minC14) / (COMPRESS - 1));
-            float c15 = (minC15 + (static_cast<float>(C15[index]) - 1.0f) * (maxC15 - minC15) / (COMPRESS - 1));
-            float c16 = (minC16 + (static_cast<float>(C16[index]) - 1.0f) * (maxC16 - minC16) / (COMPRESS - 1));
-
-            float c22 = (minC22 + (static_cast<float>(C22[index]) - 1.0f) * (maxC22 - minC22) / (COMPRESS - 1));
-            float c23 = (minC23 + (static_cast<float>(C23[index]) - 1.0f) * (maxC23 - minC23) / (COMPRESS - 1));
-            float c24 = (minC24 + (static_cast<float>(C24[index]) - 1.0f) * (maxC24 - minC24) / (COMPRESS - 1));
-            float c25 = (minC25 + (static_cast<float>(C25[index]) - 1.0f) * (maxC25 - minC25) / (COMPRESS - 1));
-            float c26 = (minC26 + (static_cast<float>(C26[index]) - 1.0f) * (maxC26 - minC26) / (COMPRESS - 1));
-
-            float c33 = (minC33 + (static_cast<float>(C33[index]) - 1.0f) * (maxC33 - minC33) / (COMPRESS - 1));
-            float c34 = (minC34 + (static_cast<float>(C34[index]) - 1.0f) * (maxC34 - minC34) / (COMPRESS - 1));
-            float c35 = (minC35 + (static_cast<float>(C35[index]) - 1.0f) * (maxC35 - minC35) / (COMPRESS - 1));
-            float c36 = (minC36 + (static_cast<float>(C36[index]) - 1.0f) * (maxC36 - minC36) / (COMPRESS - 1));
-
-            float c44 = (minC44 + (static_cast<float>(C44[index]) - 1.0f) * (maxC44 - minC44) / (COMPRESS - 1));
-            float c45 = (minC45 + (static_cast<float>(C45[index]) - 1.0f) * (maxC45 - minC45) / (COMPRESS - 1));
-            float c46 = (minC46 + (static_cast<float>(C46[index]) - 1.0f) * (maxC46 - minC46) / (COMPRESS - 1));
-
-            float c55 = (minC55 + (static_cast<float>(C55[index]) - 1.0f) * (maxC55 - minC55) / (COMPRESS - 1));
-            float c56 = (minC56 + (static_cast<float>(C56[index]) - 1.0f) * (maxC56 - minC56) / (COMPRESS - 1));
-
-            float c66 = (minC66 + (static_cast<float>(C66[index]) - 1.0f) * (maxC66 - minC66) / (COMPRESS - 1));
-
-            C[0+0*v] = c11; C[0+1*v] = c12; C[0+2*v] = c13; C[0+3*v] = c14; C[0+4*v] = c15; C[0+5*v] = c16;
-            C[1+0*v] = c12; C[1+1*v] = c22; C[1+2*v] = c23; C[1+3*v] = c24; C[1+4*v] = c25; C[1+5*v] = c26;
-            C[2+0*v] = c13; C[2+1*v] = c23; C[2+2*v] = c33; C[2+3*v] = c34; C[2+4*v] = c35; C[2+5*v] = c36;
-            C[3+0*v] = c14; C[3+1*v] = c24; C[3+2*v] = c34; C[3+3*v] = c44; C[3+4*v] = c45; C[3+5*v] = c46;
-            C[4+0*v] = c15; C[4+1*v] = c25; C[4+2*v] = c35; C[4+3*v] = c45; C[4+4*v] = c55; C[4+5*v] = c56;
-            C[5+0*v] = c16; C[5+1*v] = c26; C[5+2*v] = c36; C[5+3*v] = c46; C[5+4*v] = c56; C[5+5*v] = c66;
-
-            float Ro = c33*S[index]*S[index];    
-            
-            for (int indp = 0; indp < v*v; indp++)
-                C[indp] = C[indp] / Ro / Ro;
-
-            for (int indp = 0; indp < n*n; indp++) 
-                G[indp] = 0.0f; 
-
-            for (int ip = 0; ip < n; ip++) 
+            for (int kp = 0; kp < n; kp++) 
             {
-                for (int jp = 0; jp < n; jp++) 
+                for (int lp = 0; lp < n; lp++) 
                 {
-                    for (int kp = 0; kp < n; kp++) 
-                    {
-                        for (int lp = 0; lp < n; lp++) 
-                        {
-                            int I = voigt_map[ip][kp];
-                            int J = voigt_map[jp][lp];
+                    int I = voigt_map[ip][kp];
+                    int J = voigt_map[jp][lp];
 
-                            G[ip + jp*n] += C[I + J*v]*p[kp]*p[lp];
-                        }
-                    }
+                    G[ip + jp*n] += C[I + J*v]*p[kp]*p[lp];
                 }
             }
-
-            float a = -(G[0] + G[4] + G[8]);
-    
-            float b = G[0]*G[4] + G[4]*G[8] + 
-                      G[0]*G[8] - G[3]*G[1] - 
-                      G[6]*G[6] - G[7]*G[5];
-            
-            float c = -(G[0]*(G[4]*G[8] - G[7]*G[5]) -
-                        G[3]*(G[1]*G[8] - G[7]*G[6]) +
-                        G[6]*(G[1]*G[5] - G[4]*G[6]));
-
-            float p = b - (a*a)/3.0f;
-            float q = (2.0f*a*a*a)/27.0f - (a*b)/3.0f + c;
-
-            float detG = 0.25f*(q*q) + (p*p*p)/27.0f;
-
-            if (detG > 0) 
-            {
-                float u = cbrtf(-0.5f*q + sqrtf(detG));
-                float v = cbrtf(-0.5f*q - sqrtf(detG));
-                
-                Gv[0] = u + v - a/3.0f;
-            } 
-            else if (detG == 0) 
-            {       
-                float u = cbrtf(-0.5f*q);
-
-                Gv[0] = 2.0f*u - a/3.0f;
-                Gv[1] =-1.0f*u - a/3.0f;         
-            } 
-            else  
-            {
-                float r = sqrtf(-p*p*p/27.0f);
-                float phi = acosf(-0.5f*q/r);
-                
-                r = 2.0f*cbrtf(r);
-
-                Gv[0] = r*cosf(phi/3.0f) - a/3.0f;
-                Gv[1] = r*cosf((phi + 2.0f*M_PI)/3.0f) - a/3.0f;  
-                Gv[2] = r*cosf((phi + 4.0f*M_PI)/3.0f) - a/3.0f;      
-            }
-            
-            float aux;
-
-            if (Gv[0] < Gv[1]) {aux = Gv[0]; Gv[0] = Gv[1]; Gv[1] = aux;} 
-            if (Gv[1] < Gv[2]) {aux = Gv[1]; Gv[1] = Gv[2]; Gv[2] = aux;}
-            if (Gv[0] < Gv[1]) {aux = Gv[0]; Gv[0] = Gv[1]; Gv[1] = aux;}    
-
-            S[index] = 1.0f / sqrtf(Gv[0] * Ro);
         }
     }
+
+    G[1] = G[3] = 0.5*(G[1] + G[3]);
+    G[2] = G[6] = 0.5*(G[2] + G[6]);
+    G[5] = G[7] = 0.5*(G[5] + G[7]);
+
+    double a = -(G[0] + G[4] + G[8]);
+    double b = G[0]*G[4] + G[4]*G[8] + G[0]*G[8]
+             - G[1]*G[3] - G[2]*G[6] - G[5]*G[7];
+
+    double c = -(G[0]*(G[4]*G[8] - G[5]*G[7])
+               - G[1]*(G[3]*G[8] - G[5]*G[6])
+               + G[2]*(G[3]*G[7] - G[4]*G[6]));
+
+    double pc = b - a*a/3.0;
+    double qc = 2.0*a*a*a/27.0 - a*b/3.0 + c;
+
+    double det = 0.25*qc*qc + (pc*pc*pc)/27.0;
+
+    double Gv[n] = {0.0, 0.0, 0.0};
+
+    if (det > EPS)
+    {
+        double sqrt_det = sqrt(det);
+        double u = cbrt(-0.5*qc + sqrt_det);
+        double v = cbrt(-0.5*qc - sqrt_det);
+        Gv[0] = u + v - a/3.0;
+    }
+    else
+    {
+        double r = sqrt(max(-pc*pc*pc/27.0, 0.0));
+        double arg = -0.5*qc / max(r, EPS);
+        arg = min(1.0, max(-1.0, arg));
+
+        double phi = acos(arg);
+        r = 2.0 * cbrt(r);
+
+        Gv[0] = r*cos(phi/3.0) - a/3.0;
+        Gv[1] = r*cos((phi+2.0*M_PI)/3.0) - a/3.0;
+        Gv[2] = r*cos((phi+4.0*M_PI)/3.0) - a/3.0;
+    }
+
+    double lambda_max = max(Gv[0], max(Gv[1], Gv[2]));
+    lambda_max = max(lambda_max, EPS);
+
+    S[index] = 1.0f / sqrtf((float)(lambda_max * Ro));
 }

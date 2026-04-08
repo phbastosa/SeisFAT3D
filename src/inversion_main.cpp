@@ -1,5 +1,4 @@
 # include "../src/inversion/tomography_iso.hpp"
-// # include "../src/inversion/tomography_ani.hpp"
 
 int main(int argc, char **argv)
 {
