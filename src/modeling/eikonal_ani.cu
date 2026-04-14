@@ -217,18 +217,16 @@ __global__ void get_quasi_slowness(float * T, float * S, float dx, float dy, flo
     
     float s_val = S[index];
     float Ro = c33*s_val*s_val;
+    float iRo = 1.0f / (Ro * Ro);
 
     const int voigt_map[n][n] = {{0, 5, 4}, {5, 1, 3}, {4, 3, 2}};
 
-    C[0+0*v] = c11; C[0+1*v] = c12; C[0+2*v] = c13; C[0+3*v] = c14; C[0+4*v] = c15; C[0+5*v] = c16;
-    C[1+0*v] = c12; C[1+1*v] = c22; C[1+2*v] = c23; C[1+3*v] = c24; C[1+4*v] = c25; C[1+5*v] = c26;
-    C[2+0*v] = c13; C[2+1*v] = c23; C[2+2*v] = c33; C[2+3*v] = c34; C[2+4*v] = c35; C[2+5*v] = c36;
-    C[3+0*v] = c14; C[3+1*v] = c24; C[3+2*v] = c34; C[3+3*v] = c44; C[3+4*v] = c45; C[3+5*v] = c46;
-    C[4+0*v] = c15; C[4+1*v] = c25; C[4+2*v] = c35; C[4+3*v] = c45; C[4+4*v] = c55; C[4+5*v] = c56;
-    C[5+0*v] = c16; C[5+1*v] = c26; C[5+2*v] = c36; C[5+3*v] = c46; C[5+4*v] = c56; C[5+5*v] = c66;
-
-    for (int indp = 0; indp < v*v; indp++)
-        C[indp] = C[indp] / Ro / Ro;
+    C[0+0*v] = c11*iRo; C[0+1*v] = c12*iRo; C[0+2*v] = c13*iRo; C[0+3*v] = c14*iRo; C[0+4*v] = c15*iRo; C[0+5*v] = c16*iRo;
+    C[1+0*v] = c12*iRo; C[1+1*v] = c22*iRo; C[1+2*v] = c23*iRo; C[1+3*v] = c24*iRo; C[1+4*v] = c25*iRo; C[1+5*v] = c26*iRo;
+    C[2+0*v] = c13*iRo; C[2+1*v] = c23*iRo; C[2+2*v] = c33*iRo; C[2+3*v] = c34*iRo; C[2+4*v] = c35*iRo; C[2+5*v] = c36*iRo;
+    C[3+0*v] = c14*iRo; C[3+1*v] = c24*iRo; C[3+2*v] = c34*iRo; C[3+3*v] = c44*iRo; C[3+4*v] = c45*iRo; C[3+5*v] = c46*iRo;
+    C[4+0*v] = c15*iRo; C[4+1*v] = c25*iRo; C[4+2*v] = c35*iRo; C[4+3*v] = c45*iRo; C[4+4*v] = c55*iRo; C[4+5*v] = c56*iRo;
+    C[5+0*v] = c16*iRo; C[5+1*v] = c26*iRo; C[5+2*v] = c36*iRo; C[5+3*v] = c46*iRo; C[5+4*v] = c56*iRo; C[5+5*v] = c66*iRo;
 
     for (int indp = 0; indp < n*n; indp++) 
         G[indp] = 0.0f; 

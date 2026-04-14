@@ -10,7 +10,7 @@ x_spacing = 100.0                          # [m] <float>
 y_spacing = 100.0                          # [m] <float> 
 z_spacing = 100.0                          # [m] <float> 
 
-vp_model_file = ../inputs/models/anisoTomo_vp_init.bin   
+vp_model_file = ../inputs/models/anisoTomo_vp_true.bin   
 
 Cijkl_folder = ../inputs/models/anisoTomo_
 
@@ -28,16 +28,14 @@ RPS = ../inputs/geometry/anisoTomo_RPS.txt
 # [1] - Eikonal ANI
 # --------------------------------------------------------------------------------------------------
 
-mod_type = 0
+mod_type = 1
 
-mod_output_folder = ../inputs/data/cal_
+mod_output_folder = ../inputs/data/obs_
 
 #---------------------------------------------------------------------------------------------------
 # Inversion parameters 
 #---------------------------------------------------------------------------------------------------
 #   [0] - Tomography ISO
-#   [1] - Tomography VTI
-#   [2] - Tomography ORT
 #---------------------------------------------------------------------------------------------------
 
 inv_type = 0                                # <int> 
@@ -45,17 +43,17 @@ inv_type = 0                                # <int>
 tk_order = 2                                # Tikhonov order <int>
 tk_param = 1e-5                             # Tikhonov parameter <float>
 
-inv_max_it = 5                              # <int>
+inv_max_it = 10                             # <int>
 
 smooth_per_iteration = true                 # <bool>
 gaussian_filter_stdv = 5.0                  # <float>
 gaussian_filter_samples = 11                # [odd number] <int> 
 
-inv_residuo_folder = ../outputs/residuo/base_         
-inv_output_folder = ../outputs/models/base_    
+inv_residuo_folder = ../outputs/residuo/         
+inv_output_folder = ../outputs/models/    
 
 inv_data_folder = ../inputs/data/        
-inv_data_prefix = obs_eikonal_iso_nStations1506_shot_  
+inv_data_prefix = obs_eikonal_ani_nStations1506_shot_  
 
 #---------------------------------------------------------------------------------------------------
 # Migration parameters 
@@ -81,14 +79,16 @@ max_frequency = 20.0                        # [Hz] <float>
 mig_aperture = 30                           # [°] <float>
 
 mig_max_angle = 60                          # [°] <float>
-mig_angle_spacing = 5                       # [°] <float>
+mig_angle_spacing = 2.0                     # [°] <float>
 
-mig_max_offset = 1000                       # [m] <float>
+mig_max_offset = 2000                       # [m] <float>
 
 mig_max_iteration = 10                      # <int> 
 
-mig_data_folder = ../../EikoStagTriX3D/outputs/seismograms/       
-mig_data_prefix = seismogram_input_shot_  
+mig_smooth_lambda = 0.001                   # <float> 
+
+mig_data_folder = ../inputs/data/       
+mig_data_prefix = mig_input_shot_  
 
 mig_tables_folder = ../outputs/tables/
 mig_images_folder = ../outputs/seismic/

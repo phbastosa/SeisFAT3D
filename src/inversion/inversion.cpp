@@ -122,7 +122,7 @@ void Inversion::gradient_ray_tracing()
             float dTx = 0.5f*(modeling->T[i + (j+1)*modeling->nzz + k*modeling->nxx*modeling->nzz] - modeling->T[i + (j-1)*modeling->nzz + k*modeling->nxx*modeling->nzz]) / modeling->dx;    
             float dTy = 0.5f*(modeling->T[i + j*modeling->nzz + (k+1)*modeling->nxx*modeling->nzz] - modeling->T[i + j*modeling->nzz + (k-1)*modeling->nxx*modeling->nzz]) / modeling->dy;    
 
-            float norm = sqrtf(dTx*dTx + dTy*dTy + dTz*dTz);
+            float norm = sqrtf(dTx*dTx + dTy*dTy + dTz*dTz) + 1e-12f;
 
             xi -= rayStep*dTx / norm;   
             yi -= rayStep*dTy / norm;   

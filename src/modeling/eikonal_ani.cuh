@@ -33,8 +33,6 @@ private:
     uintc * d_C56 = nullptr; float maxC56; float minC56;
 
     uintc * d_C66 = nullptr; float maxC66; float minC66;
-
-    void set_stiffness_element(std::string element, uintc * dCij, float &max, float &min);
     
 public:
 

@@ -2,7 +2,7 @@
 
 int main(int argc, char **argv)
 {
-    Inversion * inversion = new Tomography_ISO(); 
+    auto * inversion = new Tomography_ISO(); 
     
     auto file = std::string(argv[1]);
     auto type = std::stoi(catch_parameter("inv_type", file));
