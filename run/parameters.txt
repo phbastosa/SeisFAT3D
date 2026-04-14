@@ -43,7 +43,7 @@ inv_type = 0                                # <int>
 tk_order = 2                                # Tikhonov order <int>
 tk_param = 1e-5                             # Tikhonov parameter <float>
 
-inv_max_it = 10                             # <int>
+inv_max_it = 5                              # <int>
 
 smooth_per_iteration = true                 # <bool>
 gaussian_filter_stdv = 5.0                  # <float>

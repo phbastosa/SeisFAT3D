@@ -105,6 +105,6 @@ void Tomography_ISO::export_estimated_models()
     for (int index = 0; index < modeling->nPoints; index++)
         Vp[index] = 1.0f / Vp[index];
 
-    std::string estimated_vp_path = estimated_model_folder + inversion_name + "_final_model_vp_" + std::to_string(modeling->nz) + "x" + std::to_string(modeling->nx) + ".bin";
+    std::string estimated_vp_path = estimated_model_folder + inversion_name + "_final_model_vp_" + std::to_string(modeling->nz) + "x" + std::to_string(modeling->nx) + "x" + std::to_string(modeling->ny) + ".bin";
     export_binary_float(estimated_vp_path, Vp, modeling->nPoints);
 }
