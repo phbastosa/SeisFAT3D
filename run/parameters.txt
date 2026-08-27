@@ -64,7 +64,7 @@ inv_data_prefix = obs_eikonal_ani_nStations1506_shot_
 
 mig_type = 0                                # <int>
 
-cubic_dh = 50.0                             # [m] <float>
+cubic_spacing = 50.0                        # [m] <float>
 
 anisotropy = false                          # <bool>
 

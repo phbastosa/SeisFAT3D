@@ -58,8 +58,11 @@ public:
     std::string parameters;
     std::string data_folder;
     std::string modeling_type;
-    std::string modeling_name;
     std::string Cijkl_folder;
+
+    std::string current, keyword;
+    std::string xpos, ypos, zpos, total;
+    std::string current_operation;
 
     void set_eikonal();
     void set_geometry();

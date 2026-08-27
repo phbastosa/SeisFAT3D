@@ -1,16 +1,16 @@
 # include "migration/IDKDM.cuh"
-# include "migration/ADKDM.cuh"
-# include "migration/IDLSKDM.cuh"
-# include "migration/ADLSKDM.cuh"
+// # include "migration/ADKDM.cuh"
+// # include "migration/IDLSKDM.cuh"
+// # include "migration/ADLSKDM.cuh"
 
 int main(int argc, char **argv)
 {
     std::vector<Migration *> migration = 
     {
-        new IDKDM(),
-        new ADKDM(),
-        new IDLSKDM(),
-        new ADLSKDM()
+        new IDKDM()
+        // new ADKDM(),
+        // new IDLSKDM(),
+        // new ADLSKDM()
     };
 
     auto file = std::string(argv[1]);
@@ -19,8 +19,6 @@ int main(int argc, char **argv)
     migration[type]->parameters = file;
 
     migration[type]->set_parameters();
-
-    //migration[type]->dot_product_test();
 
     auto ti = std::chrono::system_clock::now();
 

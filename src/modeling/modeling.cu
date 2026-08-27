@@ -116,6 +116,16 @@ void Modeling::initialization()
     sIdy = (int)((sy + 0.5f*dh) / dh) + nb;
     sIdz = (int)((sz + 0.5f*dh) / dh) + nb;
 
+    current = std::to_string(srcId+1);
+    
+    xpos = format1Decimal(sx);
+    ypos = format1Decimal(sy);
+    zpos = format1Decimal(sz);
+
+    keyword = "source";
+
+    total = std::to_string(geometry->nsrc);     
+
     time_set<<<nBlocks,NTHREADS>>>(d_T, volsize);
 
     dim3 grid(1,1,1);
@@ -282,7 +292,7 @@ void Modeling::reduce_boundary(float * input, float * output)
 void Modeling::show_information()
 {
     auto clear = system("clear");
-    
+ 
     std::cout << "-------------------------------------------------------------------------------\n";
     std::cout << "                                 \033[34mSeisFAT3D\033[0;0m\n";
     std::cout << "-------------------------------------------------------------------------------\n\n";
@@ -291,13 +301,13 @@ void Modeling::show_information()
                                   ", x = " << (nx - 1)*dh <<
                                   ", y = " << (ny - 1)*dh << ") m\n\n";
 
-    std::cout << "Running shot " << srcId + 1 << " of " << geometry->nsrc << " in total\n\n";
+    std::cout << "Running " << keyword << " " << current << " of " << total << " in total\n\n";
 
-    std::cout << "Current shot position: (z = " << geometry->zsrc[srcId] << 
-                                       ", x = " << geometry->xsrc[srcId] << 
-                                       ", y = " << geometry->ysrc[srcId] << ") m\n\n";
-
-    std::cout << modeling_name << "\n";
+    std::cout << "Current " << keyword << " position: (z = " << zpos << 
+                                                    ", x = " << xpos << 
+                                                    ", y = " << ypos << ") m\n\n";
+    
+    std::cout << current_operation << "\n";
 }
 
 void Modeling::compression(float * input, uintc * output, int volsize, float &max_value, float &min_value)

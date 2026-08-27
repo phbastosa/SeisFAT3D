@@ -43,7 +43,7 @@ ADLSKDM="../src/migration/ADLSKDM.cu"
 
 migration_main="../src/migration_main.cpp"
 
-migration_all="$migration $KDM $LSKDM $IDKDM $IDLSKDM $ADKDM $ADLSKDM"
+migration_all="$migration $KDM $IDKDM" # $ADKDM $LSKDM $IDLSKDM  $ADLSKDM"
 
 # Compiler flags --------------------------------------------------------------------------------------
 
@@ -88,8 +88,8 @@ case "$1" in
     # echo -e "../bin/\033[31minversion.exe\033[m" 
     # nvcc $admin $geometry $modeling_all $inversion_all $inversion_main $flags -o ../bin/inversion.exe
 
-    # echo -e "../bin/\033[31mmigration.exe\033[m"
-    # nvcc $admin $geometry $modeling_all $migration_all $migration_main $flags -o ../bin/migration.exe
+    echo -e "../bin/\033[31mmigration.exe\033[m"
+    nvcc $admin $geometry $modeling_all $migration_all $migration_main $flags -o ../bin/migration.exe
 
 	exit 0
 ;;

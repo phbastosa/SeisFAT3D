@@ -3,7 +3,7 @@
 void Eikonal_ANI::set_conditions()
 {
     modeling_type = "eikonal_ani";
-    modeling_name = "Modeling type: Anisotropic eikonal solver";
+    current_operation = "Modeling type: Anisotropic eikonal solver";
 
     auto * iModel = new float[nPoints]();
     auto * xModel = new float[volsize]();

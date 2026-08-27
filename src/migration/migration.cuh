@@ -15,8 +15,7 @@ protected:
     int old_nx, old_ny, old_nz, old_nPoints;
     int new_nx, new_ny, new_nz, new_nPoints;
 
-    float old_dx, old_dy, old_dz;
-    float new_dx, new_dy, new_dz;
+    float old_dh, new_dh;
 
     int nfreq;
     int cmpId, nCMP, nCMPx, nCMPy;
@@ -32,6 +31,15 @@ protected:
     float aperture;
 
     bool anisotropy;
+
+    float * h_Ts, * h_Tr[2];
+    float * d_Ts, * d_Tr[2];
+
+    float * d_data = nullptr;
+    float * h_data = nullptr;    
+
+    float * h_model = nullptr;
+    float * d_model = nullptr;
     
     float * seismic = nullptr; 
     float * wavelet = nullptr;
@@ -46,34 +54,10 @@ protected:
     fftw_plan trace_inverse_plan;
     fftw_plan wavelet_forward_plan;
 
-    float * m1 = nullptr;
-    float * d1 = nullptr;
-
-    float * m2 = nullptr;
-    float * d2 = nullptr;
-
-    float * h_Ts = nullptr;
-    float * h_Tr = nullptr;
-
-    float * d_Ts = nullptr;
-    float * d_Tr = nullptr;
-
-    float * d_data = nullptr;
-    float * h_data = nullptr;    
-
-    float * h_model = nullptr;
-    float * d_model = nullptr;
-
     std::string domain;
     std::string migType;
     std::string output_path;
-
-    Modeling * modeling = nullptr;
     
-    std::string current, keyword;
-    std::string xpos, ypos, zpos, total;
-    std::string current_operation;
-
     std::string input_data_folder;
     std::string input_data_prefix;
     
@@ -81,19 +65,15 @@ protected:
     std::string seismic_folder;
     std::string residuo_folder;
 
+    Modeling * modeling = nullptr;
+
     void set_interpolation();
+    void set_CMP_gathers();
     void set_anisotropy();
     void set_slowness();
     void set_wavelet();
-    void set_gathers();
 
     void perform_cubic(float * input, float * output);
-
-    void set_src_domain();
-    void set_current_src();
-
-    void set_rec_domain();
-    void set_current_rec();
 
     void show_information();    
     void set_src_travel_times();

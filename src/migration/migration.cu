@@ -35,26 +35,25 @@ void Migration::set_parameters()
     set_anisotropy();
     set_slowness();
     set_wavelet();
-    set_gathers();
 
     modeling->set_eikonal();
     modeling->set_conditions();
     
-    set_migration();
+    // set_migration();
 
-    h_data = new float[nt]();    
-    h_model = new float[m_samples]();
+    // h_data = new float[nt]();    
+    // h_model = new float[m_samples]();
 
-    h_Ts = new float[modeling->volsize]();
-    h_Tr = new float[modeling->volsize]();
+    // h_Ts = new float[modeling->volsize]();
+    // h_Tr = new float[modeling->volsize]();
     
-    seismic = new float[nt*modeling->geometry->nrec]();
+    // seismic = new float[nt*modeling->geometry->nrec]();
 
-    cudaMalloc((void**)&(d_data), nt*sizeof(float));    
-    cudaMalloc((void**)&(d_model), m_samples*sizeof(float));
+    // cudaMalloc((void**)&(d_data), nt*sizeof(float));    
+    // cudaMalloc((void**)&(d_model), m_samples*sizeof(float));
     
-    cudaMalloc((void**)&(d_Ts), modeling->volsize*sizeof(float));
-    cudaMalloc((void**)&(d_Tr), modeling->volsize*sizeof(float));
+    // cudaMalloc((void**)&(d_Ts), modeling->volsize*sizeof(float));
+    // cudaMalloc((void**)&(d_Tr), modeling->volsize*sizeof(float));
 }
 
 void Migration::set_interpolation()
@@ -63,26 +62,19 @@ void Migration::set_interpolation()
     old_ny = std::stoi(catch_parameter("y_samples", parameters));
     old_nz = std::stoi(catch_parameter("z_samples", parameters));
 
-    old_dx = std::stof(catch_parameter("x_spacing", parameters));
-    old_dy = std::stof(catch_parameter("y_spacing", parameters));
-    old_dz = std::stof(catch_parameter("z_spacing", parameters));
+    old_dh = std::stof(catch_parameter("model_spacing", parameters));
+    new_dh = std::stof(catch_parameter("cubic_spacing", parameters)); 
 
-    new_dx = std::stof(catch_parameter("cubic_dx", parameters)); 
-    new_dy = std::stof(catch_parameter("cubic_dy", parameters)); 
-    new_dz = std::stof(catch_parameter("cubic_dz", parameters)); 
-
-    new_nx = (int)((old_nx-1)*old_dx/new_dx)+1;
-    new_ny = (int)((old_ny-1)*old_dy/new_dy)+1;
-    new_nz = (int)((old_nz-1)*old_dz/new_dz)+1;
+    new_nx = (int)((old_nx-1)*old_dh/new_dh)+1;
+    new_ny = (int)((old_ny-1)*old_dh/new_dh)+1;
+    new_nz = (int)((old_nz-1)*old_dh/new_dh)+1;
 
     old_nPoints = old_nx*old_ny*old_nz;
     new_nPoints = new_nx*new_ny*new_nz;
 
     modeling->nb = 3;
 
-    modeling->dx = new_dx;
-    modeling->dy = new_dy;
-    modeling->dz = new_dz;
+    modeling->dh = new_dh;
 
     modeling->nx = new_nx;
     modeling->ny = new_ny;
@@ -98,6 +90,84 @@ void Migration::set_interpolation()
     modeling->nBlocks = (int)((modeling->volsize + NTHREADS - 1) / NTHREADS);
 
     nBlocks = (int)((old_nPoints + NTHREADS - 1) / NTHREADS);
+}
+
+void Migration::perform_cubic(float * input, float * output)
+{
+    float P[4][4][4];
+
+    if ((new_nx == old_nx) && (new_ny == old_ny) && (new_nz == old_nz))
+    {
+        std::swap(output, input);
+    }
+    else
+    {
+        for (int index = 0; index < new_nPoints; index++)
+        {
+            int new_k = (int) (index / (new_nx*new_nz));         
+            int new_j = (int) (index - new_k*new_nx*new_nz) / new_nz;    
+            int new_i = (int) (index - new_j*new_nz - new_k*new_nx*new_nz); 
+            
+            float z = (float)(new_i) * new_dh;
+            float x = (float)(new_j) * new_dh;
+            float y = (float)(new_k) * new_dh;
+            
+            float z0 = floorf(z / old_dh) * old_dh;
+            float x0 = floorf(x / old_dh) * old_dh;
+            float y0 = floorf(y / old_dh) * old_dh;
+            
+            float zd = (z - z0) / old_dh;
+            float xd = (x - x0) / old_dh;
+            float yd = (y - y0) / old_dh;
+
+            int old_i = (int)(z / old_dh); 
+            int old_j = (int)(x / old_dh);   
+            int old_k = (int)(y / old_dh);         
+
+            if ((new_i > 0) && (new_i < new_nz-1) && (new_j > 0) && (new_j < new_nx-1) && (new_k > 0) && (new_k < new_ny-1))
+            {
+                for (int pIdx = 0; pIdx < 4; pIdx++)
+                    for (int pIdy = 0; pIdy < 4; pIdy++)
+                        for (int pIdz = 0; pIdz < 4; pIdz++)
+                            P[pIdx][pIdy][pIdz] = input[(old_i + pIdz - 1) + (old_j + pIdx - 1)*old_nz + (old_k + pIdy - 1)*old_nx*old_nz];
+
+                output[new_i + new_j*new_nz + new_k*new_nx*new_nz] = cubic3d(P, xd, yd, zd);
+            }        
+        }
+
+        for (int i = 0; i < new_nz; i++)
+        {
+            for (int j = 0; j < new_nx; j++)
+            {
+                int beg = 0;
+                int end = new_ny-1;
+
+                output[i + j*new_nz + beg*new_nx*new_nz] = output[i + j*new_nz + (beg+1)*new_nx*new_nz];
+                output[i + j*new_nz + end*new_nx*new_nz] = output[i + j*new_nz + (end-1)*new_nx*new_nz];
+            }
+        
+            for (int k = 0; k < new_ny; k++)
+            {
+                int beg = 0;
+                int end = new_nx-1;
+
+                output[i + beg*new_nz + k*new_nx*new_nz] = output[i + (beg+1)*new_nz + k*new_nx*new_nz];
+                output[i + end*new_nz + k*new_nx*new_nz] = output[i + (end-1)*new_nz + k*new_nx*new_nz];
+            }    
+        }    
+
+        for (int j = 0; j < new_nx; j++)
+        {
+            for (int k = 0; k < new_ny; k++)
+            {
+                int beg = 0;
+                int end = new_nz-1;
+
+                output[beg + j*new_nz + k*new_nx*new_nz] = output[(beg+1) + j*new_nz + k*new_nx*new_nz];
+                output[end + j*new_nz + k*new_nx*new_nz] = output[(end-1) + j*new_nz + k*new_nx*new_nz];
+            }
+        }
+    }
 }
 
 void Migration::set_anisotropy()
@@ -149,88 +219,6 @@ void Migration::set_slowness()
     delete[] new_s;
 }
 
-void Migration::perform_cubic(float * input, float * output)
-{
-    float P[4][4][4];
-
-    if ((new_nx == old_nx) && (new_ny == old_ny) && (new_nz == old_nz))
-    {
-        std::swap(output, input);
-    }
-    else
-    {
-        for (int index = 0; index < new_nPoints; index++)
-        {
-            int new_k = (int) (index / (new_nx*new_nz));         
-            int new_j = (int) (index - new_k*new_nx*new_nz) / new_nz;    
-            int new_i = (int) (index - new_j*new_nz - new_k*new_nx*new_nz); 
-            
-            float z = (float)(new_i) * new_dz;
-            float x = (float)(new_j) * new_dx;
-            float y = (float)(new_k) * new_dy;
-            
-            float z0 = floorf(z / old_dz) * old_dz;
-            float x0 = floorf(x / old_dx) * old_dx;
-            float y0 = floorf(y / old_dy) * old_dy;
-            
-            float z1 = floorf(z / old_dz) * old_dz + old_dz;
-            float x1 = floorf(x / old_dx) * old_dx + old_dx;
-            float y1 = floorf(y / old_dy) * old_dy + old_dy;
-
-            float zd = (z - z0) / (z1 - z0);
-            float xd = (x - x0) / (x1 - x0);
-            float yd = (y - y0) / (y1 - y0);
-
-            int old_i = (int)(z / old_dz); 
-            int old_j = (int)(x / old_dx);   
-            int old_k = (int)(y / old_dy);         
-
-            if ((new_i > 0) && (new_i < new_nz-1) && (new_j > 0) && (new_j < new_nx-1) && (new_k > 0) && (new_k < new_ny-1))
-            {
-                for (int pIdx = 0; pIdx < 4; pIdx++)
-                    for (int pIdy = 0; pIdy < 4; pIdy++)
-                        for (int pIdz = 0; pIdz < 4; pIdz++)
-                            P[pIdx][pIdy][pIdz] = input[(old_i + pIdz - 1) + (old_j + pIdx - 1)*old_nz + (old_k + pIdy - 1)*old_nx*old_nz];
-
-                output[new_i + new_j*new_nz + new_k*new_nx*new_nz] = cubic3d(P, xd, yd, zd);
-            }        
-        }
-
-        for (int i = 0; i < new_nz; i++)
-        {
-            for (int j = 0; j < new_nx; j++)
-            {
-                int beg = 0;
-                int end = new_ny-1;
-
-                output[i + j*new_nz + beg*new_nx*new_nz] = output[i + j*new_nz + (beg+1)*new_nx*new_nz];
-                output[i + j*new_nz + end*new_nx*new_nz] = output[i + j*new_nz + (end-1)*new_nx*new_nz];
-            }
-        
-            for (int k = 0; k < new_ny; k++)
-            {
-                int beg = 0;
-                int end = new_nx-1;
-
-                output[i + beg*new_nz + k*new_nx*new_nz] = output[i + (beg+1)*new_nz + k*new_nx*new_nz];
-                output[i + end*new_nz + k*new_nx*new_nz] = output[i + (end-1)*new_nz + k*new_nx*new_nz];
-            }    
-        }    
-
-        for (int j = 0; j < new_nx; j++)
-        {
-            for (int k = 0; k < new_ny; k++)
-            {
-                int beg = 0;
-                int end = new_nz-1;
-
-                output[beg + j*new_nz + k*new_nx*new_nz] = output[(beg+1) + j*new_nz + k*new_nx*new_nz];
-                output[end + j*new_nz + k*new_nx*new_nz] = output[(end-1) + j*new_nz + k*new_nx*new_nz];
-            }
-        }
-    }
-}
-
 void Migration::set_wavelet()
 {
     float t0 = 2.0f*sqrtf(M_PI) / fmax;
@@ -250,7 +238,7 @@ void Migration::set_wavelet()
     }
 }
 
-void Migration::set_gathers()
+void Migration::set_CMP_gathers()
 {
     nang = (int)(max_angle / da) + 1;
 
@@ -286,103 +274,60 @@ void Migration::set_gathers()
     nCMP = nCMPx * nCMPy;
 }
 
-void Migration::set_src_domain()
-{
-    keyword = "source";
-    total = std::to_string(modeling->geometry->nsrc); 
-}
-
-void Migration::set_current_src()
-{
-    modeling->sx = modeling->geometry->xsrc[modeling->srcId];
-    modeling->sy = modeling->geometry->ysrc[modeling->srcId];
-    modeling->sz = modeling->geometry->zsrc[modeling->srcId];
-
-    current = std::to_string(modeling->srcId+1);
-    
-    xpos = format1Decimal(modeling->sx);
-    ypos = format1Decimal(modeling->sy);
-    zpos = format1Decimal(modeling->sz);
-}
-
 void Migration::set_src_travel_times()
 {
-    set_src_domain();
+    modeling->keyword = "source";
+    modeling->total = std::to_string(modeling->geometry->nsrc); 
 
     for (modeling->srcId = 0; modeling->srcId < modeling->geometry->nsrc; modeling->srcId++)
     {
-        set_current_src();
-    
-        current_operation = "Computing " + keyword + " travel time matrices";
+        modeling->sx = modeling->geometry->xsrc[modeling->srcId];
+        modeling->sy = modeling->geometry->ysrc[modeling->srcId];
+        modeling->sz = modeling->geometry->zsrc[modeling->srcId];
 
-        show_information();
+        modeling->current = std::to_string(modeling->srcId+1);
+        
+        modeling->xpos = format1Decimal(modeling->sx);
+        modeling->ypos = format1Decimal(modeling->sy);
+        modeling->zpos = format1Decimal(modeling->sz);
 
+        modeling->current_operation = "Computing " + modeling->keyword + " travel time matrices";
+
+        modeling->show_information();
         modeling->time_propagation();
         
-        cudaMemcpy(h_Ts, modeling->d_T, modeling->volsize*sizeof(float), cudaMemcpyDeviceToHost);
+        cudaMemcpy(modeling->T, modeling->d_T, modeling->volsize*sizeof(float), cudaMemcpyDeviceToHost);
 
-        export_binary_float(tables_folder + "eikonal_src_" + std::to_string(modeling->srcId+1) + ".bin", h_Ts, modeling->volsize);
+        export_binary_float(tables_folder + "eikonal_src_" + std::to_string(modeling->srcId+1) + ".bin", modeling->T, modeling->volsize);
     }
-}
-
-void Migration::set_rec_domain()
-{
-    keyword = "receiver";
-    total = std::to_string(modeling->geometry->nrec); 
-}
-
-void Migration::set_current_rec()
-{
-    modeling->sx = modeling->geometry->xrec[modeling->recId];
-    modeling->sy = modeling->geometry->yrec[modeling->recId];
-    modeling->sz = modeling->geometry->zrec[modeling->recId];
-
-    current = std::to_string(modeling->recId+1);
-    
-    xpos = format1Decimal(modeling->sx);
-    ypos = format1Decimal(modeling->sy);
-    zpos = format1Decimal(modeling->sz);
 }
 
 void Migration::set_rec_travel_times()
 {
-    set_rec_domain();
+    modeling->keyword = "receiver";
+    modeling->total = std::to_string(modeling->geometry->nrec); 
     
     for (modeling->recId = 0; modeling->recId < modeling->geometry->nrec; modeling->recId++)
     {
-        set_current_rec();
+        modeling->sx = modeling->geometry->xrec[modeling->recId];
+        modeling->sy = modeling->geometry->yrec[modeling->recId];
+        modeling->sz = modeling->geometry->zrec[modeling->recId];
 
-        current_operation = "Computing " + keyword + " travel time matrices";
+        modeling->current = std::to_string(modeling->recId+1);
+        
+        modeling->xpos = format1Decimal(modeling->sx);
+        modeling->ypos = format1Decimal(modeling->sy);
+        modeling->zpos = format1Decimal(modeling->sz);
 
-        show_information();
+        modeling->current_operation = "Computing " + modeling->keyword + " travel time matrices";
 
+        modeling->show_information();
         modeling->time_propagation();
         
-        cudaMemcpy(h_Tr, modeling->d_T, modeling->volsize*sizeof(float), cudaMemcpyDeviceToHost);
+        cudaMemcpy(modeling->T, modeling->d_T, modeling->volsize*sizeof(float), cudaMemcpyDeviceToHost);
 
-        export_binary_float(tables_folder + "eikonal_rec_" + std::to_string(modeling->recId+1) + ".bin", h_Tr, modeling->volsize);
+        export_binary_float(tables_folder + "eikonal_rec_" + std::to_string(modeling->recId+1) + ".bin", modeling->T, modeling->volsize);
     }
-}
-
-void Migration::show_information()
-{
-    auto clear = system("clear");
-    
-    std::cout << "-------------------------------------------------------------------\n";
-    std::cout << " \033[34mSeisFAT3D\033[0;0m --------------------------------------------------------\n";
-    std::cout << "-------------------------------------------------------------------\n\n";
-
-    std::cout << "Model dimensions: (z = " << (modeling->nz - 1)*modeling->dz << 
-                                  ", x = " << (modeling->nx - 1)*modeling->dx << 
-                                  ", y = " << (modeling->ny - 1)*modeling->dy << ") m\n\n";
-
-    std::cout << "Running " << keyword << " " << current << " of " << total << " in total\n\n";
-
-    std::cout << "Current " << keyword << " position: (z = " << zpos << 
-                                                    ", x = " << xpos << 
-                                                    ", y = " << ypos << ") m\n\n";
-    
-    std::cout << current_operation << "\n";                                                   
 }
 
 void Migration::prepare_convolution()
@@ -439,7 +384,7 @@ void Migration::adjoint_convolution()
     fftw_execute(trace_inverse_plan);
 
     for (int tId = nw/2 + nw/5; tId < nt; tId++)
-        h_data[tId] = (float)(time_trace[tId - nw/2 - nw/5]);
+        h_data[tId] = (float)(time_trace[tId - nw/2 - nw/8]);
 }
 
 void Migration::forward_convolution()
@@ -472,124 +417,22 @@ void Migration::forward_convolution()
     fftw_execute(trace_inverse_plan);
 
     for (int tId = 0; tId < nt; tId++)
-        h_data[tId] = (float)(time_trace[tId + nw/2 + nw/5]);
+        h_data[tId] = (float)(time_trace[tId + nw/2 + nw/8]);
 }
 
-// void Migration::dot_product_test()
-// {
-//     set_src_travel_times();
-//     set_rec_travel_times();
-//     prepare_convolution();
-
-//     d_samples = nt*modeling->geometry->nrec*modeling->geometry->nsrc;
+void Migration::show_information()
+{
+    auto clear = system("clear");
     
-//     auto trash = system("clear");
-//     std::cout << "Computing dot product test!\n\n";
+    std::cout << "-------------------------------------------------------------------\n";
+    std::cout << " \033[34mSeisFAT3D\033[0;0m --------------------------------------------------------\n";
+    std::cout << "-------------------------------------------------------------------\n\n";
 
-//     // d1 = new float[d_samples]();
-//     // d2 = new float[d_samples]();
+    // Cross Spread Gather Information
 
-//     // m1 = new float[m_samples]();
-//     // m2 = new float[m_samples]();
 
-//     // int minValue =-100;
-//     // int maxValue = 100;
 
-//     // std::mt19937 prng(std::random_device{}());
-//     // std::uniform_int_distribution<int> dist(minValue, maxValue);
-
-//     // for (int mId = 0; mId < m_samples; mId++)
-//     //     m1[mId] = dist(prng);
-
-//     // for (int dId = 0; dId < d_samples; dId++)
-//     //     d2[dId] = dist(prng);
-    
-//     // cudaMemcpy(d_model, m1, m_samples*sizeof(float), cudaMemcpyHostToDevice);
-
-//     // for (modeling->srcId = 0; modeling->srcId < modeling->geometry->nsrc; modeling->srcId++)
-//     // {     
-//     //     import_binary_float(tables_folder + "eikonal_src_" + std::to_string(modeling->srcId+1) + ".bin", h_Ts, modeling->matsize);
-//     //     cudaMemcpy(d_Ts, h_Ts, modeling->matsize*sizeof(float), cudaMemcpyHostToDevice);
-        
-//     //     int spreadId = 0;
-        
-//     //     for (modeling->recId = modeling->geometry->iRec[modeling->srcId]; modeling->recId < modeling->geometry->fRec[modeling->srcId]; modeling->recId++)
-//     //     {
-//     //         cmpId = spreadId + 2.0f*(ds/dr)*modeling->srcId;                              
-//     //         cmp = 0.5f*(modeling->geometry->xsrc[modeling->srcId] + 
-//     //                     modeling->geometry->xrec[modeling->recId]);
-
-//     //         import_binary_float(tables_folder + "eikonal_rec_" + std::to_string(modeling->recId+1) + ".bin", h_Tr, modeling->matsize);
-//     //         cudaMemcpy(d_Tr, h_Tr, modeling->matsize*sizeof(float), cudaMemcpyHostToDevice);
-
-//     //         cudaMemset(d_data, 0.0f, nt * sizeof(float));
-
-//     //         perform_forward();
-
-//     //         cudaMemcpy(h_data, d_data, nt * sizeof(float), cudaMemcpyDeviceToHost);
-
-//     //         forward_convolution();
-
-//     //         for (int tId = 0; tId < nt; tId++)
-//     //         {
-//     //             int index = tId + spreadId*nt + modeling->srcId*modeling->max_spread*nt;
-                
-//     //             d1[index] = h_data[tId];    
-//     //         }                
-        
-//     //         ++spreadId;
-//     //     }
-//     // }
-
-//     // cudaMemset(d_model, 0.0f, m_samples*sizeof(float));
-
-//     // for (modeling->srcId = 0; modeling->srcId < modeling->geometry->nsrc; modeling->srcId++)
-//     // { 
-//     //     modeling->sx = modeling->geometry->xsrc[modeling->srcId];
-
-//     //     import_binary_float(tables_folder + "eikonal_src_" + std::to_string(modeling->srcId+1) + ".bin", h_Ts, modeling->matsize);
-//     //     cudaMemcpy(d_Ts, h_Ts, modeling->matsize*sizeof(float), cudaMemcpyHostToDevice);
-
-//     //     int spreadId = 0;
-        
-//     //     for (modeling->recId = modeling->geometry->iRec[modeling->srcId]; modeling->recId < modeling->geometry->fRec[modeling->srcId]; modeling->recId++)
-//     //     {
-//     //         cmp = 0.5f*(modeling->sx + modeling->geometry->xrec[modeling->recId]);
-//     //         cmpId = spreadId + 2.0f*(ds/dr)*modeling->srcId;                              
-
-//     //         import_binary_float(tables_folder + "eikonal_rec_" + std::to_string(modeling->recId+1) + ".bin", h_Tr, modeling->matsize);
-//     //         cudaMemcpy(d_Tr, h_Tr, modeling->matsize*sizeof(float), cudaMemcpyHostToDevice);
-
-//     //         for (int tId = 0; tId < nt; tId++)
-//     //             h_data[tId] = d2[tId + spreadId*nt + modeling->srcId*modeling->max_spread*nt];
-
-//     //         adjoint_convolution();
-
-//     //         cudaMemcpy(d_data, h_data, nt * sizeof(float), cudaMemcpyHostToDevice);
-            
-//     //         perform_adjoint();
-
-//     //         ++spreadId;
-//     //     }
-//     // }
-
-//     // cudaMemcpy(m2, d_model, m_samples*sizeof(float), cudaMemcpyDeviceToHost);        
-
-//     // double dot_m = 0.0;
-//     // double dot_d = 0.0;
-
-//     // for (int mId = 0; mId < m_samples; mId++)
-//     //     dot_m += m1[mId]*m2[mId];
-    
-//     // for (int dId = 0; dId < d_samples; dId++)
-//     //     dot_d += d1[dId]*d2[dId];
-
-//     // double r = (dot_d - dot_m) / (dot_d + dot_m);
-    
-//     // std::cout << "<m1, m2> = " << dot_m << std::endl;
-//     // std::cout << "<d1, d2> = " << dot_d << std::endl; 
-//     // std::cout << "residuo = " << r << std::endl;
-// }
+}
 
 __global__ void image_domain_adjoint_kernel(float * S, float * Ts, float * Tr, float * data, float * model, float dt, int nt, 
                                             float old_dx, float old_dy, float old_dz, float new_dx, float new_dy, float new_dz, 
