@@ -145,7 +145,7 @@ void Eikonal_ANI::time_propagation()
     initialization();
     eikonal_solver();
 
-    get_quasi_slowness<<<nBlocks,NTHREADS>>>(d_T,d_S,dx,dy,dz,sIdx,sIdy,sIdz,nxx,nyy,nzz,nb,d_C11, 
+    get_quasi_slowness<<<nBlocks,NTHREADS>>>(d_T,d_S,dh,dh,dh,sIdx,sIdy,sIdz,nxx,nyy,nzz,nb,d_C11, 
                                              d_C12,d_C13,d_C14,d_C15,d_C16,d_C22,d_C23,d_C24,d_C25, 
                                              d_C26,d_C33,d_C34,d_C35,d_C36,d_C44,d_C45,d_C46,d_C55, 
                                              d_C56,d_C66,minC11,maxC11,minC12,maxC12,minC13,maxC13,

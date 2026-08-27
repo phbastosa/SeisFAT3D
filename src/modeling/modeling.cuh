@@ -36,7 +36,8 @@ protected:
 
 public:
 
-    float dx, dy, dz;
+    float dh;
+    
     int nxx, nyy, nzz, volsize;
     int nx, ny, nz, nb, nPoints;
     int srcId, recId, sIdx, sIdy, sIdz;

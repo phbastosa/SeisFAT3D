@@ -6,9 +6,7 @@ void Modeling::set_parameters()
     ny = std::stoi(catch_parameter("y_samples", parameters));
     nz = std::stoi(catch_parameter("z_samples", parameters));
 
-    dx = std::stof(catch_parameter("x_spacing", parameters));
-    dy = std::stof(catch_parameter("y_spacing", parameters));
-    dz = std::stof(catch_parameter("z_spacing", parameters));
+    dh = std::stof(catch_parameter("model_spacing", parameters));
 
     data_folder = catch_parameter("mod_output_folder", parameters);
 
@@ -43,28 +41,24 @@ void Modeling::set_geometry()
 
 void Modeling::set_properties()
 {
-    float * vp = new float[nPoints]();
+    float * s = new float[nPoints]();
 
-    std::string vp_file = catch_parameter("vp_model_file", parameters);
+    std::string slowness_file = catch_parameter("slowness_file", parameters);
 
-    import_binary_float(vp_file, vp, nPoints);
-
-    # pragma omp parallel for
-    for (int index = 0; index < nPoints; index++)
-        vp[index] = 1.0f / vp[index];
+    import_binary_float(slowness_file, s, nPoints);
 
     S = new float[volsize]();
 
-    expand_boundary(vp, S);
+    expand_boundary(s, S);
 
-    delete[] vp;
+    delete[] s;
 }
 
 void Modeling::set_eikonal()
 {
-    dz2i = 1.0f / (dz*dz);
-    dx2i = 1.0f / (dx*dx);
-    dy2i = 1.0f / (dy*dy);
+    dz2i = 1.0f / (dh*dh);
+    dx2i = 1.0f / (dh*dh);
+    dy2i = 1.0f / (dh*dh);
 
     dz2dx2 = dz2i * dx2i;
     dz2dy2 = dz2i * dy2i;
@@ -118,16 +112,16 @@ void Modeling::set_shot_point()
 
 void Modeling::initialization()
 {
-    sIdx = (int)((sx + 0.5f*dx) / dx) + nb;
-    sIdy = (int)((sy + 0.5f*dy) / dy) + nb;
-    sIdz = (int)((sz + 0.5f*dz) / dz) + nb;
+    sIdx = (int)((sx + 0.5f*dh) / dh) + nb;
+    sIdy = (int)((sy + 0.5f*dh) / dh) + nb;
+    sIdz = (int)((sz + 0.5f*dh) / dh) + nb;
 
     time_set<<<nBlocks,NTHREADS>>>(d_T, volsize);
 
     dim3 grid(1,1,1);
     dim3 block(MESHDIM,MESHDIM,MESHDIM);
 
-    time_init<<<grid,block>>>(d_T,d_S,sx,sy,sz,dx,dy,dz,sIdx,sIdy,sIdz,nxx,nzz,nb);
+    time_init<<<grid,block>>>(d_T,d_S,sx,sy,sz,dh,dh,dh,sIdx,sIdy,sIdz,nxx,nzz,nb);
 }
 
 void Modeling::eikonal_solver()
@@ -166,7 +160,7 @@ void Modeling::eikonal_solver()
             int sgnk = sweep + 2*NSWEEPS;
 
             inner_sweep<<<gs, bs>>>(d_S, d_T, d_sgnt, d_sgnv, sgni, sgnj, sgnk, level, xs, ys, 
-                                    xSweepOff, ySweepOff, zSweepOff, nxx, nyy, nzz, dx, dy, dz, 
+                                    xSweepOff, ySweepOff, zSweepOff, nxx, nyy, nzz, dh, dh, dh, 
                                     dx2i, dy2i, dz2i, dz2dx2, dz2dy2, dx2dy2, dsum);
 	    }
     }
@@ -184,21 +178,21 @@ void Modeling::compute_seismogram()
         float y = geometry->yrec[recId];
         float z = geometry->zrec[recId];
 
-        float x0 = floorf(x / dx) * dx;
-        float y0 = floorf(y / dy) * dy;
-        float z0 = floorf(z / dz) * dz;
+        float x0 = floorf(x / dh) * dh;
+        float y0 = floorf(y / dh) * dh;
+        float z0 = floorf(z / dh) * dh;
 
-        float x1 = floorf(x / dx) * dx + dx;
-        float y1 = floorf(y / dy) * dy + dy;
-        float z1 = floorf(z / dz) * dz + dz;
+        float x1 = floorf(x / dh) * dh + dh;
+        float y1 = floorf(y / dh) * dh + dh;
+        float z1 = floorf(z / dh) * dh + dh;
 
         float xd = (x - x0) / (x1 - x0);
         float yd = (y - y0) / (y1 - y0);
         float zd = (z - z0) / (z1 - z0);
 
-        int i = (int)(z / dz) + nb; 
-        int j = (int)(x / dx) + nb;   
-        int k = (int)(y / dy) + nb;         
+        int i = (int)(z / dh) + nb; 
+        int j = (int)(x / dh) + nb;   
+        int k = (int)(y / dh) + nb;         
 
         for (int pIdx = 0; pIdx < 4; pIdx++)
         {
@@ -293,7 +287,9 @@ void Modeling::show_information()
     std::cout << "                                 \033[34mSeisFAT3D\033[0;0m\n";
     std::cout << "-------------------------------------------------------------------------------\n\n";
 
-    std::cout << "Model dimensions: (z = " << (nz - 1)*dz << ", x = " << (nx - 1) * dx <<", y = " << (ny - 1) * dy << ") m\n\n";
+    std::cout << "Model dimensions: (z = " << (nz - 1)*dh << 
+                                  ", x = " << (nx - 1)*dh <<
+                                  ", y = " << (ny - 1)*dh << ") m\n\n";
 
     std::cout << "Running shot " << srcId + 1 << " of " << geometry->nsrc << " in total\n\n";
 
