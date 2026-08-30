@@ -4,10 +4,12 @@ void KDM::kirchhoff_depth_migration()
 {
     prepare_convolution();
 
-    set_src_travel_times();
-    set_rec_travel_times();
+    get_src_travel_times();
+    get_rec_travel_times();
 
     cudaMemset(d_model, 0.0f, m_samples*sizeof(float));    
+
+    modeling->current_operation = domain + " Kirchhoff Depth Migration in " + modType + " media";
 
     auto set_rec_line_travel_times = [&](float * buffer, int rec_csIdy) 
     {
@@ -80,50 +82,67 @@ void KDM::kirchhoff_depth_migration()
         }
     };
 
+    auto set_rec_line_geometry = [&](float * h_xrec, float * h_yrec, int rec_csIdy) 
+    {
+        for (int rec_csIdx = 0; rec_csIdx < nrx; rec_csIdx++) 
+        {
+            int recId = rec_csIdy + rec_csIdx*nry;
+
+            h_xrec[rec_csIdx] = modeling->geometry->xrec[recId];
+            h_yrec[rec_csIdx] = modeling->geometry->yrec[recId];
+        }
+    };
+
     for (src_csIdx = 0; src_csIdx < nsx; src_csIdx++)
     {
-        set_src_line_seismic();        
-        set_src_line_travel_times();
+        set_src_line_components();
 
         set_cross_spread_data(h_data[0], 0);
         set_rec_line_travel_times(h_Tr[0], 0);
         perform_adjoint_convolution(h_data[0]);
+        set_rec_line_geometry(h_xrec[0], h_yrec[0], 0);
 
         for (rec_csIdy = 0; rec_csIdy < nry; rec_csIdy++)
-        {            
-            int curr = rec_csIdy % 2;
+        {               
+            curr = rec_csIdy % 2;
+
             int next = (rec_csIdy + 1) % 2;
+            int next_recId = rec_csIdy + 1;
+
+            zpos = format1Decimal(modeling->geometry->zrec[rec_csIdy]);
+            ypos = format1Decimal(modeling->geometry->xrec[rec_csIdy]);
+            xpos = format1Decimal(modeling->geometry->yrec[rec_csIdy +       0*nry]) + " - " +
+                   format1Decimal(modeling->geometry->yrec[rec_csIdy + (nrx-1)*nry]);
 
             cudaMemcpyAsync(d_data[curr], h_data[curr], nt*nrx*nsy*sizeof(float), cudaMemcpyHostToDevice, stream_cpy);
             cudaMemcpyAsync(d_Tr[curr], h_Tr[curr], nrx*volBytes, cudaMemcpyHostToDevice, stream_cpy);
+            cudaMemcpyAsync(d_xrec[curr], h_xrec[curr], nrx*sizeof(float), cudaMemcpyHostToDevice, stream_cpy);
+            cudaMemcpyAsync(d_yrec[curr], h_yrec[curr], nrx*sizeof(float), cudaMemcpyHostToDevice, stream_cpy);
             cudaEventRecord(cpy_done[curr], stream_cpy);            
 
-            std::future<void> cpu_worker;
+            cudaStreamWaitEvent(stream_krn, cpy_done[curr], 0);        
+            
+            show_information();
+            perform_adjoint();            
+            
+            cudaEventRecord(krn_done[curr], stream_krn);
+
+            std::future<void> worker;
 
             if (rec_csIdy + 1 < nry) 
             {
-                if (rec_csIdy >= 1) 
-                    cudaEventSynchronize(krn_done[next]);
+                if (rec_csIdy >= 1) cudaEventSynchronize(krn_done[next]);
                                 
-                cpu_worker = std::async(std::launch::async, [&]() 
+                worker = std::async(std::launch::async, [&, next, next_recId]() 
                 {
-                    set_cross_spread_data(h_data[next], rec_csIdy + 1);
-                    set_rec_line_travel_times(h_Tr[next], rec_csIdy + 1);
+                    set_cross_spread_data(h_data[next], next_recId);
+                    set_rec_line_travel_times(h_Tr[next], next_recId);
                     perform_adjoint_convolution(h_data[next]);
+                    set_rec_line_geometry(h_xrec[next], h_yrec[next], next_recId);
                 });
             }
 
-            cudaStreamWaitEvent(stream_krn, cpy_done[curr], 0);        
-        
-            
-
-
-
-
-
-            cudaEventRecord(krn_done[curr], stream_krn);
-
-            if (cpu_worker.valid()) cpu_worker.wait();    
+            if (worker.valid()) worker.wait();    
         }
     }
 }

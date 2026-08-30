@@ -6,8 +6,6 @@
 
 # define EPS 1e-6f
 
-# define NTHREADS 256
-
 class Migration
 {
 protected:
@@ -21,7 +19,7 @@ protected:
     int cmpId, nCMP, nCMPx, nCMPy;
     int nt, nw, nfft, max_it, nang;
     int nBlocks, d_samples, m_samples; 
-    int src_csIdx, rec_csIdy;
+    int src_csIdx, rec_csIdy, curr;
 
     float ds, dr, dt, da, dCMP;
     float minCMPy, minCMPx;
@@ -32,6 +30,12 @@ protected:
     float aperture;
 
     bool anisotropy;
+
+    float * h_xsrc, * h_ysrc;
+    float * d_xsrc, * d_ysrc;
+
+    float * h_xrec[2], * h_yrec[2];
+    float * d_xrec[2], * d_yrec[2];
 
     float * h_data[2];
     float * d_data[2];
@@ -70,6 +74,7 @@ protected:
     std::string tables_folder;
     std::string seismic_folder;
     std::string residuo_folder;
+    std::string zpos, xpos, ypos;
 
     Modeling * modeling = nullptr;
 
@@ -83,14 +88,10 @@ protected:
 
     void show_information();    
     void prepare_convolution();
-    void set_src_travel_times();
-    void set_rec_travel_times();
+    void get_src_travel_times();
+    void get_rec_travel_times();
 
-    void set_src_line_seismic();
-    void set_src_line_travel_times();
-
-//    void adjoint_convolution();
-//    void forward_convolution();
+    void set_src_line_components();
 
     virtual void set_migration() = 0;
     virtual void perform_forward() = 0;
@@ -102,29 +103,39 @@ public:
 
     void set_parameters();
 
-    //void dot_product_test();
-
     virtual void kirchhoff_depth_migration() = 0;
 
     virtual void export_outputs() = 0;
 };
 
-__global__ void image_domain_adjoint_kernel(float * S, float * Ts, float * Tr, float * data, float * model, float dt, int nt, 
-                                            float old_dx, float old_dy, float old_dz, float new_dx, float new_dy, float new_dz, 
-                                            int old_nx, int old_ny, int old_nz, int new_nxx, int new_nyy, int new_nzz, int nb,
-                                            float aperture, float cmpx, float cmpy);
+__global__ void image_domain_adjoint_kernel(const float * __restrict__ d_S, const float * __restrict__ d_T_src, const float * __restrict__ d_T_rec, const float * __restrict__ data,
+                                            float * __restrict__ model, const float * cs_xsrc, const float * cs_ysrc, const float * cs_xrec, const float * cs_yrec, const float aperture,
+                                            const float max_offset, const int sm_z, const int sm_x, const int sm_y, const float cubic_dh, const float dh, const float dt, const int cubic_nxx,
+                                            const int cubic_nyy, const int cubic_nzz, const int cubic_nb, const int nx, const int ny, const int nz, const int nt, const int nsy, const int nrx);
 
-__global__ void image_domain_forward_kernel(float * S, float * Ts, float * Tr, float * data, float * model, float dt, int nt, 
-                                            float old_dx, float old_dy, float old_dz, float new_dx, float new_dy, float new_dz, 
-                                            int old_nx, int old_ny, int old_nz, int new_nxx, int new_nyy, int new_nzz, int nb,
-                                            float aperture, float cmpx, float cmpy);
+__global__ void image_domain_forward_kernel();
 
-__global__ void angle_domain_adjoint_kernel(float * S, float * Ts, float * Tr, float * data, float * model, float dx, float dz, float dt, float da, int nxx, int nzz, int nt, int na, int nb, int cmpId);
-__global__ void angle_domain_forward_kernel(float * S, float * Ts, float * Tr, float * data, float * model, float dx, float dz, float dt, float da, int nxx, int nzz, int nt, int na, int nb, int cmpId);
+__global__ void angle_domain_adjoint_kernel();
 
-__device__ float d_cubic1d(float P[4], float dx);
-__device__ float d_cubic2d(float P[4][4], float dx, float dy);
-__device__ float d_cubic3d(float P[4][4][4], float dx, float dy, float dz);
+__global__ void angle_domain_forward_kernel();
+
+__device__ __forceinline__ float cubic1d(float p0, float p1, float p2, float p3, float u); 
+
+__device__ __forceinline__ float tricubic(const float * __restrict__ smem_buffer, int base_z, int base_x, int base_y, 
+                                          int smem_z, int smem_x, float uz, float ux, float uy); 
+
+typedef struct 
+{
+    float T, dT_dz, dT_dx, dT_dy;
+    float d2T_dz2, d2T_dx2, d2T_dy2;
+    float d2T_dxdz, d2T_dydz, d2T_dxdy;
+} TTD;
+
+__device__ __forceinline__ TTD compute_TTDs(const float * __restrict__ smem_buffer, int base_z, int base_x, int base_y, 
+                                            int smem_z, int smem_x, float uz, float ux, float uy, float cubic_dh); 
+
+__device__ __forceinline__ void get_catmull_weights(float u, float w[4], float dw[4], float d2w[4]); 
+
 
 
 # endif

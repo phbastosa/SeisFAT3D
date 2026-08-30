@@ -48,37 +48,46 @@ void Migration::set_parameters()
     
     set_migration();
 
+    volBytes = modeling->volsize*sizeof(float);
+
+    h_xsrc = new float[nsy]();
+    h_ysrc = new float[nsy]();
+
     h_model = new float[m_samples]();
+
+    h_Ts = new float[nsy*modeling->volsize]();
 
     seismic = new float[nsy*nt*modeling->geometry->nrec]();
 
+    cudaMalloc((void**)&d_xsrc, nsy*sizeof(float));
+    cudaMalloc((void**)&d_ysrc, nsy*sizeof(float));
+
     cudaMalloc((void**)&d_model, m_samples*sizeof(float));
-
-    cudaMallocHost((void**)&h_data[0], nt*nrx*nsy*sizeof(float));
-    cudaMallocHost((void**)&h_data[1], nt*nrx*nsy*sizeof(float));
-
-    cudaMalloc((void**)&d_data[0], nt*nrx*nsy*sizeof(float));
-    cudaMalloc((void**)&d_data[1], nt*nrx*nsy*sizeof(float));
-
-    volBytes = modeling->volsize*sizeof(float);
-
-    cudaMallocHost((void**)&h_Ts, nsy*volBytes);
-    
-    cudaMallocHost((void**)&h_Tr[0], nrx*volBytes);
-    cudaMallocHost((void**)&h_Tr[1], nrx*volBytes);
 
     cudaMalloc((void**)&d_Ts, nsy*volBytes);
 
-    cudaMalloc((void**)&d_Tr[0], nrx*volBytes);
-    cudaMalloc((void**)&d_Tr[1], nrx*volBytes);
-        
     cudaStreamCreate(&stream_cpy);
     cudaStreamCreate(&stream_krn);
 
-    cudaEventCreate(&cpy_done[0]);
-    cudaEventCreate(&cpy_done[1]);
-    cudaEventCreate(&krn_done[0]);
-    cudaEventCreate(&krn_done[1]);
+    for (int p = 0; p < 2; p++)
+    {
+        cudaMallocHost((void**)&h_xrec[p], nrx*sizeof(float));
+        cudaMallocHost((void**)&h_yrec[p], nrx*sizeof(float));
+
+        cudaMallocHost((void**)&h_data[p], nt*nrx*nsy*sizeof(float));
+
+        cudaMallocHost((void**)&h_Tr[p], nrx*volBytes);
+
+        cudaMalloc((void**)&d_xrec[p], nsy*sizeof(float));
+        cudaMalloc((void**)&d_yrec[p], nsy*sizeof(float));
+    
+        cudaMalloc((void**)&d_data[p], nt*nrx*nsy*sizeof(float));
+        
+        cudaMalloc((void**)&d_Tr[0], nrx*volBytes);
+
+        cudaEventCreate(&cpy_done[0]);
+        cudaEventCreate(&krn_done[0]);
+    }
 }
 
 void Migration::set_interpolation()
@@ -299,7 +308,7 @@ void Migration::set_CMP_gathers()
     nCMP = nCMPx * nCMPy;
 }
 
-void Migration::set_src_travel_times()
+void Migration::get_src_travel_times()
 {
     modeling->keyword = "source";
     modeling->total = std::to_string(modeling->geometry->nsrc); 
@@ -327,7 +336,7 @@ void Migration::set_src_travel_times()
     }
 }
 
-void Migration::set_rec_travel_times()
+void Migration::get_rec_travel_times()
 {
     modeling->keyword = "receiver";
     modeling->total = std::to_string(modeling->geometry->nrec); 
@@ -355,34 +364,37 @@ void Migration::set_rec_travel_times()
     }
 }
 
-void Migration::set_src_line_seismic()
+void Migration::set_src_line_components()
 {
+    #pragma omp parallel for schedule(dynamic)
     for (int src_csIdy = 0; src_csIdy < nsy; src_csIdy++)
     {
-        int srcId = src_csIdy + src_csIdx*nry;
+        int srcId = src_csIdy + src_csIdx * nsy;
 
-        float * target = seismic + src_csIdy*nt*modeling->geometry->nrec;
+        float * target_seismic = seismic + src_csIdy * nt * modeling->geometry->nrec;
+        float * target_eikonal = h_Ts + src_csIdy * modeling->volsize;
 
-        std::string path = input_data_folder + input_data_prefix + std::to_string(srcId+1) + ".bin";
+        std::string seismic_path = input_data_folder + input_data_prefix + std::to_string(srcId + 1) + ".bin";
+        std::string eikonal_path = tables_folder + "eikonal_src_" + std::to_string(srcId + 1) + ".bin";
 
-        import_binary_float(path, target, nt*nrx*nry);
+        import_binary_float(seismic_path, target_seismic, nt * nrx * nry);
+        import_binary_float(eikonal_path, target_eikonal, modeling->volsize);
+
+        h_xsrc[src_csIdy] = modeling->geometry->xsrc[srcId];
+        h_ysrc[src_csIdy] = modeling->geometry->ysrc[srcId];
     }
-}
 
-void Migration::set_src_line_travel_times()
-{
-    for (int src_csIdy = 0; src_csIdy < nsy; src_csIdy++)
-    {
-        int srcId = src_csIdy + src_csIdx*nsy;
-        
-        float * target = h_Ts + src_csIdy*modeling->volsize;
-        
-        std::string path = tables_folder + "eikonal_src_" + std::to_string(srcId+1) + ".bin";
-        
-        import_binary_float(path, target, modeling->volsize);
-    }
+    modeling->total   = std::to_string(nsx);
+    modeling->current = std::to_string(src_csIdx+1);
+
+    modeling->zpos = format1Decimal(modeling->geometry->zsrc[src_csIdx*nsy]);
+    modeling->xpos = format1Decimal(modeling->geometry->xsrc[src_csIdx*nsy]);
+    modeling->ypos = format1Decimal(modeling->geometry->ysrc[    0   + src_csIdx*nsy]) + " - " +
+                     format1Decimal(modeling->geometry->ysrc[(nsy-1) + src_csIdx*nsy]);
 
     cudaMemcpy(d_Ts, h_Ts, nsy * volBytes, cudaMemcpyHostToDevice);
+    cudaMemcpy(d_xsrc, h_xsrc, nsy * sizeof(float), cudaMemcpyHostToDevice);
+    cudaMemcpy(d_ysrc, h_ysrc, nsy * sizeof(float), cudaMemcpyHostToDevice);
 }
 
 void Migration::prepare_convolution()
@@ -450,421 +462,446 @@ void Migration::show_information()
     std::cout << " \033[34mSeisFAT3D\033[0;0m --------------------------------------------------------\n";
     std::cout << "-------------------------------------------------------------------\n\n";
 
-    // Cross Spread Gather Information
+    std::cout << "Model dimensions: (z = " << (old_nz - 1)*old_dh << 
+                                  ", x = " << (old_nx - 1)*old_dh <<
+                                  ", y = " << (old_ny - 1)*old_dh << ") m\n\n";
 
+    std::cout << "Running Cross Spread for xline " << modeling->current << " of " << modeling->total << " in total\n\n";
 
+    std::cout << "Current src range position: (z = " << modeling->zpos << 
+                                            ", x = " << modeling->xpos << 
+                                            ", y = " << modeling->ypos << ") m\n\n";
+    
+    std::cout << "Current rec range position: (z = " << zpos << 
+                                            ", x = " << xpos << 
+                                            ", y = " << ypos << ") m\n\n";
 
+    std::cout << modeling->current_operation << "\n";
 }
 
-__global__ void image_domain_adjoint_kernel(float * S, float * Ts, float * Tr, float * data, float * model, float dt, int nt, 
-                                            float old_dx, float old_dy, float old_dz, float new_dx, float new_dy, float new_dz, 
-                                            int old_nx, int old_ny, int old_nz, int new_nxx, int new_nyy, int new_nzz, int nb,
-                                            float aperture, float cmpx, float cmpy)
+__global__ void image_domain_adjoint_kernel(const float * __restrict__ d_S, const float * __restrict__ d_T_src, const float * __restrict__ d_T_rec, const float * __restrict__ data,
+                                            float * __restrict__ model, const float * cs_xsrc, const float * cs_ysrc, const float * cs_xrec, const float * cs_yrec, const float aperture,
+                                            const float max_offset, const int sm_z, const int sm_x, const int sm_y, const float cubic_dh, const float dh, const float dt, const int cubic_nxx,
+                                            const int cubic_nyy, const int cubic_nzz, const int cubic_nb, const int nx, const int ny, const int nz, const int nt, const int nsy, const int nrx)
 {
-    int index = blockIdx.x * blockDim.x + threadIdx.x;
+    extern __shared__ float raw_smem[];
+    const int total_sm_nodes = sm_z * sm_x * sm_y;
 
-    int k = (int) (index / (old_nx*old_nz));         
-    int j = (int) (index - k*old_nx*old_nz) / old_nz;    
-    int i = (int) (index - j*old_nz - k*old_nx*old_nz);  
+    float * sm_S  = raw_smem;
+    float * sm_Ts = raw_smem + total_sm_nodes;
+    float * sm_Tr = raw_smem + 2 * total_sm_nodes;
 
-    float z = __int2float_rd(i)*old_dz;
-    float x = __int2float_rd(j)*old_dx;
-    float y = __int2float_rd(k)*old_dy;
+    __shared__ int cz_block_origin, cx_block_origin, cy_block_origin;
 
-    float z0 = __float2int_rd(z / new_dz) * new_dz;
-    float x0 = __float2int_rd(x / new_dx) * new_dx;
-    float y0 = __float2int_rd(y / new_dy) * new_dy;
-    
-    float z1 = __float2int_rd(z / new_dz) * new_dz + new_dz;
-    float x1 = __float2int_rd(x / new_dx) * new_dx + new_dx;
-    float y1 = __float2int_rd(y / new_dy) * new_dy + new_dy;
+    const int tid = threadIdx.z * blockDim.y * blockDim.x + threadIdx.y * blockDim.x + threadIdx.x;
+    const int num_threads = blockDim.x * blockDim.y * blockDim.z;
 
-    float zd = (z - z0) / (z1 - z0);
-    float xd = (x - x0) / (x1 - x0);
-    float yd = (y - y0) / (y1 - y0);
+    const float inv_cubic_dh = 1.0f / cubic_dh;
+    const float scale_const = 1.0f / (2.0f * M_PI);
 
-    int new_i = __float2int_rd(z / new_dz) + nb; 
-    int new_j = __float2int_rd(x / new_dx) + nb;   
-    int new_k = __float2int_rd(y / new_dy) + nb;         
-
-    const int n = 4;
-
-    float cS[n][n][n];
-    float cTs[n][n][n]; 
-    float cTr[n][n][n]; 
-    
-    if ((new_i >= nb) && (new_i < new_nzz-nb) && 
-        (new_j >= nb) && (new_j < new_nxx-nb) && 
-        (new_k >= nb) && (new_k < new_nyy-nb))
+    if (tid == 0) 
     {
-        for (int pIdx = 0; pIdx < n; pIdx++)
-        {
-            for (int pIdy = 0; pIdy < n; pIdy++)
-            {
-                for (int pIdz = 0; pIdz < n; pIdz++)
-                {
-                    int targetId = (new_i+pIdz-1) + (new_j+pIdx-1)*new_nzz + (new_k+pIdy-1)*new_nxx*new_nzz; 
+        float z_phys_start = (blockIdx.x * blockDim.x) * dh;
+        float x_phys_start = (blockIdx.y * blockDim.y) * dh;
+        float y_phys_start = (blockIdx.z * blockDim.z) * dh;
 
-                    cS[pIdx][pIdy][pIdz] = S[targetId];
-                    cTs[pIdx][pIdy][pIdz] = Ts[targetId];
-                    cTr[pIdx][pIdy][pIdz] = Tr[targetId];
+        cz_block_origin = (int)floorf(z_phys_start * inv_cubic_dh) + cubic_nb;
+        cx_block_origin = (int)floorf(x_phys_start * inv_cubic_dh) + cubic_nb;
+        cy_block_origin = (int)floorf(y_phys_start * inv_cubic_dh) + cubic_nb;
+    }
+
+    __syncthreads();
+
+    float local_image_sum = 0.0f;
+
+    int i = blockIdx.x * blockDim.x + threadIdx.x;
+    int j = blockIdx.y * blockDim.y + threadIdx.y;
+    int k = blockIdx.z * blockDim.z + threadIdx.z;
+
+    bool valid_voxel = (i < nz) && (j < nx) && (k < ny);
+
+    float uz = 0.0f, ux = 0.0f, uy = 0.0f;
+    int sm_base_z = 0, sm_base_x = 0, sm_base_y = 0;
+    float z = 0.0f, x = 0.0f, y = 0.0f;
+
+    if (valid_voxel) 
+    {
+        z = __int2float_rd(i) * dh;
+        x = __int2float_rd(j) * dh;
+        y = __int2float_rd(k) * dh;
+
+        int ic = (int)floorf(z * inv_cubic_dh);
+        int jc = (int)floorf(x * inv_cubic_dh);
+        int kc = (int)floorf(y * inv_cubic_dh);
+
+        uz = fminf(fmaxf((z - (float)(ic)*cubic_dh)*inv_cubic_dh, 0.0f), 1.0f);
+        ux = fminf(fmaxf((x - (float)(jc)*cubic_dh)*inv_cubic_dh, 0.0f), 1.0f);
+        uy = fminf(fmaxf((y - (float)(kc)*cubic_dh)*inv_cubic_dh, 0.0f), 1.0f);
+
+        sm_base_z = (ic + cubic_nb - cz_block_origin) + 1;
+        sm_base_x = (jc + cubic_nb - cx_block_origin) + 1;
+        sm_base_y = (kc + cubic_nb - cy_block_origin) + 1;
+    }
+
+    for (int src_csIdy = 0; src_csIdy < nsy; src_csIdy++) 
+    {
+        size_t src_offset = src_csIdy*cubic_nxx*cubic_nyy*cubic_nzz;
+
+        for (int idx = tid; idx < total_sm_nodes; idx += num_threads) 
+        {
+            int local_cz = idx % sm_z;
+            int rem      = idx / sm_z;
+            int local_cx = rem % sm_x;
+            int local_cy = rem / sm_x;
+
+            int global_cz = max(0, min(cz_block_origin + local_cz - 1, cubic_nzz - 1));
+            int global_cx = max(0, min(cx_block_origin + local_cx - 1, cubic_nxx - 1));
+            int global_cy = max(0, min(cy_block_origin + local_cy - 1, cubic_nyy - 1));
+
+            size_t g_idx = (size_t)(global_cy * cubic_nxx * cubic_nzz) + 
+                           (size_t)(global_cx * cubic_nzz) + 
+                           (size_t)(global_cz);
+
+            size_t s_idx = (size_t)(local_cy * sm_x * sm_z) + 
+                           (size_t)(local_cx * sm_z) + 
+                           (size_t)(local_cz);
+
+            sm_S[s_idx]  = d_S[g_idx];
+            sm_Ts[s_idx] = d_T_src[g_idx + src_offset];
+        }
+
+        __syncthreads();
+
+        TTD src = {0};
+
+        if (valid_voxel) src = compute_TTDs(sm_Ts, sm_base_z, sm_base_x, sm_base_y, 
+                                            sm_z, sm_x, uz, ux, uy, cubic_dh);
+
+        for (int rec_csIdx = 0; rec_csIdx < nrx; rec_csIdx++) 
+        {
+            size_t rec_offset = rec_csIdx*cubic_nxx*cubic_nyy*cubic_nzz;
+
+            for (int idx = tid; idx < total_sm_nodes; idx += num_threads) 
+            {
+                int local_cz = idx % sm_z;
+                int rem      = idx / sm_z;
+                int local_cx = rem % sm_x;
+                int local_cy = rem / sm_x;
+
+                int global_cz = max(0, min(cz_block_origin + local_cz - 1, cubic_nzz - 1));
+                int global_cx = max(0, min(cx_block_origin + local_cx - 1, cubic_nxx - 1));
+                int global_cy = max(0, min(cy_block_origin + local_cy - 1, cubic_nyy - 1));
+
+                size_t g_idx = (size_t)(global_cy * cubic_nxx * cubic_nzz) + 
+                               (size_t)(global_cx * cubic_nzz) + 
+                               (size_t)(global_cz);
+                
+                size_t s_idx = (size_t)(local_cy * sm_x * sm_z) + 
+                               (size_t)(local_cx * sm_z) + 
+                               (size_t)(local_cz);
+
+                sm_Tr[s_idx] = d_T_rec[g_idx + rec_offset];
+            }
+
+            __syncthreads();
+
+            if (valid_voxel) 
+            {
+                float sx = cs_xsrc[src_csIdy];
+                float sy = cs_ysrc[src_csIdy];
+                float rx = cs_xrec[rec_csIdx];
+                float ry = cs_yrec[rec_csIdx];
+
+                float cmpx = 0.5f * (sx + rx);
+                float cmpy = 0.5f * (sy + ry);
+
+                float offset = sqrtf((sx - rx)*(sx - rx) + (sy - ry)*(sy - ry));
+
+                if (offset <= max_offset) 
+                {
+                    TTD rec = compute_TTDs(sm_Tr, sm_base_z, sm_base_x, sm_base_y, sm_z, sm_x, uz, ux, uy, cubic_dh);
+
+                    float T = src.T + rec.T;
+
+                    int tId = __float2int_rd(T / dt);
+
+                    if (tId >= 0 && tId < nt) 
+                    {
+                        float S = tricubic(sm_S, sm_base_z, sm_base_x, sm_base_y, sm_z, sm_x, uz, ux, uy);
+
+                        float norm_Ts = sqrtf(src.dT_dx*src.dT_dx + src.dT_dy*src.dT_dy + src.dT_dz*src.dT_dz) + EPS;
+                        float norm_Tr = sqrtf(rec.dT_dx*rec.dT_dx + rec.dT_dy*rec.dT_dy + rec.dT_dz*rec.dT_dz) + EPS;
+
+                        float ux_s = src.dT_dx / norm_Ts, uy_s = src.dT_dy / norm_Ts, uz_s = src.dT_dz / norm_Ts;
+                        float ux_r = rec.dT_dx / norm_Tr, uy_r = rec.dT_dy / norm_Tr, uz_r = rec.dT_dz / norm_Tr;
+
+                        float nx_norm = 0.0f, ny_norm = 0.0f, nz_norm = -1.0f;
+
+                        float cos_s = fminf(1.0f, fmaxf(0.001f, fabsf(ux_s*nx_norm + uy_s*ny_norm + uz_s*nz_norm)));
+                        float cos_r = fminf(1.0f, fmaxf(0.001f, fabsf(ux_r*nx_norm + uy_r*ny_norm + uz_r*nz_norm)));
+
+                        float obliquity = 0.5f * sqrtf(cos_s + cos_r);
+
+                        float detHs_raw = src.d2T_dx2*(src.d2T_dy2*src.d2T_dz2 - src.d2T_dydz*src.d2T_dydz)
+                                        - src.d2T_dxdy*(src.d2T_dxdy*src.d2T_dz2 - src.d2T_dydz*src.d2T_dxdz)
+                                        + src.d2T_dxdz*(src.d2T_dxdy*src.d2T_dydz - src.d2T_dy2*src.d2T_dxdz);
+
+                        float detHr_raw = rec.d2T_dx2*(rec.d2T_dy2*rec.d2T_dz2 - rec.d2T_dydz*rec.d2T_dydz)
+                                        - rec.d2T_dxdy*(rec.d2T_dxdy*rec.d2T_dz2 - rec.d2T_dydz*rec.d2T_dxdz)
+                                        + rec.d2T_dxdz*(rec.d2T_dxdy*rec.d2T_dydz - rec.d2T_dy2*rec.d2T_dxdz);
+
+                        float detHs = fmaxf(fabsf(detHs_raw), EPS);
+                        float detHr = fmaxf(fabsf(detHr_raw), EPS);
+
+                        float Jterm = fminf((sqrtf(detHs) * sqrtf(detHr)) / (norm_Ts * norm_Tr), 10.0f);
+
+                        float R_s = fmaxf(src.T / S, EPS);
+                        float R_r = fmaxf(rec.T / S, EPS);
+
+                        float G = 1.0f / sqrtf(R_s * R_r);
+
+                        float theta_s = acosf(fminf(1.0f, fmaxf(-1.0f, ux_s*nx_norm + uy_s*ny_norm + uz_s*nz_norm)));
+                        float theta_r = acosf(fminf(1.0f, fmaxf(-1.0f, ux_r*nx_norm + uy_r*ny_norm + uz_r*nz_norm)));
+                        float theta = 0.5f * (theta_s + theta_r);
+                        float R = 1.0f + 0.2f * cosf(theta);
+                        
+                        float sigma = tanf(aperture * M_PI / 180.0f) * z;
+
+                        float par_x = ((x - cmpx) / (sigma + EPS)) * ((x - cmpx) / (sigma + EPS));
+                        float par_y = ((y - cmpy) / (sigma + EPS)) * ((y - cmpy) / (sigma + EPS));
+
+                        float taper = expf(-0.5f * (par_x + par_y));
+
+                        float weights = scale_const * obliquity * Jterm * G * R * taper;
+
+                        size_t tId_offset = rec_csIdx*nt + src_csIdy*nt*nrx;
+
+                        local_image_sum += weights * data[tId + tId_offset];
+                    }
                 }
             }
+
+            __syncthreads();
         }
 
-        float cubic_S = d_cubic3d(cS, xd, yd, zd);
-        float cubic_Ts = d_cubic3d(cTs, xd, yd, zd);
-        float cubic_Tr = d_cubic3d(cTr, xd, yd, zd);
-                    
-        float T = cubic_Ts + cubic_Tr; 
-        int tId = __float2int_rd(T / dt);
+        __syncthreads();
+    }
 
-        if (tId < nt) 
-        {
-            float dTs_dz = 0.5f*(Ts[(new_i+1) + new_j*new_nzz + new_k*new_nxx*new_nzz] - 
-                                 Ts[(new_i-1) + new_j*new_nzz + new_k*new_nxx*new_nzz]) / new_dz;            
-
-            float dTs_dx = 0.5f*(Ts[new_i + (new_j+1)*new_nzz + new_k*new_nxx*new_nzz] - 
-                                 Ts[new_i + (new_j-1)*new_nzz + new_k*new_nxx*new_nzz]) / new_dx;
-
-            float dTs_dy = 0.5f*(Ts[new_i + new_j*new_nzz + (new_k+1)*new_nxx*new_nzz] - 
-                                 Ts[new_i + new_j*new_nzz + (new_k-1)*new_nxx*new_nzz]) / new_dy;
-
-            float d2Ts_dz2 = (Ts[(new_i+1) + new_j*new_nzz + new_k*new_nxx*new_nzz] - 
-                         2.0f*Ts[new_i + new_j*new_nzz + new_k*new_nxx*new_nzz] + 
-                              Ts[(new_i-1) + new_j*new_nzz + new_k*new_nxx*new_nzz]) / (new_dz*new_dz); 
-
-            float d2Ts_dx2 = (Ts[new_i + (new_j+1)*new_nzz + new_k*new_nxx*new_nzz] - 
-                         2.0f*Ts[new_i + new_j*new_nzz + new_k*new_nxx*new_nzz] + 
-                              Ts[new_i + (new_j-1)*new_nzz + new_k*new_nxx*new_nzz]) / (new_dx*new_dx); 
-                              
-            float d2Ts_dy2 = (Ts[new_i + new_j*new_nzz + (new_k+1)*new_nxx*new_nzz] - 
-                         2.0f*Ts[new_i + new_j*new_nzz + new_k*new_nxx*new_nzz] + 
-                              Ts[new_i + new_j*new_nzz + (new_k-1)*new_nxx*new_nzz]) / (new_dy*new_dy); 
-           
-            float d2Ts_dxdz = (Ts[(new_i+1) + (new_j+1)*new_nzz + new_k*new_nxx*new_nzz] - 
-                               Ts[(new_i-1) + (new_j+1)*new_nzz + new_k*new_nxx*new_nzz] - 
-                               Ts[(new_i+1) + (new_j-1)*new_nzz + new_k*new_nxx*new_nzz] + 
-                               Ts[(new_i-1) + (new_j-1)*new_nzz + new_k*new_nxx*new_nzz]) / (4.0f*new_dx*new_dz);
-
-            float d2Ts_dydz = (Ts[(new_i+1) + new_j*new_nzz + (new_k+1)*new_nxx*new_nzz] - 
-                               Ts[(new_i+1) + new_j*new_nzz + (new_k-1)*new_nxx*new_nzz] - 
-                               Ts[(new_i-1) + new_j*new_nzz + (new_k+1)*new_nxx*new_nzz] + 
-                               Ts[(new_i-1) + new_j*new_nzz + (new_k-1)*new_nxx*new_nzz]) / (4.0f*new_dy*new_dz);
-
-            float d2Ts_dxdy = (Ts[new_i + (new_j+1)*new_nzz + (new_k+1)*new_nxx*new_nzz] - 
-                               Ts[new_i + (new_j+1)*new_nzz + (new_k-1)*new_nxx*new_nzz] - 
-                               Ts[new_i + (new_j-1)*new_nzz + (new_k+1)*new_nxx*new_nzz] + 
-                               Ts[new_i + (new_j-1)*new_nzz + (new_k-1)*new_nxx*new_nzz]) / (4.0f*new_dx*new_dy);
-
-            float dTr_dz = 0.5f*(Tr[(new_i+1) + new_j*new_nzz + new_k*new_nxx*new_nzz] - 
-                                 Tr[(new_i-1) + new_j*new_nzz + new_k*new_nxx*new_nzz]) / new_dz;            
-
-            float dTr_dx = 0.5f*(Tr[new_i + (new_j+1)*new_nzz + new_k*new_nxx*new_nzz] - 
-                                 Tr[new_i + (new_j-1)*new_nzz + new_k*new_nxx*new_nzz]) / new_dx;
-
-            float dTr_dy = 0.5f*(Tr[new_i + new_j*new_nzz + (new_k+1)*new_nxx*new_nzz] - 
-                                 Tr[new_i + new_j*new_nzz + (new_k-1)*new_nxx*new_nzz]) / new_dy;
-
-            float d2Tr_dz2 = (Tr[(new_i+1) + new_j*new_nzz + new_k*new_nxx*new_nzz] - 
-                         2.0f*Tr[new_i + new_j*new_nzz + new_k*new_nxx*new_nzz] + 
-                              Tr[(new_i-1) + new_j*new_nzz + new_k*new_nxx*new_nzz]) / (new_dz*new_dz); 
-
-            float d2Tr_dx2 = (Tr[new_i + (new_j+1)*new_nzz + new_k*new_nxx*new_nzz] - 
-                         2.0f*Tr[new_i + new_j*new_nzz + new_k*new_nxx*new_nzz] + 
-                              Tr[new_i + (new_j-1)*new_nzz + new_k*new_nxx*new_nzz]) / (new_dx*new_dx); 
-                              
-            float d2Tr_dy2 = (Tr[new_i + new_j*new_nzz + (new_k+1)*new_nxx*new_nzz] - 
-                         2.0f*Tr[new_i + new_j*new_nzz + new_k*new_nxx*new_nzz] + 
-                              Tr[new_i + new_j*new_nzz + (new_k-1)*new_nxx*new_nzz]) / (new_dz*new_dz); 
-           
-            float d2Tr_dxdz = (Tr[(new_i+1) + (new_j+1)*new_nzz + new_k*new_nxx*new_nzz] - 
-                               Tr[(new_i-1) + (new_j+1)*new_nzz + new_k*new_nxx*new_nzz] - 
-                               Tr[(new_i+1) + (new_j-1)*new_nzz + new_k*new_nxx*new_nzz] + 
-                               Tr[(new_i-1) + (new_j-1)*new_nzz + new_k*new_nxx*new_nzz]) / (4.0f*new_dx*new_dz);
-
-            float d2Tr_dydz = (Tr[(new_i+1) + new_j*new_nzz + (new_k+1)*new_nxx*new_nzz] - 
-                               Tr[(new_i+1) + new_j*new_nzz + (new_k-1)*new_nxx*new_nzz] - 
-                               Tr[(new_i-1) + new_j*new_nzz + (new_k+1)*new_nxx*new_nzz] + 
-                               Tr[(new_i-1) + new_j*new_nzz + (new_k-1)*new_nxx*new_nzz]) / (4.0f*new_dy*new_dz);
-
-            float d2Tr_dxdy = (Tr[new_i + (new_j+1)*new_nzz + (new_k+1)*new_nxx*new_nzz] - 
-                               Tr[new_i + (new_j+1)*new_nzz + (new_k-1)*new_nxx*new_nzz] - 
-                               Tr[new_i + (new_j-1)*new_nzz + (new_k+1)*new_nxx*new_nzz] + 
-                               Tr[new_i + (new_j-1)*new_nzz + (new_k-1)*new_nxx*new_nzz]) / (4.0f*new_dx*new_dy);
-  
-            float detHs = d2Ts_dx2*(d2Ts_dy2*d2Ts_dz2 - d2Ts_dydz*d2Ts_dydz)
-                       - d2Ts_dxdy*(d2Ts_dxdy*d2Ts_dz2 - d2Ts_dydz*d2Ts_dxdz)
-                       + d2Ts_dxdz*(d2Ts_dxdy*d2Ts_dydz - d2Ts_dy2*d2Ts_dxdz);
-
-            float detHr = d2Tr_dx2*(d2Tr_dy2*d2Tr_dz2 - d2Tr_dydz*d2Tr_dydz)
-                       - d2Tr_dxdy*(d2Tr_dxdy*d2Tr_dz2 - d2Tr_dydz*d2Tr_dxdz)
-                       + d2Tr_dxdz*(d2Tr_dxdy*d2Tr_dydz - d2Tr_dy2*d2Tr_dxdz);
-
-            float norm_Ts = sqrtf(dTs_dx*dTs_dx + dTs_dy*dTs_dy + dTs_dz*dTs_dz) + EPS;
-            float norm_Tr = sqrtf(dTr_dx*dTr_dx + dTr_dy*dTr_dy + dTr_dz*dTr_dz) + EPS;
-
-            detHs = fabsf(detHs) + EPS;
-            detHr = fabsf(detHr) + EPS;
-
-            float Jterm = sqrtf(detHs * detHr) * cubic_S / (norm_Ts * norm_Tr);    
-            
-            float ux_s = dTs_dx / norm_Ts; float uy_s = dTs_dy / norm_Ts; float uz_s = dTs_dz / norm_Ts;            
-            float ux_r = dTr_dx / norm_Tr; float uy_r = dTr_dy / norm_Tr; float uz_r = dTr_dz / norm_Tr;            
-
-            float nx_norm = 0.0f, ny_norm = 0.0f, nz_norm = -1.0f; 
-            float cos_s = fabs(ux_s*nx_norm + uy_s*ny_norm + uz_s*nz_norm);
-            float cos_r = fabs(ux_s*nx_norm + uy_s*ny_norm + uz_s*nz_norm);
-            
-            float obliquity = sqrt(max(0.0f, cos_s) * max(0.0f, cos_r));
-
-            float R_s = max(cubic_Ts / cubic_S, EPS);
-            float R_r = max(cubic_Tr / cubic_S, EPS);
-
-            float G = 1.0f / sqrt(R_s * R_r);
-
-            float theta_s = acosf(min(1.0f,max(-1.0f, ux_s*nx_norm + uy_s*ny_norm + uz_s*nz_norm)));
-            float theta_r = acosf(min(1.0f,max(-1.0f, ux_r*nx_norm + uy_r*ny_norm + uz_r*nz_norm)));
-            float theta = 0.5f*(theta_s + theta_r);
-            float R = 1.0f + 0.2f*cosf(theta); 
-
-            float scale_const = 1.0f / (2.0f * M_PI);
-
-            float sigma = tanf(aperture * M_PI / 180.0f)*z;        
-
-            float par_x = ((x - cmpx) / (sigma + EPS))*((x - cmpx) / (sigma + EPS));
-            float par_y = ((y - cmpy) / (sigma + EPS))*((y - cmpy) / (sigma + EPS));
-
-            float taper = expf(-0.5f*(par_x + par_y));
-
-            float weights = scale_const * Jterm * obliquity * G * R * taper;            
-    
-            atomicAdd(&model[index], weights * data[tId]);
-        }
-    }    
-}
-
-__global__ void image_domain_forward_kernel(float * S, float * Ts, float * Tr, float * data, float * model, float dt, int nt, 
-                                            float old_dx, float old_dy, float old_dz, float new_dx, float new_dy, float new_dz, 
-                                            int old_nx, int old_ny, int old_nz, int new_nxx, int new_nyy, int new_nzz, int nb,
-                                            float aperture, float cmpx, float cmpy)
-{
-    int index = blockIdx.x * blockDim.x + threadIdx.x;
-
-    int k = (int) (index / (old_nx*old_nz));         
-    int j = (int) (index - k*old_nx*old_nz) / old_nz;    
-    int i = (int) (index - j*old_nz - k*old_nx*old_nz);  
-
-    float z = __int2float_rd(i)*old_dz;
-    float x = __int2float_rd(j)*old_dx;
-    float y = __int2float_rd(k)*old_dy;
-
-    float z0 = __float2int_rd(z / new_dz) * new_dz;
-    float x0 = __float2int_rd(x / new_dx) * new_dx;
-    float y0 = __float2int_rd(y / new_dy) * new_dy;
-    
-    float z1 = __float2int_rd(z / new_dz) * new_dz + new_dz;
-    float x1 = __float2int_rd(x / new_dx) * new_dx + new_dx;
-    float y1 = __float2int_rd(y / new_dy) * new_dy + new_dy;
-
-    float zd = (z - z0) / (z1 - z0);
-    float xd = (x - x0) / (x1 - x0);
-    float yd = (y - y0) / (y1 - y0);
-
-    int new_i = __float2int_rd(z / new_dz) + nb; 
-    int new_j = __float2int_rd(x / new_dx) + nb;   
-    int new_k = __float2int_rd(y / new_dy) + nb;         
-
-    const int n = 4;
-
-    float cS[n][n][n];
-    float cTs[n][n][n]; 
-    float cTr[n][n][n]; 
-    
-    if ((new_i >= nb) && (new_i < new_nzz-nb) && 
-        (new_j >= nb) && (new_j < new_nxx-nb) && 
-        (new_k >= nb) && (new_k < new_nyy-nb))
+    if (valid_voxel) 
     {
-        for (int pIdx = 0; pIdx < n; pIdx++)
+        size_t mId = i + j * nz + k * nx * nz;
+        atomicAdd(&model[mId], local_image_sum);
+    }
+}
+
+__global__ void image_domain_forward_kernel()
+{
+
+
+}
+
+__global__ void angle_domain_adjoint_kernel()
+{
+
+
+}
+
+__global__ void angle_domain_forward_kernel()
+{
+
+
+}
+
+__device__ __forceinline__ void get_catmull_weights(float u, float w[4], float dw[4], float d2w[4]) 
+{
+    float u2 = u * u;
+    float u3 = u2 * u;
+
+    w[0] = -0.5f * u3 + u2 - 0.5f * u;
+    w[1] =  1.5f * u3 - 2.5f * u2 + 1.0f;
+    w[2] = -1.5f * u3 + 2.0f * u2 + 0.5f * u;
+    w[3] =  0.5f * u3 - 0.5f * u2;
+
+    dw[0] = -1.5f * u2 + 2.0f * u - 0.5f;
+    dw[1] =  4.5f * u2 - 5.0f * u;
+    dw[2] = -4.5f * u2 + 4.0f * u + 0.5f;
+    dw[3] =  1.5f * u2 - u;
+
+    d2w[0] = -3.0f * u + 2.0f;
+    d2w[1] =  9.0f * u - 5.0f;
+    d2w[2] = -9.0f * u + 4.0f;
+    d2w[3] =  3.0f * u - 1.0f;
+}
+
+__device__ __forceinline__ TTD compute_TTDs(const float * __restrict__ smem_buffer, int base_z, int base_x, int base_y, 
+                                            int smem_z, int smem_x, float uz, float ux, float uy, float cubic_dh) 
+{
+    float wz[4], dwz[4], d2wz[4];
+    float wx[4], dwx[4], d2wx[4];
+    float wy[4], dwy[4], d2wy[4];
+
+    get_catmull_weights(uz, wz, dwz, d2wz);
+    get_catmull_weights(ux, wx, dwx, d2wx);
+    get_catmull_weights(uy, wy, dwy, d2wy);
+
+    const int stride_x = smem_z;
+    const int stride_y = smem_x * smem_z;
+
+    float inv_z  = 1.0f / cubic_dh;
+    float inv_x  = 1.0f / cubic_dh;
+    float inv_y  = 1.0f / cubic_dh;
+
+    float inv_z2 = inv_z * inv_z;
+    float inv_x2 = inv_x * inv_x;
+    float inv_y2 = inv_y * inv_y;
+
+    float inv_xz = inv_x * inv_z;
+    float inv_yz = inv_y * inv_z;
+    float inv_xy = inv_x * inv_y;
+
+    float R0[4][4], R1[4][4], R2[4][4];
+
+    #pragma unroll
+    for (int dy = 0; dy < 4; ++dy) 
+    {
+        int y_offset = (base_y + dy - 1) * stride_y;
+
+        #pragma unroll
+        for (int dx = 0; dx < 4; ++dx) 
         {
-            for (int pIdy = 0; pIdy < n; pIdy++)
+            int offset = y_offset + (base_x + dx - 1) * stride_x + (base_z - 1);
+
+            float r0 = 0.0f, r1 = 0.0f, r2 = 0.0f;
+        
+            #pragma unroll
+            for (int dz = 0; dz < 4; ++dz) 
             {
-                for (int pIdz = 0; pIdz < n; pIdz++)
-                {
-                    int targetId = (new_i+pIdz-1) + (new_j+pIdx-1)*new_nzz + (new_k+pIdy-1)*new_nxx*new_nzz; 
-
-                    cS[pIdx][pIdy][pIdz] = S[targetId];
-                    cTs[pIdx][pIdy][pIdz] = Ts[targetId];
-                    cTr[pIdx][pIdy][pIdz] = Tr[targetId];
-                }
+                float val = smem_buffer[offset + dz];
+                
+                r0 += val * wz[dz];   
+                r1 += val * dwz[dz];  
+                r2 += val * d2wz[dz]; 
             }
+
+            R0[dy][dx] = r0;
+            R1[dy][dx] = r1;
+            R2[dy][dx] = r2;
         }
+    }
 
-        float cubic_S = d_cubic3d(cS, xd, yd, zd);
-        float cubic_Ts = d_cubic3d(cTs, xd, yd, zd);
-        float cubic_Tr = d_cubic3d(cTr, xd, yd, zd);
-                    
-        float T = cubic_Ts + cubic_Tr; 
-        int tId = __float2int_rd(T / dt);
+    float RX00[4], RX01[4], RX02[4];
+    float RX10[4], RX11[4];
+    float RX20[4];
 
-        if (tId < nt) 
+    #pragma unroll
+    for (int dy = 0; dy < 4; ++dy) 
+    {
+        float rx00 = 0.0f, rx01 = 0.0f, rx02 = 0.0f;
+        float rx10 = 0.0f, rx11 = 0.0f;
+        float rx20 = 0.0f;
+
+        #pragma unroll
+        for (int dx = 0; dx < 4; ++dx) 
         {
-            float dTs_dz = 0.5f*(Ts[(new_i+1) + new_j*new_nzz + new_k*new_nxx*new_nzz] - 
-                                 Ts[(new_i-1) + new_j*new_nzz + new_k*new_nxx*new_nzz]) / new_dz;            
+            float r0 = R0[dy][dx];
+            float r1 = R1[dy][dx];
+            float r2 = R2[dy][dx];
 
-            float dTs_dx = 0.5f*(Ts[new_i + (new_j+1)*new_nzz + new_k*new_nxx*new_nzz] - 
-                                 Ts[new_i + (new_j-1)*new_nzz + new_k*new_nxx*new_nzz]) / new_dx;
+            float w = wx[dx], dw = dwx[dx], d2w = d2wx[dx];
 
-            float dTs_dy = 0.5f*(Ts[new_i + new_j*new_nzz + (new_k+1)*new_nxx*new_nzz] - 
-                                 Ts[new_i + new_j*new_nzz + (new_k-1)*new_nxx*new_nzz]) / new_dy;
+            rx00 += r0 * w;   
+            rx01 += r0 * dw;  
+            rx02 += r0 * d2w; 
 
-            float d2Ts_dz2 = (Ts[(new_i+1) + new_j*new_nzz + new_k*new_nxx*new_nzz] - 
-                         2.0f*Ts[new_i + new_j*new_nzz + new_k*new_nxx*new_nzz] + 
-                              Ts[(new_i-1) + new_j*new_nzz + new_k*new_nxx*new_nzz]) / (new_dz*new_dz); 
+            rx10 += r1 * w;   
+            rx11 += r1 * dw;  
 
-            float d2Ts_dx2 = (Ts[new_i + (new_j+1)*new_nzz + new_k*new_nxx*new_nzz] - 
-                         2.0f*Ts[new_i + new_j*new_nzz + new_k*new_nxx*new_nzz] + 
-                              Ts[new_i + (new_j-1)*new_nzz + new_k*new_nxx*new_nzz]) / (new_dx*new_dx); 
-                              
-            float d2Ts_dy2 = (Ts[new_i + new_j*new_nzz + (new_k+1)*new_nxx*new_nzz] - 
-                         2.0f*Ts[new_i + new_j*new_nzz + new_k*new_nxx*new_nzz] + 
-                              Ts[new_i + new_j*new_nzz + (new_k-1)*new_nxx*new_nzz]) / (new_dy*new_dy); 
-           
-            float d2Ts_dxdz = (Ts[(new_i+1) + (new_j+1)*new_nzz + new_k*new_nxx*new_nzz] - 
-                               Ts[(new_i-1) + (new_j+1)*new_nzz + new_k*new_nxx*new_nzz] - 
-                               Ts[(new_i+1) + (new_j-1)*new_nzz + new_k*new_nxx*new_nzz] + 
-                               Ts[(new_i-1) + (new_j-1)*new_nzz + new_k*new_nxx*new_nzz]) / (4.0f*new_dx*new_dz);
-
-            float d2Ts_dydz = (Ts[(new_i+1) + new_j*new_nzz + (new_k+1)*new_nxx*new_nzz] - 
-                               Ts[(new_i+1) + new_j*new_nzz + (new_k-1)*new_nxx*new_nzz] - 
-                               Ts[(new_i-1) + new_j*new_nzz + (new_k+1)*new_nxx*new_nzz] + 
-                               Ts[(new_i-1) + new_j*new_nzz + (new_k-1)*new_nxx*new_nzz]) / (4.0f*new_dy*new_dz);
-
-            float d2Ts_dxdy = (Ts[new_i + (new_j+1)*new_nzz + (new_k+1)*new_nxx*new_nzz] - 
-                               Ts[new_i + (new_j+1)*new_nzz + (new_k-1)*new_nxx*new_nzz] - 
-                               Ts[new_i + (new_j-1)*new_nzz + (new_k+1)*new_nxx*new_nzz] + 
-                               Ts[new_i + (new_j-1)*new_nzz + (new_k-1)*new_nxx*new_nzz]) / (4.0f*new_dx*new_dy);
-
-            float dTr_dz = 0.5f*(Tr[(new_i+1) + new_j*new_nzz + new_k*new_nxx*new_nzz] - 
-                                 Tr[(new_i-1) + new_j*new_nzz + new_k*new_nxx*new_nzz]) / new_dz;            
-
-            float dTr_dx = 0.5f*(Tr[new_i + (new_j+1)*new_nzz + new_k*new_nxx*new_nzz] - 
-                                 Tr[new_i + (new_j-1)*new_nzz + new_k*new_nxx*new_nzz]) / new_dx;
-
-            float dTr_dy = 0.5f*(Tr[new_i + new_j*new_nzz + (new_k+1)*new_nxx*new_nzz] - 
-                                 Tr[new_i + new_j*new_nzz + (new_k-1)*new_nxx*new_nzz]) / new_dy;
-
-            float d2Tr_dz2 = (Tr[(new_i+1) + new_j*new_nzz + new_k*new_nxx*new_nzz] - 
-                         2.0f*Tr[new_i + new_j*new_nzz + new_k*new_nxx*new_nzz] + 
-                              Tr[(new_i-1) + new_j*new_nzz + new_k*new_nxx*new_nzz]) / (new_dz*new_dz); 
-
-            float d2Tr_dx2 = (Tr[new_i + (new_j+1)*new_nzz + new_k*new_nxx*new_nzz] - 
-                         2.0f*Tr[new_i + new_j*new_nzz + new_k*new_nxx*new_nzz] + 
-                              Tr[new_i + (new_j-1)*new_nzz + new_k*new_nxx*new_nzz]) / (new_dx*new_dx); 
-                              
-            float d2Tr_dy2 = (Tr[new_i + new_j*new_nzz + (new_k+1)*new_nxx*new_nzz] - 
-                         2.0f*Tr[new_i + new_j*new_nzz + new_k*new_nxx*new_nzz] + 
-                              Tr[new_i + new_j*new_nzz + (new_k-1)*new_nxx*new_nzz]) / (new_dz*new_dz); 
-           
-            float d2Tr_dxdz = (Tr[(new_i+1) + (new_j+1)*new_nzz + new_k*new_nxx*new_nzz] - 
-                               Tr[(new_i-1) + (new_j+1)*new_nzz + new_k*new_nxx*new_nzz] - 
-                               Tr[(new_i+1) + (new_j-1)*new_nzz + new_k*new_nxx*new_nzz] + 
-                               Tr[(new_i-1) + (new_j-1)*new_nzz + new_k*new_nxx*new_nzz]) / (4.0f*new_dx*new_dz);
-
-            float d2Tr_dydz = (Tr[(new_i+1) + new_j*new_nzz + (new_k+1)*new_nxx*new_nzz] - 
-                               Tr[(new_i+1) + new_j*new_nzz + (new_k-1)*new_nxx*new_nzz] - 
-                               Tr[(new_i-1) + new_j*new_nzz + (new_k+1)*new_nxx*new_nzz] + 
-                               Tr[(new_i-1) + new_j*new_nzz + (new_k-1)*new_nxx*new_nzz]) / (4.0f*new_dy*new_dz);
-
-            float d2Tr_dxdy = (Tr[new_i + (new_j+1)*new_nzz + (new_k+1)*new_nxx*new_nzz] - 
-                               Tr[new_i + (new_j+1)*new_nzz + (new_k-1)*new_nxx*new_nzz] - 
-                               Tr[new_i + (new_j-1)*new_nzz + (new_k+1)*new_nxx*new_nzz] + 
-                               Tr[new_i + (new_j-1)*new_nzz + (new_k-1)*new_nxx*new_nzz]) / (4.0f*new_dx*new_dy);
-  
-            float detHs = d2Ts_dx2*(d2Ts_dy2*d2Ts_dz2 - d2Ts_dydz*d2Ts_dydz)
-                       - d2Ts_dxdy*(d2Ts_dxdy*d2Ts_dz2 - d2Ts_dydz*d2Ts_dxdz)
-                       + d2Ts_dxdz*(d2Ts_dxdy*d2Ts_dydz - d2Ts_dy2*d2Ts_dxdz);
-
-            float detHr = d2Tr_dx2*(d2Tr_dy2*d2Tr_dz2 - d2Tr_dydz*d2Tr_dydz)
-                       - d2Tr_dxdy*(d2Tr_dxdy*d2Tr_dz2 - d2Tr_dydz*d2Tr_dxdz)
-                       + d2Tr_dxdz*(d2Tr_dxdy*d2Tr_dydz - d2Tr_dy2*d2Tr_dxdz);
-
-            float norm_Ts = sqrtf(dTs_dx*dTs_dx + dTs_dy*dTs_dy + dTs_dz*dTs_dz) + EPS;
-            float norm_Tr = sqrtf(dTr_dx*dTr_dx + dTr_dy*dTr_dy + dTr_dz*dTr_dz) + EPS;
-
-            detHs = fabsf(detHs) + EPS;
-            detHr = fabsf(detHr) + EPS;
-
-            float Jterm = sqrtf(detHs * detHr) * cubic_S / (norm_Ts * norm_Tr);    
-            
-            float ux_s = dTs_dx / norm_Ts; float uy_s = dTs_dy / norm_Ts; float uz_s = dTs_dz / norm_Ts;            
-            float ux_r = dTr_dx / norm_Tr; float uy_r = dTr_dy / norm_Tr; float uz_r = dTr_dz / norm_Tr;            
-
-            float nx_norm = 0.0f, ny_norm = 0.0f, nz_norm = -1.0f; 
-            float cos_s = fabs(ux_s*nx_norm + uy_s*ny_norm + uz_s*nz_norm);
-            float cos_r = fabs(ux_s*nx_norm + uy_s*ny_norm + uz_s*nz_norm);
-            
-            float obliquity = sqrt(max(0.0f, cos_s) * max(0.0f, cos_r));
-
-            float R_s = max(cubic_Ts / cubic_S, EPS);
-            float R_r = max(cubic_Tr / cubic_S, EPS);
-
-            float G = 1.0f / sqrt(R_s * R_r);
-
-            float theta_s = acosf(min(1.0f,max(-1.0f, ux_s*nx_norm + uy_s*ny_norm + uz_s*nz_norm)));
-            float theta_r = acosf(min(1.0f,max(-1.0f, ux_r*nx_norm + uy_r*ny_norm + uz_r*nz_norm)));
-            float theta = 0.5f*(theta_s + theta_r);
-            float R = 1.0f + 0.2f*cosf(theta); 
-
-            float scale_const = 1.0f / (2.0f * M_PI);
-
-            float sigma = tanf(aperture * M_PI / 180.0f)*z;        
-
-            float par_x = powf((x - cmpx) / (sigma + EPS), 2.0f);
-            float par_y = powf((y - cmpy) / (sigma + EPS), 2.0f);
-
-            float taper = expf(-0.5f*(par_x + par_y));
-
-            float weights = scale_const * Jterm * obliquity * G * R * taper;            
-    
-            atomicAdd(&data[tId], weights * model[index]);
+            rx20 += r2 * w;   
         }
-    }    
+
+        RX00[dy] = rx00; RX01[dy] = rx01; RX02[dy] = rx02;
+        RX10[dy] = rx10; RX11[dy] = rx11;
+        RX20[dy] = rx20;
+    }
+
+    TTD ttd = {0};
+
+    #pragma unroll
+    for (int dy = 0; dy < 4; ++dy) 
+    {
+        float w = wy[dy], dw = dwy[dy], d2w = d2wy[dy];
+
+        ttd.T        += RX00[dy] * w;
+
+        ttd.dT_dz    += RX10[dy] * w;
+        ttd.dT_dx    += RX01[dy] * w;
+        ttd.dT_dy    += RX00[dy] * dw;
+
+        ttd.d2T_dz2  += RX20[dy] * w;
+        ttd.d2T_dx2  += RX02[dy] * w;
+        ttd.d2T_dy2  += RX00[dy] * d2w;
+
+        ttd.d2T_dxdz += RX11[dy] * w;
+        ttd.d2T_dydz += RX10[dy] * dw;
+        ttd.d2T_dxdy += RX01[dy] * dw;
+    }
+
+    ttd.dT_dz    *= inv_z;
+    ttd.dT_dx    *= inv_x;
+    ttd.dT_dy    *= inv_y;
+
+    ttd.d2T_dz2  *= inv_z2;
+    ttd.d2T_dx2  *= inv_x2;
+    ttd.d2T_dy2  *= inv_y2;
+
+    ttd.d2T_dxdz *= inv_xz;
+    ttd.d2T_dydz *= inv_yz;
+    ttd.d2T_dxdy *= inv_xy;
+
+    return ttd;
 }
 
-__global__ void angle_domain_adjoint_kernel(float * S, float * Ts, float * Tr, float * data, float * model, float dx, float dz, float dt, float da, int nxx, int nzz, int nt, int na, int nb, int cmpId)
+__device__ __forceinline__ float cubic1d(float p0, float p1, float p2, float p3, float u) 
 {
-
-
+    float c0 = p1;
+    float c1 = 0.5f * (p2 - p0);
+    float c2 = p0 - 2.5f * p1 + 2.0f * p2 - 0.5f * p3;
+    float c3 = 0.5f * (p3 - p0) + 1.5f * (p1 - p2);
+    
+    return ((c3 * u + c2) * u + c1) * u + c0;
 }
 
-__global__ void angle_domain_forward_kernel(float * S, float * Ts, float * Tr, float * data, float * model, float dx, float dz, float dt, float da, int nxx, int nzz, int nt, int na, int nb, int cmpId)
+__device__ __forceinline__ float tricubic(const float * __restrict__ smem_buffer, int base_z, int base_x, int base_y, 
+                                          int smem_z, int smem_x, float uz, float ux, float uy) 
 {
+    const int stride_x = smem_z;
+    const int stride_y = smem_x * smem_z;
 
+    float val_y[4];
 
+    #pragma unroll
+    for (int dy = 0; dy < 4; ++dy) 
+    {
+        int y_offset = (base_y + dy - 1) * stride_y;
+        float val_x[4]; 
+
+        #pragma unroll
+        for (int dx = 0; dx < 4; ++dx) 
+        {
+            int xy_offset = y_offset + (base_x + dx - 1) * stride_x + (base_z - 1);
+
+            float p0 = smem_buffer[xy_offset];
+            float p1 = smem_buffer[xy_offset + 1];
+            float p2 = smem_buffer[xy_offset + 2];
+            float p3 = smem_buffer[xy_offset + 3];
+
+            val_x[dx] = cubic1d(p0, p1, p2, p3, uz);
+        }
+
+        val_y[dy] = cubic1d(val_x[0], val_x[1], val_x[2], val_x[3], ux);
+    }
+
+    return cubic1d(val_y[0], val_y[1], val_y[2], val_y[3], uy);
 }
 
-__device__ float d_cubic1d(float P[4], float dx)
-{
-    return P[1] + 0.5f*dx*(P[2] - P[0] + dx*(2.0f*P[0] - 5.0f*P[1] + 4.0f*P[2] - P[3] + dx*(3.0f*(P[1] - P[2]) + P[3] - P[0])));
-}
 
-__device__ float d_cubic2d(float P[4][4], float dx, float dy)
-{    
-    float p[4];
-    p[0] = d_cubic1d(P[0], dy);
-    p[1] = d_cubic1d(P[1], dy);
-    p[2] = d_cubic1d(P[2], dy);
-    p[3] = d_cubic1d(P[3], dy);    
-    return d_cubic1d(p, dx);
-}
-
-__device__ float d_cubic3d(float P[4][4][4], float dx, float dy, float dz)
-{    
-    float p[4];
-    p[0] = d_cubic2d(P[0], dy, dz);
-    p[1] = d_cubic2d(P[1], dy, dz);
-    p[2] = d_cubic2d(P[2], dy, dz);
-    p[3] = d_cubic2d(P[3], dy, dz);
-    return d_cubic1d(p, dx);
-}

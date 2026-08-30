@@ -26,7 +26,7 @@ int main(int argc, char **argv)
 
     auto tf = std::chrono::system_clock::now();
 
-    // migration[type]->export_outputs();
+    migration[type]->export_outputs();
 
     std::chrono::duration<double> elapsed_seconds = tf - ti;
     std::cout << "\nRun time: " << elapsed_seconds.count() << " s." << std::endl;

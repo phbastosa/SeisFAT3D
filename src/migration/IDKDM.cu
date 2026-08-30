@@ -11,9 +11,32 @@ void IDKDM::set_migration()
 
 void IDKDM::perform_adjoint()
 {
-    // image_domain_adjoint_kernel<<<nBlocks,NTHREADS>>>(modeling->d_S, d_Ts, d_Tr, d_data, d_model, dt, nt, old_dx, old_dy, old_dz, new_dx, new_dy, 
-    //                                                   new_dz, old_nx, old_ny, old_nz, modeling->nxx, modeling->nyy, modeling->nzz, modeling->nb,
-    //                                                   aperture, CMPx, CMPy);
+    const int TILE = 8;
+    const int HALO = 4;
+
+    dim3 blk(TILE, TILE, TILE);
+
+    dim3 grd((old_nz + blk.x - 1) / blk.x,
+             (old_nx + blk.y - 1) / blk.y,
+             (old_ny + blk.z - 1) / blk.z);
+
+    const float tile_phys_z = blk.x * old_dh;
+    const float tile_phys_x = blk.y * old_dh;
+    const float tile_phys_y = blk.z * old_dh;
+
+    const int sm_z = (int)ceilf(tile_phys_z / new_dh) + HALO + 1;
+    const int sm_x = (int)ceilf(tile_phys_x / new_dh) + HALO + 1;
+    const int sm_y = (int)ceilf(tile_phys_y / new_dh) + HALO + 1;
+
+    const int total_sm_nodes = sm_z * sm_x * sm_y;
+
+    const int sm_bytes = 3 * total_sm_nodes * sizeof(float);
+
+    image_domain_adjoint_kernel<<<grd,blk,sm_bytes,stream_krn>>>(
+        modeling->d_S, d_Ts, d_Tr[curr], d_data[curr], d_model, d_xsrc, d_ysrc, 
+        d_xrec[curr], d_yrec[curr], aperture, max_offset, sm_z, sm_x, sm_y, 
+        new_dh, old_dh, dt, modeling->nxx, modeling->nyy, modeling->nzz, 
+        modeling->nb, old_nx, old_ny, old_nz, nt, nsy, nsx);
 }
 
 void IDKDM::perform_forward()
