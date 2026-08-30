@@ -64,16 +64,21 @@ inv_data_prefix = obs_eikonal_ani_nStations1506_shot_
 
 mig_type = 0                                # <int>
 
-cubic_spacing = 50.0                        # [m] <float>
+nsx = 7                                     # <int>
+nsy = 7                                     # <int>  
 
-anisotropy = false                          # <bool>
+nrx = 100                                   # <int>
+nry = 100                                   # <int>
 
 time_samples = 3001                         # <int>
 time_spacing = 1e-3                         # [s] <float>
 max_frequency = 30.0                        # [Hz] <float>
 
-mig_aperture = 30                           # [°] <float>
+anisotropy = false                          # <bool>
 
+cubic_spacing = 100.0                       # [m] <float>
+
+mig_aperture = 30                           # [°] <float>
 mig_max_angle = 60                          # [°] <float>
 mig_angle_spacing = 2.0                     # [°] <float>
 

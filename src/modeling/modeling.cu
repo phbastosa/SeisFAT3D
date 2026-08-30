@@ -107,15 +107,8 @@ void Modeling::set_shot_point()
 {
     sx = geometry->xsrc[srcId]; 
     sy = geometry->ysrc[srcId]; 
-    sz = geometry->zsrc[srcId]; 
-}
-
-void Modeling::initialization()
-{
-    sIdx = (int)((sx + 0.5f*dh) / dh) + nb;
-    sIdy = (int)((sy + 0.5f*dh) / dh) + nb;
-    sIdz = (int)((sz + 0.5f*dh) / dh) + nb;
-
+    sz = geometry->zsrc[srcId];
+    
     current = std::to_string(srcId+1);
     
     xpos = format1Decimal(sx);
@@ -124,7 +117,14 @@ void Modeling::initialization()
 
     keyword = "source";
 
-    total = std::to_string(geometry->nsrc);     
+    total = std::to_string(geometry->nsrc);         
+}
+
+void Modeling::initialization()
+{
+    sIdx = (int)((sx + 0.5f*dh) / dh) + nb;
+    sIdy = (int)((sy + 0.5f*dh) / dh) + nb;
+    sIdz = (int)((sz + 0.5f*dh) / dh) + nb;
 
     time_set<<<nBlocks,NTHREADS>>>(d_T, volsize);
 

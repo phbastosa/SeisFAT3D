@@ -1,7 +1,9 @@
 # ifndef ADMIN_HPP
 # define ADMIN_HPP
 
+# include <omp.h>
 # include <cmath>
+# include <future>
 # include <string>
 # include <chrono>
 # include <vector>
@@ -11,6 +13,7 @@
 # include <sstream>
 # include <iomanip>
 # include <fstream>
+# include <cstring>
 # include <iostream>
 # include <algorithm>
 

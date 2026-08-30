@@ -17,10 +17,11 @@ protected:
 
     float old_dh, new_dh;
 
-    int nfreq;
+    int nfreq, nsx, nsy, nrx, nry;
     int cmpId, nCMP, nCMPx, nCMPy;
     int nt, nw, nfft, max_it, nang;
     int nBlocks, d_samples, m_samples; 
+    int src_csIdx, rec_csIdy;
 
     float ds, dr, dt, da, dCMP;
     float minCMPy, minCMPx;
@@ -32,11 +33,15 @@ protected:
 
     bool anisotropy;
 
+    float * h_data[2];
+    float * d_data[2];
+
     float * h_Ts, * h_Tr[2];
     float * d_Ts, * d_Tr[2];
 
-    float * d_data = nullptr;
-    float * h_data = nullptr;    
+    size_t volBytes;
+    cudaStream_t stream_cpy, stream_krn;
+    cudaEvent_t cpy_done[2], krn_done[2];
 
     float * h_model = nullptr;
     float * d_model = nullptr;
@@ -55,6 +60,7 @@ protected:
     fftw_plan wavelet_forward_plan;
 
     std::string domain;
+    std::string modType;
     std::string migType;
     std::string output_path;
     
@@ -76,12 +82,15 @@ protected:
     void perform_cubic(float * input, float * output);
 
     void show_information();    
+    void prepare_convolution();
     void set_src_travel_times();
     void set_rec_travel_times();
-    void prepare_convolution();
 
-    void adjoint_convolution();
-    void forward_convolution();
+    void set_src_line_seismic();
+    void set_src_line_travel_times();
+
+//    void adjoint_convolution();
+//    void forward_convolution();
 
     virtual void set_migration() = 0;
     virtual void perform_forward() = 0;
