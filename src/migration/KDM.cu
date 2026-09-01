@@ -4,8 +4,8 @@ void KDM::kirchhoff_depth_migration()
 {
     prepare_convolution();
 
-    get_src_travel_times();
-    get_rec_travel_times();
+    //get_src_travel_times();
+    //get_rec_travel_times();
 
     cudaMemset(d_model, 0.0f, m_samples*sizeof(float));    
 
@@ -17,7 +17,7 @@ void KDM::kirchhoff_depth_migration()
         {
             int recId = rec_csIdy + rec_csIdx*nry;
 
-            float * target = buffer + rec_csIdx*modeling->volsize;
+            float * target = buffer + (size_t)rec_csIdx*modeling->volsize;
             
             std::string path = tables_folder + "eikonal_rec_" + std::to_string(recId+1) + ".bin";
             
@@ -27,7 +27,6 @@ void KDM::kirchhoff_depth_migration()
 
     auto set_cross_spread_data = [&](float * buffer, int rec_csIdy) 
     {
-        #pragma omp parallel for collapse(2) schedule(static)
         for (int src_csIdy = 0; src_csIdy < nsy; src_csIdy++)
         {
             for (int rec_csIdx = 0; rec_csIdx < nrx; rec_csIdx++)
@@ -93,7 +92,7 @@ void KDM::kirchhoff_depth_migration()
         }
     };
 
-    for (src_csIdx = 0; src_csIdx < nsx; src_csIdx++)
+    for (src_csIdx = 0; src_csIdx < 1; src_csIdx++)
     {
         set_src_line_components();
 
@@ -102,7 +101,7 @@ void KDM::kirchhoff_depth_migration()
         perform_adjoint_convolution(h_data[0]);
         set_rec_line_geometry(h_xrec[0], h_yrec[0], 0);
 
-        for (rec_csIdy = 0; rec_csIdy < nry; rec_csIdy++)
+        for (rec_csIdy = 0; rec_csIdy < 1; rec_csIdy++)
         {               
             curr = rec_csIdy % 2;
 
@@ -111,7 +110,7 @@ void KDM::kirchhoff_depth_migration()
 
             zpos = format1Decimal(modeling->geometry->zrec[rec_csIdy]);
             ypos = format1Decimal(modeling->geometry->xrec[rec_csIdy]);
-            xpos = format1Decimal(modeling->geometry->yrec[rec_csIdy +       0*nry]) + " - " +
+            xpos = format1Decimal(modeling->geometry->yrec[rec_csIdy + 0*nry]) + " - " +
                    format1Decimal(modeling->geometry->yrec[rec_csIdy + (nrx-1)*nry]);
 
             cudaMemcpyAsync(d_data[curr], h_data[curr], nt*nrx*nsy*sizeof(float), cudaMemcpyHostToDevice, stream_cpy);
@@ -120,6 +119,7 @@ void KDM::kirchhoff_depth_migration()
             cudaMemcpyAsync(d_yrec[curr], h_yrec[curr], nrx*sizeof(float), cudaMemcpyHostToDevice, stream_cpy);
             cudaEventRecord(cpy_done[curr], stream_cpy);            
 
+            cudaStreamWaitEvent(stream_krn, src_cpy_done, 0);
             cudaStreamWaitEvent(stream_krn, cpy_done[curr], 0);        
             
             show_information();
@@ -131,7 +131,11 @@ void KDM::kirchhoff_depth_migration()
 
             if (rec_csIdy + 1 < nry) 
             {
-                if (rec_csIdy >= 1) cudaEventSynchronize(krn_done[next]);
+                if (rec_csIdy >= 1) 
+                {
+                    cudaEventSynchronize(cpy_done[next]);
+                    cudaEventSynchronize(krn_done[next]);
+                }
                                 
                 worker = std::async(std::launch::async, [&, next, next_recId]() 
                 {

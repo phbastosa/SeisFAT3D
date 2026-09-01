@@ -36,7 +36,7 @@ void IDKDM::perform_adjoint()
         modeling->d_S, d_Ts, d_Tr[curr], d_data[curr], d_model, d_xsrc, d_ysrc, 
         d_xrec[curr], d_yrec[curr], aperture, max_offset, sm_z, sm_x, sm_y, 
         new_dh, old_dh, dt, modeling->nxx, modeling->nyy, modeling->nzz, 
-        modeling->nb, old_nx, old_ny, old_nz, nt, nsy, nsx);
+        modeling->nb, old_nx, old_ny, old_nz, nt, nsy, nrx);
 }
 
 void IDKDM::perform_forward()

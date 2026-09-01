@@ -45,7 +45,7 @@ protected:
 
     size_t volBytes;
     cudaStream_t stream_cpy, stream_krn;
-    cudaEvent_t cpy_done[2], krn_done[2];
+    cudaEvent_t cpy_done[2], krn_done[2], src_cpy_done;
 
     float * h_model = nullptr;
     float * d_model = nullptr;
