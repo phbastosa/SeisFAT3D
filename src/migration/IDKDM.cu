@@ -32,10 +32,10 @@ void IDKDM::perform_adjoint()
 
     const int sm_bytes = 3 * total_sm_nodes * sizeof(float);
 
-    image_domain_adjoint_kernel<<<grd,blk,sm_bytes,stream_krn>>>(
-        modeling->d_S, d_Ts, d_Tr[curr], d_data[curr], d_model, d_xsrc, d_ysrc, 
-        d_xrec[curr], d_yrec[curr], aperture, max_offset, sm_z, sm_x, sm_y, 
-        new_dh, old_dh, dt, modeling->nxx, modeling->nyy, modeling->nzz, 
+    image_domain_adjoint_kernel<<<grd,blk,sm_bytes,0>>>(
+        modeling->d_S, d_Ts, d_Tr, d_data, d_model, d_xsrc, d_ysrc, 
+        d_xrec, d_yrec, aperture, max_offset, sm_z, sm_x, sm_y, new_dh, 
+        old_dh, dt, modeling->nxx, modeling->nyy, modeling->nzz, 
         modeling->nb, old_nx, old_ny, old_nz, nt, nsy, nrx);
 }
 

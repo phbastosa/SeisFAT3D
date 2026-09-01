@@ -50,46 +50,31 @@ void Migration::set_parameters()
 
     volBytes = modeling->volsize*sizeof(float);
 
+    h_Ts = new float[nsy*modeling->volsize]();
+    h_Tr = new float[nrx*modeling->volsize]();
+
     h_xsrc = new float[nsy]();
     h_ysrc = new float[nsy]();
 
+    h_xrec = new float[nrx]();
+    h_yrec = new float[nrx]();
+
+    h_data = new float[nt*nrx*nsy]();
     h_model = new float[m_samples]();
 
-    h_Ts = new float[nsy*modeling->volsize]();
-
     seismic = new float[nsy*nt*modeling->geometry->nrec]();
+
+    cudaMalloc((void**)&d_Ts, nsy*volBytes);
+    cudaMalloc((void**)&d_Tr, nrx*volBytes);
 
     cudaMalloc((void**)&d_xsrc, nsy*sizeof(float));
     cudaMalloc((void**)&d_ysrc, nsy*sizeof(float));
 
+    cudaMalloc((void**)&d_xrec, nrx*sizeof(float));
+    cudaMalloc((void**)&d_yrec, nrx*sizeof(float));
+
+    cudaMalloc((void**)&d_data, nt*nrx*nsy*sizeof(float));
     cudaMalloc((void**)&d_model, m_samples*sizeof(float));
-
-    cudaMalloc((void**)&d_Ts, nsy*volBytes);
-
-    cudaStreamCreate(&stream_cpy);
-    cudaStreamCreate(&stream_krn);
-    
-    cudaEventCreate(&src_cpy_done);
-
-    for (int p = 0; p < 2; p++)
-    {
-        cudaMallocHost((void**)&h_xrec[p], nrx*sizeof(float));
-        cudaMallocHost((void**)&h_yrec[p], nrx*sizeof(float));
-
-        cudaMallocHost((void**)&h_data[p], nt*nrx*nsy*sizeof(float));
-
-        cudaMallocHost((void**)&h_Tr[p], nrx*volBytes);
-
-        cudaMalloc((void**)&d_xrec[p], nsy*sizeof(float));
-        cudaMalloc((void**)&d_yrec[p], nsy*sizeof(float));
-    
-        cudaMalloc((void**)&d_data[p], nt*nrx*nsy*sizeof(float));
-        
-        cudaMalloc((void**)&d_Tr[0], nrx*volBytes);
-
-        cudaEventCreate(&cpy_done[0]);
-        cudaEventCreate(&krn_done[0]);
-    }
 }
 
 void Migration::set_interpolation()
@@ -310,6 +295,30 @@ void Migration::set_CMP_gathers()
     nCMP = nCMPx * nCMPy;
 }
 
+void Migration::prepare_convolution()
+{
+    nfft = nextpow2(nt + nw - 1);
+    nfreq = nfft/2 + 1;
+
+    time_trace = (double *) fftw_malloc(nfft*sizeof(double));
+    time_wavelet = (double *) fftw_malloc(nfft*sizeof(double));
+
+    freq_trace = (fftw_complex *) fftw_malloc(nfreq*sizeof(fftw_complex));
+    freq_wavelet = (fftw_complex *) fftw_malloc(nfreq*sizeof(fftw_complex));
+
+    trace_forward_plan = fftw_plan_dft_r2c_1d(nfft, time_trace, freq_trace, FFTW_ESTIMATE);
+    trace_inverse_plan = fftw_plan_dft_c2r_1d(nfft, freq_trace, time_trace, FFTW_ESTIMATE);
+    wavelet_forward_plan = fftw_plan_dft_r2c_1d(nfft, time_wavelet, freq_wavelet, FFTW_ESTIMATE);
+
+    for (int tId = 0; tId < nfft; tId++)
+    {
+        time_trace[tId] = 0.0;
+        time_wavelet[tId] = (tId < nw) ? (double)wavelet[tId] : 0.0;
+    }
+
+    fftw_execute(wavelet_forward_plan);
+}
+
 void Migration::get_src_travel_times()
 {
     modeling->keyword = "source";
@@ -366,6 +375,26 @@ void Migration::get_rec_travel_times()
     }
 }
 
+void Migration::set_cross_spread_data()
+{
+    for (int src_csIdy = 0; src_csIdy < nsy; src_csIdy++)
+    {
+        size_t d_src_offset = src_csIdy*nt*nrx;
+        size_t h_src_offset = src_csIdy*nt*modeling->geometry->nrec;
+
+        for (int rec_csIdx = 0; rec_csIdx < nrx; rec_csIdx++)
+        {            
+            size_t d_rec_offset = rec_csIdx*nt;
+            size_t h_rec_offset = (rec_csIdy + rec_csIdx*nry)*nt;
+
+            size_t hst_base = h_rec_offset + h_src_offset; 
+            size_t dvc_base = d_rec_offset + d_src_offset;
+
+            std::memcpy(&h_data[dvc_base], &seismic[hst_base], nt*sizeof(float));
+        }
+    }        
+}
+
 void Migration::set_src_line_components()
 {
     for (int src_csIdy = 0; src_csIdy < nsy; src_csIdy++)
@@ -392,69 +421,104 @@ void Migration::set_src_line_components()
     modeling->xpos = format1Decimal(modeling->geometry->xsrc[src_csIdx*nsy]);
     modeling->ypos = format1Decimal(modeling->geometry->ysrc[    0   + src_csIdx*nsy]) + " - " +
                      format1Decimal(modeling->geometry->ysrc[(nsy-1) + src_csIdx*nsy]);
-
-    cudaMemcpyAsync(d_Ts, h_Ts, nsy * volBytes, cudaMemcpyHostToDevice, stream_cpy);
-    cudaMemcpyAsync(d_xsrc, h_xsrc, nsy * sizeof(float), cudaMemcpyHostToDevice, stream_cpy);
-    cudaMemcpyAsync(d_ysrc, h_ysrc, nsy * sizeof(float), cudaMemcpyHostToDevice, stream_cpy);
-    cudaEventRecord(src_cpy_done, stream_cpy);
 }
 
-void Migration::prepare_convolution()
+void Migration::set_rec_line_components()
 {
-    nfft = nextpow2(nt + nw - 1);
-    nfreq = nfft/2 + 1;
-
-    time_trace = (double *) fftw_malloc(nfft*sizeof(double));
-    time_wavelet = (double *) fftw_malloc(nfft*sizeof(double));
-
-    freq_trace = (fftw_complex *) fftw_malloc(nfreq*sizeof(fftw_complex));
-    freq_wavelet = (fftw_complex *) fftw_malloc(nfreq*sizeof(fftw_complex));
-
-    trace_forward_plan = fftw_plan_dft_r2c_1d(nfft, time_trace, freq_trace, FFTW_ESTIMATE);
-    trace_inverse_plan = fftw_plan_dft_c2r_1d(nfft, freq_trace, time_trace, FFTW_ESTIMATE);
-    wavelet_forward_plan = fftw_plan_dft_r2c_1d(nfft, time_wavelet, freq_wavelet, FFTW_ESTIMATE);
-
-    for (int tId = 0; tId < nfft; tId++)
+    for (int rec_csIdx = 0; rec_csIdx < nrx; rec_csIdx++) 
     {
-        time_trace[tId] = 0.0;
-        time_wavelet[tId] = (tId < nw) ? (double)wavelet[tId] : 0.0;
+        int recId = rec_csIdy + rec_csIdx*nry;
+
+        float * target = h_Tr + (size_t)rec_csIdx*modeling->volsize;
+        
+        std::string path = tables_folder + "eikonal_rec_" + std::to_string(recId+1) + ".bin";
+        
+        import_binary_float(path, target, modeling->volsize);
+
+        h_xrec[rec_csIdx] = modeling->geometry->xrec[recId];
+        h_yrec[rec_csIdx] = modeling->geometry->yrec[recId];
     }
 
-    fftw_execute(wavelet_forward_plan);
+    zpos = format1Decimal(modeling->geometry->zrec[rec_csIdy]);
+    ypos = format1Decimal(modeling->geometry->yrec[rec_csIdy]);
+    xpos = format1Decimal(modeling->geometry->xrec[rec_csIdy + 0*nry]) + " - " +
+            format1Decimal(modeling->geometry->xrec[rec_csIdy + (nrx-1)*nry]);    
 }
 
-// void Migration::forward_convolution()
-// {
-//     for (int tId = 0; tId < nfft; tId++)
-//     {
-//         if (tId < nt)
-//         {
-//             time_trace[tId] = (double)h_data[tId];
-//             h_data[tId] = 0.0f;
-//         }
-//         else 
-//             time_trace[tId] = 0.0;    
-//     }
+void Migration::adjoint_convolution()
+{
+    int num_traces = nrx * nsy; 
 
-//     fftw_execute(trace_forward_plan);
+    for (int csId = 0; csId < num_traces; csId++)
+    {
+        for (int tId = 0; tId < nfft; tId++)
+        {
+            if (tId < nt)
+            {
+                time_trace[tId] = (double)h_data[tId + csId*nt];
+                h_data[tId + csId*nt] = 0.0f;
+            }
+            else 
+                time_trace[tId] = 0.0;    
+        }
+        
+        fftw_execute(trace_forward_plan);
 
-//     for (int fId = 0; fId < nfreq; fId++)
-//     {
-//         double a_re = freq_trace[fId][0];
-//         double a_im = freq_trace[fId][1];
+        for (int fId = 0; fId < nfreq; fId++)
+        {
+            double a_re = freq_trace[fId][0];
+            double a_im = freq_trace[fId][1];
+            double b_re = freq_wavelet[fId][0];
+            double b_im = freq_wavelet[fId][1];
 
-//         double b_re = freq_wavelet[fId][0];
-//         double b_im = freq_wavelet[fId][1];
+            freq_trace[fId][0] = a_re*b_re + a_im*b_im;  
+            freq_trace[fId][1] = a_im*b_re - a_re*b_im;  
+        }
 
-//         freq_trace[fId][0] = a_re * b_re - a_im * b_im;
-//         freq_trace[fId][1] = a_re * b_im + a_im * b_re;
-//     }
+        fftw_execute(trace_inverse_plan);
 
-//     fftw_execute(trace_inverse_plan);
+        for (int tId = nw/2; tId < nt; tId++)
+            h_data[tId + csId*nt] = (float)(time_trace[tId - nw/2]);
+    }
+}
 
-//     for (int tId = 0; tId < nt; tId++)
-//         h_data[tId] = (float)(time_trace[tId + nw/2 + nw/8]);
-// }
+void Migration::forward_convolution()
+{
+    int num_traces = nrx * nsy; 
+
+    for (int csId = 0; csId < num_traces; csId++)
+    {
+        for (int tId = 0; tId < nfft; tId++)
+        {
+            if (tId < nt)
+            {
+                time_trace[tId] = (double)h_data[tId + csId*nt];
+                h_data[tId + csId*nt] = 0.0f;
+            }
+            else 
+                time_trace[tId] = 0.0;    
+        }
+
+        fftw_execute(trace_forward_plan);
+
+        for (int fId = 0; fId < nfreq; fId++)
+        {
+            double a_re = freq_trace[fId][0];
+            double a_im = freq_trace[fId][1];
+
+            double b_re = freq_wavelet[fId][0];
+            double b_im = freq_wavelet[fId][1];
+
+            freq_trace[fId][0] = a_re * b_re - a_im * b_im;
+            freq_trace[fId][1] = a_re * b_im + a_im * b_re;
+        }
+
+        fftw_execute(trace_inverse_plan);
+
+        for (int tId = 0; tId < nt; tId++)
+            h_data[tId + csId*nt] = (float)(time_trace[tId + nw/2]);
+    }        
+}
 
 void Migration::show_information()
 {

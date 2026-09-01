@@ -22,16 +22,11 @@ bool str2bool(std::string s)
     return b;
 }
 
-void import_binary_float(std::string path, float * array, int n)
+void import_binary_float(const std::string& path, float* array, size_t n)
 {
-    std::ifstream file(path, std::ios::in);
-
-    if (!file.is_open())
-        throw std::invalid_argument("Error: \033[31m" + path + "\033[0;0m could not be opened!");
-    
-    file.read((char *) array, n * sizeof(float));
-    
-    file.close();    
+    FILE * file = std::fopen(path.c_str(), "rb");
+    size_t read_count = std::fread(array, sizeof(float), n, file);
+    std::fclose(file);
 }
 
 void export_binary_float(std::string path, float * array, int n)

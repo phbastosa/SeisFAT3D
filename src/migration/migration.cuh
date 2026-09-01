@@ -31,21 +31,28 @@ protected:
 
     bool anisotropy;
 
-    float * h_xsrc, * h_ysrc;
-    float * d_xsrc, * d_ysrc;
-
-    float * h_xrec[2], * h_yrec[2];
-    float * d_xrec[2], * d_yrec[2];
-
-    float * h_data[2];
-    float * d_data[2];
-
-    float * h_Ts, * h_Tr[2];
-    float * d_Ts, * d_Tr[2];
-
     size_t volBytes;
-    cudaStream_t stream_cpy, stream_krn;
-    cudaEvent_t cpy_done[2], krn_done[2], src_cpy_done;
+
+    float * h_Ts = nullptr;
+    float * h_Tr = nullptr;
+
+    float * d_Ts = nullptr;
+    float * d_Tr = nullptr;
+
+    float * h_xsrc = nullptr; 
+    float * h_ysrc = nullptr;
+
+    float * d_xsrc = nullptr; 
+    float * d_ysrc = nullptr;
+
+    float * h_xrec = nullptr;
+    float * h_yrec = nullptr;
+
+    float * d_xrec = nullptr; 
+    float * d_yrec = nullptr;
+
+    float * h_data = nullptr;
+    float * d_data = nullptr;
 
     float * h_model = nullptr;
     float * d_model = nullptr;
@@ -91,7 +98,12 @@ protected:
     void get_src_travel_times();
     void get_rec_travel_times();
 
+    void set_cross_spread_data();
     void set_src_line_components();
+    void set_rec_line_components();
+
+    void adjoint_convolution();
+    void forward_convolution();
 
     virtual void set_migration() = 0;
     virtual void perform_forward() = 0;
