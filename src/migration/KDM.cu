@@ -29,12 +29,13 @@ void KDM::kirchhoff_depth_migration()
     {
         for (int src_csIdy = 0; src_csIdy < nsy; src_csIdy++)
         {
+            size_t d_src_offset = src_csIdy*nt*nrx;
+            size_t h_src_offset = src_csIdy*nt*modeling->geometry->nrec;
+
             for (int rec_csIdx = 0; rec_csIdx < nrx; rec_csIdx++)
             {            
                 size_t d_rec_offset = rec_csIdx*nt;
-                size_t d_src_offset = src_csIdy*nt*nrx;
                 size_t h_rec_offset = (rec_csIdy + rec_csIdx*nry)*nt;
-                size_t h_src_offset = src_csIdy*nt*modeling->geometry->nrec;
 
                 size_t hst_base = h_rec_offset + h_src_offset; 
                 size_t dvc_base = d_rec_offset + d_src_offset;
