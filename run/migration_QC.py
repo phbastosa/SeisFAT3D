@@ -15,16 +15,10 @@ nz = int(pyf.catch_parameter(parameters, "z_samples"))
 
 dh = float(pyf.catch_parameter(parameters, "model_spacing"))
 
-IDKDM1 = np.fromfile(f"first_src_line.bin", count = nx*ny*nz, dtype = np.float32).reshape([nz,nx,ny], order = "F")
-IDKDM2 = np.fromfile(f"last_src_line.bin", count = nx*ny*nz, dtype = np.float32).reshape([nz,nx,ny], order = "F")
-
+IDKDM = np.fromfile(f"../outputs/seismic/IDKDM_result_161x401x401.bin", count = nx*ny*nz, dtype = np.float32).reshape([nz,nx,ny], order = "F")
 IDRTM = np.fromfile(f"../../FWI3D/outputs/seismic/RTM_section_30Hz_161x401x401_12m.bin", count = nx*ny*nz, dtype = np.float32).reshape([nz,nx,ny], order = "F")
 
-IDKDM1 *= 2000 / np.max(np.abs(IDKDM1))
-IDKDM2 *= 2000 / np.max(np.abs(IDKDM2))
-
-IDKDM = IDKDM1 + IDKDM2
-
+IDKDM *= 2000 / np.max(np.abs(IDKDM))
 IDRTM *= 2000 / np.max(np.abs(IDRTM))
 
 SPS = np.loadtxt(sps_path, delimiter = ",", dtype = float)

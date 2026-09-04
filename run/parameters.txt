@@ -78,11 +78,11 @@ anisotropy = false                          # <bool>
 
 cubic_spacing = 50.0                        # [m] <float>
 
-mig_aperture = 10                           # [°] <float>
+mig_aperture = 30                           # [°] <float>
 mig_max_angle = 60                          # [°] <float>
 mig_angle_spacing = 2.0                     # [°] <float>
 
-mig_max_offset = 1000                       # [m] <float>
+mig_max_offset = 2000                       # [m] <float>
 
 mig_max_iteration = 10                      # <int> 
 
