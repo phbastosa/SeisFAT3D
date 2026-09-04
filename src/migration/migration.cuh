@@ -125,7 +125,10 @@ __global__ void image_domain_adjoint_kernel(const float * __restrict__ d_S, cons
                                             const float max_offset, const int sm_z, const int sm_x, const int sm_y, const float cubic_dh, const float dh, const float dt, const int cubic_nxx,
                                             const int cubic_nyy, const int cubic_nzz, const int cubic_nb, const int nx, const int ny, const int nz, const int nt, const int nsy, const int nrx);
 
-__global__ void image_domain_forward_kernel();
+__global__ void image_domain_forward_kernel(const float * __restrict__ d_S, const float * __restrict__ d_T_src, const float * __restrict__ d_T_rec, float * __restrict__ data,
+                                            const float * __restrict__ model, const float * cs_xsrc, const float * cs_ysrc, const float * cs_xrec, const float * cs_yrec, const float aperture,
+                                            const float max_offset, const int sm_z, const int sm_x, const int sm_y, const float cubic_dh, const float dh, const float dt, const int cubic_nxx,
+                                            const int cubic_nyy, const int cubic_nzz, const int cubic_nb, const int nx, const int ny, const int nz, const int nt, const int nsy, const int nrx);
 
 __global__ void angle_domain_adjoint_kernel();
 

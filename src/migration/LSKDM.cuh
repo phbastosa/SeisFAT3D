@@ -28,6 +28,8 @@ private:
 
 protected:
 
+    float * cal_data = nullptr;
+
     float * h_gradient = nullptr;
     float * d_gradient = nullptr;
 

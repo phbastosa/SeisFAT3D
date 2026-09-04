@@ -368,7 +368,7 @@ void Migration::get_rec_travel_times()
 
         modeling->show_information();
         modeling->time_propagation();
-        
+
         cudaMemcpy(modeling->T, modeling->d_T, modeling->volsize*sizeof(float), cudaMemcpyDeviceToHost);
 
         export_binary_float(tables_folder + "eikonal_rec_" + std::to_string(modeling->recId+1) + ".bin", modeling->T, modeling->volsize);
@@ -379,18 +379,19 @@ void Migration::set_cross_spread_data()
 {
     for (int src_csIdy = 0; src_csIdy < nsy; src_csIdy++)
     {
-        size_t d_src_offset = src_csIdy*nt*nrx;
-        size_t h_src_offset = src_csIdy*nt*modeling->geometry->nrec;
+        int d_src_offset = src_csIdy*nt*nrx;
+        int h_src_offset = src_csIdy*nt*modeling->geometry->nrec;
 
         for (int rec_csIdx = 0; rec_csIdx < nrx; rec_csIdx++)
         {            
-            size_t d_rec_offset = rec_csIdx*nt;
-            size_t h_rec_offset = (rec_csIdy + rec_csIdx*nry)*nt;
+            int d_rec_offset = rec_csIdx*nt;
+            int h_rec_offset = (rec_csIdy + rec_csIdx*nry)*nt;
 
-            size_t hst_base = h_rec_offset + h_src_offset; 
-            size_t dvc_base = d_rec_offset + d_src_offset;
+            int hst_base = h_rec_offset + h_src_offset; 
+            int dvc_base = d_rec_offset + d_src_offset;
 
-            std::memcpy(&h_data[dvc_base], &seismic[hst_base], nt*sizeof(float));
+            for (int tId = 0; tId < nt; tId++)
+                h_data[tId + dvc_base] = seismic[tId + hst_base];
         }
     }        
 }
@@ -429,7 +430,7 @@ void Migration::set_rec_line_components()
     {
         int recId = rec_csIdy + rec_csIdx*nry;
 
-        float * target = h_Tr + (size_t)rec_csIdx*modeling->volsize;
+        float * target = h_Tr + rec_csIdx*modeling->volsize;
         
         std::string path = tables_folder + "eikonal_rec_" + std::to_string(recId+1) + ".bin";
         
@@ -447,9 +448,7 @@ void Migration::set_rec_line_components()
 
 void Migration::adjoint_convolution()
 {
-    int num_traces = nrx * nsy; 
-
-    for (int csId = 0; csId < num_traces; csId++)
+    for (int csId = 0; csId < nrx * nsy; csId++)
     {
         for (int tId = 0; tId < nfft; tId++)
         {
@@ -477,16 +476,14 @@ void Migration::adjoint_convolution()
 
         fftw_execute(trace_inverse_plan);
 
-        for (int tId = nw/2; tId < nt; tId++)
-            h_data[tId + csId*nt] = (float)(time_trace[tId - nw/2]);
+        for (int tId = nw/2 + nw/5; tId < nt; tId++)
+            h_data[tId + csId*nt] = (float)(time_trace[tId - nw/2 - nw/5]);
     }
 }
 
 void Migration::forward_convolution()
 {
-    int num_traces = nrx * nsy; 
-
-    for (int csId = 0; csId < num_traces; csId++)
+    for (int csId = 0; csId < nrx * nsy; csId++)
     {
         for (int tId = 0; tId < nfft; tId++)
         {
@@ -567,8 +564,7 @@ __global__ void image_domain_adjoint_kernel(const float * __restrict__ d_S, cons
 
     const float inv_cubic_dh = 1.0f / cubic_dh;
     const float scale_const = 1.0f / (2.0f * M_PI);
-
-    const size_t cubic_volsize = cubic_nxx*cubic_nyy*cubic_nzz;
+    const int cubic_volsize = cubic_nxx * cubic_nyy * cubic_nzz;
 
     if (tid == 0) 
     {
@@ -594,20 +590,13 @@ __global__ void image_domain_adjoint_kernel(const float * __restrict__ d_S, cons
         int global_cx = max(0, min(cx_block_origin + local_cx - 1, cubic_nxx - 1));
         int global_cy = max(0, min(cy_block_origin + local_cy - 1, cubic_nyy - 1));
 
-        size_t g_idx = (size_t)(global_cy * cubic_nxx * cubic_nzz) + 
-                       (size_t)(global_cx * cubic_nzz) + 
-                       (size_t)(global_cz);
-
-        size_t s_idx = (size_t)(local_cy * sm_x * sm_z) + 
-                       (size_t)(local_cx * sm_z) + 
-                       (size_t)(local_cz);
+        int g_idx = global_cy * cubic_nxx * cubic_nzz + global_cx * cubic_nzz + global_cz;
+        int s_idx = local_cy * sm_x * sm_z + local_cx * sm_z + local_cz;
 
         sm_S[s_idx] = d_S[g_idx];
     }
 
     __syncthreads();
-
-    float local_image_sum = 0.0f;
 
     int i = blockIdx.x * blockDim.x + threadIdx.x;
     int j = blockIdx.y * blockDim.y + threadIdx.y;
@@ -629,18 +618,18 @@ __global__ void image_domain_adjoint_kernel(const float * __restrict__ d_S, cons
         int jc = (int)floorf(x * inv_cubic_dh);
         int kc = (int)floorf(y * inv_cubic_dh);
 
-        uz = fminf(fmaxf((z - (float)(ic)*cubic_dh)*inv_cubic_dh, 0.0f), 1.0f);
-        ux = fminf(fmaxf((x - (float)(jc)*cubic_dh)*inv_cubic_dh, 0.0f), 1.0f);
-        uy = fminf(fmaxf((y - (float)(kc)*cubic_dh)*inv_cubic_dh, 0.0f), 1.0f);
+        uz = fminf(fmaxf((z - (float)(ic) * cubic_dh) * inv_cubic_dh, 0.0f), 1.0f);
+        ux = fminf(fmaxf((x - (float)(jc) * cubic_dh) * inv_cubic_dh, 0.0f), 1.0f);
+        uy = fminf(fmaxf((y - (float)(kc) * cubic_dh) * inv_cubic_dh, 0.0f), 1.0f);
 
         sm_base_z = (ic + cubic_nb - cz_block_origin) + 1;
         sm_base_x = (jc + cubic_nb - cx_block_origin) + 1;
         sm_base_y = (kc + cubic_nb - cy_block_origin) + 1;
     }
 
-    for (int src_csIdy = 0; src_csIdy < nsy; src_csIdy++) // <------------------
+    for (int src_csIdy = 0; src_csIdy < nsy; src_csIdy++)
     {
-        size_t src_base = src_csIdy*cubic_volsize;
+        int src_base = src_csIdy * cubic_volsize;
 
         for (int idx = tid; idx < total_sm_nodes; idx += num_threads) 
         {
@@ -653,13 +642,8 @@ __global__ void image_domain_adjoint_kernel(const float * __restrict__ d_S, cons
             int global_cx = max(0, min(cx_block_origin + local_cx - 1, cubic_nxx - 1));
             int global_cy = max(0, min(cy_block_origin + local_cy - 1, cubic_nyy - 1));
 
-            size_t g_idx = (size_t)(global_cy * cubic_nxx * cubic_nzz) + 
-                           (size_t)(global_cx * cubic_nzz) + 
-                           (size_t)(global_cz);
-
-            size_t s_idx = (size_t)(local_cy * sm_x * sm_z) + 
-                           (size_t)(local_cx * sm_z) + 
-                           (size_t)(local_cz);
+            int g_idx = global_cy * cubic_nxx * cubic_nzz + global_cx * cubic_nzz + global_cz;
+            int s_idx = local_cy * sm_x * sm_z + local_cx * sm_z + local_cz;
 
             sm_Ts[s_idx] = d_T_src[g_idx + src_base];
         }
@@ -667,13 +651,15 @@ __global__ void image_domain_adjoint_kernel(const float * __restrict__ d_S, cons
         __syncthreads();
 
         TTD src = {0};
-
-        if (valid_voxel) src = compute_TTDs(sm_Ts, sm_base_z, sm_base_x, sm_base_y, 
-                                            sm_z, sm_x, uz, ux, uy, cubic_dh);
-
-        for (int rec_csIdx = 0; rec_csIdx < nrx; rec_csIdx++) // <------------------
+        if (valid_voxel) 
         {
-            size_t rec_base = rec_csIdx*cubic_volsize;
+            src = compute_TTDs(sm_Ts, sm_base_z, sm_base_x, sm_base_y, 
+                              sm_z, sm_x, uz, ux, uy, cubic_dh);
+        }
+
+        for (int rec_csIdx = 0; rec_csIdx < nrx; rec_csIdx++)
+        {
+            int rec_base = rec_csIdx * cubic_volsize;
 
             for (int idx = tid; idx < total_sm_nodes; idx += num_threads) 
             {
@@ -686,13 +672,8 @@ __global__ void image_domain_adjoint_kernel(const float * __restrict__ d_S, cons
                 int global_cx = max(0, min(cx_block_origin + local_cx - 1, cubic_nxx - 1));
                 int global_cy = max(0, min(cy_block_origin + local_cy - 1, cubic_nyy - 1));
 
-                size_t g_idx = (size_t)(global_cy * cubic_nxx * cubic_nzz) + 
-                               (size_t)(global_cx * cubic_nzz) + 
-                               (size_t)(global_cz);
-                
-                size_t s_idx = (size_t)(local_cy * sm_x * sm_z) + 
-                               (size_t)(local_cx * sm_z) + 
-                               (size_t)(local_cz);
+                int g_idx = global_cy * cubic_nxx * cubic_nzz + global_cx * cubic_nzz + global_cz;
+                int s_idx = local_cy * sm_x * sm_z + local_cx * sm_z + local_cz;
 
                 sm_Tr[s_idx] = d_T_rec[g_idx + rec_base];
             }
@@ -716,62 +697,66 @@ __global__ void image_domain_adjoint_kernel(const float * __restrict__ d_S, cons
                     TTD rec = compute_TTDs(sm_Tr, sm_base_z, sm_base_x, sm_base_y, sm_z, sm_x, uz, ux, uy, cubic_dh);
 
                     float T = src.T + rec.T;
-
                     int tId = __float2int_rd(T / dt);
 
                     if (tId >= 0 && tId < nt) 
                     {
                         float S = tricubic(sm_S, sm_base_z, sm_base_x, sm_base_y, sm_z, sm_x, uz, ux, uy);
 
-                        float norm_Ts = sqrtf(src.dT_dx*src.dT_dx + src.dT_dy*src.dT_dy + src.dT_dz*src.dT_dz) + EPS;
-                        float norm_Tr = sqrtf(rec.dT_dx*rec.dT_dx + rec.dT_dy*rec.dT_dy + rec.dT_dz*rec.dT_dz) + EPS;
+                        // Slowness vectors
+                        float ps_x = src.dT_dx, ps_y = src.dT_dy, ps_z = src.dT_dz;
+                        float pr_x = rec.dT_dx, pr_y = rec.dT_dy, pr_z = rec.dT_dz;
 
-                        float ux_s = src.dT_dx / norm_Ts, uy_s = src.dT_dy / norm_Ts, uz_s = src.dT_dz / norm_Ts;
-                        float ux_r = rec.dT_dx / norm_Tr, uy_r = rec.dT_dy / norm_Tr, uz_r = rec.dT_dz / norm_Tr;
+                        float norm_Ts = sqrtf(ps_x*ps_x + ps_y*ps_y + ps_z*ps_z) + EPS;
+                        float norm_Tr = sqrtf(pr_x*pr_x + pr_y*pr_y + pr_z*pr_z) + EPS;
 
+                        // Unit propagation direction vectors
+                        float ux_s = ps_x / norm_Ts, uy_s = ps_y / norm_Ts, uz_s = ps_z / norm_Ts;
+                        float ux_r = pr_x / norm_Tr, uy_r = pr_y / norm_Tr, uz_r = pr_z / norm_Tr;
+
+                        // Obliquity factor
                         float nx_norm = 0.0f, ny_norm = 0.0f, nz_norm = -1.0f;
-
                         float cos_s = fminf(1.0f, fmaxf(0.001f, fabsf(ux_s*nx_norm + uy_s*ny_norm + uz_s*nz_norm)));
                         float cos_r = fminf(1.0f, fmaxf(0.001f, fabsf(ux_r*nx_norm + uy_r*ny_norm + uz_r*nz_norm)));
-
                         float obliquity = 0.5f * sqrtf(cos_s + cos_r);
 
-                        float detHs_raw = src.d2T_dx2*(src.d2T_dy2*src.d2T_dz2 - src.d2T_dydz*src.d2T_dydz)
-                                        - src.d2T_dxdy*(src.d2T_dxdy*src.d2T_dz2 - src.d2T_dydz*src.d2T_dxdz)
-                                        + src.d2T_dxdz*(src.d2T_dxdy*src.d2T_dydz - src.d2T_dy2*src.d2T_dxdz);
+                        // Stable Beylkin Opening Angle Jacobian
+                        float dot_sr = ux_s*ux_r + uy_s*uy_r + uz_s*uz_r;
+                        float cos_psi = fminf(1.0f, fmaxf(-1.0f, dot_sr));
+                        float sin_psi = sqrtf(1.0f - cos_psi * cos_psi);
 
-                        float detHr_raw = rec.d2T_dx2*(rec.d2T_dy2*rec.d2T_dz2 - rec.d2T_dydz*rec.d2T_dydz)
-                                        - rec.d2T_dxdy*(rec.d2T_dxdy*rec.d2T_dz2 - rec.d2T_dydz*rec.d2T_dxdz)
-                                        + rec.d2T_dxdz*(rec.d2T_dxdy*rec.d2T_dydz - rec.d2T_dy2*rec.d2T_dxdz);
+                        float sum_p_mag = sqrtf((ps_x + pr_x)*(ps_x + pr_x) + 
+                                                (ps_y + pr_y)*(ps_y + pr_y) + 
+                                                (ps_z + pr_z)*(ps_z + pr_z));
 
-                        float detHs = fmaxf(fabsf(detHs_raw), EPS);
-                        float detHr = fmaxf(fabsf(detHr_raw), EPS);
+                        float Jterm = sum_p_mag * sin_psi;
 
-                        float Jterm = (sqrtf(detHs) * sqrtf(detHr)) / (norm_Ts * norm_Tr);
-
+                        // Geometrical Spreading
                         float R_s = fmaxf(src.T / S, EPS);
                         float R_r = fmaxf(rec.T / S, EPS);
-
                         float G = 1.0f / sqrtf(R_s * R_r);
 
+                        // Reflection Angle Weight
                         float theta_s = acosf(fminf(1.0f, fmaxf(-1.0f, ux_s*nx_norm + uy_s*ny_norm + uz_s*nz_norm)));
                         float theta_r = acosf(fminf(1.0f, fmaxf(-1.0f, ux_r*nx_norm + uy_r*ny_norm + uz_r*nz_norm)));
                         float theta = 0.5f * (theta_s + theta_r);
                         float R = 1.0f + 0.2f * cosf(theta);
                         
+                        // Aperture Gaussian Tapering
                         float sigma = tanf(aperture * M_PI / 180.0f) * z;
-
                         float par_x = ((x - cmpx) / (sigma + EPS)) * ((x - cmpx) / (sigma + EPS));
                         float par_y = ((y - cmpy) / (sigma + EPS)) * ((y - cmpy) / (sigma + EPS));
-
                         float taper = expf(-0.5f * (par_x + par_y));
 
-                        float weights = scale_const * taper * G  * R * obliquity; //  * Jterm;
+                        // Total Kernel Weights
+                        float weights = scale_const * taper * G * R * obliquity * Jterm;
 
-                        size_t traceId = (size_t)src_csIdy*nrx + (size_t)rec_csIdx;
-                        size_t tId_base = traceId * nt;
+                        int mId = i + j * nz + k * nx * nz;
 
-                        local_image_sum += weights * data[tId + tId_base];
+                        int traceId = src_csIdy * nrx + rec_csIdx;
+                        int tId_base = traceId * nt;
+                
+                        atomicAdd(&model[mId], weights * data[tId + tId_base]);
                     }
                 }
             }
@@ -781,18 +766,229 @@ __global__ void image_domain_adjoint_kernel(const float * __restrict__ d_S, cons
 
         __syncthreads();
     }
+}
+
+__global__ void image_domain_forward_kernel(const float * __restrict__ d_S, const float * __restrict__ d_T_src, const float * __restrict__ d_T_rec, float * __restrict__ data,
+                                            const float * __restrict__ model, const float * cs_xsrc, const float * cs_ysrc, const float * cs_xrec, const float * cs_yrec, const float aperture,
+                                            const float max_offset, const int sm_z, const int sm_x, const int sm_y, const float cubic_dh, const float dh, const float dt, const int cubic_nxx,
+                                            const int cubic_nyy, const int cubic_nzz, const int cubic_nb, const int nx, const int ny, const int nz, const int nt, const int nsy, const int nrx)
+{
+    extern __shared__ float raw_smem[];
+    const int total_sm_nodes = sm_z * sm_x * sm_y;
+
+    float * sm_S  = raw_smem;
+    float * sm_Ts = raw_smem + total_sm_nodes;
+    float * sm_Tr = raw_smem + 2 * total_sm_nodes;
+
+    __shared__ int cz_block_origin, cx_block_origin, cy_block_origin;
+
+    const int tid = threadIdx.z * blockDim.y * blockDim.x + 
+                    threadIdx.y * blockDim.x + 
+                    threadIdx.x;
+    
+    const int num_threads = blockDim.x * blockDim.y * blockDim.z;
+
+    const float inv_cubic_dh = 1.0f / cubic_dh;
+    const float scale_const = 1.0f / (2.0f * M_PI);
+    const int cubic_volsize = cubic_nxx * cubic_nyy * cubic_nzz;
+
+    if (tid == 0) 
+    {
+        float z_phys_start = (blockIdx.x * blockDim.x) * dh;
+        float x_phys_start = (blockIdx.y * blockDim.y) * dh;
+        float y_phys_start = (blockIdx.z * blockDim.z) * dh;
+
+        cz_block_origin = (int)floorf(z_phys_start * inv_cubic_dh) + cubic_nb;
+        cx_block_origin = (int)floorf(x_phys_start * inv_cubic_dh) + cubic_nb;
+        cy_block_origin = (int)floorf(y_phys_start * inv_cubic_dh) + cubic_nb;
+    }
+
+    __syncthreads();
+
+    for (int idx = tid; idx < total_sm_nodes; idx += num_threads) 
+    {
+        int local_cz = idx % sm_z;
+        int rem      = idx / sm_z;
+        int local_cx = rem % sm_x;
+        int local_cy = rem / sm_x;
+
+        int global_cz = max(0, min(cz_block_origin + local_cz - 1, cubic_nzz - 1));
+        int global_cx = max(0, min(cx_block_origin + local_cx - 1, cubic_nxx - 1));
+        int global_cy = max(0, min(cy_block_origin + local_cy - 1, cubic_nyy - 1));
+
+        int g_idx = global_cy * cubic_nxx * cubic_nzz + global_cx * cubic_nzz + global_cz;
+        int s_idx = local_cy * sm_x * sm_z + local_cx * sm_z + local_cz;
+
+        sm_S[s_idx] = d_S[g_idx];
+    }
+
+    __syncthreads();
+
+    int i = blockIdx.x * blockDim.x + threadIdx.x;
+    int j = blockIdx.y * blockDim.y + threadIdx.y;
+    int k = blockIdx.z * blockDim.z + threadIdx.z;
+
+    bool valid_voxel = (i < nz) && (j < nx) && (k < ny);
+
+    float uz = 0.0f, ux = 0.0f, uy = 0.0f;
+    int sm_base_z = 0, sm_base_x = 0, sm_base_y = 0;
+    float z = 0.0f, x = 0.0f, y = 0.0f;
 
     if (valid_voxel) 
     {
-        size_t mId = i + j * nz + k * nx * nz;
-        atomicAdd(&model[mId], local_image_sum);
+        z = __int2float_rd(i) * dh;
+        x = __int2float_rd(j) * dh;
+        y = __int2float_rd(k) * dh;
+
+        int ic = (int)floorf(z * inv_cubic_dh);
+        int jc = (int)floorf(x * inv_cubic_dh);
+        int kc = (int)floorf(y * inv_cubic_dh);
+
+        uz = fminf(fmaxf((z - (float)(ic) * cubic_dh) * inv_cubic_dh, 0.0f), 1.0f);
+        ux = fminf(fmaxf((x - (float)(jc) * cubic_dh) * inv_cubic_dh, 0.0f), 1.0f);
+        uy = fminf(fmaxf((y - (float)(kc) * cubic_dh) * inv_cubic_dh, 0.0f), 1.0f);
+
+        sm_base_z = (ic + cubic_nb - cz_block_origin) + 1;
+        sm_base_x = (jc + cubic_nb - cx_block_origin) + 1;
+        sm_base_y = (kc + cubic_nb - cy_block_origin) + 1;
     }
-}
 
-__global__ void image_domain_forward_kernel()
-{
+    for (int src_csIdy = 0; src_csIdy < nsy; src_csIdy++)
+    {
+        int src_base = src_csIdy * cubic_volsize;
 
+        for (int idx = tid; idx < total_sm_nodes; idx += num_threads) 
+        {
+            int local_cz = idx % sm_z;
+            int rem      = idx / sm_z;
+            int local_cx = rem % sm_x;
+            int local_cy = rem / sm_x;
 
+            int global_cz = max(0, min(cz_block_origin + local_cz - 1, cubic_nzz - 1));
+            int global_cx = max(0, min(cx_block_origin + local_cx - 1, cubic_nxx - 1));
+            int global_cy = max(0, min(cy_block_origin + local_cy - 1, cubic_nyy - 1));
+
+            int g_idx = global_cy * cubic_nxx * cubic_nzz + global_cx * cubic_nzz + global_cz;
+            int s_idx = local_cy * sm_x * sm_z + local_cx * sm_z + local_cz;
+
+            sm_Ts[s_idx] = d_T_src[g_idx + src_base];
+        }
+
+        __syncthreads();
+
+        TTD src = {0};
+        if (valid_voxel) 
+            src = compute_TTDs(sm_Ts, sm_base_z, sm_base_x, sm_base_y, sm_z, sm_x, uz, ux, uy, cubic_dh);
+
+        for (int rec_csIdx = 0; rec_csIdx < nrx; rec_csIdx++)
+        {
+            int rec_base = rec_csIdx * cubic_volsize;
+
+            for (int idx = tid; idx < total_sm_nodes; idx += num_threads) 
+            {
+                int local_cz = idx % sm_z;
+                int rem      = idx / sm_z;
+                int local_cx = rem % sm_x;
+                int local_cy = rem / sm_x;
+
+                int global_cz = max(0, min(cz_block_origin + local_cz - 1, cubic_nzz - 1));
+                int global_cx = max(0, min(cx_block_origin + local_cx - 1, cubic_nxx - 1));
+                int global_cy = max(0, min(cy_block_origin + local_cy - 1, cubic_nyy - 1));
+
+                int g_idx = global_cy * cubic_nxx * cubic_nzz + global_cx * cubic_nzz + global_cz;
+                int s_idx = local_cy * sm_x * sm_z + local_cx * sm_z + local_cz;
+
+                sm_Tr[s_idx] = d_T_rec[g_idx + rec_base];
+            }
+
+            __syncthreads();
+
+            if (valid_voxel) 
+            {
+                float sx = cs_xsrc[src_csIdy];
+                float sy = cs_ysrc[src_csIdy];
+                float rx = cs_xrec[rec_csIdx];
+                float ry = cs_yrec[rec_csIdx];
+
+                float cmpx = 0.5f * (sx + rx);
+                float cmpy = 0.5f * (sy + ry);
+
+                float offset = sqrtf((sx - rx)*(sx - rx) + (sy - ry)*(sy - ry));
+
+                if (offset <= max_offset) 
+                {
+                    TTD rec = compute_TTDs(sm_Tr, sm_base_z, sm_base_x, sm_base_y, sm_z, sm_x, uz, ux, uy, cubic_dh);
+
+                    float T = src.T + rec.T;
+                    int tId = __float2int_rd(T / dt);
+
+                    if (tId >= 0 && tId < nt) 
+                    {
+                        float S = tricubic(sm_S, sm_base_z, sm_base_x, sm_base_y, sm_z, sm_x, uz, ux, uy);
+
+                        // Slowness vectors
+                        float ps_x = src.dT_dx, ps_y = src.dT_dy, ps_z = src.dT_dz;
+                        float pr_x = rec.dT_dx, pr_y = rec.dT_dy, pr_z = rec.dT_dz;
+
+                        float norm_Ts = sqrtf(ps_x*ps_x + ps_y*ps_y + ps_z*ps_z) + EPS;
+                        float norm_Tr = sqrtf(pr_x*pr_x + pr_y*pr_y + pr_z*pr_z) + EPS;
+
+                        // Unit propagation direction vectors
+                        float ux_s = ps_x / norm_Ts, uy_s = ps_y / norm_Ts, uz_s = ps_z / norm_Ts;
+                        float ux_r = pr_x / norm_Tr, uy_r = pr_y / norm_Tr, uz_r = pr_z / norm_Tr;
+
+                        // Obliquity factor
+                        float nx_norm = 0.0f, ny_norm = 0.0f, nz_norm = -1.0f;
+                        float cos_s = fminf(1.0f, fmaxf(0.001f, fabsf(ux_s*nx_norm + uy_s*ny_norm + uz_s*nz_norm)));
+                        float cos_r = fminf(1.0f, fmaxf(0.001f, fabsf(ux_r*nx_norm + uy_r*ny_norm + uz_r*nz_norm)));
+                        float obliquity = 0.5f * sqrtf(cos_s + cos_r);
+
+                        // Stable Beylkin Opening Angle Jacobian
+                        float dot_sr = ux_s*ux_r + uy_s*uy_r + uz_s*uz_r;
+                        float cos_psi = fminf(1.0f, fmaxf(-1.0f, dot_sr));
+                        float sin_psi = sqrtf(1.0f - cos_psi * cos_psi);
+
+                        float sum_p_mag = sqrtf((ps_x + pr_x)*(ps_x + pr_x) + 
+                                                (ps_y + pr_y)*(ps_y + pr_y) + 
+                                                (ps_z + pr_z)*(ps_z + pr_z));
+
+                        float Jterm = sum_p_mag * sin_psi;
+
+                        // Geometrical Spreading
+                        float R_s = fmaxf(src.T / S, EPS);
+                        float R_r = fmaxf(rec.T / S, EPS);
+                        float G = 1.0f / sqrtf(R_s * R_r);
+
+                        // Reflection Angle Weight
+                        float theta_s = acosf(fminf(1.0f, fmaxf(-1.0f, ux_s*nx_norm + uy_s*ny_norm + uz_s*nz_norm)));
+                        float theta_r = acosf(fminf(1.0f, fmaxf(-1.0f, ux_r*nx_norm + uy_r*ny_norm + uz_r*nz_norm)));
+                        float theta = 0.5f * (theta_s + theta_r);
+                        float R = 1.0f + 0.2f * cosf(theta);
+                        
+                        // Aperture Gaussian Tapering
+                        float sigma = tanf(aperture * M_PI / 180.0f) * z;
+                        float par_x = ((x - cmpx) / (sigma + EPS)) * ((x - cmpx) / (sigma + EPS));
+                        float par_y = ((y - cmpy) / (sigma + EPS)) * ((y - cmpy) / (sigma + EPS));
+                        float taper = expf(-0.5f * (par_x + par_y));
+
+                        // Total Kernel Weights
+                        float weights = scale_const * taper * G * R * obliquity * Jterm;
+
+                        int mId = i + j * nz + k * nx * nz;
+
+                        int traceId = src_csIdy * nrx + rec_csIdx;
+                        int tId_base = traceId * nt;
+                
+                        atomicAdd(&data[tId + tId_base], weights * model[mId]);
+                    }
+                }
+            }
+
+            __syncthreads();
+        }
+
+        __syncthreads();
+    }
 }
 
 __global__ void angle_domain_adjoint_kernel()
